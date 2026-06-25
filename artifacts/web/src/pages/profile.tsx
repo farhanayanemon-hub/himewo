@@ -1,0 +1,68 @@
+import { MainLayout } from "@/components/layout/main-layout";
+import { useGetUser, useGetUserPosts, getGetUserQueryKey, getGetUserPostsQueryKey } from "@workspace/api-client-react";
+import { useParams } from "wouter";
+import { PostCard } from "@/components/post-card";
+import { Loader2 } from "lucide-react";
+
+export default function ProfilePage() {
+  const { id } = useParams<{ id: string }>();
+  
+  const { data: profile, isLoading: profileLoading } = useGetUser(id!, { query: { enabled: !!id, queryKey: getGetUserQueryKey(id!) } });
+  const { data: posts, isLoading: postsLoading } = useGetUserPosts(id!, {}, { query: { enabled: !!id, queryKey: getGetUserPostsQueryKey(id!) } });
+
+  if (profileLoading) {
+    return <MainLayout><div className="py-10 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></MainLayout>;
+  }
+
+  if (!profile) {
+    return <MainLayout><div className="py-10 text-center text-muted-foreground">Profile not found</div></MainLayout>;
+  }
+
+  return (
+    <MainLayout>
+      <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm mb-6">
+        <div className="h-48 bg-muted relative">
+          {profile.coverUrl ? (
+            <img src={profile.coverUrl} className="w-full h-full object-cover" alt="Cover" />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-r from-primary/20 to-primary/40" />
+          )}
+        </div>
+        <div className="px-6 pb-6 relative">
+          <div className="flex justify-between items-end mb-4">
+            <img 
+              src={profile.avatarUrl || ""} 
+              className="w-32 h-32 rounded-full border-4 border-card object-cover -mt-16 bg-muted relative z-10" 
+              alt="Avatar" 
+            />
+            <div className="flex gap-2">
+              <button className="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium text-sm hover:bg-primary/90">
+                Add Friend
+              </button>
+            </div>
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">{profile.displayName}</h1>
+            <p className="text-muted-foreground text-sm mb-2">@{profile.username}</p>
+            {profile.bio && <p className="text-[15px] mb-4">{profile.bio}</p>}
+            <div className="flex gap-4 text-sm text-muted-foreground font-medium">
+              <span>{profile.friendCount || 0} Friends</span>
+              <span>{profile.followerCount || 0} Followers</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h2 className="font-bold text-lg px-2">Posts</h2>
+        {postsLoading ? (
+          <div className="py-4 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" /></div>
+        ) : posts?.length === 0 ? (
+          <div className="text-center py-10 bg-card border border-border rounded-xl text-muted-foreground">No posts yet</div>
+        ) : (
+          posts?.map(post => <PostCard key={post.id} post={post} />)
+        )}
+      </div>
+    </MainLayout>
+  );
+}

@@ -1,1 +1,2 @@
-- [HiMewo backend conventions](himewo-backend.md) — dev auth fallback, codegen zod naming, seed/run-without-tsx, authz model for the api-server.
+- [HiMewo backend](himewo-backend.md) — shared API/auth/realtime that powers all clients; env-driven Supabase, dev fallback.
+- [HiMewo client auth & realtime contract](himewo-client-contract.md) — how web/mobile clients authenticate, do realtime, and upload media against the shared backend.
