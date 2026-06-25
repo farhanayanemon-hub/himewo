@@ -1,8 +1,36 @@
 import { Router, type IRouter } from "express";
+import { authMiddleware } from "../lib/auth";
 import healthRouter from "./health";
+import authRouter from "./auth";
+import usersRouter from "./users";
+import postsRouter from "./posts";
+import commentsRouter from "./comments";
+import friendsRouter from "./friends";
+import conversationsRouter from "./conversations";
+import groupsRouter from "./groups";
+import pagesRouter from "./pages";
+import storiesRouter from "./stories";
+import reelsRouter from "./reels";
+import notificationsRouter from "./notifications";
+import mediaRouter from "./media";
 
 const router: IRouter = Router();
 
+// Populate req.userId from the bearer token (or dev fallback) for all routes.
+router.use(authMiddleware);
+
 router.use(healthRouter);
+router.use(authRouter);
+router.use(usersRouter);
+router.use(postsRouter);
+router.use(commentsRouter);
+router.use(friendsRouter);
+router.use(conversationsRouter);
+router.use(groupsRouter);
+router.use(pagesRouter);
+router.use(storiesRouter);
+router.use(reelsRouter);
+router.use(notificationsRouter);
+router.use(mediaRouter);
 
 export default router;

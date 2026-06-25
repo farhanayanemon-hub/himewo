@@ -1,0 +1,1 @@
+- [HiMewo backend conventions](himewo-backend.md) — dev auth fallback, codegen zod naming, seed/run-without-tsx, authz model for the api-server.
