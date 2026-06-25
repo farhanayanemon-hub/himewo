@@ -1,12 +1,34 @@
 import { MainLayout } from "@/components/layout/main-layout";
-import { useListFriends, useListFriendRequests, useGetFriendSuggestions } from "@workspace/api-client-react";
+import {
+  useListFriends,
+  useListFriendRequests,
+  useGetFriendSuggestions,
+  useSendFriendRequest,
+  useAcceptFriendRequest,
+  useDeclineFriendRequest,
+  getListFriendsQueryKey,
+  getListFriendRequestsQueryKey,
+  getGetFriendSuggestionsQueryKey,
+} from "@workspace/api-client-react";
 import { Loader2 } from "lucide-react";
 import { Link } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function FriendsPage() {
+  const queryClient = useQueryClient();
   const { data: requests } = useListFriendRequests();
   const { data: friends } = useListFriends();
   const { data: suggestions } = useGetFriendSuggestions();
+
+  const sendRequest = useSendFriendRequest();
+  const acceptRequest = useAcceptFriendRequest();
+  const declineRequest = useDeclineFriendRequest();
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: getListFriendsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getListFriendRequestsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetFriendSuggestionsQueryKey() });
+  };
 
   return (
     <MainLayout>
@@ -26,8 +48,22 @@ export default function FriendsPage() {
                     </Link>
                   </div>
                   <div className="flex gap-2 w-full">
-                    <button className="flex-1 bg-primary text-primary-foreground py-1.5 rounded-lg text-sm font-medium">Accept</button>
-                    <button className="flex-1 bg-muted text-foreground py-1.5 rounded-lg text-sm font-medium">Decline</button>
+                    <button
+                      onClick={() => acceptRequest.mutate({ id: req.id }, { onSuccess: invalidate })}
+                      disabled={acceptRequest.isPending || declineRequest.isPending}
+                      className="flex-1 bg-primary text-primary-foreground py-1.5 rounded-lg text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-1"
+                    >
+                      {acceptRequest.isPending && acceptRequest.variables?.id === req.id && <Loader2 className="w-4 h-4 animate-spin" />}
+                      Accept
+                    </button>
+                    <button
+                      onClick={() => declineRequest.mutate({ id: req.id }, { onSuccess: invalidate })}
+                      disabled={acceptRequest.isPending || declineRequest.isPending}
+                      className="flex-1 bg-muted text-foreground py-1.5 rounded-lg text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-1"
+                    >
+                      {declineRequest.isPending && declineRequest.variables?.id === req.id && <Loader2 className="w-4 h-4 animate-spin" />}
+                      Decline
+                    </button>
                   </div>
                 </div>
               ))}
@@ -46,7 +82,12 @@ export default function FriendsPage() {
                     {user.displayName}
                   </Link>
                 </div>
-                <button className="w-full bg-primary/10 text-primary hover:bg-primary/20 py-1.5 rounded-lg text-sm font-medium">
+                <button
+                  onClick={() => sendRequest.mutate({ data: { addresseeId: user.id } }, { onSuccess: invalidate })}
+                  disabled={sendRequest.isPending}
+                  className="w-full bg-primary/10 text-primary hover:bg-primary/20 py-1.5 rounded-lg text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-1"
+                >
+                  {sendRequest.isPending && sendRequest.variables?.data.addresseeId === user.id && <Loader2 className="w-4 h-4 animate-spin" />}
                   Add Friend
                 </button>
               </div>

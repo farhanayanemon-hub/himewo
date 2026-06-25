@@ -1,9 +1,30 @@
 import { MainLayout } from "@/components/layout/main-layout";
-import { useListGroups, useGetGroup, useGetGroupPosts } from "@workspace/api-client-react";
-import { useParams, Link } from "wouter";
+import {
+  useListGroups,
+  useGetGroup,
+  useGetGroupPosts,
+  useCreateGroup,
+  useJoinGroup,
+  useLeaveGroup,
+  getListGroupsQueryKey,
+  getGetGroupQueryKey,
+} from "@workspace/api-client-react";
+import { useParams, Link, useLocation } from "wouter";
 import { PostCard } from "@/components/post-card";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Loader2, Users } from "lucide-react";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function GroupsPage() {
   const { id } = useParams<{ id: string }>();
@@ -17,13 +38,36 @@ export default function GroupsPage() {
 
 function GroupList() {
   const { data: groups, isLoading } = useListGroups();
+  const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+
+  const createGroup = useCreateGroup();
+
+  const handleCreate = () => {
+    if (!name.trim()) return;
+    createGroup.mutate(
+      { data: { name: name.trim(), description: description.trim() || undefined } },
+      {
+        onSuccess: (group) => {
+          queryClient.invalidateQueries({ queryKey: getListGroupsQueryKey() });
+          setOpen(false);
+          setName("");
+          setDescription("");
+          navigate(`/groups/${group.id}`);
+        },
+      }
+    );
+  };
 
   return (
     <MainLayout>
       <div className="bg-card border border-border rounded-xl p-4 shadow-sm animate-in fade-in">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-xl font-bold">Groups</h1>
-          <Button>Create Group</Button>
+          <Button onClick={() => setOpen(true)}>Create Group</Button>
         </div>
 
         {isLoading ? (
@@ -57,6 +101,41 @@ function GroupList() {
           </div>
         )}
       </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Group</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="group-name">Name</Label>
+              <Input
+                id="group-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Group name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="group-description">Description</Label>
+              <Textarea
+                id="group-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="What's this group about?"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreate} disabled={!name.trim() || createGroup.isPending}>
+              {createGroup.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 }
@@ -64,6 +143,15 @@ function GroupList() {
 function GroupDetail({ id }: { id: number }) {
   const { data: group, isLoading: groupLoading } = useGetGroup(id);
   const { data: posts, isLoading: postsLoading } = useGetGroupPosts(id);
+  const queryClient = useQueryClient();
+
+  const joinGroup = useJoinGroup();
+  const leaveGroup = useLeaveGroup();
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: getListGroupsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetGroupQueryKey(id) });
+  };
 
   if (groupLoading) {
     return <MainLayout><div className="py-10 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></MainLayout>;
@@ -72,6 +160,14 @@ function GroupDetail({ id }: { id: number }) {
   if (!group) {
     return <MainLayout><div className="py-10 text-center text-muted-foreground">Group not found</div></MainLayout>;
   }
+
+  const handleMembership = () => {
+    if (group.viewerIsMember) {
+      leaveGroup.mutate({ id }, { onSuccess: invalidate });
+    } else {
+      joinGroup.mutate({ id }, { onSuccess: invalidate });
+    }
+  };
 
   return (
     <MainLayout>
@@ -91,7 +187,12 @@ function GroupDetail({ id }: { id: number }) {
                 <Users className="w-4 h-4" /> {group.privacy} group • {group.memberCount} members
               </div>
             </div>
-            <Button variant={group.viewerIsMember ? "secondary" : "default"}>
+            <Button
+              variant={group.viewerIsMember ? "secondary" : "default"}
+              onClick={handleMembership}
+              disabled={joinGroup.isPending || leaveGroup.isPending}
+            >
+              {(joinGroup.isPending || leaveGroup.isPending) && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
               {group.viewerIsMember ? "Joined" : "Join Group"}
             </Button>
           </div>

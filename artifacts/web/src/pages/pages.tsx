@@ -1,8 +1,28 @@
 import { MainLayout } from "@/components/layout/main-layout";
-import { useListPages, useGetPage } from "@workspace/api-client-react";
-import { useParams, Link } from "wouter";
+import {
+  useListPages,
+  useGetPage,
+  useCreatePage,
+  useFollowPage,
+  useUnfollowPage,
+  getListPagesQueryKey,
+  getGetPageQueryKey,
+} from "@workspace/api-client-react";
+import { useParams, Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Loader2, FileText } from "lucide-react";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function PagesView() {
   const { id } = useParams<{ id: string }>();
@@ -16,13 +36,44 @@ export default function PagesView() {
 
 function PageList() {
   const { data: pages, isLoading } = useListPages();
+  const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState("");
+  const [description, setDescription] = useState("");
+
+  const createPage = useCreatePage();
+
+  const handleCreate = () => {
+    if (!name.trim()) return;
+    createPage.mutate(
+      {
+        data: {
+          name: name.trim(),
+          category: category.trim() || undefined,
+          description: description.trim() || undefined,
+        },
+      },
+      {
+        onSuccess: (page) => {
+          queryClient.invalidateQueries({ queryKey: getListPagesQueryKey() });
+          setOpen(false);
+          setName("");
+          setCategory("");
+          setDescription("");
+          navigate(`/pages/${page.id}`);
+        },
+      }
+    );
+  };
 
   return (
     <MainLayout>
       <div className="bg-card border border-border rounded-xl p-4 shadow-sm animate-in fade-in">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-xl font-bold">Pages</h1>
-          <Button>Create Page</Button>
+          <Button onClick={() => setOpen(true)}>Create Page</Button>
         </div>
 
         {isLoading ? (
@@ -56,12 +107,65 @@ function PageList() {
           </div>
         )}
       </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Page</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="page-name">Name</Label>
+              <Input
+                id="page-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Page name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="page-category">Category</Label>
+              <Input
+                id="page-category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="e.g. Business, Community"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="page-description">Description</Label>
+              <Textarea
+                id="page-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="What's this page about?"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreate} disabled={!name.trim() || createPage.isPending}>
+              {createPage.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 }
 
 function PageDetail({ id }: { id: number }) {
   const { data: page, isLoading } = useGetPage(id);
+  const queryClient = useQueryClient();
+
+  const followPage = useFollowPage();
+  const unfollowPage = useUnfollowPage();
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: getListPagesQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetPageQueryKey(id) });
+  };
 
   if (isLoading) {
     return <MainLayout><div className="py-10 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></MainLayout>;
@@ -70,6 +174,14 @@ function PageDetail({ id }: { id: number }) {
   if (!page) {
     return <MainLayout><div className="py-10 text-center text-muted-foreground">Page not found</div></MainLayout>;
   }
+
+  const handleFollow = () => {
+    if (page.viewerFollows) {
+      unfollowPage.mutate({ id }, { onSuccess: invalidate });
+    } else {
+      followPage.mutate({ id }, { onSuccess: invalidate });
+    }
+  };
 
   return (
     <MainLayout>
@@ -88,7 +200,12 @@ function PageDetail({ id }: { id: number }) {
               className="w-32 h-32 rounded-full border-4 border-card object-cover -mt-16 bg-muted relative z-10" 
               alt="Avatar" 
             />
-            <Button variant={page.viewerFollows ? "secondary" : "default"}>
+            <Button
+              variant={page.viewerFollows ? "secondary" : "default"}
+              onClick={handleFollow}
+              disabled={followPage.isPending || unfollowPage.isPending}
+            >
+              {(followPage.isPending || unfollowPage.isPending) && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
               {page.viewerFollows ? "Following" : "Follow"}
             </Button>
           </div>

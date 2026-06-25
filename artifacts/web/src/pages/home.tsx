@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { PostCard } from "@/components/post-card";
 import {
@@ -8,14 +8,16 @@ import {
   useListFriends,
   getGetFeedQueryKey,
   type MediaItemInput,
+  type Post,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { Image as ImageIcon, Video, Smile, Loader2, X, Plus } from "lucide-react";
+import { Image as ImageIcon, Video, Loader2, X, Plus } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRealtime } from "@/lib/realtime";
 import { Link } from "wouter";
 import { uploadMedia, UploadUnavailableError, type UploadedMedia } from "@/lib/upload";
 import { toast } from "@/hooks/use-toast";
+import { EmojiPickerButton } from "@/components/emoji-picker";
 
 function PostComposer() {
   const { data: user } = useGetCurrentUser();
@@ -135,9 +137,12 @@ function PostComposer() {
         >
           <Video className="w-5 h-5 mr-2 text-red-500" /> Video
         </Button>
-        <Button variant="ghost" className="flex-1 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg">
-          <Smile className="w-5 h-5 mr-2 text-yellow-500" /> Feeling
-        </Button>
+        <div className="flex-1 flex justify-center">
+          <EmojiPickerButton
+            onSelect={(emoji) => setContent((prev) => prev + emoji)}
+            className="w-full text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg flex items-center justify-center gap-2"
+          />
+        </div>
         <Button
           onClick={submit}
           disabled={(!content.trim() && media.length === 0) || createPost.isPending}
@@ -180,8 +185,50 @@ function ContactsSidebar() {
   );
 }
 
+const FEED_PAGE_SIZE = 10;
+
 export default function HomePage() {
-  const { data: feed, isLoading } = useGetFeed();
+  const [pages, setPages] = useState<Post[][]>([]);
+  const [cursor, setCursor] = useState<number | undefined>(undefined);
+  const [hasMore, setHasMore] = useState(true);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  const { data: page, isLoading, isFetching } = useGetFeed(
+    { cursor, limit: FEED_PAGE_SIZE },
+    { query: { queryKey: getGetFeedQueryKey({ cursor, limit: FEED_PAGE_SIZE }) } },
+  );
+
+  useEffect(() => {
+    if (!page) return;
+    setPages((prev) => {
+      const next = [...prev];
+      const idx = cursor === undefined ? 0 : next.length;
+      next[idx] = page;
+      return cursor === undefined ? [page] : next;
+    });
+    if (page.length < FEED_PAGE_SIZE) setHasMore(false);
+  }, [page, cursor]);
+
+  const posts = pages.flat();
+  const lastId = posts.length ? posts[posts.length - 1].id : undefined;
+
+  const loadMore = () => {
+    if (!hasMore || isFetching || lastId === undefined) return;
+    setCursor(lastId);
+  };
+
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) loadMore();
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasMore, isFetching, lastId]);
 
   return (
     <MainLayout rightSidebar={<ContactsSidebar />}>
@@ -202,14 +249,27 @@ export default function HomePage() {
 
         {/* Feed */}
         <div className="space-y-4">
-          {isLoading ? (
+          {isLoading && posts.length === 0 ? (
             <div className="text-center py-10 text-muted-foreground">
               <Loader2 className="w-6 h-6 animate-spin mx-auto" />
             </div>
-          ) : feed?.length === 0 ? (
+          ) : posts.length === 0 ? (
             <div className="text-center py-10 text-muted-foreground bg-card border border-border rounded-xl">No posts yet. Make one!</div>
           ) : (
-            feed?.map((post) => <PostCard key={post.id} post={post} />)
+            posts.map((post) => <PostCard key={post.id} post={post} />)
+          )}
+
+          {/* Infinite scroll sentinel */}
+          {hasMore && posts.length > 0 && (
+            <div ref={sentinelRef} className="py-6 flex justify-center">
+              {isFetching ? (
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              ) : (
+                <Button variant="ghost" onClick={loadMore} className="text-muted-foreground">
+                  Load more
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </div>
