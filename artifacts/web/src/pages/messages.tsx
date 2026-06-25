@@ -5,17 +5,19 @@ import {
   useListMessages, 
   useSendMessage,
   useCreateConversation,
+  useListFriends,
   getListMessagesQueryKey,
-  getListConversationsQueryKey
+  getListConversationsQueryKey,
+  getListFriendsQueryKey
 } from "@workspace/api-client-react";
-import { Link, useParams } from "wouter";
+import { Link, useParams, useLocation } from "wouter";
 import { useRealtime } from "@/lib/realtime";
 import { useCall } from "@/components/call-provider";
 import { useAuth } from "@/lib/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Phone, Video, Info, Loader2, MessageCircle } from "lucide-react";
+import { Send, Phone, Video, Info, Loader2, MessageCircle, SquarePen, X } from "lucide-react";
 import { EmojiPickerButton } from "@/components/emoji-picker";
 
 export default function MessagesPage() {
@@ -30,10 +32,28 @@ export default function MessagesPage() {
   );
 
   const sendMessage = useSendMessage();
+  const createConversation = useCreateConversation();
   const { user } = useAuth();
   const realtime = useRealtime();
   const call = useCall();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
+
+  const [showNewChat, setShowNewChat] = useState(false);
+  const { data: friends, isLoading: friendsLoading } = useListFriends({ query: { enabled: showNewChat, queryKey: getListFriendsQueryKey() } });
+
+  const handleStartConversation = (friendId: string) => {
+    createConversation.mutate(
+      { data: { type: "direct", memberIds: [friendId] } },
+      {
+        onSuccess: (conv) => {
+          setShowNewChat(false);
+          queryClient.invalidateQueries({ queryKey: getListConversationsQueryKey() });
+          navigate(`/messages/${conv.id}`);
+        },
+      },
+    );
+  };
 
   const [newMessage, setNewMessage] = useState("");
   const [peerTyping, setPeerTyping] = useState(false);
@@ -139,8 +159,8 @@ export default function MessagesPage() {
         <div className="w-[320px] border-r border-border flex flex-col bg-card/50">
           <div className="p-4 border-b border-border flex justify-between items-center">
             <h2 className="font-bold text-lg">Chats</h2>
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+            <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setShowNewChat(true)} title="New message">
+              <SquarePen className="w-5 h-5" />
             </Button>
           </div>
           <div className="p-2">
@@ -302,11 +322,47 @@ export default function MessagesPage() {
               </div>
               <h2 className="text-2xl font-bold text-foreground mb-2">Your Messages</h2>
               <p className="max-w-md">Send private photos and messages to a friend or group.</p>
-              <Button className="mt-6 rounded-full px-8">Send Message</Button>
+              <Button className="mt-6 rounded-full px-8" onClick={() => setShowNewChat(true)}>Send Message</Button>
             </div>
           )}
         </div>
       </div>
+
+      {showNewChat && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 animate-in fade-in" onClick={() => setShowNewChat(false)}>
+          <div className="bg-card border border-border rounded-xl shadow-xl w-full max-w-md max-h-[80vh] flex flex-col animate-in zoom-in-95" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h3 className="font-bold text-lg">New Message</h3>
+              <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setShowNewChat(false)}>
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+            <div className="p-2 overflow-y-auto">
+              {friendsLoading ? (
+                <div className="flex justify-center p-6"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+              ) : !friends?.length ? (
+                <div className="text-center text-sm text-muted-foreground py-8">Add some friends to start chatting.</div>
+              ) : (
+                friends.map((friend) => (
+                  <button
+                    key={friend.id}
+                    onClick={() => handleStartConversation(friend.id)}
+                    disabled={createConversation.isPending}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/60 transition-colors text-left disabled:opacity-60"
+                  >
+                    <img src={friend.avatarUrl || ""} className="w-11 h-11 rounded-full object-cover bg-muted" alt="" />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold truncate">{friend.displayName}</div>
+                      <div className="text-xs text-muted-foreground truncate">@{friend.username}</div>
+                    </div>
+                    {createConversation.isPending && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </MainLayout>
   );
 }
