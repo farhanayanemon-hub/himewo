@@ -1,14 +1,36 @@
 import { MainLayout } from "@/components/layout/main-layout";
-import { useGetUser, useGetUserPosts, getGetUserQueryKey, getGetUserPostsQueryKey } from "@workspace/api-client-react";
+import { useGetUser, useGetUserPosts, useSendFriendRequest, getGetUserQueryKey, getGetUserPostsQueryKey } from "@workspace/api-client-react";
 import { useParams } from "wouter";
 import { PostCard } from "@/components/post-card";
-import { Loader2 } from "lucide-react";
+import { Loader2, Check } from "lucide-react";
+import { useState } from "react";
+import { useAuth } from "@/lib/auth";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function ProfilePage() {
   const { id } = useParams<{ id: string }>();
-  
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const sendRequest = useSendFriendRequest();
+  const [requested, setRequested] = useState(false);
+
   const { data: profile, isLoading: profileLoading } = useGetUser(id!, { query: { enabled: !!id, queryKey: getGetUserQueryKey(id!) } });
   const { data: posts, isLoading: postsLoading } = useGetUserPosts(id!, {}, { query: { enabled: !!id, queryKey: getGetUserPostsQueryKey(id!) } });
+
+  const isOwnProfile = user?.id === id;
+
+  const handleAddFriend = () => {
+    if (!id) return;
+    sendRequest.mutate(
+      { data: { addresseeId: id } },
+      {
+        onSuccess: () => {
+          setRequested(true);
+          queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(id) });
+        },
+      },
+    );
+  };
 
   if (profileLoading) {
     return <MainLayout><div className="py-10 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></MainLayout>;
@@ -36,9 +58,22 @@ export default function ProfilePage() {
               alt="Avatar" 
             />
             <div className="flex gap-2">
-              <button className="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium text-sm hover:bg-primary/90">
-                Add Friend
-              </button>
+              {!isOwnProfile && (
+                requested ? (
+                  <button disabled className="bg-muted text-muted-foreground px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-1.5">
+                    <Check className="w-4 h-4" /> Request Sent
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleAddFriend}
+                    disabled={sendRequest.isPending}
+                    className="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium text-sm hover:bg-primary/90 flex items-center gap-1.5 disabled:opacity-60"
+                  >
+                    {sendRequest.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                    Add Friend
+                  </button>
+                )
+              )}
             </div>
           </div>
           <div>

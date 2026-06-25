@@ -1,27 +1,20 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
-import { ThumbsUp, MessageCircle, Share2, MoreHorizontal } from "lucide-react";
-import { Post, useSetPostReaction, useRemovePostReaction, ReactionType } from "@workspace/api-client-react";
+import { MessageCircle, Share2, MoreHorizontal, Loader2 } from "lucide-react";
+import { Post, useSetPostReaction, useRemovePostReaction, useSharePost, ReactionType } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 import { getGetFeedQueryKey, getGetPostQueryKey, getGetUserPostsQueryKey } from "@workspace/api-client-react";
-
-const reactionConfig: Record<ReactionType, { emoji: string; color: string; label: string }> = {
-  [ReactionType.like]: { emoji: "👍", color: "text-blue-500", label: "Like" },
-  [ReactionType.love]: { emoji: "❤️", color: "text-red-500", label: "Love" },
-  [ReactionType.care]: { emoji: "🥰", color: "text-yellow-500", label: "Care" },
-  [ReactionType.haha]: { emoji: "😆", color: "text-yellow-500", label: "Haha" },
-  [ReactionType.wow]: { emoji: "😮", color: "text-yellow-500", label: "Wow" },
-  [ReactionType.sad]: { emoji: "😢", color: "text-yellow-500", label: "Sad" },
-  [ReactionType.angry]: { emoji: "😡", color: "text-orange-600", label: "Angry" },
-};
+import { ReactionControl, reactionConfig } from "@/components/reaction-picker";
 
 export function PostCard({ post }: { post: Post }) {
   const queryClient = useQueryClient();
   const setReaction = useSetPostReaction();
   const removeReaction = useRemovePostReaction();
-  const [showPicker, setShowPicker] = useState(false);
+  const sharePost = useSharePost();
+  const [showShare, setShowShare] = useState(false);
+  const [shareCaption, setShareCaption] = useState("");
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: getGetFeedQueryKey() });
@@ -30,7 +23,6 @@ export function PostCard({ post }: { post: Post }) {
   };
 
   const handleReaction = (type: ReactionType) => {
-    setShowPicker(false);
     if (post.reactions.viewerReaction === type) {
       removeReaction.mutate({ id: post.id }, { onSuccess: invalidate });
     } else {
@@ -38,8 +30,20 @@ export function PostCard({ post }: { post: Post }) {
     }
   };
 
+  const handleShare = () => {
+    sharePost.mutate(
+      { id: post.id, data: { caption: shareCaption.trim() || undefined } },
+      {
+        onSuccess: () => {
+          setShowShare(false);
+          setShareCaption("");
+          invalidate();
+        },
+      },
+    );
+  };
+
   const viewerReaction = post.reactions.viewerReaction as ReactionType | null | undefined;
-  const active = viewerReaction ? reactionConfig[viewerReaction] : null;
 
   return (
     <div className="bg-card border border-border rounded-xl p-4 shadow-sm animate-in fade-in zoom-in-95 duration-300">
@@ -93,37 +97,8 @@ export function PostCard({ post }: { post: Post }) {
       </div>
 
       <div className="flex gap-1 relative">
-        {showPicker && (
-          <div className="absolute -top-12 left-0 bg-card border border-border rounded-full shadow-lg flex gap-1 p-1 animate-in slide-in-from-bottom-2 z-10"
-               onMouseLeave={() => setShowPicker(false)}>
-            {Object.entries(reactionConfig).map(([type, config]) => (
-              <button
-                key={type}
-                onClick={() => handleReaction(type as ReactionType)}
-                className="w-10 h-10 rounded-full hover:bg-muted flex items-center justify-center hover:scale-125 transition-transform text-2xl leading-none"
-                title={config.label}
-              >
-                {config.emoji}
-              </button>
-            ))}
-          </div>
-        )}
-
-        <div className="flex-1 relative"
-             onMouseEnter={() => setShowPicker(true)}
-             onMouseLeave={() => setShowPicker(false)}>
-          <Button
-            variant="ghost"
-            className="w-full text-muted-foreground hover:bg-muted/50 rounded-lg flex items-center gap-2"
-            onClick={() => handleReaction(viewerReaction || ReactionType.like)}
-          >
-            {active ? (
-              <span className="text-lg leading-none">{active.emoji}</span>
-            ) : (
-              <ThumbsUp className="w-5 h-5 text-muted-foreground" />
-            )}
-            <span className={`font-medium ${active ? active.color : ""}`}>{active ? active.label : "Like"}</span>
-          </Button>
+        <div className="flex-1 flex justify-center items-center hover:bg-muted/50 rounded-lg py-1.5">
+          <ReactionControl viewerReaction={viewerReaction} onReact={handleReaction} />
         </div>
 
         <Link href={`/post/${post.id}`} className="flex-1">
@@ -132,11 +107,33 @@ export function PostCard({ post }: { post: Post }) {
             <span className="font-medium">Comment</span>
           </Button>
         </Link>
-        <Button variant="ghost" className="flex-1 text-muted-foreground hover:bg-muted/50 rounded-lg flex items-center gap-2">
+        <Button
+          variant="ghost"
+          className="flex-1 text-muted-foreground hover:bg-muted/50 rounded-lg flex items-center gap-2"
+          onClick={() => setShowShare((s) => !s)}
+        >
           <Share2 className="w-5 h-5" />
           <span className="font-medium">Share</span>
         </Button>
       </div>
+
+      {showShare && (
+        <div className="mt-3 pt-3 border-t border-border space-y-2 animate-in fade-in slide-in-from-top-1">
+          <textarea
+            value={shareCaption}
+            onChange={(e) => setShareCaption(e.target.value)}
+            placeholder="Say something about this..."
+            rows={2}
+            className="w-full bg-muted/50 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setShowShare(false)}>Cancel</Button>
+            <Button size="sm" disabled={sharePost.isPending} onClick={handleShare} className="rounded-lg">
+              {sharePost.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Share now"}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

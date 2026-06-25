@@ -12,11 +12,12 @@ import {
 } from "@workspace/api-client-react";
 import { useParams } from "wouter";
 import { PostCard } from "@/components/post-card";
-import { Loader2, ThumbsUp } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { EmojiPickerButton } from "@/components/emoji-picker";
+import { ReactionControl } from "@/components/reaction-picker";
 
 function CommentItem({ comment, postId }: { comment: Comment; postId: number }) {
   const queryClient = useQueryClient();
@@ -28,14 +29,14 @@ function CommentItem({ comment, postId }: { comment: Comment; postId: number }) 
     queryClient.invalidateQueries({ queryKey: getGetPostQueryKey(postId) });
   };
 
-  const liked = !!comment.viewerReaction;
+  const viewerReaction = comment.viewerReaction as ReactionType | null | undefined;
 
-  const toggleLike = () => {
-    if (liked) {
+  const handleReact = (type: ReactionType) => {
+    if (viewerReaction === type) {
       removeReaction.mutate({ id: comment.id }, { onSuccess: invalidate });
     } else {
       setReaction.mutate(
-        { id: comment.id, data: { type: ReactionType.like } },
+        { id: comment.id, data: { type } },
         { onSuccess: invalidate },
       );
     }
@@ -50,14 +51,12 @@ function CommentItem({ comment, postId }: { comment: Comment; postId: number }) 
           <div className="text-[15px]">{comment.content}</div>
         </div>
         <div className="flex gap-3 mt-1 ml-2 text-xs text-muted-foreground font-medium items-center">
-          <button
-            onClick={toggleLike}
-            disabled={setReaction.isPending || removeReaction.isPending}
-            className={`flex items-center gap-1 hover:underline ${liked ? "text-primary" : ""}`}
-          >
-            <ThumbsUp className="w-3.5 h-3.5" />
-            Like{comment.reactionCount > 0 ? ` · ${comment.reactionCount}` : ""}
-          </button>
+          <ReactionControl
+            viewerReaction={viewerReaction}
+            onReact={handleReact}
+            count={comment.reactionCount}
+            size="sm"
+          />
           <button className="hover:underline">Reply</button>
           <span>{new Date(comment.createdAt).toLocaleDateString()}</span>
         </div>

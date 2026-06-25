@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { useGetUnreadNotificationCount } from "@workspace/api-client-react";
@@ -19,8 +19,16 @@ import { Button } from "@/components/ui/button";
 
 export function MainLayout({ children, rightSidebar }: { children: ReactNode; rightSidebar?: ReactNode }) {
   const { user, signOut } = useAuth();
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const { data: unreadCount } = useGetUnreadNotificationCount();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (!q) return;
+    navigate(`/search?q=${encodeURIComponent(q)}`);
+  };
 
   const navItems = [
     { href: "/", icon: Home, label: "Home" },
@@ -39,14 +47,16 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
             <Link href="/" className="text-2xl font-extrabold text-primary tracking-tight">
               HiMewo
             </Link>
-            <div className="hidden md:flex relative">
+            <form onSubmit={handleSearch} className="hidden md:flex relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input 
                 type="text" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search HiMewo..." 
                 className="pl-9 pr-4 py-2 bg-muted/50 border-none rounded-full w-64 focus:ring-1 focus:ring-primary text-sm"
               />
-            </div>
+            </form>
           </div>
 
           <div className="flex items-center gap-2 md:gap-6">
