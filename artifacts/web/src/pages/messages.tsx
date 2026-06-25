@@ -16,6 +16,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, Phone, Video, Info, Loader2, MessageCircle } from "lucide-react";
+import { EmojiPickerButton } from "@/components/emoji-picker";
 
 export default function MessagesPage() {
   const { id } = useParams<{ id: string }>();
@@ -281,9 +282,7 @@ export default function MessagesPage() {
                       placeholder="Aa" 
                       className="w-full bg-transparent border-none focus:outline-none focus:ring-0 py-2 text-[15px]"
                     />
-                    <Button type="button" variant="ghost" size="icon" className="shrink-0 w-8 h-8 rounded-full text-muted-foreground hover:text-primary">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    </Button>
+                    <EmojiPickerButton onSelect={(emoji) => handleTyping(newMessage + emoji)} />
                   </div>
                   <Button 
                     type="submit" 
