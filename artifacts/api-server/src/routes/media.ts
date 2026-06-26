@@ -1,7 +1,6 @@
 import { Router, type IRouter } from "express";
 import { requireAuth } from "../lib/auth";
-import { getSupabaseAdmin } from "../lib/supabase";
-import { env } from "../lib/env";
+import { createR2UploadUrl } from "../lib/r2";
 import {
   CreateUploadUrlBody,
   CreateUploadUrlResponse,
@@ -22,32 +21,20 @@ router.post(
       res.status(400).json({ error: parsed.error.message });
       return;
     }
-    const admin = getSupabaseAdmin();
-    if (!admin) {
+    const path = `${req.userId}/${Date.now()}-${sanitize(parsed.data.fileName)}`;
+    const target = await createR2UploadUrl(path, parsed.data.contentType);
+    if (!target) {
       res.status(503).json({
         error:
-          "Storage is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
+          "Storage is not configured. Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY and R2_PUBLIC_URL.",
       });
       return;
     }
-    const bucket = parsed.data.bucket ?? env.storageBucket;
-    const path = `${req.userId}/${Date.now()}-${sanitize(parsed.data.fileName)}`;
-    const { data, error } = await admin.storage
-      .from(bucket)
-      .createSignedUploadUrl(path);
-    if (error || !data) {
-      res
-        .status(500)
-        .json({ error: error?.message ?? "Failed to create upload URL" });
-      return;
-    }
-    const { data: pub } = admin.storage.from(bucket).getPublicUrl(path);
     res.json(
       CreateUploadUrlResponse.parse({
-        uploadUrl: data.signedUrl,
-        publicUrl: pub.publicUrl,
+        uploadUrl: target.uploadUrl,
+        publicUrl: target.publicUrl,
         path,
-        token: data.token,
       }),
     );
   },

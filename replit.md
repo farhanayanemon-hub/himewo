@@ -17,10 +17,11 @@ The Agent chat history does NOT transfer between accounts — but this file, the
 ### What is NOT done yet (pending work)
 - **Admin panel** (Facebook-style): planned as a NEW separate web artifact `artifacts/admin` (react-vite + shadcn, `/admin` path, same backend). Planned pages: dashboard/stats, user management (verify/ban/delete/make-admin), content moderation, reports queue, groups & pages management, and a Settings/Integrations page. Required schema additions: `isAdmin` + `isBanned`/`bannedAt` on `profiles`, an encrypted `app_settings` table, and a `reports` table. Needs a `requireAdmin` middleware and a `make-admin <userId>` script for the first admin. **Decision: the admin Settings page is where the owner will paste the Cloudflare Stream credentials** (stored encrypted in `app_settings`, encrypted using the existing `SESSION_SECRET`), instead of as env secrets.
 - **Large video upload + livestreaming (broadcast, Facebook-Live style)**: provider chosen = **Cloudflare Stream** (live ingest + transcoding + adaptive HLS + CDN + auto-recording to VOD, all in one). No Replit one-click integration exists, so credentials come from the admin Settings page (or env). Backend needs: read provider config from `app_settings`, create live inputs, handle VOD uploads, store stream UIDs (add a `live_streams` table + extend `reels`/posts to reference Cloudflare UIDs). Apps need: "Go Live" flow + HLS player + live chat (reuse the existing WebSocket). Live chat does NOT need a new system.
-- **Supabase for production**: dev currently uses a dev-auth fallback and returns 503 for media upload (no storage configured). For real accounts + (non-video) media storage, provision a Supabase project and set its env vars (see below). DB/Auth/Storage can all come from one Supabase project.
+- **Supabase for production (Auth + DB only)**: dev currently uses a dev-auth fallback. For real accounts, provision a Supabase project (gives Postgres `DATABASE_URL` + Auth) and set its env vars (see below).
+- **Cloudflare R2 for storage (images/files)**: media upload uses an S3-compatible presigned-PUT flow against Cloudflare R2 (`src/lib/r2.ts`). Dev returns 503 for media upload until R2 env is set. Video/livestream uses Cloudflare Stream separately.
 
 ### Setup required in a new account after transfer (none of this copies automatically)
-1. **Secrets / env vars** — re-add. Currently present (must be recreated): `SESSION_SECRET`, `DATABASE_URL` (+ `PG*`). When enabling production features also add Supabase vars (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`, `SUPABASE_STORAGE_BUCKET`) and Cloudflare Stream creds (`CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_STREAM_API_TOKEN`) — or enter Cloudflare creds via the admin Settings page once built.
+1. **Secrets / env vars** — re-add. Currently present (must be recreated): `SESSION_SECRET`, `DATABASE_URL` (+ `PG*`). When enabling production features also add Supabase Auth+DB vars (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`), Cloudflare R2 storage vars (`R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_URL`), and Cloudflare Stream creds (`CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_STREAM_API_TOKEN`) — or enter Cloudflare Stream creds via the admin Settings page once built.
 2. **Database data** — the Replit Postgres data does NOT move. Either start fresh (run `pnpm --filter @workspace/db run push` then the seed) or migrate via `pg_dump` from the old project and restore into the new one.
 3. **GitHub** — repo is `github.com/farhanayanemon-hub/himewo`. Cleanest transfer path is: push everything, then in the new account Create Repl → Import from GitHub. Verify all commits are pushed (there has been an unpushed commit before).
 4. **Deployment** — re-publish in the new account.
@@ -46,11 +47,11 @@ The Agent chat history does NOT transfer between accounts — but this file, the
 - Web: React + Vite + wouter + Shadcn UI + Tailwind
 - Mobile: Expo (React Native)
 - Build: esbuild (CJS bundle) for the API server
-- Auth/Storage (prod): Supabase. Video/livestream (planned): Cloudflare Stream.
+- Auth + DB (prod): Supabase. Storage (images/files): Cloudflare R2 (S3-compatible). Video/livestream (planned): Cloudflare Stream.
 
 ## Where things live
 
-- API server: `artifacts/api-server/src` (routes in `src/routes`, auth in `src/lib/auth.ts`, authorization in `src/lib/authz.ts`, env in `src/lib/env.ts`, storage in `src/lib/supabase.ts`, media in `src/routes/media.ts`)
+- API server: `artifacts/api-server/src` (routes in `src/routes`, auth in `src/lib/auth.ts`, authorization in `src/lib/authz.ts`, env in `src/lib/env.ts`, R2 storage in `src/lib/r2.ts`, Supabase admin in `src/lib/supabase.ts`, media in `src/routes/media.ts`)
 - DB schema (source of truth): `lib/db/src/schema/*`
 - API contract (source of truth): `lib/api-spec/openapi.yaml`
 - Generated API client: `lib/api-client-react/src`
@@ -60,9 +61,9 @@ The Agent chat history does NOT transfer between accounts — but this file, the
 
 ## Architecture decisions
 
-- The backend is env-driven: real Supabase Auth/Storage in production, a dev fallback (dev:<uuid> token / `x-dev-user-id` header / `DEV_USER_ID`) otherwise — so the whole app runs in the Replit dev DB with no Supabase secrets, then switches to Supabase purely via env at deploy.
+- The backend is env-driven: real Supabase Auth + Cloudflare R2 storage in production, a dev fallback (dev:<uuid> token / `x-dev-user-id` header / `DEV_USER_ID`) otherwise — so the whole app runs in the Replit dev DB with no external secrets, then switches to Supabase/R2 purely via env at deploy.
 - Read-by-id endpoints mask non-visible resources as 404 (not 403) to avoid existence leakage. Every post/comment/conversation read-or-mutate-by-id endpoint must gate on the helpers in `authz.ts`.
-- Media upload uses a signed-upload-URL → public-URL pattern (S3-compatible), which makes swapping storage providers straightforward.
+- Media upload uses a signed-upload-URL → public-URL pattern (S3-compatible) backed by Cloudflare R2 (`src/lib/r2.ts`); the same pattern makes swapping storage providers straightforward.
 - Video/livestream will use one provider (Cloudflare Stream) for both live and VOD; live chat reuses the existing WebSocket rather than a new service.
 - Admin-managed integration credentials (Cloudflare) are stored encrypted in an `app_settings` table (encrypted with `SESSION_SECRET`) and entered via the admin panel, instead of env secrets.
 
