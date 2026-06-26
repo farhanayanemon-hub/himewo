@@ -7,6 +7,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { Platform } from "react-native";
+import * as WebBrowser from "expo-web-browser";
+import * as Linking from "expo-linking";
 import {
   getCurrentUser,
   syncProfile,
@@ -38,6 +41,7 @@ interface AuthContextValue {
   devUsers: DevUser[];
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (args: SignUpArgs) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   sendPhoneOtp: (phone: string) => Promise<void>;
   verifyPhoneOtp: (phone: string, token: string) => Promise<void>;
   signInAsDevUser: (id: string) => Promise<void>;
@@ -46,6 +50,34 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+function parseAuthUrl(url: string): {
+  params: Record<string, string>;
+  errorMessage: string | null;
+} {
+  const params: Record<string, string> = {};
+  const hashIndex = url.indexOf("#");
+  const queryIndex = url.indexOf("?");
+  const fragment = hashIndex >= 0 ? url.slice(hashIndex + 1) : "";
+  const query =
+    queryIndex >= 0
+      ? url.slice(queryIndex + 1, hashIndex >= 0 ? hashIndex : undefined)
+      : "";
+
+  for (const segment of [query, fragment]) {
+    if (!segment) continue;
+    for (const pair of segment.split("&")) {
+      const [rawKey, rawValue] = pair.split("=");
+      if (!rawKey) continue;
+      params[decodeURIComponent(rawKey)] = decodeURIComponent(rawValue ?? "");
+    }
+  }
+
+  return {
+    params,
+    errorMessage: params.error_description || params.error || null,
+  };
+}
 
 function requireSupabase() {
   if (!supabase) {
@@ -192,6 +224,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [loadUser],
   );
 
+  const signInWithGoogle = useCallback(async () => {
+    const sb = requireSupabase();
+
+    if (Platform.OS === "web") {
+      const { error } = await sb.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: Linking.createURL("/") },
+      });
+      if (error) throw error;
+      return;
+    }
+
+    const redirectTo = Linking.createURL("/");
+    const { data, error } = await sb.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo, skipBrowserRedirect: true },
+    });
+    if (error) throw error;
+    if (!data.url) throw new Error("Could not start Google sign-in.");
+
+    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+    if (result.type !== "success" || !result.url) return;
+
+    const { params, errorMessage } = parseAuthUrl(result.url);
+    if (errorMessage) throw new Error(errorMessage);
+
+    const accessToken = params.access_token;
+    const refreshToken = params.refresh_token;
+    if (accessToken && refreshToken) {
+      const { error: sessionError } = await sb.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+      if (sessionError) throw sessionError;
+      await loadUser();
+    }
+  }, [loadUser]);
+
   const sendPhoneOtp = useCallback(async (phone: string) => {
     const sb = requireSupabase();
     const { error } = await sb.auth.signInWithOtp({ phone });
@@ -236,6 +306,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     devUsers: DEV_USERS,
     signInWithEmail,
     signUpWithEmail,
+    signInWithGoogle,
     sendPhoneOtp,
     verifyPhoneOtp,
     signInAsDevUser,

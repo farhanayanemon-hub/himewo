@@ -164,6 +164,9 @@ export default function ReelsScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }} edges={["top"]}>
       <View style={styles.header} pointerEvents="box-none">
         <Text style={styles.headerTitle}>Reels</Text>
+        <Pressable hitSlop={10} onPress={() => router.push("/create-reel")}>
+          <Ionicons name="add-circle-outline" size={28} color="#fff" />
+        </Pressable>
       </View>
 
       {isLoading ? (
@@ -340,6 +343,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
   },

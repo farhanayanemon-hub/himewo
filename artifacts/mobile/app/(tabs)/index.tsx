@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Pressable,
   RefreshControl,
@@ -14,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import {
   useGetFeed,
   getGetFeedQueryKey,
+  useSharePost,
   type Post,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -33,10 +35,28 @@ export default function HomeScreen() {
   const { data, isLoading, isRefetching, refetch } = useGetFeed();
   const posts = (data ?? []) as Post[];
 
+  const sharePost = useSharePost();
+
   const onRefresh = useCallback(() => {
     qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
     refetch();
   }, [qc, refetch]);
+
+  const onShare = useCallback(
+    (postId: number) => {
+      sharePost.mutate(
+        { id: postId, data: {} },
+        {
+          onSuccess: () => {
+            qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
+            Alert.alert("Shared", "This post has been shared to your timeline.");
+          },
+          onError: () => Alert.alert("Error", "Could not share this post."),
+        },
+      );
+    },
+    [sharePost, qc],
+  );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top"]}>
@@ -83,7 +103,11 @@ export default function HomeScreen() {
             </>
           }
           renderItem={({ item }) => (
-            <PostCard post={item} onComment={() => setActivePost(item.id)} />
+            <PostCard
+              post={item}
+              onComment={() => setActivePost(item.id)}
+              onShare={() => onShare(item.id)}
+            />
           )}
           ListEmptyComponent={
             <View style={{ alignItems: "center", marginTop: 60, paddingHorizontal: 20 }}>

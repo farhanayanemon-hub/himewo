@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
+import { useVideoPlayer, VideoView } from "expo-video";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -137,12 +138,16 @@ export default function StoryViewerScreen() {
 
   return (
     <View style={[styles.fill, { backgroundColor: "#000" }]}>
-      <Image
-        source={{ uri: current.mediaUrl }}
-        style={StyleSheet.absoluteFill}
-        contentFit="contain"
-        transition={150}
-      />
+      {isVideo ? (
+        <StoryVideo uri={current.mediaUrl} paused={paused} />
+      ) : (
+        <Image
+          source={{ uri: current.mediaUrl }}
+          style={StyleSheet.absoluteFill}
+          contentFit="contain"
+          transition={150}
+        />
+      )}
 
       <Pressable
         style={styles.tapLeft}
@@ -200,19 +205,37 @@ export default function StoryViewerScreen() {
         </View>
       </SafeAreaView>
 
-      {isVideo && (
-        <View style={styles.videoBadge} pointerEvents="none">
-          <Ionicons name="videocam" size={14} color="#fff" />
-          <Text style={{ color: "#fff", fontSize: 12, fontFamily: "Inter_500Medium" }}>Video</Text>
-        </View>
-      )}
-
       {!!current.caption && (
         <SafeAreaView style={styles.captionWrap} pointerEvents="none">
           <Text style={styles.captionText}>{current.caption}</Text>
         </SafeAreaView>
       )}
     </View>
+  );
+}
+
+function StoryVideo({ uri, paused }: { uri: string; paused: boolean }) {
+  const player = useVideoPlayer(uri, (p) => {
+    p.loop = true;
+    p.muted = false;
+    p.play();
+  });
+
+  useEffect(() => {
+    if (paused) {
+      player.pause();
+    } else {
+      player.play();
+    }
+  }, [paused, player]);
+
+  return (
+    <VideoView
+      player={player}
+      style={StyleSheet.absoluteFill}
+      contentFit="contain"
+      nativeControls={false}
+    />
   );
 }
 
@@ -253,18 +276,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textShadowColor: "#0008",
     textShadowRadius: 4,
-  },
-  videoBadge: {
-    position: "absolute",
-    top: 96,
-    left: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#0009",
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
   },
   captionWrap: { position: "absolute", left: 0, right: 0, bottom: 0, padding: 24 },
   captionText: {

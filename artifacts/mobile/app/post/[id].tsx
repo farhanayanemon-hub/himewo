@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -18,6 +19,7 @@ import {
   useGetPost,
   useListComments,
   useCreateComment,
+  useSharePost,
   getGetPostQueryKey,
   getGetFeedQueryKey,
   getListCommentsQueryKey,
@@ -62,6 +64,22 @@ export default function PostDetailScreen() {
   const comments = (commentsData ?? []) as Comment[];
 
   const createComment = useCreateComment();
+  const sharePost = useSharePost();
+
+  const onShare = () => {
+    if (!Number.isFinite(postId)) return;
+    sharePost.mutate(
+      { id: postId, data: {} },
+      {
+        onSuccess: () => {
+          qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
+          qc.invalidateQueries({ queryKey: getGetPostQueryKey(postId) });
+          Alert.alert("Shared", "This post has been shared to your timeline.");
+        },
+        onError: () => Alert.alert("Error", "Could not share this post."),
+      },
+    );
+  };
 
   const send = () => {
     const content = text.trim();
@@ -110,7 +128,7 @@ export default function PostDetailScreen() {
             contentContainerStyle={{ paddingBottom: 16 }}
             ListHeaderComponent={
               <View>
-                <PostCard post={post} />
+                <PostCard post={post} onShare={onShare} />
                 <View style={[styles.commentsHeader, { borderTopColor: c.border }]}>
                   <Text style={[styles.commentsTitle, { color: c.foreground }]}>Comments</Text>
                 </View>
