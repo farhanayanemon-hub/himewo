@@ -4850,7 +4850,7 @@ export const getCreateUploadUrlUrl = () => {
 }
 
 /**
- * @summary Request a signed upload URL (Supabase Storage)
+ * @summary Request a signed upload URL (Cloudflare R2)
  */
 export const createUploadUrl = async (uploadUrlInput: UploadUrlInput, options?: RequestInit): Promise<UploadUrlResponse> => {
 
@@ -4898,7 +4898,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateUploadUrlMutationError = ErrorType<unknown>
 
     /**
- * @summary Request a signed upload URL (Supabase Storage)
+ * @summary Request a signed upload URL (Cloudflare R2)
  */
 export const useCreateUploadUrl = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createUploadUrl>>, TError,{data: BodyType<UploadUrlInput>}, TContext>, request?: SecondParameter<typeof customFetch>}

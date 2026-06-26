@@ -2464,7 +2464,7 @@ export const MarkAllNotificationsReadResponse = zod.void()
 
 
 /**
- * @summary Request a signed upload URL (Supabase Storage)
+ * @summary Request a signed upload URL (Cloudflare R2)
  */
 export const CreateUploadUrlBody = zod.object({
   "fileName": zod.string(),

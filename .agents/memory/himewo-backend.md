@@ -17,6 +17,18 @@ There is no `tsx`. Scripts (seed, etc.) are bundled by `build.mjs` (esbuild, add
 ## Codegen zod naming (from openapi.yaml)
 Per operation: path params = `<Op>Params`, query = `<Op>QueryParams`, body = `<Op>Body`, response = `<Op>Response`. Endpoints returning void use `res.sendStatus(204)`.
 
+## Storage = Cloudflare R2 (not Supabase Storage)
+Supabase covers **Auth + Postgres only**. Image/file storage is **Cloudflare R2** via the AWS S3 SDK (`src/lib/r2.ts`, presigned PUT, `region: "auto"`, endpoint `https://<accountId>.r2.cloudflarestorage.com`). `media/upload-url` signs with the request's `contentType`; the client must PUT with a matching `Content-Type` header (web `upload.ts` already does). Returns 503 until `R2_ACCOUNT_ID`/`R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY`/`R2_PUBLIC_URL` are set. Video/livestream is separate (Cloudflare Stream).
+
+**Why:** owner wants nothing on Replit and chose Cloudflare for storage; R2 is S3-compatible so the existing signed-upload pattern swapped in cleanly.
+**How to apply:** `@aws-sdk/*` is in `build.mjs`'s esbuild `external` list, so it stays a real runtime dependency (installed by `pnpm install` on the host) — NOT bundled. Bucket needs CORS allowing PUT from the web origin; `R2_PUBLIC_URL` is the public r2.dev URL or a custom domain.
+
+## Adding deps in this monorepo can break Expo/Metro (stale pnpm _tmp_ dirs)
+After any dependency install, the Expo workflow can crash with Metro's file watcher throwing `ENOENT ... watch '.../*_tmp_*'`. It is NOT a permanent break: verify no `*_tmp_*` dirs remain under `node_modules/.pnpm` and restart the mobile workflow. The first one or two restarts can still read a cached Metro file map and re-show the same stale path before it recovers.
+
+**Why:** Metro recursively watches the shared workspace `node_modules`; pnpm leaves transient `_tmp_` dirs during linking that vanish mid-scan.
+**How to apply:** any new dependency install can trigger this for the mobile artifact — don't assume the install broke the build; clear stale tmp dirs and restart until it bundles.
+
 ## Authorization model (src/lib/authz.ts)
 Helpers: `areFriends`, `isGroupMember`, `canViewPost`, `canViewComment`.
 - `canViewPost`: author always; group posts → group members only; public → anyone; friends → author's friends; private → author only.

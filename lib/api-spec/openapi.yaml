@@ -947,7 +947,7 @@ paths:
     post:
       operationId: createUploadUrl
       tags: [media]
-      summary: Request a signed upload URL (Supabase Storage)
+      summary: Request a signed upload URL (Cloudflare R2)
       requestBody:
         required: true
         content:
