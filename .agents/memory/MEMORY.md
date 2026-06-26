@@ -1,2 +1,3 @@
 - [HiMewo backend](himewo-backend.md) — shared API/auth/realtime that powers all clients; env-driven Supabase, dev fallback.
 - [HiMewo client auth & realtime contract](himewo-client-contract.md) — how web/mobile clients authenticate, do realtime, and upload media against the shared backend.
+- [expo-router typed routes](expo-router-typed-routes.md) — tsc can pass before dev server, fail after; dead route links only caught once routes are generated.

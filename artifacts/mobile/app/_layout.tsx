@@ -6,25 +6,75 @@ import {
   useFonts,
 } from "@expo-google-fonts/inter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
+import { ActivityIndicator, View, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { CallProvider } from "@/components/CallProvider";
+import { AuthProvider, useAuth } from "@/lib/auth";
+import { RealtimeProvider } from "@/lib/realtime";
+import { useColors } from "@/hooks/useColors";
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: 1, staleTime: 15_000 } },
+});
 
-function RootLayoutNav() {
+function RootNavigator() {
+  const { loading, isAuthenticated } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+  const c = useColors();
+
+  useEffect(() => {
+    if (loading) return;
+    const inAuthGroup = segments[0] === "(auth)";
+    if (!isAuthenticated && !inAuthGroup) {
+      router.replace("/(auth)/login");
+    } else if (isAuthenticated && inAuthGroup) {
+      router.replace("/(tabs)");
+    }
+  }, [loading, isAuthenticated, segments, router]);
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: c.background }}>
+        <ActivityIndicator size="large" color={c.primary} />
+      </View>
+    );
+  }
+
   return (
-    <Stack screenOptions={{ headerBackTitle: "Back" }}>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.background } }}>
+      <Stack.Screen name="(auth)" />
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="create-post" options={{ presentation: "modal" }} />
+      <Stack.Screen name="create-story" options={{ presentation: "modal" }} />
+      <Stack.Screen name="search" options={{ presentation: "modal" }} />
     </Stack>
+  );
+}
+
+function ThemedRoot() {
+  const scheme = useColorScheme();
+  return (
+    <>
+      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+      <AuthProvider>
+        <RealtimeProvider>
+          <CallProvider>
+            <RootNavigator />
+          </CallProvider>
+        </RealtimeProvider>
+      </AuthProvider>
+    </>
   );
 }
 
@@ -48,9 +98,9 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
-          <GestureHandlerRootView>
+          <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
-              <RootLayoutNav />
+              <ThemedRoot />
             </KeyboardProvider>
           </GestureHandlerRootView>
         </QueryClientProvider>
