@@ -6,7 +6,11 @@ import { resolveUserId } from "../lib/auth";
 import { setPresence } from "../lib/presence";
 import { logger } from "../lib/logger";
 
-type Client = WebSocket & { userId?: string; isAlive?: boolean };
+type Client = WebSocket & {
+  userId?: string;
+  isAlive?: boolean;
+  invisible?: boolean;
+};
 
 const userSockets = new Map<string, Set<Client>>();
 
@@ -102,7 +106,11 @@ export function initRealtime(server: HttpServer): void {
     }
     ws.userId = userId;
     ws.isAlive = true;
+    ws.invisible = false;
     addSocket(userId, ws);
+    // Default to legacy auto-online on connect so existing clients (which do not
+    // send `presence:set`) keep broadcasting as online. Clients that support the
+    // "Active status" toggle can opt out by sending `presence:set { visible: false }`.
     await setPresence(userId, "online");
     realtime.toUsers([...userSockets.keys()], {
       type: "presence",
@@ -124,6 +132,26 @@ export function initRealtime(server: HttpServer): void {
       }
       const from = ws.userId!;
       switch (msg.type) {
+        case "presence:set": {
+          const visible = msg.visible !== false;
+          ws.invisible = !visible;
+          if (visible) {
+            await setPresence(from, "online");
+            realtime.toUsers([...userSockets.keys()], {
+              type: "presence",
+              userId: from,
+              status: "online",
+            });
+          } else {
+            await setPresence(from, "offline");
+            realtime.toUsers([...userSockets.keys()], {
+              type: "presence",
+              userId: from,
+              status: "offline",
+            });
+          }
+          return;
+        }
         case "typing":
         case "stop_typing": {
           const conversationId = Number(msg.conversationId);
