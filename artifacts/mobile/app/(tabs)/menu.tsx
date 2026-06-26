@@ -21,6 +21,8 @@ interface Shortcut {
 
 const SHORTCUTS: Shortcut[] = [
   { label: "Friends", icon: "people", color: "#1877f2", href: "/friends" },
+  { label: "Groups", icon: "people-circle", color: "#0a7ea4", href: "/groups" },
+  { label: "Pages", icon: "document-text", color: "#d946ef", href: "/pages" },
   { label: "Reels", icon: "film", color: "#e9710f", href: "/reels" },
   { label: "Messages", icon: "chatbubbles", color: "#31a24c", href: "/messages" },
   { label: "Search", icon: "search", color: "#9333ea", href: "/search" },

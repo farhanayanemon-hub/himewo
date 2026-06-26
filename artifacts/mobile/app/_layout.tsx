@@ -58,6 +58,42 @@ function RootNavigator() {
       <Stack.Screen name="create-post" options={{ presentation: "modal" }} />
       <Stack.Screen name="create-story" options={{ presentation: "modal" }} />
       <Stack.Screen name="search" options={{ presentation: "modal" }} />
+      <Stack.Screen
+        name="groups/index"
+        options={{
+          headerShown: true,
+          headerStyle: { backgroundColor: c.card },
+          headerTintColor: c.foreground,
+          headerTitleStyle: { fontFamily: "Inter_700Bold" },
+        }}
+      />
+      <Stack.Screen
+        name="groups/[id]"
+        options={{
+          headerShown: true,
+          headerStyle: { backgroundColor: c.card },
+          headerTintColor: c.foreground,
+          headerTitleStyle: { fontFamily: "Inter_700Bold" },
+        }}
+      />
+      <Stack.Screen
+        name="pages/index"
+        options={{
+          headerShown: true,
+          headerStyle: { backgroundColor: c.card },
+          headerTintColor: c.foreground,
+          headerTitleStyle: { fontFamily: "Inter_700Bold" },
+        }}
+      />
+      <Stack.Screen
+        name="pages/[id]"
+        options={{
+          headerShown: true,
+          headerStyle: { backgroundColor: c.card },
+          headerTintColor: c.foreground,
+          headerTitleStyle: { fontFamily: "Inter_700Bold" },
+        }}
+      />
     </Stack>
   );
 }

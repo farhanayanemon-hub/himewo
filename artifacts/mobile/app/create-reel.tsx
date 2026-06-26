@@ -16,7 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCreateReel, getListReelsQueryKey } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
-import { uploadMedia, UploadUnavailableError, type PickedAsset } from "@/lib/upload";
+import { uploadMedia, UploadUnavailableError, captureWithCamera, type PickedAsset } from "@/lib/upload";
 
 export default function CreateReelScreen() {
   const c = useColors();
@@ -34,6 +34,13 @@ export default function CreateReelScreen() {
     });
     if (!res.canceled && res.assets[0]) {
       setAsset(res.assets[0]);
+    }
+  };
+
+  const capture = async () => {
+    const captured = await captureWithCamera(["videos"]);
+    if (captured) {
+      setAsset(captured);
     }
   };
 
@@ -105,12 +112,20 @@ export default function CreateReelScreen() {
               style={styles.captionInput}
               multiline
             />
-            <Pressable style={styles.changeBtn} onPress={pick}>
-              <Ionicons name="film" size={18} color="#fff" />
-              <Text style={{ color: "#fff", fontFamily: "Inter_500Medium", fontSize: 13 }}>
-                Change
-              </Text>
-            </Pressable>
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <Pressable style={styles.changeBtn} onPress={pick}>
+                <Ionicons name="film" size={18} color="#fff" />
+                <Text style={{ color: "#fff", fontFamily: "Inter_500Medium", fontSize: 13 }}>
+                  Gallery
+                </Text>
+              </Pressable>
+              <Pressable style={styles.changeBtn} onPress={capture}>
+                <Ionicons name="videocam" size={18} color="#fff" />
+                <Text style={{ color: "#fff", fontFamily: "Inter_500Medium", fontSize: 13 }}>
+                  Record
+                </Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       ) : (
@@ -119,9 +134,18 @@ export default function CreateReelScreen() {
             style={[styles.pickBtn, { backgroundColor: c.primary }]}
             onPress={pick}
           >
-            <Ionicons name="videocam" size={28} color="#fff" />
+            <Ionicons name="film" size={28} color="#fff" />
             <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: 16 }}>
               Choose a video
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.pickBtn, { backgroundColor: "#ffffff22" }]}
+            onPress={capture}
+          >
+            <Ionicons name="videocam" size={28} color="#fff" />
+            <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: 16 }}>
+              Record a video
             </Text>
           </Pressable>
           <Text style={{ color: "#ffffff99", fontFamily: "Inter_400Regular", fontSize: 13 }}>

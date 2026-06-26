@@ -25,7 +25,7 @@ import { Avatar } from "@/components/Avatar";
 import { EmojiPickerSheet } from "@/components/EmojiPickerSheet";
 import { useAuth } from "@/lib/auth";
 import { useColors } from "@/hooks/useColors";
-import { uploadMedia, UploadUnavailableError, type PickedAsset } from "@/lib/upload";
+import { uploadMedia, UploadUnavailableError, captureWithCamera, type PickedAsset } from "@/lib/upload";
 
 const privacyOptions = [
   { value: PostInputPrivacy.public, label: "Public", icon: "earth" as const },
@@ -54,6 +54,13 @@ export default function CreatePostScreen() {
     });
     if (!res.canceled) {
       setAssets((prev) => [...prev, ...res.assets].slice(0, 6));
+    }
+  };
+
+  const capture = async () => {
+    const asset = await captureWithCamera(["images", "videos"]);
+    if (asset) {
+      setAssets((prev) => [...prev, asset].slice(0, 6));
     }
   };
 
@@ -203,7 +210,11 @@ export default function CreatePostScreen() {
       <View style={[styles.toolbar, { borderTopColor: c.border }]}>
         <Pressable style={styles.tool} onPress={pick}>
           <Ionicons name="images" size={24} color="#31a24c" />
-          <Text style={[styles.toolLabel, { color: c.foreground }]}>Photo / Video</Text>
+          <Text style={[styles.toolLabel, { color: c.foreground }]}>Gallery</Text>
+        </Pressable>
+        <Pressable style={styles.tool} onPress={capture}>
+          <Ionicons name="camera" size={24} color="#1877f2" />
+          <Text style={[styles.toolLabel, { color: c.foreground }]}>Camera</Text>
         </Pressable>
         <Pressable style={styles.tool} onPress={() => setEmojiOpen(true)}>
           <Ionicons name="happy" size={24} color="#f7b125" />

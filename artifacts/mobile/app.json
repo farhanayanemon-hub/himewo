@@ -29,7 +29,14 @@
       ],
       "expo-font",
       "expo-web-browser",
-      "expo-video"
+      "expo-video",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "HiMewo needs access to your photos so you can share images and videos.",
+          "cameraPermission": "HiMewo needs access to your camera so you can capture photos and videos to share."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

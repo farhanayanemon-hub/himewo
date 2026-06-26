@@ -13,12 +13,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
-  useGetFeed,
+  getFeed,
   getGetFeedQueryKey,
   useSharePost,
   type Post,
 } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Avatar } from "@/components/Avatar";
 import { PostCard } from "@/components/PostCard";
 import { StoryBar } from "@/components/StoryBar";
@@ -26,14 +26,31 @@ import { CommentsSheet } from "@/components/CommentsSheet";
 import { useAuth } from "@/lib/auth";
 import { useColors } from "@/hooks/useColors";
 
+const FEED_LIMIT = 10;
+
 export default function HomeScreen() {
   const c = useColors();
   const qc = useQueryClient();
   const { user } = useAuth();
   const [activePost, setActivePost] = useState<number | null>(null);
 
-  const { data, isLoading, isRefetching, refetch } = useGetFeed();
-  const posts = (data ?? []) as Post[];
+  const {
+    data,
+    isLoading,
+    isRefetching,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: [...getGetFeedQueryKey(), "infinite"],
+    queryFn: ({ pageParam }) =>
+      getFeed({ cursor: pageParam as number | undefined, limit: FEED_LIMIT }),
+    initialPageParam: undefined as number | undefined,
+    getNextPageParam: (lastPage: Post[]) =>
+      lastPage.length === FEED_LIMIT ? lastPage[lastPage.length - 1].id : undefined,
+  });
+  const posts = (data?.pages.flat() ?? []) as Post[];
 
   const sharePost = useSharePost();
 
@@ -41,6 +58,12 @@ export default function HomeScreen() {
     qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
     refetch();
   }, [qc, refetch]);
+
+  const onEndReached = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const onShare = useCallback(
     (postId: number) => {
@@ -86,6 +109,13 @@ export default function HomeScreen() {
           keyExtractor={(item) => String(item.id)}
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={onRefresh} tintColor={c.primary} />
+          }
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            isFetchingNextPage ? (
+              <ActivityIndicator color={c.primary} style={{ marginVertical: 20 }} />
+            ) : null
           }
           ListHeaderComponent={
             <>

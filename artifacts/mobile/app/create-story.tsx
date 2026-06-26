@@ -20,7 +20,7 @@ import {
   StoryInputMediaType,
 } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
-import { uploadMedia, UploadUnavailableError, type PickedAsset } from "@/lib/upload";
+import { uploadMedia, UploadUnavailableError, captureWithCamera, type PickedAsset } from "@/lib/upload";
 
 export default function CreateStoryScreen() {
   const c = useColors();
@@ -40,6 +40,13 @@ export default function CreateStoryScreen() {
     });
     if (!res.canceled && res.assets[0]) {
       setAsset(res.assets[0]);
+    }
+  };
+
+  const capture = async () => {
+    const captured = await captureWithCamera(["images", "videos"]);
+    if (captured) {
+      setAsset(captured);
     }
   };
 
@@ -133,12 +140,20 @@ export default function CreateStoryScreen() {
               style={styles.captionInput}
               multiline
             />
-            <Pressable style={styles.changeBtn} onPress={pick}>
-              <Ionicons name="image" size={18} color="#fff" />
-              <Text style={{ color: "#fff", fontFamily: "Inter_500Medium", fontSize: 13 }}>
-                Change
-              </Text>
-            </Pressable>
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <Pressable style={styles.changeBtn} onPress={pick}>
+                <Ionicons name="image" size={18} color="#fff" />
+                <Text style={{ color: "#fff", fontFamily: "Inter_500Medium", fontSize: 13 }}>
+                  Gallery
+                </Text>
+              </Pressable>
+              <Pressable style={styles.changeBtn} onPress={capture}>
+                <Ionicons name="camera" size={18} color="#fff" />
+                <Text style={{ color: "#fff", fontFamily: "Inter_500Medium", fontSize: 13 }}>
+                  Camera
+                </Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       ) : (
@@ -150,6 +165,15 @@ export default function CreateStoryScreen() {
             <Ionicons name="images" size={28} color="#fff" />
             <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: 16 }}>
               Choose photo or video
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.pickBtn, { backgroundColor: "#ffffff22" }]}
+            onPress={capture}
+          >
+            <Ionicons name="camera" size={28} color="#fff" />
+            <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: 16 }}>
+              Take photo or video
             </Text>
           </Pressable>
           <Text style={{ color: "#ffffff99", fontFamily: "Inter_400Regular", fontSize: 13 }}>

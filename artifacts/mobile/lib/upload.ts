@@ -1,3 +1,5 @@
+import { Alert } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import { createUploadUrl, ApiError } from "@workspace/api-client-react";
 
 export class UploadUnavailableError extends Error {
@@ -76,4 +78,23 @@ export async function uploadMedia(asset: PickedAsset): Promise<UploadedMedia> {
     width: asset.width,
     height: asset.height,
   };
+}
+
+export async function captureWithCamera(
+  mediaTypes: ImagePicker.MediaType[] = ["images"],
+): Promise<PickedAsset | null> {
+  const perm = await ImagePicker.requestCameraPermissionsAsync();
+  if (!perm.granted) {
+    Alert.alert(
+      "Camera permission needed",
+      "Enable camera access in your device settings to capture photos or videos.",
+    );
+    return null;
+  }
+  const res = await ImagePicker.launchCameraAsync({
+    mediaTypes,
+    quality: 0.8,
+  });
+  if (res.canceled || !res.assets?.[0]) return null;
+  return res.assets[0];
 }
