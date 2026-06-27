@@ -4,6 +4,7 @@ import {
   uuid,
   text,
   integer,
+  boolean,
   timestamp,
   uniqueIndex,
   index,
@@ -24,6 +25,10 @@ export const postsTable = pgTable(
     privacy: privacyEnum("privacy").notNull().default("public"),
     groupId: integer("group_id"),
     pageId: integer("page_id"),
+    // Moderation / curation flags (managed from the admin panel).
+    hidden: boolean("hidden").notNull().default(false),
+    pinned: boolean("pinned").notNull().default(false),
+    featured: boolean("featured").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -80,6 +85,8 @@ export const commentsTable = pgTable(
     parentId: integer("parent_id"),
     content: text("content").notNull().default(""),
     mediaUrl: text("media_url"),
+    // Moderation flag (managed from the admin panel).
+    hidden: boolean("hidden").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

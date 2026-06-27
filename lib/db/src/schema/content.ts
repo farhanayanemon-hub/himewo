@@ -20,6 +20,8 @@ export const storiesTable = pgTable("stories", {
   mediaUrl: text("media_url").notNull(),
   mediaType: mediaTypeEnum("media_type").notNull(),
   caption: text("caption"),
+  // Moderation flag (managed from the admin panel).
+  hidden: boolean("hidden").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -51,6 +53,9 @@ export const reelsTable = pgTable("reels", {
   videoUrl: text("video_url").notNull(),
   thumbnailUrl: text("thumbnail_url"),
   caption: text("caption"),
+  // Moderation / curation flags (managed from the admin panel).
+  hidden: boolean("hidden").notNull().default(false),
+  featured: boolean("featured").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
