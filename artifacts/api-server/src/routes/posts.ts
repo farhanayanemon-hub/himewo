@@ -79,6 +79,7 @@ router.get("/feed", requireAuth, async (req, res): Promise<void> => {
     .where(
       and(
         isNull(postsTable.groupId),
+        eq(postsTable.hidden, false),
         or(
           eq(postsTable.privacy, "public"),
           inArray(postsTable.authorId, visibleAuthors),
