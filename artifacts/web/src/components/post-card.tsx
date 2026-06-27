@@ -46,7 +46,7 @@ export function PostCard({ post }: { post: Post }) {
   const viewerReaction = post.reactions.viewerReaction as ReactionType | null | undefined;
 
   return (
-    <div className="bg-card border border-border rounded-xl p-4 shadow-sm animate-in fade-in zoom-in-95 duration-300">
+    <div className="bg-card border border-card-border rounded-2xl p-4 card-depth animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div className="flex items-center justify-between mb-3">
         <Link href={`/profile/${post.author.id}`} className="flex items-center gap-3 group">
           <img src={post.author.avatarUrl || ""} className="w-10 h-10 rounded-full object-cover group-hover:ring-2 ring-primary transition-all" alt="" />
@@ -97,23 +97,23 @@ export function PostCard({ post }: { post: Post }) {
       </div>
 
       <div className="flex gap-1 relative">
-        <div className="flex-1 flex justify-center items-center hover:bg-muted/50 rounded-lg py-1.5">
+        <div className="flex-1 flex justify-center items-center hover:bg-muted/60 rounded-lg py-2 press transition-colors">
           <ReactionControl viewerReaction={viewerReaction} onReact={handleReaction} />
         </div>
 
         <Link href={`/post/${post.id}`} className="flex-1">
-          <Button variant="ghost" className="w-full text-muted-foreground hover:bg-muted/50 rounded-lg flex items-center gap-2">
+          <Button variant="ghost" className="w-full text-muted-foreground hover:bg-muted/60 rounded-lg flex items-center gap-2 press">
             <MessageCircle className="w-5 h-5" />
-            <span className="font-medium">Comment</span>
+            <span className="font-semibold">Comment</span>
           </Button>
         </Link>
         <Button
           variant="ghost"
-          className="flex-1 text-muted-foreground hover:bg-muted/50 rounded-lg flex items-center gap-2"
+          className="flex-1 text-muted-foreground hover:bg-muted/60 rounded-lg flex items-center gap-2 press"
           onClick={() => setShowShare((s) => !s)}
         >
           <Share2 className="w-5 h-5" />
-          <span className="font-medium">Share</span>
+          <span className="font-semibold">Share</span>
         </Button>
       </div>
 

@@ -394,11 +394,13 @@ export default function AuthPage() {
   const { supabaseEnabled } = useAuth();
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-8">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 relative overflow-hidden bg-background">
+      <div className="pointer-events-none absolute -top-32 -left-32 w-[28rem] h-[28rem] rounded-full bg-primary/15 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-32 -right-32 w-[28rem] h-[28rem] rounded-full bg-accent/60 blur-3xl" />
+      <div className="w-full max-w-md space-y-8 relative animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="text-center space-y-2">
-          <h1 className="text-5xl font-extrabold text-primary tracking-tight">HiMewo</h1>
-          <p className="text-muted-foreground text-lg">Connect with your community.</p>
+          <h1 className="text-6xl font-extrabold text-primary tracking-tight drop-shadow-sm">HiMewo</h1>
+          <p className="text-muted-foreground text-lg">Tomar bondhura ekhane wait kortese 💙</p>
         </div>
 
         {supabaseEnabled ? <SupabaseAuth /> : <DevLogin />}

@@ -41,7 +41,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+      <header className="sticky top-0 z-50 w-full bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 shadow-card">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="/" className="text-2xl font-extrabold text-primary tracking-tight">
@@ -65,10 +65,11 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
                 const Icon = item.icon;
                 const isActive = location === item.href;
                 return (
-                  <Link key={item.href} href={item.href}>
-                    <Button variant={isActive ? "secondary" : "ghost"} size="icon" className="rounded-xl w-12 h-12">
-                      <Icon className={`w-6 h-6 ${isActive ? "text-primary fill-primary/20" : "text-muted-foreground"}`} />
+                  <Link key={item.href} href={item.href} className="relative">
+                    <Button variant="ghost" size="icon" className={`rounded-xl w-14 h-12 press ${isActive ? "bg-accent" : "hover:bg-muted/60"}`}>
+                      <Icon className={`w-6 h-6 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
                     </Button>
+                    {isActive && <span className="absolute -bottom-[14px] left-2 right-2 h-1 rounded-full bg-primary" />}
                   </Link>
                 );
               })}
