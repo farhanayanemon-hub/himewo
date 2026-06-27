@@ -5,7 +5,12 @@ import {
   DEV_USER_STORAGE_KEY,
 } from "./supabase";
 
-const apiBaseUrl = import.meta.env.VITE_API_URL as string | undefined;
+const rawApiBaseUrl = import.meta.env.VITE_API_URL as string | undefined;
+const apiBaseUrl = rawApiBaseUrl
+  ? /^https?:\/\//.test(rawApiBaseUrl)
+    ? rawApiBaseUrl
+    : `https://${rawApiBaseUrl}`
+  : undefined;
 setBaseUrl(apiBaseUrl ?? null);
 
 setAuthTokenGetter(async () => {
