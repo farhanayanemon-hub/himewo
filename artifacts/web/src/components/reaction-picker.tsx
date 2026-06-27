@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ThumbsUp } from "lucide-react";
 import { ReactionType } from "@workspace/api-client-react";
 
@@ -32,13 +32,13 @@ export function ReactionControl({ viewerReaction, onReact, count, size = "defaul
     onReact(type);
   };
 
-  let hideTimer: ReturnType<typeof setTimeout>;
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const open = () => {
-    clearTimeout(hideTimer);
+    if (hideTimer.current) clearTimeout(hideTimer.current);
     setShowPicker(true);
   };
   const close = () => {
-    hideTimer = setTimeout(() => setShowPicker(false), 120);
+    hideTimer.current = setTimeout(() => setShowPicker(false), 120);
   };
 
   return (
