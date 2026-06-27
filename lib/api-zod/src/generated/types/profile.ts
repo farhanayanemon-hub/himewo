@@ -5,6 +5,7 @@
  * HiMewo social platform + Messenger API
  * OpenAPI spec version: 0.1.0
  */
+import type { ProfilePresence } from './profilePresence';
 
 export interface Profile {
   id: string;
@@ -40,4 +41,6 @@ export interface Profile {
   viewerHasPendingRequest?: boolean | null;
   /** @nullable */
   viewerFollows?: boolean | null;
+  /** @nullable */
+  presence?: ProfilePresence;
 }

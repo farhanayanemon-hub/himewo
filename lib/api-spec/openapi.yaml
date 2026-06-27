@@ -1011,6 +1011,11 @@ components:
         viewerIsFriend: { type: ["boolean", "null"] }
         viewerHasPendingRequest: { type: ["boolean", "null"] }
         viewerFollows: { type: ["boolean", "null"] }
+        presence:
+          type: ["object", "null"]
+          properties:
+            status: { type: string }
+            lastSeenAt: { type: ["string", "null"], format: date-time }
     ProfileInput:
       type: object
       required: [id, username, displayName]

@@ -26,6 +26,15 @@ export const ReactionType = {
   angry: 'angry',
 } as const;
 
+/**
+ * @nullable
+ */
+export type ProfilePresence = {
+  status?: string;
+  /** @nullable */
+  lastSeenAt?: string | null;
+} | null;
+
 export interface Profile {
   id: string;
   username: string;
@@ -60,6 +69,8 @@ export interface Profile {
   viewerHasPendingRequest?: boolean | null;
   /** @nullable */
   viewerFollows?: boolean | null;
+  /** @nullable */
+  presence?: ProfilePresence;
 }
 
 export interface ProfileInput {

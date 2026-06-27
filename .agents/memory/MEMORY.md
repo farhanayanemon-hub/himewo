@@ -1,3 +1,4 @@
-- [HiMewo backend](himewo-backend.md) — shared API/auth/realtime that powers all clients; env-driven Supabase, dev fallback.
-- [HiMewo client auth & realtime contract](himewo-client-contract.md) — how web/mobile clients authenticate, do realtime, and upload media against the shared backend.
-- [expo-router typed routes](expo-router-typed-routes.md) — tsc can pass before dev server, fail after; dead route links only caught once routes are generated.
+- [Push to external GitHub repo](push-to-external-github.md) — git binary blocked; use GitHub REST API + read real $GITHUB_TOKEN via bash-launched node script.
+- [Expo native-only SDK gating](expo-native-sdk-gating.md) — file-extension split alone doesn't spare Expo Go; runtime-guard the require so the native module is never evaluated.
+- [HiMewo live connection](himewo-live-connection.md) — connect artifacts/mobile to live website via 3 EXPO_PUBLIC_* env (API host + Supabase URL/anon); calls route is local-only, missing on live Railway backend.
+- [RN Soft-3D shadows](rn-soft3d-shadows.md) — shadow()/glow() branches web(boxShadow) vs native(elevation); never put overflow:hidden on a shadowed node (clips native elevation).

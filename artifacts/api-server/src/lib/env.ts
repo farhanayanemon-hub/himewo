@@ -21,10 +21,19 @@ export const env = {
   // Dev convenience: when set (non-production only), unauthenticated requests
   // are treated as this user so clients work before Supabase Auth is wired.
   devUserId: process.env.DEV_USER_ID,
+  // Stream Video (getstream.io) — powers real voice/video calls. The API key is
+  // public (sent to the app); the secret stays server-side to sign call tokens.
+  // When unset, the calls token endpoint returns 503 and the app degrades.
+  streamApiKey: process.env.STREAM_API_KEY,
+  streamApiSecret: process.env.STREAM_API_SECRET,
 };
 
 export function isSupabaseConfigured(): boolean {
   return Boolean(env.supabaseUrl && env.supabaseServiceRoleKey);
+}
+
+export function isCallsConfigured(): boolean {
+  return Boolean(env.streamApiKey && env.streamApiSecret);
 }
 
 export function isR2Configured(): boolean {

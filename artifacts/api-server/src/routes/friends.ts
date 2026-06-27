@@ -5,6 +5,7 @@ import {
   friendRequestsTable,
   friendshipsTable,
   followsTable,
+  presenceTable,
   type FriendRequest,
 } from "@workspace/db";
 import { and, or, eq, inArray } from "drizzle-orm";
@@ -72,7 +73,24 @@ router.get("/friends", requireAuth, async (req, res): Promise<void> => {
     .select()
     .from(profilesTable)
     .where(inArray(profilesTable.id, friendIds));
-  res.json(ListFriendsResponse.parse(profiles.map(toProfile)));
+  const presenceRows = await db
+    .select()
+    .from(presenceTable)
+    .where(inArray(presenceTable.userId, friendIds));
+  const presenceMap = new Map(
+    presenceRows.map((p) => [
+      p.userId,
+      { status: p.status, lastSeenAt: p.lastSeenAt },
+    ]),
+  );
+  res.json(
+    ListFriendsResponse.parse(
+      profiles.map((p) => ({
+        ...toProfile(p),
+        presence: presenceMap.get(p.id) ?? null,
+      })),
+    ),
+  );
 });
 
 router.get("/friends/requests", requireAuth, async (req, res): Promise<void> => {

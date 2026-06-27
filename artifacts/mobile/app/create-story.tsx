@@ -1,3 +1,6 @@
+import { Touchable } from "@/components/Touchable";
+import { fs } from "@/constants/typography";
+import { glow } from "@/constants/shadows";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -90,14 +93,14 @@ export default function CreateStoryScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8}>
+        <Touchable onPress={() => router.back()} hitSlop={8}>
           <Ionicons name="close" size={28} color="#fff" />
-        </Pressable>
-        <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: 18 }}>
+        </Touchable>
+        <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: fs(18) }}>
           Create story
         </Text>
-        <Pressable
-          style={[styles.shareBtn, { backgroundColor: asset ? c.primary : "#333" }]}
+        <Touchable
+          style={[styles.shareBtn, { backgroundColor: asset ? c.primary : "#333" }, asset ? glow(c.primary) : null]}
           onPress={submit}
           disabled={!asset || posting}
         >
@@ -106,7 +109,7 @@ export default function CreateStoryScreen() {
           ) : (
             <Text style={{ color: "#fff", fontFamily: "Inter_700Bold" }}>Share</Text>
           )}
-        </Pressable>
+        </Touchable>
       </View>
 
       {asset ? (
@@ -119,7 +122,7 @@ export default function CreateStoryScreen() {
           {isVideo && (
             <View style={styles.videoBadge}>
               <Ionicons name="videocam" size={16} color="#fff" />
-              <Text style={{ color: "#fff", fontSize: 12, fontFamily: "Inter_500Medium" }}>
+              <Text style={{ color: "#fff", fontSize: fs(12), fontFamily: "Inter_500Medium" }}>
                 Video
               </Text>
             </View>
@@ -141,42 +144,42 @@ export default function CreateStoryScreen() {
               multiline
             />
             <View style={{ flexDirection: "row", gap: 10 }}>
-              <Pressable style={styles.changeBtn} onPress={pick}>
+              <Touchable style={styles.changeBtn} onPress={pick}>
                 <Ionicons name="image" size={18} color="#fff" />
-                <Text style={{ color: "#fff", fontFamily: "Inter_500Medium", fontSize: 13 }}>
+                <Text style={{ color: "#fff", fontFamily: "Inter_500Medium", fontSize: fs(13) }}>
                   Gallery
                 </Text>
-              </Pressable>
-              <Pressable style={styles.changeBtn} onPress={capture}>
+              </Touchable>
+              <Touchable style={styles.changeBtn} onPress={capture}>
                 <Ionicons name="camera" size={18} color="#fff" />
-                <Text style={{ color: "#fff", fontFamily: "Inter_500Medium", fontSize: 13 }}>
+                <Text style={{ color: "#fff", fontFamily: "Inter_500Medium", fontSize: fs(13) }}>
                   Camera
                 </Text>
-              </Pressable>
+              </Touchable>
             </View>
           </View>
         </View>
       ) : (
         <View style={styles.empty}>
-          <Pressable
-            style={[styles.pickBtn, { backgroundColor: c.primary }]}
+          <Touchable
+            style={[styles.pickBtn, { backgroundColor: c.primary }, glow(c.primary)]}
             onPress={pick}
           >
             <Ionicons name="images" size={28} color="#fff" />
-            <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: 16 }}>
+            <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: fs(16) }}>
               Choose photo or video
             </Text>
-          </Pressable>
-          <Pressable
+          </Touchable>
+          <Touchable
             style={[styles.pickBtn, { backgroundColor: "#ffffff22" }]}
             onPress={capture}
           >
             <Ionicons name="camera" size={28} color="#fff" />
-            <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: 16 }}>
+            <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: fs(16) }}>
               Take photo or video
             </Text>
-          </Pressable>
-          <Text style={{ color: "#ffffff99", fontFamily: "Inter_400Regular", fontSize: 13 }}>
+          </Touchable>
+          <Text style={{ color: "#ffffff99", fontFamily: "Inter_400Regular", fontSize: fs(13) }}>
             Share a moment that disappears after 24 hours
           </Text>
         </View>
@@ -224,7 +227,7 @@ const styles = StyleSheet.create({
   captionText: {
     color: "#fff",
     fontFamily: "Inter_700Bold",
-    fontSize: 24,
+    fontSize: fs(24),
     textAlign: "center",
     textShadowColor: "#000",
     textShadowOffset: { width: 0, height: 1 },
@@ -242,7 +245,7 @@ const styles = StyleSheet.create({
   captionInput: {
     color: "#fff",
     fontFamily: "Inter_500Medium",
-    fontSize: 16,
+    fontSize: fs(16),
     maxHeight: 100,
   },
   changeBtn: {

@@ -1,3 +1,6 @@
+import { Touchable } from "@/components/Touchable";
+import { fs } from "@/constants/typography";
+import { shadow, glow } from "@/constants/shadows";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -38,7 +41,15 @@ import { useRealtime, type RealtimeEvent } from "@/lib/realtime";
 import { useCall } from "@/components/CallProvider";
 import { useColors } from "@/hooks/useColors";
 import { formatClock } from "@/lib/format";
-import { uploadMedia, UploadUnavailableError, type PickedAsset } from "@/lib/upload";
+import { uploadMedia, uploadAudio, UploadUnavailableError, type PickedAsset } from "@/lib/upload";
+import {
+  AudioModule,
+  RecordingPresets,
+  setAudioModeAsync,
+  useAudioRecorder,
+  useAudioPlayer,
+  useAudioPlayerStatus,
+} from "expo-audio";
 
 function peerOf(conv: Conversation | undefined, myId?: string): Profile | undefined {
   if (!conv) return undefined;
@@ -227,45 +238,121 @@ export default function ChatThreadScreen() {
     }
   };
 
+  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const [recording, setRecording] = useState(false);
+  const [recSeconds, setRecSeconds] = useState(0);
+  const recStartRef = useRef(0);
+  const recTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startRecording = async () => {
+    if (sending || recording) return;
+    const perm = await AudioModule.requestRecordingPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert("Microphone needed", "Enable mic access to send voice messages.");
+      return;
+    }
+    try {
+      await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: true });
+      await recorder.prepareToRecordAsync();
+      recorder.record();
+      recStartRef.current = Date.now();
+      setRecSeconds(0);
+      setRecording(true);
+      recTimer.current = setInterval(() => setRecSeconds((s) => s + 1), 1000);
+    } catch {
+      setRecording(false);
+      Alert.alert("Error", "Could not start recording.");
+    }
+  };
+
+  const stopRecording = async (cancel: boolean) => {
+    if (!recording) return;
+    if (recTimer.current) {
+      clearInterval(recTimer.current);
+      recTimer.current = null;
+    }
+    setRecording(false);
+    const durationMs = Date.now() - recStartRef.current;
+    try {
+      await recorder.stop();
+    } catch {
+      // ignore stop errors
+    }
+    const uri = recorder.uri;
+    try {
+      await setAudioModeAsync({ allowsRecording: false });
+    } catch {
+      // ignore
+    }
+    if (cancel || !uri || durationMs < 800) return;
+    setSending(true);
+    try {
+      const uploaded = await uploadAudio(uri, durationMs);
+      const attachment: AttachmentInput = {
+        url: uploaded.url,
+        type: AttachmentInputType.audio,
+        durationMs,
+      };
+      await sendMessage.mutateAsync({
+        id: convId,
+        data: { content: "", type: MessageInputType.audio, attachments: [attachment] },
+      });
+      afterSend();
+    } catch (err) {
+      if (err instanceof UploadUnavailableError) {
+        Alert.alert(
+          "Voice messages unavailable",
+          "Storage isn't configured in this environment yet.",
+        );
+      } else {
+        Alert.alert("Error", "Could not send the voice message. Please try again.");
+      }
+    } finally {
+      setSending(false);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (recTimer.current) clearInterval(recTimer.current);
+    };
+  }, []);
+
   const canSend = text.trim().length > 0 && !sending;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top"]}>
-      <View style={[styles.header, { backgroundColor: c.card, borderBottomColor: c.border }]}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
+      <View style={[styles.header, { backgroundColor: c.card }, shadow("sm")]}>
+        <Touchable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={c.foreground} />
-        </Pressable>
-        <Pressable
-          style={styles.headerInfo}
-          onPress={() => peer && router.push(`/profile/${peer.id}`)}
-          disabled={isGroup}
-        >
+        </Touchable>
+        <View style={styles.headerInfo}>
           <Avatar uri={headerAvatar} name={headerName} size={38} online={online} />
           <View style={{ marginLeft: 10, flex: 1 }}>
             <Text numberOfLines={1} style={[styles.headerName, { color: c.foreground }]}>
               {headerName}
             </Text>
-            <Text style={{ color: online ? "#31a24c" : c.mutedForeground, fontSize: 12 }}>
+            <Text style={{ color: online ? "#31a24c" : c.mutedForeground, fontSize: fs(12) }}>
               {peerTyping ? "typing..." : online ? "Active now" : "Offline"}
             </Text>
           </View>
-        </Pressable>
+        </View>
         {!isGroup && peer && (
           <View style={{ flexDirection: "row", gap: 6 }}>
-            <Pressable
-              style={styles.callBtn}
+            <Touchable
+              style={[styles.callBtn, { backgroundColor: c.secondary }, shadow("sm")]}
               onPress={() => startCall(peer.id, false)}
               hitSlop={6}
             >
-              <Ionicons name="call" size={22} color={c.primary} />
-            </Pressable>
-            <Pressable
-              style={styles.callBtn}
+              <Ionicons name="call" size={20} color={c.primary} />
+            </Touchable>
+            <Touchable
+              style={[styles.callBtn, { backgroundColor: c.secondary }, shadow("sm")]}
               onPress={() => startCall(peer.id, true)}
               hitSlop={6}
             >
-              <Ionicons name="videocam" size={24} color={c.primary} />
-            </Pressable>
+              <Ionicons name="videocam" size={22} color={c.primary} />
+            </Touchable>
           </View>
         )}
       </View>
@@ -297,10 +384,34 @@ export default function ChatThreadScreen() {
           />
         )}
 
-        <View style={[styles.composer, { backgroundColor: c.card, borderTopColor: c.border }]}>
-          <Pressable onPress={attach} hitSlop={6} style={styles.composerBtn}>
+        {recording && (
+          <View style={[styles.recBanner, { backgroundColor: c.card, borderTopColor: c.border }]}>
+            <View style={[styles.recDot, { backgroundColor: c.destructive }]} />
+            <Text style={{ color: c.foreground, fontSize: fs(13), flex: 1 }}>
+              Recording… {formatDur(recSeconds * 1000)}
+            </Text>
+            <Text style={{ color: c.mutedForeground, fontSize: fs(12) }}>release to send</Text>
+          </View>
+        )}
+
+        <View
+          style={[
+            styles.composer,
+            { backgroundColor: c.card },
+            Platform.OS === "web"
+              ? { boxShadow: "0 -3px 16px rgba(58,40,26,0.08)" }
+              : {
+                  shadowColor: "#3a281a",
+                  shadowOffset: { width: 0, height: -2 },
+                  shadowOpacity: 0.08,
+                  shadowRadius: 10,
+                  elevation: 12,
+                },
+          ]}
+        >
+          <Touchable onPress={attach} hitSlop={6} style={styles.composerBtn}>
             <Ionicons name="image" size={24} color={c.primary} />
-          </Pressable>
+          </Touchable>
           <View style={[styles.inputWrap, { backgroundColor: c.secondary }]}>
             <TextInput
               value={text}
@@ -308,24 +419,39 @@ export default function ChatThreadScreen() {
               placeholder="Message"
               placeholderTextColor={c.mutedForeground}
               multiline
-              style={{ flex: 1, color: c.foreground, fontSize: 15, maxHeight: 100, paddingVertical: 0 }}
+              style={{ flex: 1, color: c.foreground, fontSize: fs(15), maxHeight: 100, paddingVertical: 0 }}
             />
-            <Pressable onPress={() => setEmojiOpen(true)} hitSlop={6}>
+            <Touchable onPress={() => setEmojiOpen(true)} hitSlop={6}>
               <Ionicons name="happy-outline" size={22} color={c.mutedForeground} />
-            </Pressable>
+            </Touchable>
           </View>
-          <Pressable
-            onPress={sendText}
-            disabled={!canSend}
-            style={styles.composerBtn}
-            hitSlop={6}
-          >
-            {sending ? (
-              <ActivityIndicator color={c.primary} size="small" />
-            ) : (
-              <Ionicons name="send" size={22} color={canSend ? c.primary : c.mutedForeground} />
-            )}
-          </Pressable>
+          {text.trim().length > 0 ? (
+            <Touchable
+              onPress={sendText}
+              disabled={!canSend}
+              style={[styles.sendBtn, { backgroundColor: c.primary }, glow(c.primary)]}
+              hitSlop={6}
+            >
+              {sending ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Ionicons name="send" size={18} color="#fff" />
+              )}
+            </Touchable>
+          ) : (
+            <Touchable
+              onPressIn={startRecording}
+              onPressOut={() => stopRecording(false)}
+              style={[styles.composerBtn, recording && styles.composerBtnRec]}
+              hitSlop={6}
+            >
+              {sending ? (
+                <ActivityIndicator color={c.primary} size="small" />
+              ) : (
+                <Ionicons name="mic" size={24} color={recording ? "#fff" : c.primary} />
+              )}
+            </Touchable>
+          )}
         </View>
       </KeyboardAvoidingView>
 
@@ -362,36 +488,46 @@ function MessageBubble({
       )}
       <View style={{ maxWidth: "78%", marginLeft: !mine && showAvatar ? 8 : 0 }}>
         {!mine && showAvatar && (
-          <Text style={{ color: c.mutedForeground, fontSize: 11, marginBottom: 2, marginLeft: 4 }}>
+          <Text style={{ color: c.mutedForeground, fontSize: fs(11), marginBottom: 2, marginLeft: 4 }}>
             {message.sender.displayName}
           </Text>
         )}
         {hasAttachments &&
-          message.attachments.map((att) => (
-            <Pressable key={att.id} style={styles.attachment}>
-              <Image
-                source={{ uri: att.thumbnailUrl || att.url }}
-                style={styles.attachmentImg}
-                contentFit="cover"
-                transition={150}
+          message.attachments.map((att) =>
+            att.type === "audio" ? (
+              <VoiceBubble
+                key={att.id}
+                uri={att.url}
+                durationMs={att.durationMs}
+                mine={mine}
               />
-              {att.type === "video" && (
-                <View style={styles.playOverlay}>
-                  <Ionicons name="play-circle" size={44} color="#fff" />
-                </View>
-              )}
-            </Pressable>
-          ))}
+            ) : (
+              <Touchable key={att.id} style={styles.attachment}>
+                <Image
+                  source={{ uri: att.thumbnailUrl || att.url }}
+                  style={styles.attachmentImg}
+                  contentFit="cover"
+                  transition={150}
+                />
+                {att.type === "video" && (
+                  <View style={styles.playOverlay}>
+                    <Ionicons name="play-circle" size={44} color="#fff" />
+                  </View>
+                )}
+              </Touchable>
+            ),
+          )}
         {message.content.length > 0 && (
           <View
             style={[
               styles.bubble,
+              shadow("sm"),
               mine
                 ? { backgroundColor: c.primary, borderBottomRightRadius: 4 }
                 : { backgroundColor: c.secondary, borderBottomLeftRadius: 4 },
             ]}
           >
-            <Text style={{ color: mine ? "#fff" : c.foreground, fontSize: 15, lineHeight: 20 }}>
+            <Text style={{ color: mine ? "#fff" : c.foreground, fontSize: fs(15), lineHeight: 20 }}>
               {message.content}
             </Text>
           </View>
@@ -409,18 +545,70 @@ function MessageBubble({
   );
 }
 
+function formatDur(ms: number): string {
+  const total = Math.max(0, Math.round(ms / 1000));
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function VoiceBubble({
+  uri,
+  durationMs,
+  mine,
+}: {
+  uri: string;
+  durationMs?: number | null;
+  mine: boolean;
+}) {
+  const c = useColors();
+  const player = useAudioPlayer(uri);
+  const status = useAudioPlayerStatus(player);
+  const playing = status.playing;
+  const currentMs = (status.currentTime ?? 0) * 1000;
+  const totalMs = durationMs ?? (status.duration ? status.duration * 1000 : 0);
+  const progress = totalMs > 0 ? Math.min(1, currentMs / totalMs) : 0;
+  const tint = mine ? "#fff" : c.primary;
+
+  const toggle = () => {
+    if (playing) {
+      player.pause();
+      return;
+    }
+    if (status.didJustFinish || (status.duration && status.currentTime >= status.duration)) {
+      player.seekTo(0);
+    }
+    player.play();
+  };
+
+  return (
+    <View style={[styles.voiceWrap, { backgroundColor: mine ? c.primary : c.secondary }]}>
+      <Touchable onPress={toggle} hitSlop={6} style={styles.voiceBtn}>
+        <Ionicons name={playing ? "pause" : "play"} size={20} color={tint} />
+      </Touchable>
+      <View style={styles.voiceTrack}>
+        <View style={[styles.voiceTrackBg, { backgroundColor: mine ? "#ffffff55" : c.border }]} />
+        <View style={[styles.voiceTrackFill, { backgroundColor: tint, width: `${progress * 100}%` }]} />
+      </View>
+      <Text style={{ color: mine ? "#fff" : c.foreground, fontSize: fs(11), minWidth: 34, textAlign: "right" }}>
+        {formatDur(currentMs > 0 ? currentMs : totalMs)}
+      </Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 8,
     paddingVertical: 8,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    zIndex: 2,
   },
   backBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
   headerInfo: { flex: 1, flexDirection: "row", alignItems: "center" },
-  headerName: { fontFamily: "Inter_700Bold", fontSize: 16 },
-  callBtn: { width: 38, height: 38, alignItems: "center", justifyContent: "center" },
+  headerName: { fontFamily: "Inter_700Bold", fontSize: fs(16) },
+  callBtn: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
   bubbleRow: { flexDirection: "row", alignItems: "flex-end", marginVertical: 3 },
   bubble: {
     paddingHorizontal: 14,
@@ -433,6 +621,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: "hidden",
     marginBottom: 2,
+    ...shadow("md"),
   },
   attachmentImg: { width: "100%", height: "100%" },
   playOverlay: {
@@ -441,16 +630,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#0003",
   },
-  time: { fontSize: 10, marginTop: 2, marginHorizontal: 4 },
+  time: { fontSize: fs(10), marginTop: 2, marginHorizontal: 4 },
   composer: {
     flexDirection: "row",
     alignItems: "flex-end",
     gap: 6,
     paddingHorizontal: 8,
     paddingVertical: 8,
-    borderTopWidth: StyleSheet.hairlineWidth,
   },
   composerBtn: { width: 38, height: 38, alignItems: "center", justifyContent: "center" },
+  sendBtn: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
+  composerBtnRec: { backgroundColor: "#ef4343", borderRadius: 19 },
   inputWrap: {
     flex: 1,
     flexDirection: "row",
@@ -460,4 +650,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 9,
   },
+  recBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  recDot: { width: 10, height: 10, borderRadius: 5 },
+  voiceWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 2,
+    minWidth: 180,
+    ...shadow("sm"),
+  },
+  voiceBtn: { width: 30, height: 30, alignItems: "center", justifyContent: "center" },
+  voiceTrack: { flex: 1, height: 4, justifyContent: "center" },
+  voiceTrackBg: { ...StyleSheet.absoluteFillObject, borderRadius: 2 },
+  voiceTrackFill: { height: 4, borderRadius: 2 },
 });

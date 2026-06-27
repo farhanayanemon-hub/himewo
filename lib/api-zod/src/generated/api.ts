@@ -38,7 +38,11 @@ export const GetCurrentUserResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 })
 
 
@@ -77,7 +81,11 @@ export const SyncProfileResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 })
 
 
@@ -110,7 +118,11 @@ export const SearchUsersResponseItem = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 })
 export const SearchUsersResponse = zod.array(SearchUsersResponseItem)
 
@@ -137,7 +149,11 @@ export const GetFriendSuggestionsResponseItem = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 })
 export const GetFriendSuggestionsResponse = zod.array(GetFriendSuggestionsResponseItem)
 
@@ -176,7 +192,11 @@ export const UpdateMyProfileResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 })
 
 
@@ -203,7 +223,11 @@ export const GetUserResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 })
 
 
@@ -239,7 +263,11 @@ export const GetUserPostsResponseItem = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "content": zod.string(),
   "privacy": zod.enum(['public', 'friends', 'private']),
@@ -299,7 +327,11 @@ export const GetFeedResponseItem = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "content": zod.string(),
   "privacy": zod.enum(['public', 'friends', 'private']),
@@ -365,7 +397,11 @@ export const CreatePostResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "content": zod.string(),
   "privacy": zod.enum(['public', 'friends', 'private']),
@@ -418,7 +454,11 @@ export const GetPostResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "content": zod.string(),
   "privacy": zod.enum(['public', 'friends', 'private']),
@@ -476,7 +516,11 @@ export const UpdatePostResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "content": zod.string(),
   "privacy": zod.enum(['public', 'friends', 'private']),
@@ -561,7 +605,11 @@ export const ListPostReactionsResponseItem = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "type": zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry'])
 })
@@ -597,7 +645,11 @@ export const SharePostResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "content": zod.string(),
   "privacy": zod.enum(['public', 'friends', 'private']),
@@ -658,7 +710,11 @@ export const ListCommentsResponseItem = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "parentId": zod.number().nullish(),
   "content": zod.string(),
@@ -703,7 +759,11 @@ export const CreateCommentResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "parentId": zod.number().nullish(),
   "content": zod.string(),
@@ -745,7 +805,11 @@ export const UpdateCommentResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "parentId": zod.number().nullish(),
   "content": zod.string(),
@@ -794,7 +858,11 @@ export const SetCommentReactionResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "parentId": zod.number().nullish(),
   "content": zod.string(),
@@ -832,7 +900,11 @@ export const RemoveCommentReactionResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "parentId": zod.number().nullish(),
   "content": zod.string(),
@@ -863,7 +935,11 @@ export const ListFriendsResponseItem = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 })
 export const ListFriendsResponse = zod.array(ListFriendsResponseItem)
 
@@ -889,7 +965,11 @@ export const ListFriendRequestsResponseItem = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "addressee": zod.object({
   "id": zod.string(),
@@ -910,7 +990,11 @@ export const ListFriendRequestsResponseItem = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "status": zod.enum(['pending', 'accepted', 'declined']),
   "createdAt": zod.coerce.date()
@@ -943,7 +1027,11 @@ export const SendFriendRequestResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "addressee": zod.object({
   "id": zod.string(),
@@ -964,7 +1052,11 @@ export const SendFriendRequestResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "status": zod.enum(['pending', 'accepted', 'declined']),
   "createdAt": zod.coerce.date()
@@ -996,7 +1088,11 @@ export const AcceptFriendRequestResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "addressee": zod.object({
   "id": zod.string(),
@@ -1017,7 +1113,11 @@ export const AcceptFriendRequestResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "status": zod.enum(['pending', 'accepted', 'declined']),
   "createdAt": zod.coerce.date()
@@ -1049,7 +1149,11 @@ export const DeclineFriendRequestResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "addressee": zod.object({
   "id": zod.string(),
@@ -1070,7 +1174,11 @@ export const DeclineFriendRequestResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "status": zod.enum(['pending', 'accepted', 'declined']),
   "createdAt": zod.coerce.date()
@@ -1123,7 +1231,11 @@ export const ListConversationsResponseItem = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "role": zod.enum(['member', 'admin']),
   "lastReadMessageId": zod.number().nullish(),
@@ -1151,7 +1263,11 @@ export const ListConversationsResponseItem = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "content": zod.string(),
   "type": zod.enum(['text', 'image', 'video', 'file', 'audio', 'sticker', 'call']),
@@ -1214,7 +1330,11 @@ export const CreateConversationResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "role": zod.enum(['member', 'admin']),
   "lastReadMessageId": zod.number().nullish(),
@@ -1242,7 +1362,11 @@ export const CreateConversationResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "content": zod.string(),
   "type": zod.enum(['text', 'image', 'video', 'file', 'audio', 'sticker', 'call']),
@@ -1302,7 +1426,11 @@ export const GetConversationResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "role": zod.enum(['member', 'admin']),
   "lastReadMessageId": zod.number().nullish(),
@@ -1330,7 +1458,11 @@ export const GetConversationResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "content": zod.string(),
   "type": zod.enum(['text', 'image', 'video', 'file', 'audio', 'sticker', 'call']),
@@ -1395,7 +1527,11 @@ export const UpdateConversationResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "role": zod.enum(['member', 'admin']),
   "lastReadMessageId": zod.number().nullish(),
@@ -1423,7 +1559,11 @@ export const UpdateConversationResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "content": zod.string(),
   "type": zod.enum(['text', 'image', 'video', 'file', 'audio', 'sticker', 'call']),
@@ -1487,7 +1627,11 @@ export const ListMessagesResponseItem = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "content": zod.string(),
   "type": zod.enum(['text', 'image', 'video', 'file', 'audio', 'sticker', 'call']),
@@ -1557,7 +1701,11 @@ export const SendMessageResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "content": zod.string(),
   "type": zod.enum(['text', 'image', 'video', 'file', 'audio', 'sticker', 'call']),
@@ -1628,7 +1776,11 @@ export const AddConversationMembersResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "role": zod.enum(['member', 'admin']),
   "lastReadMessageId": zod.number().nullish(),
@@ -1656,7 +1808,11 @@ export const AddConversationMembersResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "content": zod.string(),
   "type": zod.enum(['text', 'image', 'video', 'file', 'audio', 'sticker', 'call']),
@@ -1725,7 +1881,11 @@ export const SetMessageReactionResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "content": zod.string(),
   "type": zod.enum(['text', 'image', 'video', 'file', 'audio', 'sticker', 'call']),
@@ -1778,7 +1938,11 @@ export const RemoveMessageReactionResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "content": zod.string(),
   "type": zod.enum(['text', 'image', 'video', 'file', 'audio', 'sticker', 'call']),
@@ -1913,7 +2077,11 @@ export const GetGroupPostsResponseItem = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "content": zod.string(),
   "privacy": zod.enum(['public', 'friends', 'private']),
@@ -2034,7 +2202,11 @@ export const ListStoriesResponseItem = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "stories": zod.array(zod.object({
   "id": zod.number(),
@@ -2057,7 +2229,11 @@ export const ListStoriesResponseItem = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "mediaUrl": zod.string(),
   "mediaType": zod.enum(['image', 'video']),
@@ -2100,7 +2276,11 @@ export const CreateStoryResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "mediaUrl": zod.string(),
   "mediaType": zod.enum(['image', 'video']),
@@ -2142,7 +2322,11 @@ export const ListStoryViewsResponseItem = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 })
 export const ListStoryViewsResponse = zod.array(ListStoryViewsResponseItem)
 
@@ -2175,7 +2359,11 @@ export const ListReelsResponseItem = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "videoUrl": zod.string(),
   "thumbnailUrl": zod.string().nullish(),
@@ -2215,7 +2403,11 @@ export const CreateReelResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "videoUrl": zod.string(),
   "thumbnailUrl": zod.string().nullish(),
@@ -2252,7 +2444,11 @@ export const GetReelResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "videoUrl": zod.string(),
   "thumbnailUrl": zod.string().nullish(),
@@ -2289,7 +2485,11 @@ export const LikeReelResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "videoUrl": zod.string(),
   "thumbnailUrl": zod.string().nullish(),
@@ -2326,7 +2526,11 @@ export const UnlikeReelResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "videoUrl": zod.string(),
   "thumbnailUrl": zod.string().nullish(),
@@ -2364,7 +2568,11 @@ export const ListReelCommentsResponseItem = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "content": zod.string(),
   "createdAt": zod.coerce.date()
@@ -2402,7 +2610,11 @@ export const CreateReelCommentResponse = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),
   "content": zod.string(),
   "createdAt": zod.coerce.date()
@@ -2438,7 +2650,11 @@ export const ListNotificationsResponseItem = zod.object({
   "postCount": zod.number().nullish(),
   "viewerIsFriend": zod.boolean().nullish(),
   "viewerHasPendingRequest": zod.boolean().nullish(),
-  "viewerFollows": zod.boolean().nullish()
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),zod.null()]).optional(),
   "entityType": zod.string().nullish(),
   "entityId": zod.number().nullish(),

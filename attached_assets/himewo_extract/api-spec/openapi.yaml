@@ -1,0 +1,1434 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: HiMewo social platform + Messenger API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+  - name: auth
+  - name: users
+  - name: posts
+  - name: comments
+  - name: friends
+  - name: messaging
+  - name: groups
+  - name: pages
+  - name: stories
+  - name: reels
+  - name: notifications
+  - name: media
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # ---------------- Auth ----------------
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [auth]
+      summary: Get the currently authenticated user's profile
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /auth/sync:
+    post:
+      operationId: syncProfile
+      tags: [auth]
+      summary: Create or update the app profile for the authenticated Supabase user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileInput"
+      responses:
+        "200":
+          description: Synced profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+
+  # ---------------- Users ----------------
+  /users:
+    get:
+      operationId: searchUsers
+      tags: [users]
+      summary: Search users
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: Users
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Profile" }
+  /users/suggestions:
+    get:
+      operationId: getFriendSuggestions
+      tags: [users]
+      summary: Get people-you-may-know suggestions
+      responses:
+        "200":
+          description: Suggestions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Profile" }
+  /users/me:
+    patch:
+      operationId: updateMyProfile
+      tags: [users]
+      summary: Update own profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /users/{id}/posts:
+    get:
+      operationId: getUserPosts
+      tags: [users]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: cursor, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer, default: 20 } }
+      responses:
+        "200":
+          description: Posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Post" }
+
+  # ---------------- Feed & Posts ----------------
+  /feed:
+    get:
+      operationId: getFeed
+      tags: [posts]
+      summary: Home feed
+      parameters:
+        - { name: cursor, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer, default: 20 } }
+      responses:
+        "200":
+          description: Feed
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Post" }
+  /posts:
+    post:
+      operationId: createPost
+      tags: [posts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PostInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Post" }
+  /posts/{id}:
+    get:
+      operationId: getPost
+      tags: [posts]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Post
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Post" }
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updatePost
+      tags: [posts]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PostUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Post" }
+    delete:
+      operationId: deletePost
+      tags: [posts]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+  /posts/{id}/reaction:
+    put:
+      operationId: setPostReaction
+      tags: [posts]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReactionInput" }
+      responses:
+        "200":
+          description: Reaction summary
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReactionSummary" }
+    delete:
+      operationId: removePostReaction
+      tags: [posts]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Reaction summary
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReactionSummary" }
+  /posts/{id}/reactions:
+    get:
+      operationId: listPostReactions
+      tags: [posts]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Reactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ReactionUser" }
+  /posts/{id}/share:
+    post:
+      operationId: sharePost
+      tags: [posts]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ShareInput" }
+      responses:
+        "201":
+          description: Shared
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Post" }
+  /posts/{id}/comments:
+    get:
+      operationId: listComments
+      tags: [comments]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: cursor, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer, default: 30 } }
+      responses:
+        "200":
+          description: Comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Comment" }
+    post:
+      operationId: createComment
+      tags: [comments]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CommentInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Comment" }
+
+  # ---------------- Comments ----------------
+  /comments/{id}:
+    patch:
+      operationId: updateComment
+      tags: [comments]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CommentUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Comment" }
+    delete:
+      operationId: deleteComment
+      tags: [comments]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+  /comments/{id}/reaction:
+    put:
+      operationId: setCommentReaction
+      tags: [comments]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReactionInput" }
+      responses:
+        "200":
+          description: Updated comment
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Comment" }
+    delete:
+      operationId: removeCommentReaction
+      tags: [comments]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Updated comment
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Comment" }
+
+  # ---------------- Friends & Follow ----------------
+  /friends:
+    get:
+      operationId: listFriends
+      tags: [friends]
+      responses:
+        "200":
+          description: Friends
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Profile" }
+  /friends/requests:
+    get:
+      operationId: listFriendRequests
+      tags: [friends]
+      responses:
+        "200":
+          description: Incoming requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/FriendRequest" }
+    post:
+      operationId: sendFriendRequest
+      tags: [friends]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FriendRequestInput" }
+      responses:
+        "201":
+          description: Sent
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FriendRequest" }
+  /friends/requests/{id}/accept:
+    post:
+      operationId: acceptFriendRequest
+      tags: [friends]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FriendRequest" }
+  /friends/requests/{id}/decline:
+    post:
+      operationId: declineFriendRequest
+      tags: [friends]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Declined
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FriendRequest" }
+  /friends/{userId}:
+    delete:
+      operationId: removeFriend
+      tags: [friends]
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Removed }
+  /follow/{userId}:
+    post:
+      operationId: followUser
+      tags: [friends]
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Followed }
+    delete:
+      operationId: unfollowUser
+      tags: [friends]
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Unfollowed }
+
+  # ---------------- Messaging ----------------
+  /conversations:
+    get:
+      operationId: listConversations
+      tags: [messaging]
+      responses:
+        "200":
+          description: Conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Conversation" }
+    post:
+      operationId: createConversation
+      tags: [messaging]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ConversationInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Conversation" }
+  /conversations/{id}:
+    get:
+      operationId: getConversation
+      tags: [messaging]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Conversation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Conversation" }
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateConversation
+      tags: [messaging]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ConversationUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Conversation" }
+  /conversations/{id}/messages:
+    get:
+      operationId: listMessages
+      tags: [messaging]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: cursor, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer, default: 30 } }
+      responses:
+        "200":
+          description: Messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Message" }
+    post:
+      operationId: sendMessage
+      tags: [messaging]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MessageInput" }
+      responses:
+        "201":
+          description: Sent
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+  /conversations/{id}/read:
+    post:
+      operationId: markConversationRead
+      tags: [messaging]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReadInput" }
+      responses:
+        "204": { description: Marked read }
+  /conversations/{id}/members:
+    post:
+      operationId: addConversationMembers
+      tags: [messaging]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MembersInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Conversation" }
+  /conversations/{id}/members/{userId}:
+    delete:
+      operationId: removeConversationMember
+      tags: [messaging]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: userId, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Removed }
+  /messages/{id}/reaction:
+    put:
+      operationId: setMessageReaction
+      tags: [messaging]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MessageReactionInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+    delete:
+      operationId: removeMessageReaction
+      tags: [messaging]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+  /messages/{id}:
+    delete:
+      operationId: deleteMessage
+      tags: [messaging]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+
+  # ---------------- Groups ----------------
+  /groups:
+    get:
+      operationId: listGroups
+      tags: [groups]
+      responses:
+        "200":
+          description: Groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Group" }
+    post:
+      operationId: createGroup
+      tags: [groups]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GroupInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Group" }
+  /groups/{id}:
+    get:
+      operationId: getGroup
+      tags: [groups]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Group
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Group" }
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /groups/{id}/join:
+    post:
+      operationId: joinGroup
+      tags: [groups]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Joined }
+  /groups/{id}/leave:
+    delete:
+      operationId: leaveGroup
+      tags: [groups]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Left }
+  /groups/{id}/posts:
+    get:
+      operationId: getGroupPosts
+      tags: [groups]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: cursor, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer, default: 20 } }
+      responses:
+        "200":
+          description: Posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Post" }
+
+  # ---------------- Pages ----------------
+  /pages:
+    get:
+      operationId: listPages
+      tags: [pages]
+      responses:
+        "200":
+          description: Pages
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Page" }
+    post:
+      operationId: createPage
+      tags: [pages]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PageInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Page" }
+  /pages/{id}:
+    get:
+      operationId: getPage
+      tags: [pages]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Page" }
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /pages/{id}/follow:
+    post:
+      operationId: followPage
+      tags: [pages]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Followed }
+    delete:
+      operationId: unfollowPage
+      tags: [pages]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Unfollowed }
+
+  # ---------------- Stories ----------------
+  /stories:
+    get:
+      operationId: listStories
+      tags: [stories]
+      summary: Active stories grouped by author
+      responses:
+        "200":
+          description: Story groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/StoryGroup" }
+    post:
+      operationId: createStory
+      tags: [stories]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StoryInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Story" }
+  /stories/{id}/view:
+    post:
+      operationId: viewStory
+      tags: [stories]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Viewed }
+  /stories/{id}/views:
+    get:
+      operationId: listStoryViews
+      tags: [stories]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Viewers
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Profile" }
+
+  # ---------------- Reels ----------------
+  /reels:
+    get:
+      operationId: listReels
+      tags: [reels]
+      parameters:
+        - { name: cursor, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer, default: 10 } }
+      responses:
+        "200":
+          description: Reels
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Reel" }
+    post:
+      operationId: createReel
+      tags: [reels]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReelInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Reel" }
+  /reels/{id}:
+    get:
+      operationId: getReel
+      tags: [reels]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Reel
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Reel" }
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /reels/{id}/like:
+    put:
+      operationId: likeReel
+      tags: [reels]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Reel" }
+    delete:
+      operationId: unlikeReel
+      tags: [reels]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Reel" }
+  /reels/{id}/comments:
+    get:
+      operationId: listReelComments
+      tags: [reels]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ReelComment" }
+    post:
+      operationId: createReelComment
+      tags: [reels]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReelCommentInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReelComment" }
+
+  # ---------------- Notifications ----------------
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      parameters:
+        - { name: cursor, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer, default: 30 } }
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Notification" }
+  /notifications/count:
+    get:
+      operationId: getUnreadNotificationCount
+      tags: [notifications]
+      responses:
+        "200":
+          description: Unread count
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UnreadCount" }
+  /notifications/{id}/read:
+    post:
+      operationId: markNotificationRead
+      tags: [notifications]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Marked }
+  /notifications/read-all:
+    post:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      responses:
+        "204": { description: Marked }
+
+  # ---------------- Media ----------------
+  /media/upload-url:
+    post:
+      operationId: createUploadUrl
+      tags: [media]
+      summary: Request a signed upload URL (Supabase Storage)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UploadUrlInput" }
+      responses:
+        "200":
+          description: Upload target
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UploadUrlResponse" }
+
+components:
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status: { type: string }
+      required: [status]
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+      required: [error]
+
+    ReactionType:
+      type: string
+      enum: [like, love, care, haha, wow, sad, angry]
+
+    Profile:
+      type: object
+      required: [id, username, displayName, isVerified, createdAt]
+      properties:
+        id: { type: string }
+        username: { type: string }
+        displayName: { type: string }
+        email: { type: ["string", "null"] }
+        phone: { type: ["string", "null"] }
+        avatarUrl: { type: ["string", "null"] }
+        coverUrl: { type: ["string", "null"] }
+        bio: { type: ["string", "null"] }
+        location: { type: ["string", "null"] }
+        work: { type: ["string", "null"] }
+        isVerified: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        friendCount: { type: ["integer", "null"] }
+        followerCount: { type: ["integer", "null"] }
+        followingCount: { type: ["integer", "null"] }
+        postCount: { type: ["integer", "null"] }
+        viewerIsFriend: { type: ["boolean", "null"] }
+        viewerHasPendingRequest: { type: ["boolean", "null"] }
+        viewerFollows: { type: ["boolean", "null"] }
+    ProfileInput:
+      type: object
+      required: [id, username, displayName]
+      properties:
+        id: { type: string }
+        username: { type: string, minLength: 1 }
+        displayName: { type: string, minLength: 1 }
+        email: { type: string }
+        phone: { type: string }
+        avatarUrl: { type: string }
+    ProfileUpdate:
+      type: object
+      properties:
+        displayName: { type: string, minLength: 1 }
+        bio: { type: string }
+        avatarUrl: { type: string }
+        coverUrl: { type: string }
+        location: { type: string }
+        work: { type: string }
+
+    MediaItem:
+      type: object
+      required: [id, url, type]
+      properties:
+        id: { type: integer }
+        url: { type: string }
+        type: { type: string, enum: [image, video] }
+        thumbnailUrl: { type: ["string", "null"] }
+        width: { type: ["integer", "null"] }
+        height: { type: ["integer", "null"] }
+        durationMs: { type: ["integer", "null"] }
+        position: { type: integer }
+    MediaItemInput:
+      type: object
+      required: [url, type]
+      properties:
+        url: { type: string }
+        type: { type: string, enum: [image, video] }
+        thumbnailUrl: { type: string }
+        width: { type: integer }
+        height: { type: integer }
+        durationMs: { type: integer }
+        position: { type: integer }
+
+    ReactionSummary:
+      type: object
+      required: [total, byType]
+      properties:
+        total: { type: integer }
+        byType:
+          type: object
+          additionalProperties: { type: integer }
+        viewerReaction:
+          oneOf:
+            - { $ref: "#/components/schemas/ReactionType" }
+            - { type: "null" }
+    ReactionInput:
+      type: object
+      required: [type]
+      properties:
+        type: { $ref: "#/components/schemas/ReactionType" }
+    ReactionUser:
+      type: object
+      required: [user, type]
+      properties:
+        user: { $ref: "#/components/schemas/Profile" }
+        type: { $ref: "#/components/schemas/ReactionType" }
+
+    Post:
+      type: object
+      required: [id, author, content, privacy, media, reactions, commentCount, shareCount, createdAt]
+      properties:
+        id: { type: integer }
+        author: { $ref: "#/components/schemas/Profile" }
+        content: { type: string }
+        privacy: { type: string, enum: [public, friends, private] }
+        groupId: { type: ["integer", "null"] }
+        pageId: { type: ["integer", "null"] }
+        media:
+          type: array
+          items: { $ref: "#/components/schemas/MediaItem" }
+        reactions: { $ref: "#/components/schemas/ReactionSummary" }
+        commentCount: { type: integer }
+        shareCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    PostInput:
+      type: object
+      required: [content]
+      properties:
+        content: { type: string }
+        privacy: { type: string, enum: [public, friends, private] }
+        groupId: { type: integer }
+        pageId: { type: integer }
+        media:
+          type: array
+          items: { $ref: "#/components/schemas/MediaItemInput" }
+    PostUpdate:
+      type: object
+      properties:
+        content: { type: string }
+        privacy: { type: string, enum: [public, friends, private] }
+
+    Comment:
+      type: object
+      required: [id, postId, author, content, createdAt, reactionCount, replyCount]
+      properties:
+        id: { type: integer }
+        postId: { type: integer }
+        author: { $ref: "#/components/schemas/Profile" }
+        parentId: { type: ["integer", "null"] }
+        content: { type: string }
+        mediaUrl: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        reactionCount: { type: integer }
+        replyCount: { type: integer }
+        viewerReaction:
+          oneOf:
+            - { $ref: "#/components/schemas/ReactionType" }
+            - { type: "null" }
+    CommentInput:
+      type: object
+      required: [content]
+      properties:
+        content: { type: string }
+        parentId: { type: integer }
+        mediaUrl: { type: string }
+    CommentUpdate:
+      type: object
+      required: [content]
+      properties:
+        content: { type: string }
+
+    ShareInput:
+      type: object
+      properties:
+        caption: { type: string }
+
+    FriendRequest:
+      type: object
+      required: [id, requester, addressee, status, createdAt]
+      properties:
+        id: { type: integer }
+        requester: { $ref: "#/components/schemas/Profile" }
+        addressee: { $ref: "#/components/schemas/Profile" }
+        status: { type: string, enum: [pending, accepted, declined] }
+        createdAt: { type: string, format: date-time }
+    FriendRequestInput:
+      type: object
+      required: [addresseeId]
+      properties:
+        addresseeId: { type: string }
+
+    Conversation:
+      type: object
+      required: [id, type, members, unreadCount, createdAt, lastMessageAt]
+      properties:
+        id: { type: integer }
+        type: { type: string, enum: [direct, group] }
+        title: { type: ["string", "null"] }
+        avatarUrl: { type: ["string", "null"] }
+        members:
+          type: array
+          items: { $ref: "#/components/schemas/ConversationMember" }
+        lastMessage:
+          oneOf:
+            - { $ref: "#/components/schemas/Message" }
+            - { type: "null" }
+        unreadCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+        lastMessageAt: { type: string, format: date-time }
+    ConversationMember:
+      type: object
+      required: [user, role, joinedAt]
+      properties:
+        user: { $ref: "#/components/schemas/Profile" }
+        role: { type: string, enum: [member, admin] }
+        lastReadMessageId: { type: ["integer", "null"] }
+        joinedAt: { type: string, format: date-time }
+    ConversationInput:
+      type: object
+      required: [memberIds]
+      properties:
+        type: { type: string, enum: [direct, group] }
+        memberIds:
+          type: array
+          items: { type: string }
+        title: { type: string }
+    ConversationUpdate:
+      type: object
+      properties:
+        title: { type: string }
+        avatarUrl: { type: string }
+
+    Attachment:
+      type: object
+      required: [id, url, type]
+      properties:
+        id: { type: integer }
+        url: { type: string }
+        type: { type: string, enum: [image, video, file, audio] }
+        name: { type: ["string", "null"] }
+        thumbnailUrl: { type: ["string", "null"] }
+        sizeBytes: { type: ["integer", "null"] }
+        width: { type: ["integer", "null"] }
+        height: { type: ["integer", "null"] }
+        durationMs: { type: ["integer", "null"] }
+    AttachmentInput:
+      type: object
+      required: [url, type]
+      properties:
+        url: { type: string }
+        type: { type: string, enum: [image, video, file, audio] }
+        name: { type: string }
+        thumbnailUrl: { type: string }
+        sizeBytes: { type: integer }
+        width: { type: integer }
+        height: { type: integer }
+        durationMs: { type: integer }
+    MessageReaction:
+      type: object
+      required: [emoji, count]
+      properties:
+        emoji: { type: string }
+        count: { type: integer }
+        viewerReacted: { type: boolean }
+    Message:
+      type: object
+      required: [id, conversationId, sender, content, type, attachments, reactions, createdAt]
+      properties:
+        id: { type: integer }
+        conversationId: { type: integer }
+        sender: { $ref: "#/components/schemas/Profile" }
+        content: { type: string }
+        type: { type: string, enum: [text, image, video, file, audio, sticker, call] }
+        replyToId: { type: ["integer", "null"] }
+        attachments:
+          type: array
+          items: { $ref: "#/components/schemas/Attachment" }
+        reactions:
+          type: array
+          items: { $ref: "#/components/schemas/MessageReaction" }
+        createdAt: { type: string, format: date-time }
+        editedAt: { type: ["string", "null"], format: date-time }
+        deletedAt: { type: ["string", "null"], format: date-time }
+    MessageInput:
+      type: object
+      properties:
+        content: { type: string }
+        type: { type: string, enum: [text, image, video, file, audio, sticker, call] }
+        replyToId: { type: integer }
+        attachments:
+          type: array
+          items: { $ref: "#/components/schemas/AttachmentInput" }
+    MessageReactionInput:
+      type: object
+      required: [emoji]
+      properties:
+        emoji: { type: string }
+    ReadInput:
+      type: object
+      required: [messageId]
+      properties:
+        messageId: { type: integer }
+    MembersInput:
+      type: object
+      required: [userIds]
+      properties:
+        userIds:
+          type: array
+          items: { type: string }
+
+    Group:
+      type: object
+      required: [id, name, privacy, memberCount, createdAt]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        description: { type: ["string", "null"] }
+        avatarUrl: { type: ["string", "null"] }
+        coverUrl: { type: ["string", "null"] }
+        privacy: { type: string, enum: [public, friends, private] }
+        memberCount: { type: integer }
+        viewerIsMember: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    GroupInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1 }
+        description: { type: string }
+        privacy: { type: string, enum: [public, friends, private] }
+        avatarUrl: { type: string }
+        coverUrl: { type: string }
+
+    Page:
+      type: object
+      required: [id, name, followerCount, createdAt]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        category: { type: ["string", "null"] }
+        description: { type: ["string", "null"] }
+        avatarUrl: { type: ["string", "null"] }
+        coverUrl: { type: ["string", "null"] }
+        followerCount: { type: integer }
+        viewerFollows: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    PageInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1 }
+        category: { type: string }
+        description: { type: string }
+        avatarUrl: { type: string }
+        coverUrl: { type: string }
+
+    Story:
+      type: object
+      required: [id, author, mediaUrl, mediaType, createdAt, expiresAt, viewCount, viewerHasViewed]
+      properties:
+        id: { type: integer }
+        author: { $ref: "#/components/schemas/Profile" }
+        mediaUrl: { type: string }
+        mediaType: { type: string, enum: [image, video] }
+        caption: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        viewCount: { type: integer }
+        viewerHasViewed: { type: boolean }
+    StoryInput:
+      type: object
+      required: [mediaUrl, mediaType]
+      properties:
+        mediaUrl: { type: string }
+        mediaType: { type: string, enum: [image, video] }
+        caption: { type: string }
+        expiresInHours: { type: integer }
+    StoryGroup:
+      type: object
+      required: [author, stories, hasUnseen]
+      properties:
+        author: { $ref: "#/components/schemas/Profile" }
+        stories:
+          type: array
+          items: { $ref: "#/components/schemas/Story" }
+        hasUnseen: { type: boolean }
+
+    Reel:
+      type: object
+      required: [id, author, videoUrl, createdAt, likeCount, commentCount, viewerHasLiked]
+      properties:
+        id: { type: integer }
+        author: { $ref: "#/components/schemas/Profile" }
+        videoUrl: { type: string }
+        thumbnailUrl: { type: ["string", "null"] }
+        caption: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        likeCount: { type: integer }
+        commentCount: { type: integer }
+        viewerHasLiked: { type: boolean }
+    ReelInput:
+      type: object
+      required: [videoUrl]
+      properties:
+        videoUrl: { type: string }
+        thumbnailUrl: { type: string }
+        caption: { type: string }
+    ReelComment:
+      type: object
+      required: [id, reelId, author, content, createdAt]
+      properties:
+        id: { type: integer }
+        reelId: { type: integer }
+        author: { $ref: "#/components/schemas/Profile" }
+        content: { type: string }
+        createdAt: { type: string, format: date-time }
+    ReelCommentInput:
+      type: object
+      required: [content]
+      properties:
+        content: { type: string }
+
+    Notification:
+      type: object
+      required: [id, type, isRead, createdAt]
+      properties:
+        id: { type: integer }
+        type:
+          type: string
+          enum: [reaction, comment, friend_request, friend_accept, follow, message, group_invite, page_follow, mention, share, story_view]
+        actor:
+          oneOf:
+            - { $ref: "#/components/schemas/Profile" }
+            - { type: "null" }
+        entityType: { type: ["string", "null"] }
+        entityId: { type: ["integer", "null"] }
+        isRead: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    UnreadCount:
+      type: object
+      required: [count]
+      properties:
+        count: { type: integer }
+
+    UploadUrlInput:
+      type: object
+      required: [fileName, contentType]
+      properties:
+        fileName: { type: string }
+        contentType: { type: string }
+        bucket: { type: string }
+    UploadUrlResponse:
+      type: object
+      required: [uploadUrl, publicUrl, path]
+      properties:
+        uploadUrl: { type: string }
+        publicUrl: { type: string }
+        path: { type: string }
+        token: { type: ["string", "null"] }
