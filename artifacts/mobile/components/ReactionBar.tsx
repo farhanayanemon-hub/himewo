@@ -1,5 +1,7 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  Animated,
+  Easing,
   Modal,
   Pressable,
   Text,
@@ -20,6 +22,59 @@ interface ReactionBarProps {
   size?: "default" | "sm";
 }
 
+/** A single emoji in the picker that pops in with a staggered spring. */
+function PickerEmoji({
+  emoji,
+  index,
+  onPress,
+}: {
+  emoji: string;
+  index: number;
+  onPress: () => void;
+}) {
+  const anim = useRef(new Animated.Value(0)).current;
+  const press = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.timing(anim, {
+      toValue: 1,
+      duration: 260,
+      delay: index * 40,
+      easing: Easing.bezier(0.18, 0.89, 0.32, 1.28),
+      useNativeDriver: true,
+    }).start();
+  }, [anim, index]);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={() =>
+        Animated.spring(press, { toValue: 1.35, useNativeDriver: true, speed: 40 }).start()
+      }
+      onPressOut={() =>
+        Animated.spring(press, { toValue: 1, useNativeDriver: true, speed: 40 }).start()
+      }
+      style={styles.reaction}
+      hitSlop={4}
+    >
+      <Animated.Text
+        style={{
+          fontSize: 32,
+          opacity: anim,
+          transform: [
+            {
+              translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }),
+            },
+            { scale: Animated.multiply(anim, press) },
+          ],
+        }}
+      >
+        {emoji}
+      </Animated.Text>
+    </Pressable>
+  );
+}
+
 export function ReactionBar({
   viewerReaction,
   onReact,
@@ -29,8 +84,22 @@ export function ReactionBar({
   const [open, setOpen] = useState(false);
   const [anchor, setAnchor] = useState({ x: 16, y: 200 });
   const btnRef = useRef<View>(null);
+  const containerAnim = useRef(new Animated.Value(0)).current;
+  const burst = useRef(new Animated.Value(1)).current;
   const active = viewerReaction ? reactionConfig[viewerReaction] : null;
   const isSm = size === "sm";
+
+  useEffect(() => {
+    if (open) {
+      containerAnim.setValue(0);
+      Animated.spring(containerAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+        speed: 18,
+        bounciness: 10,
+      }).start();
+    }
+  }, [open, containerAnim]);
 
   const showPicker = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -51,18 +120,31 @@ export function ReactionBar({
     onReact(t);
   };
 
+  const quickReact = () => {
+    burst.setValue(0.4);
+    Animated.spring(burst, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 16,
+      bounciness: 14,
+    }).start();
+    onReact(viewerReaction || ReactionType.like);
+  };
+
   return (
     <>
       <Pressable
         ref={btnRef}
-        onPress={() => onReact(viewerReaction || ReactionType.like)}
+        onPress={quickReact}
         onLongPress={showPicker}
         delayLongPress={220}
         style={styles.btn}
         hitSlop={8}
       >
         {active ? (
-          <Text style={{ fontSize: isSm ? 15 : 18 }}>{active.emoji}</Text>
+          <Animated.Text style={{ fontSize: isSm ? 15 : 18, transform: [{ scale: burst }] }}>
+            {active.emoji}
+          </Animated.Text>
         ) : (
           <Ionicons
             name="thumbs-up-outline"
@@ -81,9 +163,9 @@ export function ReactionBar({
         </Text>
       </Pressable>
 
-      <Modal visible={open} transparent animationType="fade">
+      <Modal visible={open} transparent animationType="none">
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
-          <View
+          <Animated.View
             style={[
               styles.picker,
               {
@@ -91,20 +173,28 @@ export function ReactionBar({
                 left: anchor.x,
                 backgroundColor: c.card,
                 borderColor: c.border,
+                opacity: containerAnim,
+                transform: [
+                  { scale: containerAnim.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) },
+                  {
+                    translateY: containerAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [12, 0],
+                    }),
+                  },
+                ],
               },
             ]}
           >
-            {reactionOrder.map((t) => (
-              <Pressable
+            {reactionOrder.map((t, i) => (
+              <PickerEmoji
                 key={t}
+                emoji={reactionConfig[t].emoji}
+                index={i}
                 onPress={() => pick(t)}
-                style={styles.reaction}
-                hitSlop={4}
-              >
-                <Text style={{ fontSize: 30 }}>{reactionConfig[t].emoji}</Text>
-              </Pressable>
+              />
             ))}
-          </View>
+          </Animated.View>
         </Pressable>
       </Modal>
     </>

@@ -26,8 +26,17 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: c.card,
           borderTopColor: c.border,
+          height: 60,
+          paddingTop: 6,
+          paddingBottom: 8,
+          shadowColor: "#000",
+          shadowOpacity: 0.04,
+          shadowRadius: 4,
+          shadowOffset: { width: 0, height: -1 },
+          elevation: 8,
         },
-        tabBarLabelStyle: { fontFamily: "Inter_500Medium", fontSize: 11 },
+        tabBarLabelStyle: { fontFamily: "Inter_600SemiBold", fontSize: 11 },
+        tabBarItemStyle: { paddingTop: 2 },
       }}
     >
       <Tabs.Screen

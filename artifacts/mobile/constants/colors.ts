@@ -2,8 +2,9 @@
  * Semantic design tokens for the HiMewo mobile app.
  *
  * These values are synced from the sibling web artifact (artifacts/web/src/index.css)
- * so both apps share a cohesive visual identity. HSL values from the web theme are
- * converted to hex here. The brand primary is a warm Facebook-style orange.
+ * so both apps share a cohesive visual identity. The web theme's HSL values are
+ * converted to hex here. The brand identity is Facebook-style: a #1877F2 brand blue,
+ * a light neutral-gray feed background, and crisp white elevated cards.
  *
  * The useColors() hook automatically picks the light/dark variant based on the
  * device color scheme.
@@ -12,75 +13,80 @@
 const colors = {
   light: {
     // Legacy aliases (kept for backward compatibility)
-    text: "#1f1814",
-    tint: "#ff751a",
+    text: "#050505",
+    tint: "#1877f2",
 
-    // Core surfaces
-    background: "#fcfaf8",
-    foreground: "#1f1814",
+    // Core surfaces — Facebook light-gray feed background
+    background: "#f0f2f5",
+    foreground: "#050505",
 
     // Cards / elevated surfaces
     card: "#ffffff",
-    cardForeground: "#1f1814",
-    cardBorder: "#ebe7e0",
+    cardForeground: "#050505",
+    cardBorder: "#dadde1",
 
-    // Primary action color (buttons, links, active states)
-    primary: "#ff751a",
+    // Primary action color (buttons, links, active states) — Facebook blue
+    primary: "#1877f2",
     primaryForeground: "#ffffff",
 
-    // Secondary / less-emphasis interactive surfaces
-    secondary: "#ebe7e0",
-    secondaryForeground: "#1f1814",
+    // Secondary / less-emphasis interactive surfaces (FB secondary button)
+    secondary: "#e4e6eb",
+    secondaryForeground: "#050505",
 
     // Muted / subdued elements (dividers, timestamps, placeholders)
-    muted: "#ebe7e0",
-    mutedForeground: "#7e7167",
+    muted: "#f0f2f5",
+    mutedForeground: "#65676b",
 
-    // Accent highlights (badges, selected items, focus rings)
-    accent: "#ffcc33",
-    accentForeground: "#1f1814",
+    // Accent highlights (selected items, liked surfaces, focus rings)
+    accent: "#e7f3ff",
+    accentForeground: "#1877f2",
 
     // Destructive actions (delete, error states)
-    destructive: "#ef4343",
+    destructive: "#fa383e",
     destructiveForeground: "#ffffff",
 
     // Borders and input outlines
-    border: "#ebe7e0",
-    input: "#ebe7e0",
+    border: "#dadde1",
+    input: "#f0f2f5",
+
+    // Positive / online accent (Facebook green)
+    positive: "#31a24c",
   },
 
   dark: {
-    text: "#fcfaf8",
-    tint: "#ff751a",
+    text: "#e4e6eb",
+    tint: "#2d88ff",
 
-    background: "#181310",
-    foreground: "#fcfaf8",
+    background: "#18191a",
+    foreground: "#e4e6eb",
 
-    card: "#251d18",
-    cardForeground: "#fcfaf8",
-    cardBorder: "#3b302b",
+    card: "#242526",
+    cardForeground: "#e4e6eb",
+    cardBorder: "#3e4042",
 
-    primary: "#ff751a",
+    primary: "#2d88ff",
     primaryForeground: "#ffffff",
 
-    secondary: "#3b302b",
-    secondaryForeground: "#fcfaf8",
+    secondary: "#3a3b3c",
+    secondaryForeground: "#e4e6eb",
 
-    muted: "#3b302b",
-    mutedForeground: "#a39c8f",
+    muted: "#3a3b3c",
+    mutedForeground: "#b0b3b8",
 
-    accent: "#ffcc33",
-    accentForeground: "#1f1814",
+    accent: "#263951",
+    accentForeground: "#2d88ff",
 
-    destructive: "#7c1d1d",
+    destructive: "#ff5c5c",
     destructiveForeground: "#ffffff",
 
-    border: "#3b302b",
-    input: "#3b302b",
+    border: "#3e4042",
+    input: "#3a3b3c",
+
+    positive: "#45bd62",
   },
 
-  // Border radius (in px). Synced from the web artifact's --radius (1rem = 16px).
-  radius: 16,
+  // Border radius (in px). Synced from the web artifact's --radius (0.75rem = 12px).
+  radius: 12,
 };
 
 export default colors;
