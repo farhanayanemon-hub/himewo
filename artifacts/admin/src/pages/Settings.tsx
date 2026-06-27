@@ -1,0 +1,156 @@
+import { useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { AlertTriangle, Save } from "lucide-react";
+import { api } from "../lib/api";
+import { useAuth } from "../lib/auth";
+import type { SettingsResponse } from "../lib/types";
+import {
+  Button,
+  Card,
+  CardHeader,
+  ErrorNote,
+  Input,
+  Loading,
+  Toggle,
+} from "../components/ui";
+import { PageHeader } from "../components/Layout";
+
+const FLAG_LABELS: Record<string, string> = {
+  posts: "Posts",
+  stories: "Stories",
+  reels: "Reels",
+  calls: "Calls",
+  groups: "Groups",
+  pages: "Pages",
+  messaging: "Messaging",
+  signups: "New signups",
+};
+
+export function Settings() {
+  const { can } = useAuth();
+  const qc = useQueryClient();
+  const canManage = can("settings.manage");
+
+  const query = useQuery({
+    queryKey: ["settings"],
+    queryFn: () => api.get<SettingsResponse>("/admin/settings"),
+  });
+
+  const setFlag = useMutation({
+    mutationFn: (v: { key: string; enabled: boolean }) =>
+      api.put(`/admin/flags/${v.key}`, { enabled: v.enabled }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["settings"] }),
+  });
+
+  const setSetting = useMutation({
+    mutationFn: (v: { key: string; value: string }) =>
+      api.put(`/admin/settings/${v.key}`, { value: v.value }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["settings"] }),
+  });
+
+  const [siteName, setSiteName] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
+  const [maintMsg, setMaintMsg] = useState("");
+
+  useEffect(() => {
+    if (query.data) {
+      setSiteName(query.data.settings.site_name ?? "");
+      setLogoUrl(query.data.settings.logo_url ?? "");
+      setMaintMsg(query.data.settings.maintenance_message ?? "");
+    }
+  }, [query.data]);
+
+  const maintenanceOn = query.data?.settings.maintenance_mode === "on";
+
+  return (
+    <div>
+      <PageHeader
+        title="Settings"
+        description="Feature flags, branding and maintenance mode."
+      />
+
+      {query.isLoading && <Loading />}
+      <ErrorNote error={query.error || setFlag.error || setSetting.error} />
+
+      {query.data && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader
+              title="Feature flags"
+              subtitle="Disable a feature platform-wide. Disabled features return 403 to clients."
+            />
+            <div className="divide-y divide-slate-50">
+              {Object.keys(query.data.flags).map((key) => (
+                <div key={key} className="flex items-center justify-between px-5 py-3">
+                  <span className="text-sm text-slate-700">
+                    {FLAG_LABELS[key] ?? key}
+                  </span>
+                  <Toggle
+                    checked={query.data!.flags[key]}
+                    disabled={!canManage || setFlag.isPending}
+                    onChange={(v) => setFlag.mutate({ key, enabled: v })}
+                  />
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card>
+            <CardHeader title="Branding" />
+            <div className="space-y-4 px-5 py-4">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-600">Site name</label>
+                <div className="flex gap-2">
+                  <Input value={siteName} onChange={(e) => setSiteName(e.target.value)} disabled={!canManage} />
+                  <Button variant="secondary" disabled={!canManage} loading={setSetting.isPending} onClick={() => setSetting.mutate({ key: "site_name", value: siteName })}>
+                    <Save className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-600">Logo URL</label>
+                <div className="flex gap-2">
+                  <Input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} disabled={!canManage} placeholder="https://…" />
+                  <Button variant="secondary" disabled={!canManage} loading={setSetting.isPending} onClick={() => setSetting.mutate({ key: "logo_url", value: logoUrl })}>
+                    <Save className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className={maintenanceOn ? "border-amber-300" : ""}>
+            <CardHeader
+              title="Maintenance mode"
+              subtitle="When on, only staff can use the apps. Everyone else sees the message below."
+            />
+            <div className="space-y-4 px-5 py-4">
+              <div className="flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className={maintenanceOn ? "h-5 w-5 text-amber-500" : "h-5 w-5 text-slate-400"} />
+                  <span className="text-sm font-medium text-slate-700">
+                    {maintenanceOn ? "Maintenance mode is ON" : "Maintenance mode is off"}
+                  </span>
+                </div>
+                <Toggle
+                  checked={maintenanceOn}
+                  disabled={!canManage || setSetting.isPending}
+                  onChange={(v) => setSetting.mutate({ key: "maintenance_mode", value: v ? "on" : "off" })}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-600">Maintenance message</label>
+                <div className="flex gap-2">
+                  <Input value={maintMsg} onChange={(e) => setMaintMsg(e.target.value)} disabled={!canManage} />
+                  <Button variant="secondary" disabled={!canManage} loading={setSetting.isPending} onClick={() => setSetting.mutate({ key: "maintenance_message", value: maintMsg })}>
+                    <Save className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}
