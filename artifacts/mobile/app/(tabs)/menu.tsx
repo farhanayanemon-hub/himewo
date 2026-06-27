@@ -1,6 +1,3 @@
-import { Touchable } from "@/components/Touchable";
-import { fs } from "@/constants/typography";
-import { shadow, glow } from "@/constants/shadows";
 import {
   Pressable,
   ScrollView,
@@ -9,80 +6,82 @@ import {
   StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useListFriendRequests, type FriendRequest } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
 import { useAuth } from "@/lib/auth";
 import { useColors } from "@/hooks/useColors";
 
+interface Shortcut {
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  color: string;
+  href: Href;
+}
+
+const SHORTCUTS: Shortcut[] = [
+  { label: "Friends", icon: "people", color: "#1877f2", href: "/friends" },
+  { label: "Groups", icon: "people-circle", color: "#0a7ea4", href: "/groups" },
+  { label: "Pages", icon: "document-text", color: "#d946ef", href: "/pages" },
+  { label: "Reels", icon: "film", color: "#e9710f", href: "/reels" },
+  { label: "Messages", icon: "chatbubbles", color: "#31a24c", href: "/messages" },
+  { label: "Search", icon: "search", color: "#9333ea", href: "/search" },
+  { label: "Settings", icon: "settings", color: "#64748b", href: "/settings" },
+];
+
 export default function MenuScreen() {
   const c = useColors();
-  const { user } = useAuth();
-  const { data } = useListFriendRequests();
-  const requestCount = ((data ?? []) as FriendRequest[]).length;
-
-  const items: {
-    icon: keyof typeof Ionicons.glyphMap;
-    label: string;
-    badge?: number;
-    onPress: () => void;
-  }[] = [
-    { icon: "settings-outline", label: "Settings", onPress: () => router.push("/settings") },
-    {
-      icon: "chatbox-ellipses-outline",
-      label: "Message requests",
-      badge: requestCount,
-      onPress: () => router.push("/message-requests"),
-    },
-    { icon: "archive-outline", label: "Archive", onPress: () => router.push("/archive") },
-  ];
+  const { user, signOut } = useAuth();
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top"]}>
-      <View style={[styles.header, { backgroundColor: c.card }, shadow("sm")]}>
+      <View
+        style={[styles.header, { backgroundColor: c.card, borderBottomColor: c.border }]}
+      >
         <Text style={[styles.title, { color: c.foreground }]}>Menu</Text>
       </View>
 
-      <ScrollView>
-        <Touchable
-          style={[styles.profile, { backgroundColor: c.card }, shadow("sm")]}
-          onPress={() => router.push("/settings")}
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
+        <Pressable
+          style={[styles.userCard, { backgroundColor: c.card, borderColor: c.border }]}
+          onPress={() => user && router.push(`/profile/${user.id}`)}
         >
           <Avatar uri={user?.avatarUrl} name={user?.displayName} size={56} />
-          <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={{ color: c.foreground, fontFamily: "Inter_700Bold", fontSize: fs(17) }}>
-              {user?.displayName ?? "You"}
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.userName, { color: c.foreground }]} numberOfLines={1}>
+              {user?.displayName ?? "Guest"}
             </Text>
-            <Text style={{ color: c.mutedForeground, fontSize: fs(13) }}>
-              @{user?.username}
+            <Text style={{ color: c.mutedForeground, fontSize: 13 }}>
+              View your profile
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={c.mutedForeground} />
-        </Touchable>
+        </Pressable>
 
-        <View style={[styles.list, { backgroundColor: c.card }, shadow("sm")]}>
-          {items.map((item) => (
-            <Touchable
+        <View style={styles.grid}>
+          {SHORTCUTS.map((item) => (
+            <Pressable
               key={item.label}
-              style={[styles.row, { borderBottomColor: c.border }]}
-              onPress={item.onPress}
+              style={[styles.gridCard, { backgroundColor: c.card, borderColor: c.border }]}
+              onPress={() => router.push(item.href)}
             >
-              <View style={[styles.iconWrap, { backgroundColor: c.secondary }, shadow("sm")]}>
-                <Ionicons name={item.icon} size={22} color={c.foreground} />
+              <View style={[styles.iconWrap, { backgroundColor: item.color + "22" }]}>
+                <Ionicons name={item.icon} size={24} color={item.color} />
               </View>
-              <Text style={{ flex: 1, color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: fs(16) }}>
+              <Text style={[styles.gridLabel, { color: c.foreground }]}>
                 {item.label}
               </Text>
-              {item.badge ? (
-                <View style={[styles.badge, { backgroundColor: c.primary }, glow(c.primary)]}>
-                  <Text style={styles.badgeText}>{item.badge > 99 ? "99+" : item.badge}</Text>
-                </View>
-              ) : null}
-              <Ionicons name="chevron-forward" size={20} color={c.mutedForeground} />
-            </Touchable>
+            </Pressable>
           ))}
         </View>
+
+        <Pressable
+          style={[styles.logout, { backgroundColor: c.secondary }]}
+          onPress={() => signOut()}
+        >
+          <Ionicons name="log-out-outline" size={20} color={c.destructive} />
+          <Text style={[styles.logoutText, { color: c.destructive }]}>Log out</Text>
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
@@ -90,43 +89,53 @@ export default function MenuScreen() {
 
 const styles = StyleSheet.create({
   header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    zIndex: 2,
-  },
-  title: { fontFamily: "Inter_700Bold", fontSize: fs(22) },
-  profile: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    marginHorizontal: 12,
-    marginTop: 12,
-    borderRadius: 16,
-  },
-  list: { marginTop: 12, marginHorizontal: 12, borderRadius: 16 },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
+  title: { fontFamily: "Inter_700Bold", fontSize: 22 },
+  userCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    marginBottom: 16,
+  },
+  userName: { fontFamily: "Inter_700Bold", fontSize: 17 },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  gridCard: {
+    width: "47.5%",
+    flexGrow: 1,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 14,
+    gap: 10,
+  },
   iconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
   },
-  badge: {
-    minWidth: 22,
-    height: 22,
-    borderRadius: 11,
-    paddingHorizontal: 6,
+  gridLabel: { fontFamily: "Inter_600SemiBold", fontSize: 15 },
+  logout: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: 20,
   },
-  badgeText: { color: "#fff", fontFamily: "Inter_700Bold", fontSize: fs(11) },
+  logoutText: { fontFamily: "Inter_700Bold", fontSize: 15 },
 });

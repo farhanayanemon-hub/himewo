@@ -13,7 +13,6 @@ import * as Linking from "expo-linking";
 import {
   getCurrentUser,
   syncProfile,
-  ApiError,
   type Profile,
 } from "@workspace/api-client-react";
 import "./api";
@@ -182,59 +181,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [loadUser]);
 
-  // Load the app profile for the current Supabase session. If the backend has
-  // no profile row yet (404), create one from the session metadata, then refetch.
-  // Throws a clear error instead of bouncing the user silently back to login.
-  const ensureProfile = useCallback(async (): Promise<Profile> => {
-    const sb = requireSupabase();
-    const {
-      data: { session },
-    } = await sb.auth.getSession();
-    if (!session?.user) {
-      throw new Error("Your session expired. Please try logging in again.");
-    }
-    try {
-      return await getCurrentUser();
-    } catch (e) {
-      if (e instanceof ApiError && e.status === 404) {
-        const su = session.user;
-        const meta = su.user_metadata ?? {};
-        const displayName =
-          (meta.full_name as string) ||
-          (meta.name as string) ||
-          su.email?.split("@")[0] ||
-          "New User";
-        const username = (
-          (meta.username as string) ||
-          su.email?.split("@")[0] ||
-          `user${su.id.slice(0, 8)}`
-        ).replace(/[^a-zA-Z0-9_]/g, "");
-        await syncProfile({
-          id: su.id,
-          username,
-          displayName,
-          email: su.email ?? undefined,
-        });
-        return await getCurrentUser();
-      }
-      if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
-        throw new Error(
-          "Logged in, but the server did not accept your session. The app and the server may be connected to different Supabase projects.",
-        );
-      }
-      throw e;
-    }
-  }, []);
-
   const signInWithEmail = useCallback(
     async (email: string, password: string) => {
       const sb = requireSupabase();
       const { error } = await sb.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      const me = await ensureProfile();
-      setUser(me);
+      await loadUser();
     },
-    [ensureProfile],
+    [loadUser],
   );
 
   const signUpWithEmail = useCallback(
@@ -304,9 +258,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refresh_token: refreshToken,
       });
       if (sessionError) throw sessionError;
-      setUser(await ensureProfile());
+      await loadUser();
     }
-  }, [ensureProfile]);
+  }, [loadUser]);
 
   const sendPhoneOtp = useCallback(async (phone: string) => {
     const sb = requireSupabase();
@@ -319,9 +273,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const sb = requireSupabase();
       const { error } = await sb.auth.verifyOtp({ phone, token, type: "sms" });
       if (error) throw error;
-      setUser(await ensureProfile());
+      await loadUser();
     },
-    [ensureProfile],
+    [loadUser],
   );
 
   const signInAsDevUser = useCallback(

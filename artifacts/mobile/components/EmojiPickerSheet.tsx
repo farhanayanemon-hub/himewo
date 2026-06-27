@@ -1,5 +1,3 @@
-import { Touchable } from "@/components/Touchable";
-import { fs } from "@/constants/typography";
 import { useState } from "react";
 import {
   Modal,
@@ -28,15 +26,15 @@ export function EmojiPickerSheet({
 
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <Touchable style={styles.backdrop} onPress={onClose}>
-        <Touchable
+      <Pressable style={styles.backdrop} onPress={onClose}>
+        <Pressable
           style={[styles.sheet, { backgroundColor: c.card }]}
           onPress={(e) => e.stopPropagation()}
         >
           <View style={[styles.handle, { backgroundColor: c.border }]} />
           <View style={styles.tabs}>
             {emojiCategories.map((category, i) => (
-              <Touchable
+              <Pressable
                 key={category.name}
                 onPress={() => setCat(i)}
                 style={[
@@ -48,29 +46,29 @@ export function EmojiPickerSheet({
                   style={{
                     color: cat === i ? c.foreground : c.mutedForeground,
                     fontFamily: "Inter_600SemiBold",
-                    fontSize: fs(13),
+                    fontSize: 13,
                   }}
                 >
                   {category.name}
                 </Text>
-              </Touchable>
+              </Pressable>
             ))}
           </View>
           <ScrollView contentContainerStyle={styles.grid}>
             {emojiCategories[cat].emojis.map((emoji) => (
-              <Touchable
+              <Pressable
                 key={emoji}
                 style={styles.emojiBtn}
                 onPress={() => {
                   onSelect(emoji);
                 }}
               >
-                <Text style={{ fontSize: fs(30) }}>{emoji}</Text>
-              </Touchable>
+                <Text style={{ fontSize: 30 }}>{emoji}</Text>
+              </Pressable>
             ))}
           </ScrollView>
-        </Touchable>
-      </Touchable>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }

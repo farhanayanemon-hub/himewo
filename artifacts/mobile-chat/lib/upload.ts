@@ -80,6 +80,43 @@ export async function uploadMedia(asset: PickedAsset): Promise<UploadedMedia> {
   };
 }
 
+/**
+ * Uploads a recorded voice note (m4a) via the backend-issued signed URL.
+ * Mirrors uploadMedia's graceful degradation: throws UploadUnavailableError
+ * when storage isn't configured (dev/preview returns 503).
+ */
+export async function uploadAudio(
+  uri: string,
+  durationMs?: number,
+): Promise<{ url: string; durationMs?: number }> {
+  const fileName = `voice-${Date.now()}.m4a`;
+  const contentType = "audio/m4a";
+
+  let signed;
+  try {
+    signed = await createUploadUrl({ fileName, contentType });
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 503) {
+      throw new UploadUnavailableError();
+    }
+    throw err;
+  }
+
+  const fileResponse = await fetch(uri);
+  const blob = await fileResponse.blob();
+
+  const put = await fetch(signed.uploadUrl, {
+    method: "PUT",
+    body: blob,
+    headers: { "Content-Type": contentType },
+  });
+  if (!put.ok) {
+    throw new Error(`Upload failed (${put.status})`);
+  }
+
+  return { url: signed.publicUrl, durationMs };
+}
+
 export async function captureWithCamera(
   mediaTypes: ImagePicker.MediaType[] = ["images"],
 ): Promise<PickedAsset | null> {

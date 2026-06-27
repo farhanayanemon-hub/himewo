@@ -1,3 +1,5 @@
+import { Touchable } from "@/components/Touchable";
+import { fs } from "@/constants/typography";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View, StyleSheet } from "react-native";
 import { router } from "expo-router";
@@ -56,7 +58,7 @@ export function ActiveRow() {
         {sorted.map((f) => {
           const active = isActive(f);
           return (
-            <Pressable
+            <Touchable
               key={f.id}
               style={styles.item}
               onPress={() => open(f.id)}
@@ -76,7 +78,7 @@ export function ActiveRow() {
                   {lastActiveLabel(f.presence.lastSeenAt).replace("Active ", "")}
                 </Text>
               ) : null}
-            </Pressable>
+            </Touchable>
           );
         })}
       </ScrollView>
@@ -88,6 +90,6 @@ const styles = StyleSheet.create({
   wrap: { paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
   row: { paddingHorizontal: 12, gap: 14 },
   item: { width: 64, alignItems: "center", gap: 4 },
-  name: { fontSize: 12, fontFamily: "Inter_500Medium", maxWidth: 64, textAlign: "center" },
-  sub: { fontSize: 10, fontFamily: "Inter_400Regular", maxWidth: 64, textAlign: "center" },
+  name: { fontSize: fs(12), fontFamily: "Inter_500Medium", maxWidth: 64, textAlign: "center" },
+  sub: { fontSize: fs(10), fontFamily: "Inter_400Regular", maxWidth: 64, textAlign: "center" },
 });

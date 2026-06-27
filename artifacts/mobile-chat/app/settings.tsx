@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { Touchable } from "@/components/Touchable";
+import { fs } from "@/constants/typography";
+import { shadow, glow } from "@/constants/shadows";
+import { useCallback, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Modal,
   Pressable,
@@ -41,9 +43,26 @@ export default function SettingsScreen() {
   const [location, setLocation] = useState(user?.location ?? "");
   const [work, setWork] = useState(user?.work ?? "");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.avatarUrl ?? null);
-  const [pendingAvatar, setPendingAvatar] = useState<PickedAsset | null>(null);
-  const [saving, setSaving] = useState(false);
   const [switchOpen, setSwitchOpen] = useState(false);
+
+  // Auto-save profile text fields on blur. Skips when the name is empty so we
+  // never wipe the display name, and stays silent so it doesn't nag the user.
+  const commitProfile = useCallback(async () => {
+    if (!displayName.trim()) return;
+    try {
+      const data: ProfileUpdate = {
+        displayName: displayName.trim(),
+        bio: bio.trim(),
+        location: location.trim(),
+        work: work.trim(),
+      };
+      await updateProfile.mutateAsync({ data });
+      qc.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
+      await refreshUser();
+    } catch {
+      // Silent: the next blur (or another field) will retry.
+    }
+  }, [displayName, bio, location, work, updateProfile, qc, refreshUser]);
 
   const pickAvatar = async () => {
     const res = await ImagePicker.launchImageLibraryAsync({
@@ -52,51 +71,25 @@ export default function SettingsScreen() {
       aspect: [1, 1],
       quality: 0.8,
     });
-    if (!res.canceled && res.assets[0]) {
-      const asset = res.assets[0];
-      setPendingAvatar(asset);
-      setAvatarUrl(asset.uri);
-    }
-  };
+    if (res.canceled || !res.assets[0]) return;
 
-  const save = async () => {
-    if (!displayName.trim()) {
-      Alert.alert("Name required", "Please enter a display name.");
-      return;
-    }
-    setSaving(true);
+    const asset = res.assets[0];
+    setAvatarUrl(asset.uri);
     try {
-      const data: ProfileUpdate = {
-        displayName: displayName.trim(),
-        bio: bio.trim(),
-        location: location.trim(),
-        work: work.trim(),
-      };
-
-      if (pendingAvatar) {
-        try {
-          const uploaded = await uploadMedia(pendingAvatar);
-          data.avatarUrl = uploaded.url;
-        } catch (err) {
-          if (err instanceof UploadUnavailableError) {
-            Alert.alert(
-              "Photo upload unavailable",
-              "Storage isn't configured in this environment. Your other changes will still be saved.",
-            );
-          } else {
-            throw err;
-          }
-        }
-      }
-
-      await updateProfile.mutateAsync({ data });
+      const uploaded = await uploadMedia(asset);
+      await updateProfile.mutateAsync({ data: { avatarUrl: uploaded.url } });
       qc.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
       await refreshUser();
-      router.back();
-    } catch {
-      Alert.alert("Error", "Could not save your changes. Please try again.");
-    } finally {
-      setSaving(false);
+    } catch (err) {
+      setAvatarUrl(user?.avatarUrl ?? null);
+      Alert.alert(
+        err instanceof UploadUnavailableError
+          ? "Photo upload unavailable"
+          : "Error",
+        err instanceof UploadUnavailableError
+          ? "Storage isn't configured in this environment."
+          : "Could not update your photo. Please try again.",
+      );
     }
   };
 
@@ -123,39 +116,31 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
-      <View style={[styles.header, { borderBottomColor: c.border }]}>
-        <Pressable onPress={() => router.back()} hitSlop={8}>
+      <View style={[styles.header, { backgroundColor: c.card }, shadow("sm")]}>
+        <Touchable onPress={() => router.back()} hitSlop={8}>
           <Ionicons name="arrow-back" size={24} color={c.foreground} />
-        </Pressable>
-        <Text style={{ color: c.foreground, fontFamily: "Inter_700Bold", fontSize: 18 }}>
+        </Touchable>
+        <Text style={{ color: c.foreground, fontFamily: "Inter_700Bold", fontSize: fs(18) }}>
           Settings
         </Text>
-        <Pressable onPress={save} disabled={saving} hitSlop={8}>
-          {saving ? (
-            <ActivityIndicator color={c.primary} size="small" />
-          ) : (
-            <Text style={{ color: c.primary, fontFamily: "Inter_700Bold", fontSize: 16 }}>
-              Save
-            </Text>
-          )}
-        </Pressable>
+        <View style={{ width: 24 }} />
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={styles.avatarSection}>
-          <Pressable onPress={pickAvatar} style={styles.avatarWrap}>
+          <Touchable onPress={pickAvatar} style={styles.avatarWrap}>
             <Avatar uri={avatarUrl} name={displayName} size={96} />
-            <View style={[styles.cameraBadge, { backgroundColor: c.primary, borderColor: c.background }]}>
+            <View style={[styles.cameraBadge, { backgroundColor: c.primary, borderColor: c.background }, glow(c.primary)]}>
               <Ionicons name="camera" size={18} color="#fff" />
             </View>
-          </Pressable>
-          <Text style={{ color: c.mutedForeground, fontFamily: "Inter_500Medium", fontSize: 13 }}>
+          </Touchable>
+          <Text style={{ color: c.mutedForeground, fontFamily: "Inter_500Medium", fontSize: fs(13) }}>
             @{user?.username}
           </Text>
         </View>
 
         <Text style={[styles.sectionTitle, { color: c.mutedForeground }]}>HIMEWO</Text>
-        <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+        <View style={[styles.card, { backgroundColor: c.card }, shadow("md")]}>
           <ActionRow
             c={c}
             icon="apps"
@@ -174,7 +159,7 @@ export default function SettingsScreen() {
         </View>
 
         <Text style={[styles.sectionTitle, { color: c.mutedForeground }]}>PREFERENCES</Text>
-        <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+        <View style={[styles.card, { backgroundColor: c.card }, shadow("md")]}>
           <ToggleRow
             c={c}
             icon="moon"
@@ -195,11 +180,12 @@ export default function SettingsScreen() {
         </View>
 
         <Text style={[styles.sectionTitle, { color: c.mutedForeground }]}>PROFILE</Text>
-        <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+        <View style={[styles.card, { backgroundColor: c.card }, shadow("md")]}>
           <Field label="Display name" c={c}>
             <TextInput
               value={displayName}
               onChangeText={setDisplayName}
+              onBlur={commitProfile}
               placeholder="Your name"
               placeholderTextColor={c.mutedForeground}
               style={[styles.input, { color: c.foreground }]}
@@ -209,6 +195,7 @@ export default function SettingsScreen() {
             <TextInput
               value={bio}
               onChangeText={setBio}
+              onBlur={commitProfile}
               placeholder="Tell people about yourself"
               placeholderTextColor={c.mutedForeground}
               multiline
@@ -219,6 +206,7 @@ export default function SettingsScreen() {
             <TextInput
               value={location}
               onChangeText={setLocation}
+              onBlur={commitProfile}
               placeholder="Where you live"
               placeholderTextColor={c.mutedForeground}
               style={[styles.input, { color: c.foreground }]}
@@ -228,6 +216,7 @@ export default function SettingsScreen() {
             <TextInput
               value={work}
               onChangeText={setWork}
+              onBlur={commitProfile}
               placeholder="Where you work"
               placeholderTextColor={c.mutedForeground}
               style={[styles.input, { color: c.foreground }]}
@@ -236,15 +225,15 @@ export default function SettingsScreen() {
         </View>
 
         <View style={{ paddingHorizontal: 16, marginTop: 24 }}>
-          <Pressable
+          <Touchable
             style={[styles.logout, { borderColor: c.destructive }]}
             onPress={confirmLogout}
           >
             <Ionicons name="log-out-outline" size={20} color={c.destructive} />
-            <Text style={{ color: c.destructive, fontFamily: "Inter_700Bold", fontSize: 15 }}>
+            <Text style={{ color: c.destructive, fontFamily: "Inter_700Bold", fontSize: fs(15) }}>
               Log out
             </Text>
-          </Pressable>
+          </Touchable>
         </View>
       </ScrollView>
 
@@ -255,11 +244,11 @@ export default function SettingsScreen() {
         onRequestClose={() => setSwitchOpen(false)}
       >
         <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top"]}>
-          <View style={[styles.header, { borderBottomColor: c.border }]}>
-            <Pressable onPress={() => setSwitchOpen(false)} hitSlop={8}>
+          <View style={[styles.header, { backgroundColor: c.card }, shadow("sm")]}>
+            <Touchable onPress={() => setSwitchOpen(false)} hitSlop={8}>
               <Ionicons name="close" size={24} color={c.foreground} />
-            </Pressable>
-            <Text style={{ color: c.foreground, fontFamily: "Inter_700Bold", fontSize: 18 }}>
+            </Touchable>
+            <Text style={{ color: c.foreground, fontFamily: "Inter_700Bold", fontSize: fs(18) }}>
               Switch profile
             </Text>
             <View style={{ width: 24 }} />
@@ -273,22 +262,22 @@ export default function SettingsScreen() {
           ) : (
             <ScrollView>
               {devUsers.map((u) => (
-                <Pressable
+                <Touchable
                   key={u.id}
                   style={[styles.userRow, { borderBottomColor: c.border }]}
                   onPress={() => switchTo(u.id)}
                 >
                   <Avatar uri={u.avatarUrl} name={u.displayName} size={48} />
                   <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 16 }}>
+                    <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: fs(16) }}>
                       {u.displayName}
                     </Text>
-                    <Text style={{ color: c.mutedForeground, fontSize: 13 }}>@{u.username}</Text>
+                    <Text style={{ color: c.mutedForeground, fontSize: fs(13) }}>@{u.username}</Text>
                   </View>
                   {u.id === user?.id ? (
                     <Ionicons name="checkmark-circle" size={22} color={c.primary} />
                   ) : null}
-                </Pressable>
+                </Touchable>
               ))}
             </ScrollView>
           )}
@@ -314,23 +303,23 @@ function ActionRow({
   last?: boolean;
 }) {
   return (
-    <Pressable
+    <Touchable
       style={[styles.settingRow, !last && { borderBottomColor: c.border, borderBottomWidth: StyleSheet.hairlineWidth }]}
       onPress={onPress}
     >
       <Ionicons name={icon} size={22} color={c.foreground} />
       <View style={{ flex: 1 }}>
-        <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}>
+        <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: fs(15) }}>
           {title}
         </Text>
         {subtitle ? (
-          <Text numberOfLines={1} style={{ color: c.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 13 }}>
+          <Text numberOfLines={1} style={{ color: c.mutedForeground, fontFamily: "Inter_400Regular", fontSize: fs(13) }}>
             {subtitle}
           </Text>
         ) : null}
       </View>
       <Ionicons name="chevron-forward" size={20} color={c.mutedForeground} />
-    </Pressable>
+    </Touchable>
   );
 }
 
@@ -357,11 +346,11 @@ function ToggleRow({
     >
       <Ionicons name={icon} size={22} color={c.foreground} />
       <View style={{ flex: 1 }}>
-        <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}>
+        <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: fs(15) }}>
           {title}
         </Text>
         {subtitle ? (
-          <Text style={{ color: c.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 13 }}>
+          <Text style={{ color: c.mutedForeground, fontFamily: "Inter_400Regular", fontSize: fs(13) }}>
             {subtitle}
           </Text>
         ) : null}
@@ -388,7 +377,7 @@ function Field({
 }) {
   return (
     <View style={[styles.field, !last && { borderBottomColor: c.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
-      <Text style={{ color: c.mutedForeground, fontFamily: "Inter_500Medium", fontSize: 12, marginBottom: 4 }}>
+      <Text style={{ color: c.mutedForeground, fontFamily: "Inter_500Medium", fontSize: fs(12), marginBottom: 4 }}>
         {label}
       </Text>
       {children}
@@ -403,7 +392,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    zIndex: 2,
   },
   avatarSection: { alignItems: "center", gap: 8, paddingVertical: 24 },
   avatarWrap: { position: "relative" },
@@ -420,7 +409,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontFamily: "Inter_600SemiBold",
-    fontSize: 12,
+    fontSize: fs(12),
     letterSpacing: 0.5,
     marginLeft: 16,
     marginBottom: 8,
@@ -428,9 +417,7 @@ const styles = StyleSheet.create({
   },
   card: {
     marginHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: "hidden",
+    borderRadius: 16,
   },
   settingRow: {
     flexDirection: "row",
@@ -440,7 +427,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   field: { paddingHorizontal: 14, paddingVertical: 10 },
-  input: { fontFamily: "Inter_400Regular", fontSize: 15, padding: 0 },
+  input: { fontFamily: "Inter_400Regular", fontSize: fs(15), padding: 0 },
   userRow: {
     flexDirection: "row",
     alignItems: "center",

@@ -1,5 +1,3 @@
-import { fs } from "@/constants/typography";
-import { shadow } from "@/constants/shadows";
 import { Image } from "expo-image";
 import { View, Text, StyleSheet } from "react-native";
 import { useColors } from "@/hooks/useColors";
@@ -24,7 +22,7 @@ export function Avatar({ uri, name, size = 40, online, ring }: AvatarProps) {
   const radius = size / 2;
 
   return (
-    <View style={[{ width: size, height: size, borderRadius: radius }, shadow("sm")]}>
+    <View style={{ width: size, height: size }}>
       <View
         style={[
           {

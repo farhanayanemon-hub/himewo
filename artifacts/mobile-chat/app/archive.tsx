@@ -1,3 +1,6 @@
+import { Touchable } from "@/components/Touchable";
+import { fs } from "@/constants/typography";
+import { shadow } from "@/constants/shadows";
 import { Pressable, Text, View, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -8,11 +11,11 @@ export default function ArchiveScreen() {
   const c = useColors();
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top"]}>
-      <View style={[styles.header, { borderBottomColor: c.border }]}>
-        <Pressable onPress={() => router.back()} hitSlop={8}>
+      <View style={[styles.header, { backgroundColor: c.card }, shadow("sm")]}>
+        <Touchable onPress={() => router.back()} hitSlop={8}>
           <Ionicons name="arrow-back" size={24} color={c.foreground} />
-        </Pressable>
-        <Text style={{ color: c.foreground, fontFamily: "Inter_700Bold", fontSize: 18 }}>
+        </Touchable>
+        <Text style={{ color: c.foreground, fontFamily: "Inter_700Bold", fontSize: fs(18) }}>
           Archive
         </Text>
         <View style={{ width: 24 }} />
@@ -20,7 +23,7 @@ export default function ArchiveScreen() {
 
       <View style={styles.empty}>
         <Ionicons name="archive-outline" size={48} color={c.mutedForeground} />
-        <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 16, marginTop: 12 }}>
+        <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: fs(16), marginTop: 12 }}>
           No archived chats
         </Text>
         <Text style={{ color: c.mutedForeground, textAlign: "center", marginTop: 6, paddingHorizontal: 32 }}>
@@ -38,7 +41,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    zIndex: 2,
   },
   empty: { flex: 1, alignItems: "center", justifyContent: "center" },
 });

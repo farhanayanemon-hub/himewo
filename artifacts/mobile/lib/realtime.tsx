@@ -11,7 +11,6 @@ import {
 import { supabase, isSupabaseConfigured, getDevUserId } from "./supabase";
 import { getApiOrigin } from "./api";
 import { useAuth } from "./auth";
-import { usePreferencesOptional } from "./preferences";
 
 export type RealtimeEvent =
   | { type: "connected"; userId: string }
@@ -61,16 +60,12 @@ const RealtimeContext = createContext<RealtimeContextValue | null>(null);
 
 export function RealtimeProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
-  const prefs = usePreferencesOptional();
-  const activeStatus = prefs?.activeStatus ?? true;
-  const prefsReady = prefs ? prefs.ready : true;
   const [connected, setConnected] = useState(false);
   const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
   const wsRef = useRef<WebSocket | null>(null);
   const handlersRef = useRef<Set<Handler>>(new Set());
   const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closedRef = useRef(false);
-  const activeStatusRef = useRef(activeStatus);
 
   const subscribe = useCallback((handler: Handler) => {
     handlersRef.current.add(handler);
@@ -108,7 +103,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    if (!isAuthenticated || !prefsReady) {
+    if (!isAuthenticated) {
       closedRef.current = true;
       wsRef.current?.close();
       wsRef.current = null;
@@ -128,15 +123,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
       const ws = new WebSocket(url);
       wsRef.current = ws;
 
-      ws.onopen = () => {
-        setConnected(true);
-        ws.send(
-          JSON.stringify({
-            type: "presence:set",
-            visible: activeStatusRef.current,
-          }),
-        );
-      };
+      ws.onopen = () => setConnected(true);
 
       ws.onmessage = (ev) => {
         let data: RealtimeEvent;
@@ -180,12 +167,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
       wsRef.current = null;
       setConnected(false);
     };
-  }, [isAuthenticated, prefsReady]);
-
-  useEffect(() => {
-    activeStatusRef.current = activeStatus;
-    send({ type: "presence:set", visible: activeStatus });
-  }, [activeStatus, send]);
+  }, [isAuthenticated]);
 
   const value = useMemo<RealtimeContextValue>(
     () => ({

@@ -36,14 +36,6 @@
           "photosPermission": "HiMewo needs access to your photos so you can share images and videos.",
           "cameraPermission": "HiMewo needs access to your camera so you can capture photos and videos to share."
         }
-      ],
-      "expo-audio",
-      [
-        "@config-plugins/react-native-webrtc",
-        {
-          "cameraPermission": "HiMewo needs camera access for video calls.",
-          "microphonePermission": "HiMewo needs microphone access for voice and video calls."
-        }
       ]
     ],
     "experiments": {

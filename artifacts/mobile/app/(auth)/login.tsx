@@ -1,6 +1,3 @@
-import { Touchable } from "@/components/Touchable";
-import { fs } from "@/constants/typography";
-import { shadow, glow } from "@/constants/shadows";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -131,11 +128,11 @@ export default function LoginScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.brand}>
-          <View style={[styles.logo, { backgroundColor: c.primary }, glow(c.primary)]}>
+          <View style={[styles.logo, { backgroundColor: c.primary }]}>
             <Ionicons name="chatbubble-ellipses" size={34} color="#fff" />
           </View>
           <Text style={[styles.title, { color: c.primary }]}>HiMewo</Text>
-          <Text style={{ color: c.mutedForeground, fontSize: fs(14) }}>
+          <Text style={{ color: c.mutedForeground, fontSize: 14 }}>
             Connect with friends and the world
           </Text>
         </View>
@@ -182,10 +179,10 @@ export default function LoginScreen() {
                   secureTextEntry
                 />
 
-                {error && <Text style={{ color: c.destructive, fontSize: fs(13) }}>{error}</Text>}
+                {error && <Text style={{ color: c.destructive, fontSize: 13 }}>{error}</Text>}
 
-                <Touchable
-                  style={[styles.primaryBtn, { backgroundColor: c.primary }, glow(c.primary)]}
+                <Pressable
+                  style={[styles.primaryBtn, { backgroundColor: c.primary }]}
                   onPress={submitEmail}
                   disabled={busy}
                 >
@@ -196,15 +193,15 @@ export default function LoginScreen() {
                       {mode === "signin" ? "Log In" : "Create Account"}
                     </Text>
                   )}
-                </Touchable>
+                </Pressable>
 
-                <Touchable onPress={() => setMode(mode === "signin" ? "signup" : "signin")}>
+                <Pressable onPress={() => setMode(mode === "signin" ? "signup" : "signin")}>
                   <Text style={[styles.switchText, { color: c.primary }]}>
                     {mode === "signin"
                       ? "Don't have an account? Sign up"
                       : "Already have an account? Log in"}
                   </Text>
-                </Touchable>
+                </Pressable>
               </>
             ) : (
               <>
@@ -218,9 +215,9 @@ export default function LoginScreen() {
                       keyboardType="phone-pad"
                       autoCapitalize="none"
                     />
-                    {error && <Text style={{ color: c.destructive, fontSize: fs(13) }}>{error}</Text>}
-                    <Touchable
-                      style={[styles.primaryBtn, { backgroundColor: c.primary }, glow(c.primary)]}
+                    {error && <Text style={{ color: c.destructive, fontSize: 13 }}>{error}</Text>}
+                    <Pressable
+                      style={[styles.primaryBtn, { backgroundColor: c.primary }]}
                       onPress={submitSendOtp}
                       disabled={busy || phone.trim().length === 0}
                     >
@@ -229,12 +226,12 @@ export default function LoginScreen() {
                       ) : (
                         <Text style={styles.primaryBtnText}>Send Code</Text>
                       )}
-                    </Touchable>
+                    </Pressable>
                   </>
                 ) : (
                   <>
                     {notice && (
-                      <Text style={{ color: c.mutedForeground, fontSize: fs(13) }}>{notice}</Text>
+                      <Text style={{ color: c.mutedForeground, fontSize: 13 }}>{notice}</Text>
                     )}
                     <Field
                       icon="keypad-outline"
@@ -244,9 +241,9 @@ export default function LoginScreen() {
                       keyboardType="number-pad"
                       autoCapitalize="none"
                     />
-                    {error && <Text style={{ color: c.destructive, fontSize: fs(13) }}>{error}</Text>}
-                    <Touchable
-                      style={[styles.primaryBtn, { backgroundColor: c.primary }, glow(c.primary)]}
+                    {error && <Text style={{ color: c.destructive, fontSize: 13 }}>{error}</Text>}
+                    <Pressable
+                      style={[styles.primaryBtn, { backgroundColor: c.primary }]}
                       onPress={submitVerifyOtp}
                       disabled={busy || otp.trim().length === 0}
                     >
@@ -255,8 +252,8 @@ export default function LoginScreen() {
                       ) : (
                         <Text style={styles.primaryBtnText}>Verify & Log In</Text>
                       )}
-                    </Touchable>
-                    <Touchable
+                    </Pressable>
+                    <Pressable
                       onPress={() => {
                         setOtpStep("phone");
                         setOtp("");
@@ -266,7 +263,7 @@ export default function LoginScreen() {
                       <Text style={[styles.switchText, { color: c.primary }]}>
                         Use a different number
                       </Text>
-                    </Touchable>
+                    </Pressable>
                   </>
                 )}
               </>
@@ -274,12 +271,12 @@ export default function LoginScreen() {
 
             <View style={styles.dividerRow}>
               <View style={[styles.divider, { backgroundColor: c.border }]} />
-              <Text style={{ color: c.mutedForeground, fontSize: fs(12) }}>OR</Text>
+              <Text style={{ color: c.mutedForeground, fontSize: 12 }}>OR</Text>
               <View style={[styles.divider, { backgroundColor: c.border }]} />
             </View>
 
-            <Touchable
-              style={[styles.googleBtn, { backgroundColor: c.card }, shadow("sm")]}
+            <Pressable
+              style={[styles.googleBtn, { borderColor: c.border, backgroundColor: c.card }]}
               onPress={submitGoogle}
               disabled={googleBusy}
             >
@@ -288,41 +285,41 @@ export default function LoginScreen() {
               ) : (
                 <>
                   <Ionicons name="logo-google" size={20} color="#ea4335" />
-                  <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: fs(15) }}>
+                  <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}>
                     Continue with Google
                   </Text>
                 </>
               )}
-            </Touchable>
+            </Pressable>
           </View>
         ) : (
           <View style={styles.devSection}>
             <Text style={[styles.devTitle, { color: c.foreground }]}>
               Choose a demo account
             </Text>
-            <Text style={{ color: c.mutedForeground, fontSize: fs(13), marginBottom: 12 }}>
+            <Text style={{ color: c.mutedForeground, fontSize: 13, marginBottom: 12 }}>
               Connect Supabase later for real email, Google & phone login.
             </Text>
             {devUsers.map((u) => (
-              <Touchable
+              <Pressable
                 key={u.id}
-                style={[styles.devUser, { backgroundColor: c.card }, shadow("sm")]}
+                style={[styles.devUser, { backgroundColor: c.card, borderColor: c.border }]}
                 onPress={() => devLogin(u.id)}
                 disabled={devBusy != null}
               >
                 <Avatar uri={u.avatarUrl} name={u.displayName} size={44} />
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: fs(15) }}>
+                  <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}>
                     {u.displayName}
                   </Text>
-                  <Text style={{ color: c.mutedForeground, fontSize: fs(13) }}>@{u.username}</Text>
+                  <Text style={{ color: c.mutedForeground, fontSize: 13 }}>@{u.username}</Text>
                 </View>
                 {devBusy === u.id ? (
                   <ActivityIndicator color={c.primary} />
                 ) : (
                   <Ionicons name="chevron-forward" size={20} color={c.mutedForeground} />
                 )}
-              </Touchable>
+              </Pressable>
             ))}
           </View>
         )}
@@ -342,20 +339,20 @@ function Tab({
 }) {
   const c = useColors();
   return (
-    <Touchable
-      style={[styles.tab, active && [{ backgroundColor: c.card }, shadow("sm")]]}
+    <Pressable
+      style={[styles.tab, active && { backgroundColor: c.card }]}
       onPress={onPress}
     >
       <Text
         style={{
           color: active ? c.primary : c.mutedForeground,
           fontFamily: active ? "Inter_700Bold" : "Inter_500Medium",
-          fontSize: fs(14),
+          fontSize: 14,
         }}
       >
         {label}
       </Text>
-    </Touchable>
+    </Pressable>
   );
 }
 
@@ -365,10 +362,10 @@ function Field({
 }: { icon: keyof typeof Ionicons.glyphMap } & React.ComponentProps<typeof TextInput>) {
   const c = useColors();
   return (
-    <View style={[styles.field, { backgroundColor: c.card }, shadow("sm")]}>
+    <View style={[styles.field, { backgroundColor: c.card, borderColor: c.border }]}>
       <Ionicons name={icon} size={20} color={c.mutedForeground} />
       <TextInput
-        style={{ flex: 1, color: c.foreground, fontSize: fs(15) }}
+        style={{ flex: 1, color: c.foreground, fontSize: 15 }}
         placeholderTextColor={c.mutedForeground}
         {...props}
       />
@@ -387,7 +384,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 8,
   },
-  title: { fontFamily: "Inter_700Bold", fontSize: fs(34) },
+  title: { fontFamily: "Inter_700Bold", fontSize: 34 },
   form: { gap: 12 },
   tabs: {
     flexDirection: "row",
@@ -405,9 +402,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    borderRadius: 14,
+    borderRadius: 12,
+    borderWidth: 1,
     paddingHorizontal: 14,
-    paddingVertical: 13,
+    paddingVertical: 12,
   },
   primaryBtn: {
     borderRadius: 12,
@@ -415,7 +413,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 4,
   },
-  primaryBtnText: { color: "#fff", fontFamily: "Inter_700Bold", fontSize: fs(16) },
+  primaryBtnText: { color: "#fff", fontFamily: "Inter_700Bold", fontSize: 16 },
   switchText: { textAlign: "center", fontFamily: "Inter_600SemiBold" },
   dividerRow: {
     flexDirection: "row",
@@ -429,16 +427,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
-    borderRadius: 14,
-    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 13,
   },
   devSection: { marginTop: 8 },
-  devTitle: { fontFamily: "Inter_700Bold", fontSize: fs(18) },
+  devTitle: { fontFamily: "Inter_700Bold", fontSize: 18 },
   devUser: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    borderRadius: 14,
+    borderRadius: 12,
+    borderWidth: 1,
     padding: 12,
     marginBottom: 10,
   },

@@ -1,16 +1,12 @@
-import { Touchable } from "@/components/Touchable";
-import { fs } from "@/constants/typography";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
   Dimensions,
-  ScrollView,
+  Pressable,
   Text,
   View,
   StyleSheet,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
@@ -28,7 +24,7 @@ import { useColors } from "@/hooks/useColors";
 import { timeAgo } from "@/lib/format";
 
 const STORY_DURATION = 5000;
-const { width, height } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
 
 export default function StoryViewerScreen() {
   const c = useColors();
@@ -48,29 +44,14 @@ export default function StoryViewerScreen() {
 
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
-  const [ready, setReady] = useState(false);
   const progress = useRef(new Animated.Value(0)).current;
-  const scrollX = useRef(new Animated.Value(0)).current;
-  const scrollRef = useRef<ScrollView>(null);
   const animRef = useRef<Animated.CompositeAnimation | null>(null);
   const viewedRef = useRef<Set<number>>(new Set());
-  const indexRef = useRef(0);
 
-  useEffect(() => {
-    indexRef.current = index;
-  }, [index]);
-
-  // Position on the tapped story once the list loads.
   useEffect(() => {
     if (stories.length === 0) return;
     const start = stories.findIndex((s) => s.id === storyId);
-    const startIdx = start >= 0 ? start : 0;
-    setIndex(startIdx);
-    indexRef.current = startIdx;
-    requestAnimationFrame(() => {
-      scrollRef.current?.scrollTo({ x: startIdx * width, animated: false });
-      setReady(true);
-    });
+    setIndex(start >= 0 ? start : 0);
   }, [stories, storyId]);
 
   const current = stories[index];
@@ -84,30 +65,23 @@ export default function StoryViewerScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.id]);
 
-  // Navigate with a cube fold by animating the pager to the target page.
-  const goTo = (target: number) => {
-    if (target < 0) return;
-    if (target > stories.length - 1) {
+  const goNext = () => {
+    if (index < stories.length - 1) {
+      setIndex((i) => i + 1);
+    } else {
       router.back();
-      return;
-    }
-    scrollRef.current?.scrollTo({ x: target * width, animated: true });
-    setIndex(target);
-    indexRef.current = target;
-  };
-
-  const goNext = () => goTo(indexRef.current + 1);
-  const goPrev = () => goTo(indexRef.current - 1);
-
-  const onMomentumEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const i = Math.round(e.nativeEvent.contentOffset.x / width);
-    if (i !== indexRef.current) {
-      setIndex(i);
-      indexRef.current = i;
     }
   };
 
-  const startProgress = () => {
+  const goPrev = () => {
+    if (index > 0) {
+      setIndex((i) => i - 1);
+    }
+  };
+
+  useEffect(() => {
+    if (!current || paused) return;
+    progress.setValue(0);
     const anim = Animated.timing(progress, {
       toValue: 1,
       duration: STORY_DURATION,
@@ -117,22 +91,23 @@ export default function StoryViewerScreen() {
     anim.start(({ finished }) => {
       if (finished) goNext();
     });
-  };
-
-  useEffect(() => {
-    if (!current || paused || !ready) return;
-    progress.setValue(0);
-    startProgress();
-    return () => animRef.current?.stop();
+    return () => anim.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index, current?.id, ready]);
+  }, [index, current?.id]);
 
   useEffect(() => {
-    if (!ready) return;
     if (paused) {
       animRef.current?.stop();
     } else if (current) {
-      startProgress();
+      const anim = Animated.timing(progress, {
+        toValue: 1,
+        duration: STORY_DURATION,
+        useNativeDriver: false,
+      });
+      animRef.current = anim;
+      anim.start(({ finished }) => {
+        if (finished) goNext();
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paused]);
@@ -152,42 +127,36 @@ export default function StoryViewerScreen() {
         <Text style={{ color: "#fff", fontFamily: "Inter_500Medium", marginTop: 12 }}>
           Story not available
         </Text>
-        <Touchable style={styles.backLink} onPress={() => router.back()}>
+        <Pressable style={styles.backLink} onPress={() => router.back()}>
           <Text style={{ color: c.primary, fontFamily: "Inter_600SemiBold" }}>Go back</Text>
-        </Touchable>
+        </Pressable>
       </SafeAreaView>
     );
   }
 
+  const isVideo = current.mediaType === "video";
+
   return (
     <View style={[styles.fill, { backgroundColor: "#000" }]}>
-      <Animated.ScrollView
-        ref={scrollRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        scrollEventThrottle={16}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          { useNativeDriver: true },
-        )}
-        onMomentumScrollEnd={onMomentumEnd}
-      >
-        {stories.map((s, i) => (
-          <CubePage key={s.id} index={i} scrollX={scrollX}>
-            <StoryMedia story={s} active={i === index && !paused} />
-          </CubePage>
-        ))}
-      </Animated.ScrollView>
+      {isVideo ? (
+        <StoryVideo uri={current.mediaUrl} paused={paused} />
+      ) : (
+        <Image
+          source={{ uri: current.mediaUrl }}
+          style={StyleSheet.absoluteFill}
+          contentFit="contain"
+          transition={150}
+        />
+      )}
 
-      <Touchable
+      <Pressable
         style={styles.tapLeft}
         onPress={goPrev}
         onLongPress={() => setPaused(true)}
         onPressOut={() => setPaused(false)}
         delayLongPress={200}
       />
-      <Touchable
+      <Pressable
         style={styles.tapRight}
         onPress={goNext}
         onLongPress={() => setPaused(true)}
@@ -220,16 +189,19 @@ export default function StoryViewerScreen() {
         </View>
 
         <View style={styles.headerRow}>
-          <View style={styles.authorRow}>
+          <Pressable
+            style={styles.authorRow}
+            onPress={() => current.author?.id && router.push(`/profile/${current.author.id}`)}
+          >
             <Avatar uri={current.author?.avatarUrl} name={current.author?.displayName} size={36} />
             <View>
               <Text style={styles.authorName}>{current.author?.displayName}</Text>
               <Text style={styles.timeText}>{timeAgo(current.createdAt)}</Text>
             </View>
-          </View>
-          <Touchable onPress={() => router.back()} hitSlop={10}>
+          </Pressable>
+          <Pressable onPress={() => router.back()} hitSlop={10}>
             <Ionicons name="close" size={28} color="#fff" />
-          </Touchable>
+          </Pressable>
         </View>
       </SafeAreaView>
 
@@ -242,62 +214,11 @@ export default function StoryViewerScreen() {
   );
 }
 
-function CubePage({
-  index,
-  scrollX,
-  children,
-}: {
-  index: number;
-  scrollX: Animated.Value;
-  children: ReactNode;
-}) {
-  const inputRange = [(index - 1) * width, index * width, (index + 1) * width];
-  const rotateY = scrollX.interpolate({
-    inputRange,
-    outputRange: ["50deg", "0deg", "-50deg"],
-    extrapolate: "clamp",
-  });
-  const translateX = scrollX.interpolate({
-    inputRange,
-    outputRange: [width * 0.5, 0, -width * 0.5],
-    extrapolate: "clamp",
-  });
-  const opacity = scrollX.interpolate({
-    inputRange,
-    outputRange: [0.5, 1, 0.5],
-    extrapolate: "clamp",
-  });
-
-  return (
-    <Animated.View
-      style={[
-        styles.page,
-        { opacity, transform: [{ perspective: 1000 }, { translateX }, { rotateY }] },
-      ]}
-    >
-      {children}
-    </Animated.View>
-  );
-}
-
-function StoryMedia({ story, active }: { story: Story; active: boolean }) {
-  if (story.mediaType === "video") {
-    return <StoryVideo uri={story.mediaUrl} paused={!active} />;
-  }
-  return (
-    <Image
-      source={{ uri: story.mediaUrl }}
-      style={StyleSheet.absoluteFill}
-      contentFit="contain"
-      transition={150}
-    />
-  );
-}
-
 function StoryVideo({ uri, paused }: { uri: string; paused: boolean }) {
   const player = useVideoPlayer(uri, (p) => {
     p.loop = true;
     p.muted = false;
+    p.play();
   });
 
   useEffect(() => {
@@ -322,7 +243,6 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   center: { alignItems: "center", justifyContent: "center" },
   backLink: { marginTop: 16 },
-  page: { width, height, backgroundColor: "#000" },
   tapLeft: { position: "absolute", left: 0, top: 0, bottom: 0, width: width * 0.35 },
   tapRight: { position: "absolute", right: 0, top: 0, bottom: 0, width: width * 0.65 },
   topOverlay: { position: "absolute", top: 0, left: 0, right: 0, paddingHorizontal: 8 },
@@ -346,14 +266,14 @@ const styles = StyleSheet.create({
   authorName: {
     color: "#fff",
     fontFamily: "Inter_600SemiBold",
-    fontSize: fs(14),
+    fontSize: 14,
     textShadowColor: "#0008",
     textShadowRadius: 4,
   },
   timeText: {
     color: "#ffffffcc",
     fontFamily: "Inter_400Regular",
-    fontSize: fs(12),
+    fontSize: 12,
     textShadowColor: "#0008",
     textShadowRadius: 4,
   },
@@ -361,7 +281,7 @@ const styles = StyleSheet.create({
   captionText: {
     color: "#fff",
     fontFamily: "Inter_600SemiBold",
-    fontSize: fs(18),
+    fontSize: 18,
     textAlign: "center",
     textShadowColor: "#000",
     textShadowOffset: { width: 0, height: 1 },
