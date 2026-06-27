@@ -1,5 +1,15 @@
 - [Push to external GitHub repo](push-to-external-github.md) — git binary blocked; use GitHub REST API + read real $GITHUB_TOKEN via bash-launched node script.
 - [Expo native-only SDK gating](expo-native-sdk-gating.md) — file-extension split alone doesn't spare Expo Go; runtime-guard the require so the native module is never evaluated.
+- [Active status presence](active-status-presence.md) — task-agent note on user online/active-status presence.
+- [HiMewo chat](himewo-chat.md) — task-agent note on the chat/messaging feature.
 - [HiMewo live connection](himewo-live-connection.md) — connect artifacts/mobile to live website via 3 EXPO_PUBLIC_* env (API host + Supabase URL/anon); calls route is local-only, missing on live Railway backend.
 - [HiMewo auth ES256/JWT](himewo-auth-jwt.md) — project rzdfgbfyhnkvqbcegguk signs ES256; backend must verify via JWKS (SUPABASE_URL) and NOT set SUPABASE_JWT_SECRET, else valid tokens get rejected as "session not accepted".
 - [RN Soft-3D shadows](rn-soft3d-shadows.md) — shadow()/glow() branches web(boxShadow) vs native(elevation); never put overflow:hidden on a shadowed node (clips native elevation).
+- [HiMewo GitHub push](himewo-github-push.md) — `git` commit/push is tool-blocked for the main agent; push to the external himewo repo via GitHub Git Data API + `GITHUB_TOKEN`.
+- [HiMewo Cloudflare deploy](himewo-cloudflare-pages-deploy.md) — web is wrangler direct-upload (git push does NOT redeploy); ES256/JWKS auth gotchas; VITE_API_URL scheme fix.
+- [HiMewo /tmp build instability](himewo-tmp-build-instability.md) — /tmp can wipe mid-session; full pnpm workspace install deadlocks in linking phase. Push source via API immediately; live deploy needs a stable build env.
+- [HiMewo CI/CD GitHub Actions](himewo-cicd-github-actions.md) — web auto-deploys to Cloudflare Pages on push to main via Actions (sidesteps /tmp). Secrets set via gh CLI; `.github/workflows` edits need `workflow` token scope.
+- [HiMewo mobile design tokens](himewo-mobile-design-tokens.md) — Expo app in same external repo; theming is 100% `constants/colors.ts`+`useColors()` (one file re-themes all); redesign = port palette + polish shared components, don't rewrite screens blind.
+- [HiMewo repo interleaving recovery](himewo-repo-interleaving-recovery.md) — concurrent task agents merging to the same external main can wholesale-delete files (whole `artifacts/web/`); recover via Git Data API reusing last-good blob SHAs.
+- [HiMewo Admin deploy](himewo-admin-deploy.md) — admin web app deploys to its OWN Pages project `himewo-admin` via own Action; `wrangler pages deploy` does NOT auto-create the project (create it first).
+- [HiMewo handoff](himewo-handoff.md) — continue on a fresh Replit account: live state, external repo, and the exact secret NAMES to re-add (values never transfer).
