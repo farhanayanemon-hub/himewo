@@ -26,7 +26,6 @@ import {
 import { Avatar } from "@/components/Avatar";
 import { useColors } from "@/hooks/useColors";
 import { timeAgo } from "@/lib/format";
-import { promptReport } from "@/lib/reports";
 
 const STORY_DURATION = 5000;
 const { width, height } = Dimensions.get("window");
@@ -228,26 +227,9 @@ export default function StoryViewerScreen() {
               <Text style={styles.timeText}>{timeAgo(current.createdAt)}</Text>
             </View>
           </View>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 18 }}>
-            <Touchable
-              onPress={() => {
-                setPaused(true);
-                promptReport({
-                  targetType: "story",
-                  targetId: current.id,
-                  subjectLabel: current.author?.displayName
-                    ? `${current.author.displayName}'s story`
-                    : "this story",
-                });
-              }}
-              hitSlop={10}
-            >
-              <Ionicons name="flag-outline" size={24} color="#fff" />
-            </Touchable>
-            <Touchable onPress={() => router.back()} hitSlop={10}>
-              <Ionicons name="close" size={28} color="#fff" />
-            </Touchable>
-          </View>
+          <Touchable onPress={() => router.back()} hitSlop={10}>
+            <Ionicons name="close" size={28} color="#fff" />
+          </Touchable>
         </View>
       </SafeAreaView>
 

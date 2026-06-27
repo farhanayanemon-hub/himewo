@@ -1,4 +1,5 @@
 - [Push to external GitHub repo](push-to-external-github.md) — git binary blocked; use GitHub REST API + read real $GITHUB_TOKEN via bash-launched node script.
 - [Expo native-only SDK gating](expo-native-sdk-gating.md) — file-extension split alone doesn't spare Expo Go; runtime-guard the require so the native module is never evaluated.
 - [HiMewo live connection](himewo-live-connection.md) — connect artifacts/mobile to live website via 3 EXPO_PUBLIC_* env (API host + Supabase URL/anon); calls route is local-only, missing on live Railway backend.
+- [HiMewo auth ES256/JWT](himewo-auth-jwt.md) — project rzdfgbfyhnkvqbcegguk signs ES256; backend must verify via JWKS (SUPABASE_URL) and NOT set SUPABASE_JWT_SECRET, else valid tokens get rejected as "session not accepted".
 - [RN Soft-3D shadows](rn-soft3d-shadows.md) — shadow()/glow() branches web(boxShadow) vs native(elevation); never put overflow:hidden on a shadowed node (clips native elevation).

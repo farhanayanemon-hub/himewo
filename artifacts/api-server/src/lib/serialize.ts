@@ -578,7 +578,7 @@ export async function buildStoryGroups(viewerId: string) {
   const rows = await db
     .select()
     .from(storiesTable)
-    .where(and(gt(storiesTable.expiresAt, now), eq(storiesTable.hidden, false)))
+    .where(gt(storiesTable.expiresAt, now))
     .orderBy(asc(storiesTable.createdAt));
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);

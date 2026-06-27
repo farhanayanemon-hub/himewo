@@ -38,7 +38,6 @@ import { Avatar } from "@/components/Avatar";
 import { EmojiPickerSheet } from "@/components/EmojiPickerSheet";
 import { useAuth } from "@/lib/auth";
 import { useRealtime, type RealtimeEvent } from "@/lib/realtime";
-import { promptReport } from "@/lib/reports";
 import { useCall } from "@/components/CallProvider";
 import { useColors } from "@/hooks/useColors";
 import { formatClock } from "@/lib/format";
@@ -353,19 +352,6 @@ export default function ChatThreadScreen() {
               hitSlop={6}
             >
               <Ionicons name="videocam" size={22} color={c.primary} />
-            </Touchable>
-            <Touchable
-              style={[styles.callBtn, { backgroundColor: c.secondary }, shadow("sm")]}
-              onPress={() =>
-                promptReport({
-                  targetType: "user",
-                  targetId: peer.id,
-                  subjectLabel: peer.displayName || peer.username || "this person",
-                })
-              }
-              hitSlop={6}
-            >
-              <Ionicons name="flag-outline" size={20} color={c.destructive} />
             </Touchable>
           </View>
         )}

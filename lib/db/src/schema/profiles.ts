@@ -1,7 +1,6 @@
 import { pgTable, uuid, text, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
-import { userRoleEnum } from "./enums";
 
 // Profiles are keyed by the Supabase Auth user id (auth.users.id).
 export const profilesTable = pgTable("profiles", {
@@ -16,12 +15,6 @@ export const profilesTable = pgTable("profiles", {
   location: text("location"),
   work: text("work"),
   isVerified: boolean("is_verified").notNull().default(false),
-  // Platform role. Governs admin-panel access and RBAC. Defaults to "user".
-  role: userRoleEnum("role").notNull().default("user"),
-  // Moderation state (set from the admin panel).
-  isSuspended: boolean("is_suspended").notNull().default(false),
-  suspendedUntil: timestamp("suspended_until", { withTimezone: true }),
-  isBanned: boolean("is_banned").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -37,4 +30,3 @@ export const insertProfileSchema = createInsertSchema(profilesTable).omit({
 });
 export type InsertProfile = z.infer<typeof insertProfileSchema>;
 export type Profile = typeof profilesTable.$inferSelect;
-export type UserRole = Profile["role"];
