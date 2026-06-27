@@ -21,28 +21,42 @@ interface ReactionControlProps {
 
 export function ReactionControl({ viewerReaction, onReact, count, size = "default" }: ReactionControlProps) {
   const [showPicker, setShowPicker] = useState(false);
+  const [burst, setBurst] = useState(false);
   const active = viewerReaction ? reactionConfig[viewerReaction] : null;
   const isSm = size === "sm";
 
+  const fire = (type: ReactionType) => {
+    setShowPicker(false);
+    setBurst(true);
+    window.setTimeout(() => setBurst(false), 450);
+    onReact(type);
+  };
+
+  let hideTimer: ReturnType<typeof setTimeout>;
+  const open = () => {
+    clearTimeout(hideTimer);
+    setShowPicker(true);
+  };
+  const close = () => {
+    hideTimer = setTimeout(() => setShowPicker(false), 120);
+  };
+
   return (
-    <div
-      className="relative inline-flex"
-      onMouseEnter={() => setShowPicker(true)}
-      onMouseLeave={() => setShowPicker(false)}
-    >
+    <div className="relative inline-flex" onMouseEnter={open} onMouseLeave={close}>
       {showPicker && (
-        <div className="absolute -top-12 left-0 bg-card border border-border rounded-full shadow-lg flex gap-1 p-1 animate-in slide-in-from-bottom-2 z-20">
-          {Object.entries(reactionConfig).map(([type, config]) => (
+        <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-popover border border-popover-border rounded-full flex gap-0.5 p-1.5 z-30 animate-in fade-in zoom-in-90 slide-in-from-bottom-2 duration-150" style={{ boxShadow: "var(--shadow-pop)" }}>
+          {Object.entries(reactionConfig).map(([type, config], i) => (
             <button
               key={type}
               type="button"
-              onClick={() => {
-                setShowPicker(false);
-                onReact(type as ReactionType);
-              }}
-              className="w-9 h-9 rounded-full hover:bg-muted flex items-center justify-center hover:scale-125 transition-transform text-xl leading-none"
+              onClick={() => fire(type as ReactionType)}
+              className="reaction-emoji group/emoji relative w-10 h-10 rounded-full flex items-center justify-center text-2xl leading-none origin-bottom transition-transform duration-150 hover:scale-[1.45] hover:-translate-y-2"
+              style={{ animationDelay: `${i * 35}ms` }}
               title={config.label}
             >
+              <span className="absolute -top-7 px-2 py-0.5 rounded-full bg-foreground text-background text-[10px] font-semibold opacity-0 group-hover/emoji:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                {config.label}
+              </span>
               {config.emoji}
             </button>
           ))}
@@ -51,13 +65,13 @@ export function ReactionControl({ viewerReaction, onReact, count, size = "defaul
 
       <button
         type="button"
-        onClick={() => onReact(viewerReaction || ReactionType.like)}
-        className={`flex items-center gap-1 font-medium hover:underline ${
+        onClick={() => fire(viewerReaction || ReactionType.like)}
+        className={`flex items-center gap-1.5 font-semibold press transition-colors ${
           isSm ? "text-xs" : ""
-        } ${active ? active.color : "text-muted-foreground"}`}
+        } ${active ? active.color : "text-muted-foreground hover:text-foreground"}`}
       >
         {active ? (
-          <span className="leading-none">{active.emoji}</span>
+          <span className={`leading-none ${burst ? "reaction-burst" : ""} ${isSm ? "text-sm" : "text-lg"}`}>{active.emoji}</span>
         ) : (
           <ThumbsUp className={isSm ? "w-3.5 h-3.5" : "w-5 h-5"} />
         )}

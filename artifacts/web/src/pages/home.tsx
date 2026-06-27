@@ -76,7 +76,7 @@ function PostComposer() {
   };
 
   return (
-    <div className="bg-card border border-border rounded-xl p-4 shadow-sm mb-6">
+    <div className="bg-card border border-card-border rounded-2xl p-4 card-depth mb-6">
       <div className="flex gap-3">
         <img src={user?.avatarUrl || ""} className="w-10 h-10 rounded-full object-cover" alt="" />
         <div className="flex-1">
@@ -235,7 +235,7 @@ export default function HomePage() {
       <div className="space-y-6">
         {/* Stories */}
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-          <Link href="/stories" className="w-28 h-48 shrink-0 rounded-xl relative overflow-hidden group cursor-pointer border border-border">
+          <Link href="/stories" className="w-28 h-48 shrink-0 rounded-2xl relative overflow-hidden group cursor-pointer border border-card-border card-depth lift-on-hover">
             <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&q=80" className="w-full h-full object-cover opacity-80" alt="" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
             <div className="absolute bottom-3 left-3 right-3 text-white text-sm font-medium leading-tight">Create Story</div>
