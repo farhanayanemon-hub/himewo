@@ -120,16 +120,47 @@ export default function HomeScreen() {
           ListHeaderComponent={
             <>
               <StoryBar />
-              <Pressable
-                style={[styles.composer, { backgroundColor: c.card }]}
-                onPress={() => router.push("/create-post")}
-              >
-                <Avatar uri={user?.avatarUrl} name={user?.displayName} size={40} />
-                <View style={[styles.composerInput, { backgroundColor: c.secondary }]}>
-                  <Text style={{ color: c.mutedForeground }}>What's on your mind?</Text>
+              <View style={[styles.composerWrap, { backgroundColor: c.card }]}>
+                <Pressable
+                  style={styles.composer}
+                  onPress={() => router.push("/create-post")}
+                >
+                  <Avatar uri={user?.avatarUrl} name={user?.displayName} size={40} />
+                  <View style={[styles.composerInput, { backgroundColor: c.secondary }]}>
+                    <Text style={{ color: c.mutedForeground }}>What's on your mind?</Text>
+                  </View>
+                </Pressable>
+                <View style={[styles.composerDivider, { backgroundColor: c.border }]} />
+                <View style={styles.composerActions}>
+                  <Pressable
+                    style={styles.composerAction}
+                    onPress={() => router.push("/create-reel")}
+                  >
+                    <Ionicons name="videocam" size={20} color="#f3425f" />
+                    <Text style={[styles.composerActionLabel, { color: c.mutedForeground }]}>
+                      Live
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.composerAction}
+                    onPress={() => router.push("/create-post")}
+                  >
+                    <Ionicons name="images" size={20} color="#31a24c" />
+                    <Text style={[styles.composerActionLabel, { color: c.mutedForeground }]}>
+                      Photo
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.composerAction}
+                    onPress={() => router.push("/create-story")}
+                  >
+                    <Ionicons name="happy-outline" size={20} color="#f7b125" />
+                    <Text style={[styles.composerActionLabel, { color: c.mutedForeground }]}>
+                      Story
+                    </Text>
+                  </Pressable>
                 </View>
-                <Ionicons name="images" size={24} color="#31a24c" />
-              </Pressable>
+              </View>
             </>
           }
           renderItem={({ item }) => (
@@ -182,17 +213,45 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  composerWrap: {
+    marginBottom: 8,
+    paddingTop: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
   composer: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
     padding: 12,
-    marginBottom: 8,
   },
   composerInput: {
     flex: 1,
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
+  },
+  composerDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginHorizontal: 12,
+  },
+  composerActions: {
+    flexDirection: "row",
+    paddingVertical: 4,
+  },
+  composerAction: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 10,
+  },
+  composerActionLabel: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 13,
   },
 });
