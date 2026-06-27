@@ -19,6 +19,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { CallProvider } from "@/components/CallProvider";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { RealtimeProvider } from "@/lib/realtime";
+import { PreferencesProvider, usePreferencesOptional } from "@/lib/preferences";
 import { useColors } from "@/hooks/useColors";
 
 SplashScreen.preventAutoHideAsync();
@@ -39,7 +40,7 @@ function RootNavigator() {
     if (!isAuthenticated && !inAuthGroup) {
       router.replace("/(auth)/login");
     } else if (isAuthenticated && inAuthGroup) {
-      router.replace("/(tabs)");
+      router.replace("/");
     }
   }, [loading, isAuthenticated, segments, router]);
 
@@ -55,54 +56,24 @@ function RootNavigator() {
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.background } }}>
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="create-post" options={{ presentation: "modal" }} />
+      <Stack.Screen name="messages/[id]" />
+      <Stack.Screen name="story/[id]" options={{ presentation: "fullScreenModal", animation: "fade" }} />
       <Stack.Screen name="create-story" options={{ presentation: "modal" }} />
-      <Stack.Screen name="search" options={{ presentation: "modal" }} />
-      <Stack.Screen
-        name="groups/index"
-        options={{
-          headerShown: true,
-          headerStyle: { backgroundColor: c.card },
-          headerTintColor: c.foreground,
-          headerTitleStyle: { fontFamily: "Inter_700Bold" },
-        }}
-      />
-      <Stack.Screen
-        name="groups/[id]"
-        options={{
-          headerShown: true,
-          headerStyle: { backgroundColor: c.card },
-          headerTintColor: c.foreground,
-          headerTitleStyle: { fontFamily: "Inter_700Bold" },
-        }}
-      />
-      <Stack.Screen
-        name="pages/index"
-        options={{
-          headerShown: true,
-          headerStyle: { backgroundColor: c.card },
-          headerTintColor: c.foreground,
-          headerTitleStyle: { fontFamily: "Inter_700Bold" },
-        }}
-      />
-      <Stack.Screen
-        name="pages/[id]"
-        options={{
-          headerShown: true,
-          headerStyle: { backgroundColor: c.card },
-          headerTintColor: c.foreground,
-          headerTitleStyle: { fontFamily: "Inter_700Bold" },
-        }}
-      />
+      <Stack.Screen name="settings" options={{ presentation: "modal" }} />
+      <Stack.Screen name="message-requests" />
+      <Stack.Screen name="archive" />
     </Stack>
   );
 }
 
 function ThemedRoot() {
   const scheme = useColorScheme();
+  const prefs = usePreferencesOptional();
+  const mode = prefs?.themeMode ?? "system";
+  const effective = mode === "system" ? scheme : mode;
   return (
     <>
-      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+      <StatusBar style={effective === "dark" ? "light" : "dark"} />
       <AuthProvider>
         <RealtimeProvider>
           <CallProvider>
@@ -136,7 +107,9 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
-              <ThemedRoot />
+              <PreferencesProvider>
+                <ThemedRoot />
+              </PreferencesProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>
         </QueryClientProvider>

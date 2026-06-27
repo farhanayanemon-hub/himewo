@@ -1,8 +1,12 @@
+import { Touchable } from "@/components/Touchable";
+import { fs } from "@/constants/typography";
+import { shadow } from "@/constants/shadows";
 import { Pressable, ScrollView, Text, View, StyleSheet } from "react-native";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useListStories, type StoryGroup } from "@workspace/api-client-react";
+import { Avatar } from "@/components/Avatar";
 import { useAuth } from "@/lib/auth";
 import { useColors } from "@/hooks/useColors";
 
@@ -13,68 +17,51 @@ export function StoryBar() {
   const groups = (data ?? []) as StoryGroup[];
 
   return (
-    <View style={[styles.wrap, { backgroundColor: c.card }]}>
+    <View style={[styles.wrap, { backgroundColor: c.background }]}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.row}
       >
-        <Pressable
-          style={[styles.tile, { backgroundColor: c.secondary }]}
-          onPress={() => router.push("/create-story")}
-        >
-          <View style={styles.createTop}>
-            <Avatar uri={user?.avatarUrl} />
-          </View>
-          <View style={[styles.createBottom, { backgroundColor: c.card }]}>
-            <View style={[styles.plus, { backgroundColor: c.primary, borderColor: c.card }]}>
+        <Touchable style={styles.item} onPress={() => router.push("/create-story")}>
+          <View>
+            <Avatar uri={user?.avatarUrl} name={user?.displayName} size={64} />
+            <View style={[styles.plus, { backgroundColor: c.primary, borderColor: c.background }]}>
               <Ionicons name="add" size={16} color="#fff" />
             </View>
-            <Text
-              numberOfLines={1}
-              style={{ color: c.foreground, fontSize: 11, fontFamily: "Inter_600SemiBold" }}
-            >
-              Create
-            </Text>
           </View>
-        </Pressable>
+          <Text numberOfLines={1} style={[styles.name, { color: c.foreground }]}>
+            Your story
+          </Text>
+        </Touchable>
 
         {groups.map((group) => {
           const cover = group.stories[0];
           if (!cover) return null;
           return (
-            <Pressable
+            <Touchable
               key={group.author.id}
-              style={styles.tile}
+              style={styles.item}
               onPress={() => router.push(`/story/${cover.id}`)}
             >
-              {cover.mediaUrl ? (
-                <Image
-                  source={{ uri: cover.mediaUrl }}
-                  style={StyleSheet.absoluteFill}
-                  contentFit="cover"
-                />
-              ) : (
-                <View style={[StyleSheet.absoluteFill, { backgroundColor: c.secondary }]} />
-              )}
-              <View style={styles.storyTop}>
-                <View
-                  style={[
-                    styles.storyRing,
-                    { borderColor: group.hasUnseen ? c.primary : c.border },
-                  ]}
-                >
+              <View
+                style={[
+                  styles.ring,
+                  { borderColor: group.hasUnseen ? c.primary : c.border },
+                ]}
+              >
+                <View style={[styles.ringInner, { borderColor: c.background }]}>
                   <Image
                     source={{ uri: group.author?.avatarUrl ?? undefined }}
-                    style={styles.storyAvatar}
+                    style={styles.avatar}
                     contentFit="cover"
                   />
                 </View>
               </View>
-              <Text numberOfLines={1} style={styles.storyName}>
-                {group.author?.displayName ?? "Story"}
+              <Text numberOfLines={1} style={[styles.name, { color: c.foreground }]}>
+                {group.author?.displayName?.split(" ")[0] ?? "Story"}
               </Text>
-            </Pressable>
+            </Touchable>
           );
         })}
       </ScrollView>
@@ -82,58 +69,41 @@ export function StoryBar() {
   );
 }
 
-function Avatar({ uri }: { uri?: string | null }) {
-  return (
-    <Image
-      source={{ uri: uri ?? undefined }}
-      style={{ width: "100%", height: "100%" }}
-      contentFit="cover"
-    />
-  );
-}
+const RING = 70;
+const INNER = 62;
 
 const styles = StyleSheet.create({
-  wrap: { paddingVertical: 10, marginBottom: 8 },
-  row: { paddingHorizontal: 12, gap: 8 },
-  tile: {
-    width: 96,
-    height: 150,
-    borderRadius: 12,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 2,
+  wrap: { paddingVertical: 12 },
+  row: { paddingHorizontal: 12, gap: 14 },
+  item: { width: 72, alignItems: "center", gap: 6 },
+  ring: {
+    width: RING,
+    height: RING,
+    borderRadius: RING / 2,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadow("md"),
   },
-  createTop: { height: 100, overflow: "hidden" },
-  createBottom: { flex: 1, alignItems: "center", justifyContent: "flex-end", paddingBottom: 8 },
+  ringInner: {
+    width: INNER,
+    height: INNER,
+    borderRadius: INNER / 2,
+    borderWidth: 2,
+    overflow: "hidden",
+  },
+  avatar: { width: "100%", height: "100%", borderRadius: INNER / 2 },
   plus: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    position: "absolute",
+    right: -2,
+    bottom: -2,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     borderWidth: 3,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: -14,
-    marginBottom: 4,
+    ...shadow("sm"),
   },
-  storyTop: { padding: 8 },
-  storyRing: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    borderWidth: 2,
-    padding: 2,
-  },
-  storyAvatar: { width: "100%", height: "100%", borderRadius: 19 },
-  storyName: {
-    position: "absolute",
-    bottom: 8,
-    left: 8,
-    right: 8,
-    color: "#fff",
-    fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
-  },
+  name: { fontSize: fs(12), fontFamily: "Inter_500Medium", maxWidth: 72, textAlign: "center" },
 });

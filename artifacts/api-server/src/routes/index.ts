@@ -13,6 +13,7 @@ import storiesRouter from "./stories";
 import reelsRouter from "./reels";
 import notificationsRouter from "./notifications";
 import mediaRouter from "./media";
+import callsRouter from "./calls";
 
 const router: IRouter = Router();
 
@@ -32,5 +33,6 @@ router.use(storiesRouter);
 router.use(reelsRouter);
 router.use(notificationsRouter);
 router.use(mediaRouter);
+router.use(callsRouter);
 
 export default router;

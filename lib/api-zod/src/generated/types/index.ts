@@ -60,6 +60,7 @@ export * from './postUpdate';
 export * from './postUpdatePrivacy';
 export * from './profile';
 export * from './profileInput';
+export * from './profilePresence';
 export * from './profileUpdate';
 export * from './reactionInput';
 export * from './reactionSummary';
