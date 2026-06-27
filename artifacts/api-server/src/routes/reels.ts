@@ -40,12 +40,7 @@ router.get("/reels", requireAuth, async (req, res): Promise<void> => {
   const rows = await db
     .select()
     .from(reelsTable)
-    .where(
-      and(
-        eq(reelsTable.hidden, false),
-        cursor ? lt(reelsTable.id, cursor) : undefined,
-      ),
-    )
+    .where(cursor ? lt(reelsTable.id, cursor) : undefined)
     .orderBy(desc(reelsTable.id))
     .limit(limit ?? 10);
   const built = await buildReels(rows, req.userId);

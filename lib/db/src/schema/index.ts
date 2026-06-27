@@ -5,4 +5,3 @@ export * from "./social";
 export * from "./messaging";
 export * from "./communities";
 export * from "./content";
-export * from "./admin";

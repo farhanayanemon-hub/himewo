@@ -32,19 +32,26 @@ export async function resolveUserId(token: string): Promise<string | null> {
     const id = token.slice(4).trim();
     return id || null;
   }
-  try {
-    if (env.supabaseJwtSecret) {
+  // Try HS256 (legacy shared JWT secret) first when configured. If it fails
+  // (e.g. the project now issues asymmetric ES256 tokens), fall back to the
+  // project's JWKS so either signing scheme verifies against the same project.
+  if (env.supabaseJwtSecret) {
+    try {
       const secret = new TextEncoder().encode(env.supabaseJwtSecret);
       const { payload } = await jwtVerify(token, secret);
-      return typeof payload.sub === "string" ? payload.sub : null;
+      if (typeof payload.sub === "string") return payload.sub;
+    } catch {
+      // fall through to JWKS
     }
-    const keyFn = getJwks();
-    if (keyFn) {
+  }
+  const keyFn = getJwks();
+  if (keyFn) {
+    try {
       const { payload } = await jwtVerify(token, keyFn);
-      return typeof payload.sub === "string" ? payload.sub : null;
+      if (typeof payload.sub === "string") return payload.sub;
+    } catch {
+      return null;
     }
-  } catch {
-    return null;
   }
   return null;
 }

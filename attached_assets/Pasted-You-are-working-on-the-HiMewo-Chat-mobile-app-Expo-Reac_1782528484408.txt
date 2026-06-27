@@ -1,0 +1,45 @@
+You are working on the "HiMewo Chat" mobile app (Expo / React Native). 
+Login fails with this exact error AFTER the Supabase login itself succeeds:
+  "Logged in, but the server did not accept your session. 
+   The app and the server may be connected to different Supabase projects."
+=== DIAGNOSIS (this error means a Supabase PROJECT MISMATCH) ===
+The flow is: (1) the app logs into Supabase and gets an access_token, then 
+(2) it sends that token as "Authorization: Bearer <token>" to the backend API 
+(an Express server hosted on Railway). The backend verifies the token against a 
+Supabase project's public keys (JWKS, because this Supabase project uses ES256, 
+NOT HS256). This error appears when the token was issued by a DIFFERENT Supabase 
+project than the one the backend verifies against — so the signatures don't match 
+and the backend returns 401 Unauthorized.
+The canonical HiMewo Supabase project is:
+  ref: rzdfgbfyhnkvqbcegguk
+  URL: https://rzdfgbfyhnkvqbcegguk.supabase.co
+The Railway backend verifies tokens against THIS project.
+=== FIX — make the app and the backend use the SAME Supabase project ===
+STEP 1 — Find which Supabase project the MOBILE APP is using.
+  Print the values the app actually uses at runtime for:
+    - EXPO_PUBLIC_SUPABASE_URL  (must be https://rzdfgbfyhnkvqbcegguk.supabase.co)
+    - EXPO_PUBLIC_SUPABASE_ANON_KEY  (must be the anon key of THAT SAME project)
+  Log them on app start (redact the key, but confirm the project ref in the URL).
+  If the URL points to any other project ref, that is the bug.
+STEP 2 — Find which Supabase project the BACKEND is using.
+  Check the backend's SUPABASE_URL env var. It must point to the SAME project ref 
+  as the app (rzdfgbfyhnkvqbcegguk by default).
+STEP 3 — Make them match. Two options, pick ONE:
+  (A) RECOMMENDED: point the mobile app at the backend's existing Supabase project.
+      Set EXPO_PUBLIC_SUPABASE_URL = https://rzdfgbfyhnkvqbcegguk.supabase.co and 
+      EXPO_PUBLIC_SUPABASE_ANON_KEY = the anon key from THAT project 
+      (Supabase dashboard > project rzdfgbfyhnkvqbcegguk > Settings > API > anon key).
+      Restart the app so the new env vars are picked up.
+  (B) If you intend to use a brand-new Supabase project instead, then update the 
+      BACKEND's SUPABASE_URL to that new project and redeploy it — and also recreate 
+      the users in that project. (Usually you do NOT want this; prefer A.)
+STEP 4 — Backend ES256 safety check.
+  This Supabase project signs tokens with ES256 (asymmetric). On the backend, 
+  SUPABASE_JWT_SECRET must NOT be set — if it is, the server tries HS256 and rejects 
+  every valid ES256 token, producing the same "session not accepted" failure. 
+  Remove SUPABASE_JWT_SECRET if present so the server uses JWKS verification.
+=== VERIFY ===
+- Log the URL, HTTP status, and response body of BOTH the Supabase login call and the 
+  follow-up backend call (e.g. /api/auth/me). The backend call should now return 200.
+- A test user logs in end-to-end and reaches the main screen with no "session not 
+  accepted" error.

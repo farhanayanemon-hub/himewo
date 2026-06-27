@@ -4,7 +4,6 @@ import {
   uuid,
   text,
   integer,
-  boolean,
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
@@ -18,9 +17,6 @@ export const groupsTable = pgTable("groups", {
   avatarUrl: text("avatar_url"),
   coverUrl: text("cover_url"),
   privacy: privacyEnum("privacy").notNull().default("public"),
-  // Admin curation/governance flags.
-  featured: boolean("featured").notNull().default(false),
-  isApproved: boolean("is_approved").notNull().default(true),
   createdBy: uuid("created_by")
     .notNull()
     .references(() => profilesTable.id, { onDelete: "cascade" }),
@@ -54,9 +50,6 @@ export const pagesTable = pgTable("pages", {
   description: text("description"),
   avatarUrl: text("avatar_url"),
   coverUrl: text("cover_url"),
-  // Admin curation/governance flags.
-  featured: boolean("featured").notNull().default(false),
-  isApproved: boolean("is_approved").notNull().default(true),
   createdBy: uuid("created_by")
     .notNull()
     .references(() => profilesTable.id, { onDelete: "cascade" }),
