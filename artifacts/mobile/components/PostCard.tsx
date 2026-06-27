@@ -169,7 +169,15 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
 }
 
 const styles = StyleSheet.create({
-  card: { marginBottom: 8, paddingTop: 12 },
+  card: {
+    marginBottom: 8,
+    paddingTop: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
