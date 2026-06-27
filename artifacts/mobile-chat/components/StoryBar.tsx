@@ -1,3 +1,6 @@
+import { Touchable } from "@/components/Touchable";
+import { fs } from "@/constants/typography";
+import { shadow } from "@/constants/shadows";
 import { Pressable, ScrollView, Text, View, StyleSheet } from "react-native";
 import { Image } from "expo-image";
 import { router } from "expo-router";
@@ -20,7 +23,7 @@ export function StoryBar() {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.row}
       >
-        <Pressable style={styles.item} onPress={() => router.push("/create-story")}>
+        <Touchable style={styles.item} onPress={() => router.push("/create-story")}>
           <View>
             <Avatar uri={user?.avatarUrl} name={user?.displayName} size={64} />
             <View style={[styles.plus, { backgroundColor: c.primary, borderColor: c.background }]}>
@@ -30,13 +33,13 @@ export function StoryBar() {
           <Text numberOfLines={1} style={[styles.name, { color: c.foreground }]}>
             Your story
           </Text>
-        </Pressable>
+        </Touchable>
 
         {groups.map((group) => {
           const cover = group.stories[0];
           if (!cover) return null;
           return (
-            <Pressable
+            <Touchable
               key={group.author.id}
               style={styles.item}
               onPress={() => router.push(`/story/${cover.id}`)}
@@ -58,7 +61,7 @@ export function StoryBar() {
               <Text numberOfLines={1} style={[styles.name, { color: c.foreground }]}>
                 {group.author?.displayName?.split(" ")[0] ?? "Story"}
               </Text>
-            </Pressable>
+            </Touchable>
           );
         })}
       </ScrollView>
@@ -80,6 +83,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
+    ...shadow("md"),
   },
   ringInner: {
     width: INNER,
@@ -99,6 +103,7 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     alignItems: "center",
     justifyContent: "center",
+    ...shadow("sm"),
   },
-  name: { fontSize: 12, fontFamily: "Inter_500Medium", maxWidth: 72, textAlign: "center" },
+  name: { fontSize: fs(12), fontFamily: "Inter_500Medium", maxWidth: 72, textAlign: "center" },
 });

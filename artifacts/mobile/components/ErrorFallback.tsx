@@ -1,4 +1,3 @@
-import { fs } from "@/constants/typography";
 import { Feather } from "@expo/vector-icons";
 import { reloadAppAsync } from "expo";
 import React, { useState } from "react";
@@ -189,13 +188,13 @@ const styles = StyleSheet.create({
     maxWidth: 600,
   },
   title: {
-    fontSize: fs(28),
+    fontSize: 28,
     fontWeight: "700",
     textAlign: "center",
     lineHeight: 40,
   },
   message: {
-    fontSize: fs(16),
+    fontSize: 16,
     textAlign: "center",
     lineHeight: 24,
   },
@@ -227,7 +226,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontWeight: "600",
     textAlign: "center",
-    fontSize: fs(16),
+    fontSize: 16,
   },
   modalOverlay: {
     flex: 1,
@@ -250,7 +249,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   modalTitle: {
-    fontSize: fs(20),
+    fontSize: 20,
     fontWeight: "600",
   },
   closeButton: {
@@ -272,7 +271,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   errorText: {
-    fontSize: fs(12),
+    fontSize: 12,
     lineHeight: 18,
     width: "100%",
   },

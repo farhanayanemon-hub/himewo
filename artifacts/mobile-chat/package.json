@@ -4,7 +4,7 @@
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
-    "dev": "EXPO_PACKAGER_PROXY_URL=https://$REPLIT_EXPO_DEV_DOMAIN EXPO_PUBLIC_DOMAIN=$REPLIT_DEV_DOMAIN EXPO_PUBLIC_REPL_ID=$REPL_ID REACT_NATIVE_PACKAGER_HOSTNAME=$REPLIT_DEV_DOMAIN pnpm exec expo start --localhost --port $PORT",
+    "dev": "EXPO_PACKAGER_PROXY_URL=https://$REPLIT_EXPO_DEV_DOMAIN EXPO_PUBLIC_DOMAIN=$(echo $VITE_API_URL | sed -e 's,^https*://,,' -e 's,/*$,,') EXPO_PUBLIC_SUPABASE_URL=$VITE_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY EXPO_PUBLIC_REPL_ID=$REPL_ID REACT_NATIVE_PACKAGER_HOSTNAME=$REPLIT_DEV_DOMAIN pnpm exec expo start --localhost --port $PORT",
     "build": "node scripts/build.js",
     "serve": "node server/serve.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"
@@ -56,8 +56,14 @@
     "zod-validation-error": "^3.4.0"
   },
   "dependencies": {
+    "@config-plugins/react-native-webrtc": "^13.0.0",
+    "@react-native-community/netinfo": "11.4.1",
+    "@stream-io/react-native-webrtc": "^145.0.0",
+    "@stream-io/video-react-native-sdk": "^1.39.0",
     "@supabase/supabase-js": "^2.108.2",
+    "expo-audio": "~1.1.1",
     "expo-video": "~3.0.16",
+    "react-native-incall-manager": "^4.2.1",
     "react-native-url-polyfill": "^3.0.0"
   }
 }

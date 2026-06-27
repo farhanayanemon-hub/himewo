@@ -1,3 +1,6 @@
+import { Touchable } from "@/components/Touchable";
+import { fs } from "@/constants/typography";
+import { shadow } from "@/constants/shadows";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -56,7 +59,7 @@ export default function PeopleScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top"]}>
-      <View style={[styles.header, { backgroundColor: c.card, borderBottomColor: c.border }]}>
+      <View style={[styles.header, { backgroundColor: c.card }, shadow("sm")]}>
         <Text style={[styles.title, { color: c.foreground }]}>People</Text>
       </View>
 
@@ -76,7 +79,7 @@ export default function PeopleScreen() {
           renderItem={({ item }) => {
             const active = isActive(item);
             return (
-              <Pressable
+              <Touchable
                 style={[styles.row, { borderBottomColor: c.border }]}
                 onPress={() => openChat(item.id)}
                 disabled={busy}
@@ -85,11 +88,11 @@ export default function PeopleScreen() {
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text
                     numberOfLines={1}
-                    style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 16 }}
+                    style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: fs(16) }}
                   >
                     {item.displayName}
                   </Text>
-                  <Text style={{ color: c.mutedForeground, fontSize: 13, marginTop: 2 }}>
+                  <Text style={{ color: c.mutedForeground, fontSize: fs(13), marginTop: 2 }}>
                     {active
                       ? "Active now"
                       : item.presence?.lastSeenAt
@@ -98,7 +101,7 @@ export default function PeopleScreen() {
                   </Text>
                 </View>
                 <Ionicons name="chatbubble-outline" size={20} color={c.mutedForeground} />
-              </Pressable>
+              </Touchable>
             );
           }}
           ListEmptyComponent={
@@ -119,12 +122,12 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    zIndex: 2,
   },
-  title: { fontFamily: "Inter_700Bold", fontSize: 22 },
+  title: { fontFamily: "Inter_700Bold", fontSize: fs(22) },
   section: {
     fontFamily: "Inter_600SemiBold",
-    fontSize: 12,
+    fontSize: fs(12),
     letterSpacing: 0.5,
     marginLeft: 16,
     marginTop: 14,

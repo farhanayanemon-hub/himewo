@@ -1,11 +1,22 @@
-import { fs } from "@/constants/typography";
 import { Tabs } from "expo-router";
-import { Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { View } from "react-native";
+import {
+  useGetUnreadNotificationCount,
+  getGetUnreadNotificationCountQueryKey,
+} from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 
 export default function TabsLayout() {
   const c = useColors();
+  const { data: unread } = useGetUnreadNotificationCount({
+    query: {
+      refetchInterval: 30_000,
+      queryKey: getGetUnreadNotificationCountQueryKey(),
+    },
+  });
+  const unreadCount = (unread as { count?: number } | undefined)?.count ?? 0;
+
   return (
     <Tabs
       screenOptions={{
@@ -14,39 +25,58 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: c.mutedForeground,
         tabBarStyle: {
           backgroundColor: c.card,
-          borderTopWidth: 0,
-          height: 60,
-          paddingTop: 6,
-          paddingBottom: 8,
-          ...Platform.select({
-            web: { boxShadow: "0 -4px 18px rgba(58,40,26,0.10)" },
-            default: {
-              shadowColor: "#3a281a",
-              shadowOffset: { width: 0, height: -3 },
-              shadowOpacity: 0.1,
-              shadowRadius: 12,
-              elevation: 14,
-            },
-          }),
+          borderTopColor: c.border,
         },
-        tabBarLabelStyle: { fontFamily: "Inter_600SemiBold", fontSize: fs(11) },
+        tabBarLabelStyle: { fontFamily: "Inter_500Medium", fontSize: 11 },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Chats",
+          title: "Home",
+          tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="friends"
+        options={{
+          title: "Friends",
+          tabBarIcon: ({ color, size }) => <Ionicons name="people" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="reels"
+        options={{
+          title: "Reels",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="chatbubble" size={size} color={color} />
+            <Ionicons name="film-outline" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="people"
+        name="notifications"
         options={{
-          title: "People",
+          title: "Alerts",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people" size={size} color={color} />
+            <View>
+              <Ionicons name="notifications" size={size} color={color} />
+              {unreadCount > 0 && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: -4,
+                    right: -6,
+                    backgroundColor: c.destructive,
+                    borderRadius: 8,
+                    minWidth: 16,
+                    height: 16,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    paddingHorizontal: 3,
+                  }}
+                />
+              )}
+            </View>
           ),
         }}
       />
@@ -54,9 +84,7 @@ export default function TabsLayout() {
         name="menu"
         options={{
           title: "Menu",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="menu" size={size} color={color} />
-          ),
+          tabBarIcon: ({ color, size }) => <Ionicons name="menu" size={size} color={color} />,
         }}
       />
     </Tabs>

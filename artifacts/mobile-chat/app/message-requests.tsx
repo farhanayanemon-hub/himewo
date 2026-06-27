@@ -1,3 +1,6 @@
+import { Touchable } from "@/components/Touchable";
+import { fs } from "@/constants/typography";
+import { shadow, glow } from "@/constants/shadows";
 import {
   ActivityIndicator,
   FlatList,
@@ -46,11 +49,11 @@ export default function MessageRequestsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top"]}>
-      <View style={[styles.header, { borderBottomColor: c.border }]}>
-        <Pressable onPress={() => router.back()} hitSlop={8}>
+      <View style={[styles.header, { backgroundColor: c.card }, shadow("sm")]}>
+        <Touchable onPress={() => router.back()} hitSlop={8}>
           <Ionicons name="arrow-back" size={24} color={c.foreground} />
-        </Pressable>
-        <Text style={{ color: c.foreground, fontFamily: "Inter_700Bold", fontSize: 18 }}>
+        </Touchable>
+        <Text style={{ color: c.foreground, fontFamily: "Inter_700Bold", fontSize: fs(18) }}>
           Message requests
         </Text>
         <View style={{ width: 24 }} />
@@ -70,33 +73,33 @@ export default function MessageRequestsScreen() {
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text
                     numberOfLines={1}
-                    style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}
+                    style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: fs(15) }}
                   >
                     {p.displayName}
                   </Text>
-                  <Text style={{ color: c.mutedForeground, fontSize: 13 }}>
+                  <Text style={{ color: c.mutedForeground, fontSize: fs(13) }}>
                     wants to connect
                   </Text>
                 </View>
                 <View style={styles.actions}>
-                  <Pressable
-                    style={[styles.accept, { backgroundColor: c.primary }]}
+                  <Touchable
+                    style={[styles.accept, { backgroundColor: c.primary }, glow(c.primary)]}
                     onPress={() => onAccept(item.id)}
                     disabled={accept.isPending}
                   >
-                    <Text style={{ color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 13 }}>
+                    <Text style={{ color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: fs(13) }}>
                       Accept
                     </Text>
-                  </Pressable>
-                  <Pressable
+                  </Touchable>
+                  <Touchable
                     style={[styles.decline, { backgroundColor: c.secondary }]}
                     onPress={() => onDecline(item.id)}
                     disabled={decline.isPending}
                   >
-                    <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 13 }}>
+                    <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: fs(13) }}>
                       Delete
                     </Text>
-                  </Pressable>
+                  </Touchable>
                 </View>
               </View>
             );
@@ -122,7 +125,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    zIndex: 2,
   },
   row: {
     flexDirection: "row",

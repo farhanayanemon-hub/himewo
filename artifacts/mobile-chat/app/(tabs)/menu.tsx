@@ -1,3 +1,6 @@
+import { Touchable } from "@/components/Touchable";
+import { fs } from "@/constants/typography";
+import { shadow, glow } from "@/constants/shadows";
 import {
   Pressable,
   ScrollView,
@@ -37,47 +40,47 @@ export default function MenuScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top"]}>
-      <View style={[styles.header, { backgroundColor: c.card, borderBottomColor: c.border }]}>
+      <View style={[styles.header, { backgroundColor: c.card }, shadow("sm")]}>
         <Text style={[styles.title, { color: c.foreground }]}>Menu</Text>
       </View>
 
       <ScrollView>
-        <Pressable
-          style={[styles.profile, { borderBottomColor: c.border }]}
+        <Touchable
+          style={[styles.profile, { backgroundColor: c.card }, shadow("sm")]}
           onPress={() => router.push("/settings")}
         >
           <Avatar uri={user?.avatarUrl} name={user?.displayName} size={56} />
           <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={{ color: c.foreground, fontFamily: "Inter_700Bold", fontSize: 17 }}>
+            <Text style={{ color: c.foreground, fontFamily: "Inter_700Bold", fontSize: fs(17) }}>
               {user?.displayName ?? "You"}
             </Text>
-            <Text style={{ color: c.mutedForeground, fontSize: 13 }}>
+            <Text style={{ color: c.mutedForeground, fontSize: fs(13) }}>
               @{user?.username}
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={c.mutedForeground} />
-        </Pressable>
+        </Touchable>
 
-        <View style={styles.list}>
+        <View style={[styles.list, { backgroundColor: c.card }, shadow("sm")]}>
           {items.map((item) => (
-            <Pressable
+            <Touchable
               key={item.label}
               style={[styles.row, { borderBottomColor: c.border }]}
               onPress={item.onPress}
             >
-              <View style={[styles.iconWrap, { backgroundColor: c.secondary }]}>
+              <View style={[styles.iconWrap, { backgroundColor: c.secondary }, shadow("sm")]}>
                 <Ionicons name={item.icon} size={22} color={c.foreground} />
               </View>
-              <Text style={{ flex: 1, color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 16 }}>
+              <Text style={{ flex: 1, color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: fs(16) }}>
                 {item.label}
               </Text>
               {item.badge ? (
-                <View style={[styles.badge, { backgroundColor: c.primary }]}>
+                <View style={[styles.badge, { backgroundColor: c.primary }, glow(c.primary)]}>
                   <Text style={styles.badgeText}>{item.badge > 99 ? "99+" : item.badge}</Text>
                 </View>
               ) : null}
               <Ionicons name="chevron-forward" size={20} color={c.mutedForeground} />
-            </Pressable>
+            </Touchable>
           ))}
         </View>
       </ScrollView>
@@ -89,17 +92,19 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    zIndex: 2,
   },
-  title: { fontFamily: "Inter_700Bold", fontSize: 22 },
+  title: { fontFamily: "Inter_700Bold", fontSize: fs(22) },
   profile: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    marginHorizontal: 12,
+    marginTop: 12,
+    borderRadius: 16,
   },
-  list: { marginTop: 8 },
+  list: { marginTop: 12, marginHorizontal: 12, borderRadius: 16 },
   row: {
     flexDirection: "row",
     alignItems: "center",
@@ -123,5 +128,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  badgeText: { color: "#fff", fontFamily: "Inter_700Bold", fontSize: 11 },
+  badgeText: { color: "#fff", fontFamily: "Inter_700Bold", fontSize: fs(11) },
 });

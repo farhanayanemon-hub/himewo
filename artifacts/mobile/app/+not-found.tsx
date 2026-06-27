@@ -1,4 +1,3 @@
-import { fs } from "@/constants/typography";
 import { Link, Stack } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -33,7 +32,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   title: {
-    fontSize: fs(20),
+    fontSize: 20,
     fontWeight: "bold",
   },
   link: {
@@ -41,6 +40,6 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
   },
   linkText: {
-    fontSize: fs(14),
+    fontSize: 14,
   },
 });
