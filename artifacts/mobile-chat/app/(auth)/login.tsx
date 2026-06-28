@@ -136,7 +136,7 @@ export default function LoginScreen() {
           </View>
           <Text style={[styles.title, { color: c.primary }]}>HiMewo Chat</Text>
           <Text style={{ color: c.mutedForeground, fontSize: fs(14) }}>
-            Message, call & connect — instantly
+            Messenger — message, call & connect instantly
           </Text>
         </View>
 
