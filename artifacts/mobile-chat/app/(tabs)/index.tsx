@@ -21,11 +21,13 @@ import {
   useListConversations,
   useCreateConversation,
   useSearchUsers,
+  useListFriendRequests,
   getSearchUsersQueryKey,
   getListConversationsQueryKey,
   ConversationInputType,
   type Conversation,
   type Profile,
+  type FriendRequest,
 } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
 import { ActiveRow } from "@/components/ActiveRow";
@@ -50,6 +52,9 @@ export default function ConversationsScreen() {
 
   const { data, isLoading, isRefetching, refetch } = useListConversations();
   const conversations = (data ?? []) as Conversation[];
+
+  const { data: requestData } = useListFriendRequests();
+  const requestCount = ((requestData ?? []) as FriendRequest[]).length;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -88,7 +93,7 @@ export default function ConversationsScreen() {
         <Touchable onPress={() => router.push("/settings")} hitSlop={8}>
           <Avatar uri={user?.avatarUrl} name={user?.displayName} size={36} />
         </Touchable>
-        <Text style={[styles.title, { color: c.foreground }]}>Chats</Text>
+        <Text style={[styles.wordmark, { color: c.primary }]}>himewo chat</Text>
         <View style={styles.headerRight}>
           <Touchable
             style={[styles.iconBtn, { backgroundColor: c.secondary }, shadow("sm")]}
@@ -97,11 +102,11 @@ export default function ConversationsScreen() {
             <Ionicons name="create-outline" size={20} color={c.foreground} />
           </Touchable>
           <Touchable
-            style={[styles.logoBtn, { backgroundColor: c.primary }, glow(c.primary)]}
+            style={[styles.iconBtn, { backgroundColor: c.secondary }, shadow("sm")]}
             onPress={() => openMainApp()}
             hitSlop={6}
           >
-            <Ionicons name="chatbubble-ellipses" size={20} color="#fff" />
+            <Ionicons name="apps" size={20} color={c.foreground} />
           </Touchable>
         </View>
       </View>
@@ -130,7 +135,34 @@ export default function ConversationsScreen() {
         <FlatList
           data={filtered}
           keyExtractor={(item) => String(item.id)}
-          ListHeaderComponent={search.trim().length > 0 ? null : <ActiveRow />}
+          ListHeaderComponent={
+            search.trim().length > 0 ? null : (
+              <View>
+                <ActiveRow />
+                {requestCount > 0 && (
+                  <Touchable
+                    style={[styles.requestRow, { borderBottomColor: c.border }]}
+                    onPress={() => router.push("/message-requests")}
+                  >
+                    <View style={[styles.requestIcon, { backgroundColor: c.primary }, glow(c.primary)]}>
+                      <Ionicons name="chatbox-ellipses" size={24} color="#fff" />
+                    </View>
+                    <View style={{ flex: 1, marginLeft: 12 }}>
+                      <Text style={{ color: c.foreground, fontFamily: "Inter_700Bold", fontSize: fs(16) }}>
+                        Message requests
+                      </Text>
+                      <Text style={{ color: c.mutedForeground, fontSize: fs(13), marginTop: 2 }}>
+                        {requestCount} {requestCount === 1 ? "person wants" : "people want"} to connect
+                      </Text>
+                    </View>
+                    <View style={[styles.badge, { backgroundColor: c.primary }, glow(c.primary)]}>
+                      <Text style={styles.badgeText}>{requestCount > 99 ? "99+" : requestCount}</Text>
+                    </View>
+                  </Touchable>
+                )}
+              </View>
+            )
+          }
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={onRefresh} tintColor={c.primary} />
           }
@@ -328,6 +360,7 @@ const styles = StyleSheet.create({
   headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },
   backBtn: { width: 38, height: 38, alignItems: "center", justifyContent: "center" },
   title: { fontFamily: "Inter_700Bold", fontSize: fs(20) },
+  wordmark: { flex: 1, marginLeft: 12, fontFamily: "Inter_700Bold", fontSize: fs(22), letterSpacing: -0.5 },
   iconBtn: {
     width: 38,
     height: 38,
@@ -335,10 +368,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  logoBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
+  requestRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  requestIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: "center",
     justifyContent: "center",
   },
