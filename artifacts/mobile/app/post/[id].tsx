@@ -29,10 +29,12 @@ import { Avatar } from "@/components/Avatar";
 import { PostCard } from "@/components/PostCard";
 import { EmojiPickerSheet } from "@/components/EmojiPickerSheet";
 import { useColors } from "@/hooks/useColors";
+import { useSounds } from "@/lib/sounds";
 import { timeAgo } from "@/lib/format";
 
 export default function PostDetailScreen() {
   const c = useColors();
+  const { play } = useSounds();
   const qc = useQueryClient();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -89,6 +91,7 @@ export default function PostDetailScreen() {
       { id: postId, data: { content } },
       {
         onSuccess: () => {
+          play("comment");
           qc.invalidateQueries({ queryKey: getListCommentsQueryKey(postId) });
           qc.invalidateQueries({ queryKey: getGetPostQueryKey(postId) });
           qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
