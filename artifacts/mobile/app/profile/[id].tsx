@@ -112,15 +112,8 @@ export default function ProfileScreen() {
     }
   };
 
-  const onMessage = async () => {
-    try {
-      const conv = await createConversation.mutateAsync({
-        data: { type: ConversationType.direct, memberIds: [userId] },
-      });
-      router.push(`/messages/${conv.id}`);
-    } catch {
-      router.push("/messages");
-    }
+  const onMessage = () => {
+    router.push("/messages");
   };
 
   const friendLabel = profile?.viewerIsFriend
