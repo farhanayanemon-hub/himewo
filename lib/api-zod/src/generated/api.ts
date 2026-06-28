@@ -2110,6 +2110,277 @@ export const GetGroupPostsResponseItem = zod.object({
 export const GetGroupPostsResponse = zod.array(GetGroupPostsResponseItem)
 
 
+
+export const listMarketplaceListingsQueryLimitDefault = 20;
+export const listMarketplaceListingsQueryLimitMax = 50;
+
+
+
+export const ListMarketplaceListingsQueryParams = zod.object({
+  "category": zod.coerce.string().optional(),
+  "search": zod.coerce.string().optional(),
+  "cursor": zod.coerce.number().min(1).optional(),
+  "limit": zod.coerce.number().min(1).max(listMarketplaceListingsQueryLimitMax).default(listMarketplaceListingsQueryLimitDefault)
+})
+
+export const ListMarketplaceListingsResponseItem = zod.object({
+  "id": zod.number(),
+  "seller": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "title": zod.string(),
+  "price": zod.number(),
+  "currency": zod.string(),
+  "category": zod.string(),
+  "condition": zod.string(),
+  "description": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "photos": zod.array(zod.string()),
+  "status": zod.enum(['available', 'sold']),
+  "viewerIsSeller": zod.boolean().optional(),
+  "createdAt": zod.coerce.date()
+})
+export const ListMarketplaceListingsResponse = zod.array(ListMarketplaceListingsResponseItem)
+
+
+
+export const createMarketplaceListingBodyPriceMin = 0;
+
+
+
+export const CreateMarketplaceListingBody = zod.object({
+  "title": zod.string().min(1),
+  "price": zod.number().min(createMarketplaceListingBodyPriceMin),
+  "currency": zod.string().optional(),
+  "category": zod.string().optional(),
+  "condition": zod.string().optional(),
+  "description": zod.string().optional(),
+  "location": zod.string().optional(),
+  "photos": zod.array(zod.string()).optional()
+})
+
+export const CreateMarketplaceListingResponse = zod.object({
+  "id": zod.number(),
+  "seller": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "title": zod.string(),
+  "price": zod.number(),
+  "currency": zod.string(),
+  "category": zod.string(),
+  "condition": zod.string(),
+  "description": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "photos": zod.array(zod.string()),
+  "status": zod.enum(['available', 'sold']),
+  "viewerIsSeller": zod.boolean().optional(),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const GetSellingDashboardResponse = zod.object({
+  "activeListings": zod.number(),
+  "soldListings": zod.number(),
+  "totalListings": zod.number(),
+  "listings": zod.array(zod.object({
+  "id": zod.number(),
+  "seller": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "title": zod.string(),
+  "price": zod.number(),
+  "currency": zod.string(),
+  "category": zod.string(),
+  "condition": zod.string(),
+  "description": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "photos": zod.array(zod.string()),
+  "status": zod.enum(['available', 'sold']),
+  "viewerIsSeller": zod.boolean().optional(),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+export const GetMarketplaceListingParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetMarketplaceListingResponse = zod.object({
+  "id": zod.number(),
+  "seller": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "title": zod.string(),
+  "price": zod.number(),
+  "currency": zod.string(),
+  "category": zod.string(),
+  "condition": zod.string(),
+  "description": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "photos": zod.array(zod.string()),
+  "status": zod.enum(['available', 'sold']),
+  "viewerIsSeller": zod.boolean().optional(),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const UpdateMarketplaceListingParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+export const updateMarketplaceListingBodyPriceMin = 0;
+
+
+
+export const UpdateMarketplaceListingBody = zod.object({
+  "title": zod.string().min(1).optional(),
+  "price": zod.number().min(updateMarketplaceListingBodyPriceMin).optional(),
+  "category": zod.string().optional(),
+  "condition": zod.string().optional(),
+  "description": zod.string().optional(),
+  "location": zod.string().optional(),
+  "photos": zod.array(zod.string()).optional(),
+  "status": zod.enum(['available', 'sold']).optional()
+})
+
+export const UpdateMarketplaceListingResponse = zod.object({
+  "id": zod.number(),
+  "seller": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "title": zod.string(),
+  "price": zod.number(),
+  "currency": zod.string(),
+  "category": zod.string(),
+  "condition": zod.string(),
+  "description": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "photos": zod.array(zod.string()),
+  "status": zod.enum(['available', 'sold']),
+  "viewerIsSeller": zod.boolean().optional(),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const DeleteMarketplaceListingParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteMarketplaceListingResponse = zod.void()
+
+
 export const ListPagesResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),

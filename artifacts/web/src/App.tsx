@@ -21,6 +21,11 @@ import SearchPage from "@/pages/search";
 import SettingsPage from "@/pages/settings";
 import MePage from "@/pages/me";
 import StoriesPage from "@/pages/stories";
+import MarketplacePage, {
+  MarketplaceListingPage,
+  MarketplaceCreatePage,
+  MarketplaceSellingPage,
+} from "@/pages/marketplace";
 
 const queryClient = new QueryClient();
 
@@ -57,6 +62,10 @@ function AppRoutes() {
       <Route path="/groups/:id" component={GroupsPage} />
       <Route path="/pages" component={PagesView} />
       <Route path="/pages/:id" component={PagesView} />
+      <Route path="/marketplace" component={MarketplacePage} />
+      <Route path="/marketplace/selling" component={MarketplaceSellingPage} />
+      <Route path="/marketplace/create" component={MarketplaceCreatePage} />
+      <Route path="/marketplace/:id" component={MarketplaceListingPage} />
       <Route path="/notifications" component={NotificationsPage} />
       <Route path="/search" component={SearchPage} />
       <Route path="/settings" component={SettingsPage} />

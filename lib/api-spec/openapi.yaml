@@ -695,6 +695,104 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/Post" }
 
+  # ---------------- Marketplace ----------------
+  /marketplace:
+    get:
+      operationId: listMarketplaceListings
+      tags: [marketplace]
+      parameters:
+        - { name: category, in: query, schema: { type: string } }
+        - { name: search, in: query, schema: { type: string } }
+        - { name: cursor, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, default: 20, minimum: 1, maximum: 50 } }
+      responses:
+        "200":
+          description: Listings
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/MarketplaceListing" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+    post:
+      operationId: createMarketplaceListing
+      tags: [marketplace]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MarketplaceListingInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MarketplaceListing" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /marketplace/selling:
+    get:
+      operationId: getSellingDashboard
+      tags: [marketplace]
+      responses:
+        "200":
+          description: Selling overview
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SellingOverview" }
+  /marketplace/{id}:
+    get:
+      operationId: getMarketplaceListing
+      tags: [marketplace]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Listing
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MarketplaceListing" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateMarketplaceListing
+      tags: [marketplace]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MarketplaceListingUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MarketplaceListing" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteMarketplaceListing
+      tags: [marketplace]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   # ---------------- Pages ----------------
   /pages:
     get:
@@ -969,6 +1067,16 @@ components:
           schema: { $ref: "#/components/schemas/Error" }
     NotFound:
       description: Not found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Forbidden:
+      description: Forbidden
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
@@ -1333,6 +1441,75 @@ components:
         description: { type: string }
         avatarUrl: { type: string }
         coverUrl: { type: string }
+
+    MarketplaceListing:
+      type: object
+      required:
+        [
+          id,
+          seller,
+          title,
+          price,
+          currency,
+          category,
+          condition,
+          photos,
+          status,
+          createdAt,
+        ]
+      properties:
+        id: { type: integer }
+        seller: { $ref: "#/components/schemas/Profile" }
+        title: { type: string }
+        price: { type: integer }
+        currency: { type: string }
+        category: { type: string }
+        condition: { type: string }
+        description: { type: ["string", "null"] }
+        location: { type: ["string", "null"] }
+        photos:
+          type: array
+          items: { type: string }
+        status: { type: string, enum: [available, sold] }
+        viewerIsSeller: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    MarketplaceListingInput:
+      type: object
+      required: [title, price]
+      properties:
+        title: { type: string, minLength: 1 }
+        price: { type: integer, minimum: 0 }
+        currency: { type: string }
+        category: { type: string }
+        condition: { type: string }
+        description: { type: string }
+        location: { type: string }
+        photos:
+          type: array
+          items: { type: string }
+    MarketplaceListingUpdate:
+      type: object
+      properties:
+        title: { type: string, minLength: 1 }
+        price: { type: integer, minimum: 0 }
+        category: { type: string }
+        condition: { type: string }
+        description: { type: string }
+        location: { type: string }
+        photos:
+          type: array
+          items: { type: string }
+        status: { type: string, enum: [available, sold] }
+    SellingOverview:
+      type: object
+      required: [activeListings, soldListings, totalListings, listings]
+      properties:
+        activeListings: { type: integer }
+        soldListings: { type: integer }
+        totalListings: { type: integer }
+        listings:
+          type: array
+          items: { $ref: "#/components/schemas/MarketplaceListing" }
 
     Story:
       type: object

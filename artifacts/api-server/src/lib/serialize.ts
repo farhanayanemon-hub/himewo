@@ -25,7 +25,9 @@ import {
   reelLikesTable,
   reelCommentsTable,
   notificationsTable,
+  marketplaceListingsTable,
   type Profile as ProfileRow,
+  type MarketplaceListing as MarketplaceListingRow,
   type Post as PostRow,
   type Comment as CommentRow,
   type Conversation as ConversationRow,
@@ -714,4 +716,43 @@ export async function buildNotifications(rows: NotificationRow[]) {
 }
 
 // ---------------- Shared helpers ----------------
+// ---------------- Marketplace ----------------
+export async function buildListings(
+  rows: MarketplaceListingRow[],
+  viewerId?: string,
+) {
+  const profiles = await loadProfileMap(rows.map((r) => r.sellerId));
+  return rows
+    .map((r) => {
+      const seller = profiles.get(r.sellerId);
+      if (!seller) return null;
+      return {
+        id: r.id,
+        seller,
+        title: r.title,
+        price: r.price,
+        currency: r.currency,
+        category: r.category,
+        condition: r.condition,
+        description: r.description,
+        location: r.location,
+        photos: r.photos ?? [],
+        status: r.status,
+        viewerIsSeller: viewerId ? r.sellerId === viewerId : false,
+        createdAt: r.createdAt,
+      };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null);
+}
+
+export async function buildListingById(id: number, viewerId?: string) {
+  const [row] = await db
+    .select()
+    .from(marketplaceListingsTable)
+    .where(eq(marketplaceListingsTable.id, id));
+  if (!row) return null;
+  const [built] = await buildListings([row], viewerId);
+  return built ?? null;
+}
+
 export { and, eq, ne, or, gt, inArray, desc, asc, count, isNull };

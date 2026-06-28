@@ -500,6 +500,73 @@ export interface PageInput {
   coverUrl?: string;
 }
 
+export type MarketplaceListingStatus = typeof MarketplaceListingStatus[keyof typeof MarketplaceListingStatus];
+
+
+export const MarketplaceListingStatus = {
+  available: 'available',
+  sold: 'sold',
+} as const;
+
+export interface MarketplaceListing {
+  id: number;
+  seller: Profile;
+  title: string;
+  price: number;
+  currency: string;
+  category: string;
+  condition: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  location?: string | null;
+  photos: string[];
+  status: MarketplaceListingStatus;
+  viewerIsSeller?: boolean;
+  createdAt: string;
+}
+
+export interface MarketplaceListingInput {
+  /** @minLength 1 */
+  title: string;
+  /** @minimum 0 */
+  price: number;
+  currency?: string;
+  category?: string;
+  condition?: string;
+  description?: string;
+  location?: string;
+  photos?: string[];
+}
+
+export type MarketplaceListingUpdateStatus = typeof MarketplaceListingUpdateStatus[keyof typeof MarketplaceListingUpdateStatus];
+
+
+export const MarketplaceListingUpdateStatus = {
+  available: 'available',
+  sold: 'sold',
+} as const;
+
+export interface MarketplaceListingUpdate {
+  /** @minLength 1 */
+  title?: string;
+  /** @minimum 0 */
+  price?: number;
+  category?: string;
+  condition?: string;
+  description?: string;
+  location?: string;
+  photos?: string[];
+  status?: MarketplaceListingUpdateStatus;
+}
+
+export interface SellingOverview {
+  activeListings: number;
+  soldListings: number;
+  totalListings: number;
+  listings: MarketplaceListing[];
+}
+
 export type StoryMediaType = typeof StoryMediaType[keyof typeof StoryMediaType];
 
 
@@ -631,6 +698,16 @@ export type UnauthorizedResponse = Error;
  */
 export type NotFoundResponse = Error;
 
+/**
+ * Invalid request
+ */
+export type BadRequestResponse = Error;
+
+/**
+ * Forbidden
+ */
+export type ForbiddenResponse = Error;
+
 export type SearchUsersParams = {
 q?: string;
 limit?: number;
@@ -658,6 +735,20 @@ limit?: number;
 
 export type GetGroupPostsParams = {
 cursor?: number;
+limit?: number;
+};
+
+export type ListMarketplaceListingsParams = {
+category?: string;
+search?: string;
+/**
+ * @minimum 1
+ */
+cursor?: number;
+/**
+ * @minimum 1
+ * @maximum 50
+ */
 limit?: number;
 };
 

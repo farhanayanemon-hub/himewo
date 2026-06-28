@@ -13,7 +13,8 @@ import {
   Settings,
   LogOut,
   UsersRound,
-  FileText
+  FileText,
+  Store
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -36,6 +37,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
     { href: "/reels", icon: Video, label: "Reels" },
     { href: "/groups", icon: UsersRound, label: "Groups" },
     { href: "/pages", icon: FileText, label: "Pages" },
+    { href: "/marketplace", icon: Store, label: "Marketplace" },
   ];
 
   return (
