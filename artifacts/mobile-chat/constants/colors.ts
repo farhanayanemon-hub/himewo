@@ -1,9 +1,10 @@
 /**
- * Semantic design tokens for the HiMewo mobile app.
+ * Semantic design tokens for the HiMewo Chat (Messenger) mobile app.
  *
- * These values are synced from the sibling web artifact (artifacts/web/src/index.css)
- * so both apps share a cohesive visual identity. HSL values from the web theme are
- * converted to hex here. The brand primary is a warm Facebook-style orange.
+ * HiMewo Chat is the dedicated Messenger-style app, so it uses a distinct
+ * Messenger-blue identity (cool neutral surfaces + vivid blue primary) to set it
+ * apart from the warm Facebook-orange HiMewo social app. Both apps still share
+ * the same structure/components; only the palette differs.
  *
  * The useColors() hook automatically picks the light/dark variant based on the
  * device color scheme.
@@ -12,75 +13,75 @@
 const colors = {
   light: {
     // Legacy aliases (kept for backward compatibility)
-    text: "#1f1814",
-    tint: "#ff751a",
+    text: "#050505",
+    tint: "#0084ff",
 
-    // Core surfaces
-    background: "#fcfaf8",
-    foreground: "#1f1814",
+    // Core surfaces (Messenger cool neutrals)
+    background: "#ffffff",
+    foreground: "#050505",
 
     // Cards / elevated surfaces
     card: "#ffffff",
-    cardForeground: "#1f1814",
-    cardBorder: "#ebe7e0",
+    cardForeground: "#050505",
+    cardBorder: "#e4e6eb",
 
-    // Primary action color (buttons, links, active states)
-    primary: "#ff751a",
+    // Primary action color (Messenger blue)
+    primary: "#0084ff",
     primaryForeground: "#ffffff",
 
     // Secondary / less-emphasis interactive surfaces
-    secondary: "#ebe7e0",
-    secondaryForeground: "#1f1814",
+    secondary: "#f0f2f5",
+    secondaryForeground: "#050505",
 
     // Muted / subdued elements (dividers, timestamps, placeholders)
-    muted: "#ebe7e0",
-    mutedForeground: "#7e7167",
+    muted: "#f0f2f5",
+    mutedForeground: "#65676b",
 
-    // Accent highlights (badges, selected items, focus rings)
-    accent: "#ffcc33",
-    accentForeground: "#1f1814",
+    // Accent highlights (Messenger gradient purple)
+    accent: "#a033ff",
+    accentForeground: "#ffffff",
 
     // Destructive actions (delete, error states)
     destructive: "#ef4343",
     destructiveForeground: "#ffffff",
 
     // Borders and input outlines
-    border: "#ebe7e0",
-    input: "#ebe7e0",
+    border: "#e4e6eb",
+    input: "#e4e6eb",
   },
 
   dark: {
-    text: "#fcfaf8",
-    tint: "#ff751a",
+    text: "#e4e6eb",
+    tint: "#2e9bff",
 
-    background: "#181310",
-    foreground: "#fcfaf8",
+    background: "#18191a",
+    foreground: "#e4e6eb",
 
-    card: "#251d18",
-    cardForeground: "#fcfaf8",
-    cardBorder: "#3b302b",
+    card: "#242526",
+    cardForeground: "#e4e6eb",
+    cardBorder: "#3a3b3c",
 
-    primary: "#ff751a",
+    primary: "#2e9bff",
     primaryForeground: "#ffffff",
 
-    secondary: "#3b302b",
-    secondaryForeground: "#fcfaf8",
+    secondary: "#3a3b3c",
+    secondaryForeground: "#e4e6eb",
 
-    muted: "#3b302b",
-    mutedForeground: "#a39c8f",
+    muted: "#3a3b3c",
+    mutedForeground: "#b0b3b8",
 
-    accent: "#ffcc33",
-    accentForeground: "#1f1814",
+    accent: "#b16cff",
+    accentForeground: "#ffffff",
 
     destructive: "#7c1d1d",
     destructiveForeground: "#ffffff",
 
-    border: "#3b302b",
-    input: "#3b302b",
+    border: "#3a3b3c",
+    input: "#3a3b3c",
   },
 
-  // Border radius (in px). Synced from the web artifact's --radius (1rem = 16px).
-  radius: 16,
+  // Border radius (in px). Messenger uses fully rounded bubbles/controls.
+  radius: 18,
 };
 
 export default colors;
