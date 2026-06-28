@@ -87,6 +87,8 @@ export * from './savedItemInput';
 export * from './savedItemInputEntityType';
 export * from './searchUsersParams';
 export * from './sellingOverview';
+export * from './sharedPost';
+export * from './sharedPostPrivacy';
 export * from './shareInput';
 export * from './story';
 export * from './storyGroup';

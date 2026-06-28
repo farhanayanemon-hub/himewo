@@ -33,12 +33,25 @@ export function ReactionControl({ viewerReaction, onReact, count, size = "defaul
   };
 
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const heldOpen = useRef(false);
   const open = () => {
     if (hideTimer.current) clearTimeout(hideTimer.current);
     setShowPicker(true);
   };
   const close = () => {
     hideTimer.current = setTimeout(() => setShowPicker(false), 120);
+  };
+
+  const startHold = () => {
+    heldOpen.current = false;
+    holdTimer.current = setTimeout(() => {
+      heldOpen.current = true;
+      open();
+    }, 300);
+  };
+  const cancelHold = () => {
+    if (holdTimer.current) clearTimeout(holdTimer.current);
   };
 
   return (
@@ -57,7 +70,7 @@ export function ReactionControl({ viewerReaction, onReact, count, size = "defaul
               <span className="absolute -top-7 px-2 py-0.5 rounded-full bg-foreground text-background text-[10px] font-semibold opacity-0 group-hover/emoji:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                 {config.label}
               </span>
-              {config.emoji}
+              <span className="reaction-idle" style={{ animationDelay: `${i * 120}ms` }}>{config.emoji}</span>
             </button>
           ))}
         </div>
@@ -65,7 +78,17 @@ export function ReactionControl({ viewerReaction, onReact, count, size = "defaul
 
       <button
         type="button"
-        onClick={() => fire(viewerReaction || ReactionType.like)}
+        onClick={() => {
+          if (heldOpen.current) {
+            heldOpen.current = false;
+            return;
+          }
+          fire(viewerReaction || ReactionType.like);
+        }}
+        onPointerDown={startHold}
+        onPointerUp={cancelHold}
+        onPointerLeave={cancelHold}
+        onContextMenu={(e) => e.preventDefault()}
         className={`flex items-center gap-1.5 font-semibold press transition-colors ${
           isSm ? "text-xs" : ""
         } ${active ? active.color : "text-muted-foreground hover:text-foreground"}`}

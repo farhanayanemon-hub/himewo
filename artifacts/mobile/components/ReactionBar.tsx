@@ -1,10 +1,11 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Modal,
   Pressable,
   Text,
   View,
   StyleSheet,
+  Animated,
   findNodeHandle,
   UIManager,
 } from "react-native";
@@ -18,6 +19,47 @@ interface ReactionBarProps {
   viewerReaction?: ReactionType | null;
   onReact: (type: ReactionType) => void;
   size?: "default" | "sm";
+}
+
+function AnimatedReaction({
+  type,
+  index,
+  onPick,
+}: {
+  type: ReactionType;
+  index: number;
+  onPick: (t: ReactionType) => void;
+}) {
+  const scale = useRef(new Animated.Value(0)).current;
+  const press = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.spring(scale, {
+      toValue: 1,
+      friction: 5,
+      tension: 120,
+      delay: index * 45,
+      useNativeDriver: true,
+    }).start();
+  }, [scale, index]);
+
+  return (
+    <Pressable
+      onPress={() => onPick(type)}
+      onPressIn={() =>
+        Animated.spring(press, { toValue: 1.4, useNativeDriver: true, friction: 4 }).start()
+      }
+      onPressOut={() =>
+        Animated.spring(press, { toValue: 1, useNativeDriver: true, friction: 4 }).start()
+      }
+      style={styles.reaction}
+      hitSlop={4}
+    >
+      <Animated.Text style={{ fontSize: 32, transform: [{ scale: Animated.multiply(scale, press) }] }}>
+        {reactionConfig[type].emoji}
+      </Animated.Text>
+    </Pressable>
+  );
 }
 
 export function ReactionBar({
@@ -37,7 +79,7 @@ export function ReactionBar({
     const node = btnRef.current && findNodeHandle(btnRef.current);
     if (node) {
       UIManager.measureInWindow(node, (x, y) => {
-        setAnchor({ x: Math.max(12, x - 8), y: Math.max(80, y - 64) });
+        setAnchor({ x: Math.max(12, x - 8), y: Math.max(80, y - 70) });
         setOpen(true);
       });
     } else {
@@ -94,15 +136,8 @@ export function ReactionBar({
               },
             ]}
           >
-            {reactionOrder.map((t) => (
-              <Pressable
-                key={t}
-                onPress={() => pick(t)}
-                style={styles.reaction}
-                hitSlop={4}
-              >
-                <Text style={{ fontSize: 30 }}>{reactionConfig[t].emoji}</Text>
-              </Pressable>
+            {reactionOrder.map((t, i) => (
+              <AnimatedReaction key={t} type={t} index={i} onPick={pick} />
             ))}
           </View>
         </Pressable>

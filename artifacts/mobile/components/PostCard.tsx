@@ -1,5 +1,14 @@
 import { useState } from "react";
-import { Pressable, Text, View, StyleSheet } from "react-native";
+import {
+  Pressable,
+  Text,
+  View,
+  StyleSheet,
+  Modal,
+  Share,
+  TextInput,
+  Alert,
+} from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
@@ -9,6 +18,7 @@ import {
   useRemovePostReaction,
   useSaveItem,
   useUnsaveItem,
+  useSharePost,
   getGetFeedQueryKey,
   getGetPostQueryKey,
   getListSavedItemsQueryKey,
@@ -22,6 +32,8 @@ import { reactionConfig } from "@/constants/reactions";
 import { useColors } from "@/hooks/useColors";
 import { timeAgo, formatCount } from "@/lib/format";
 
+type SharedPost = NonNullable<Post["sharedPost"]>;
+
 interface PostCardProps {
   post: Post;
   onComment?: () => void;
@@ -34,17 +46,50 @@ function privacyIcon(privacy: string): keyof typeof Ionicons.glyphMap {
   return "earth";
 }
 
-export function PostCard({ post, onComment, onShare }: PostCardProps) {
+function SharedPostEmbed({ shared }: { shared: SharedPost }) {
+  const c = useColors();
+  return (
+    <Pressable
+      onPress={() => router.push(`/post/${shared.id}`)}
+      style={[styles.embed, { borderColor: c.border }]}
+    >
+      {shared.media.length > 0 && <MediaGrid media={shared.media} />}
+      <View style={styles.embedBody}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 }}>
+          <Avatar uri={shared.author.avatarUrl} name={shared.author.displayName} size={28} />
+          <View>
+            <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 13 }}>
+              {shared.author.displayName}
+            </Text>
+            <Text style={{ color: c.mutedForeground, fontSize: 11 }}>{timeAgo(shared.createdAt)}</Text>
+          </View>
+        </View>
+        {shared.content.length > 0 && (
+          <Text numberOfLines={4} style={{ color: c.foreground, fontSize: 14, lineHeight: 19 }}>
+            {shared.content}
+          </Text>
+        )}
+      </View>
+    </Pressable>
+  );
+}
+
+export function PostCard({ post, onComment }: PostCardProps) {
   const c = useColors();
   const qc = useQueryClient();
   const [summary, setSummary] = useState<ReactionSummary>(post.reactions);
   const [saved, setSaved] = useState<boolean>(post.viewerHasSaved ?? false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareCaption, setShareCaption] = useState("");
   const setReaction = useSetPostReaction();
   const removeReaction = useRemovePostReaction();
   const saveItem = useSaveItem();
   const unsaveItem = useUnsaveItem();
+  const sharePost = useSharePost();
 
   const viewerReaction = summary.viewerReaction ?? null;
+  const targetId = post.sharedPost?.id ?? post.id;
+  const postUrl = `https://himewo.com/post/${targetId}`;
 
   const syncServer = () => {
     qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
@@ -71,7 +116,6 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
   const applyReaction = (type: ReactionType) => {
     const prev = viewerReaction;
     if (prev === type) {
-      // toggle off
       setSummary((s) => ({
         ...s,
         total: Math.max(0, s.total - 1),
@@ -93,6 +137,33 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
       };
     });
     setReaction.mutate({ id: post.id, data: { type } }, { onSettled: syncServer });
+  };
+
+  const shareToFeed = () => {
+    sharePost.mutate(
+      { id: post.id, data: { caption: shareCaption.trim() || undefined } },
+      {
+        onSuccess: () => {
+          setShareOpen(false);
+          setShareCaption("");
+          syncServer();
+          Alert.alert("Shared", "This post is now on your timeline.");
+        },
+        onError: () => Alert.alert("Error", "Could not share this post."),
+      },
+    );
+  };
+
+  const sendToFriends = async () => {
+    setShareOpen(false);
+    try {
+      await Share.share({
+        message: `${post.content || "Check this out on HiMewo"}\n${postUrl}`,
+        url: postUrl,
+      });
+    } catch {
+      /* cancelled */
+    }
   };
 
   const topReactions = Object.entries(summary.byType)
@@ -119,6 +190,9 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
             {post.author.isVerified && (
               <Ionicons name="checkmark-circle" size={14} color={c.primary} />
             )}
+            {post.sharedPost && (
+              <Text style={{ color: c.mutedForeground, fontSize: 13 }}>shared a post</Text>
+            )}
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
             <Text style={{ color: c.mutedForeground, fontSize: 12 }}>
@@ -143,10 +217,16 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
         </Pressable>
       )}
 
-      {post.media.length > 0 && (
-        <Pressable onPress={() => router.push(`/post/${post.id}`)}>
-          <MediaGrid media={post.media} />
-        </Pressable>
+      {post.sharedPost ? (
+        <View style={{ paddingHorizontal: 14, marginBottom: 8 }}>
+          <SharedPostEmbed shared={post.sharedPost} />
+        </View>
+      ) : (
+        post.media.length > 0 && (
+          <Pressable onPress={() => router.push(`/post/${post.id}`)}>
+            <MediaGrid media={post.media} />
+          </Pressable>
+        )
       )}
 
       {(summary.total > 0 || post.commentCount > 0 || post.shareCount > 0) && (
@@ -186,11 +266,49 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
           <Ionicons name="chatbubble-outline" size={18} color={c.mutedForeground} />
           <Text style={[styles.actionLabel, { color: c.mutedForeground }]}>Comment</Text>
         </Pressable>
-        <Pressable style={styles.actionItem} onPress={onShare} hitSlop={6}>
+        <Pressable style={styles.actionItem} onPress={() => setShareOpen(true)} hitSlop={6}>
           <Ionicons name="arrow-redo-outline" size={18} color={c.mutedForeground} />
           <Text style={[styles.actionLabel, { color: c.mutedForeground }]}>Share</Text>
         </Pressable>
       </View>
+
+      <Modal visible={shareOpen} transparent animationType="slide" onRequestClose={() => setShareOpen(false)}>
+        <Pressable style={styles.sheetBackdrop} onPress={() => setShareOpen(false)}>
+          <Pressable style={[styles.sheet, { backgroundColor: c.card }]} onPress={(e) => e.stopPropagation()}>
+            <View style={[styles.sheetHandle, { backgroundColor: c.border }]} />
+            <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 16, marginBottom: 12 }}>
+              Share this post
+            </Text>
+            <TextInput
+              value={shareCaption}
+              onChangeText={setShareCaption}
+              placeholder="Say something about this..."
+              placeholderTextColor={c.mutedForeground}
+              multiline
+              style={[styles.sheetInput, { color: c.foreground, backgroundColor: c.secondary }]}
+            />
+            <Pressable
+              style={[styles.sheetPrimary, { backgroundColor: c.primary }]}
+              onPress={shareToFeed}
+              disabled={sharePost.isPending}
+            >
+              <Ionicons name="repeat" size={18} color="#fff" />
+              <Text style={{ color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 15 }}>
+                {sharePost.isPending ? "Sharing..." : "Share to your feed"}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.sheetSecondary, { borderColor: c.border }]}
+              onPress={sendToFriends}
+            >
+              <Ionicons name="paper-plane-outline" size={18} color={c.foreground} />
+              <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}>
+                Send to friends & other apps
+              </Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -205,6 +323,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   content: { paddingHorizontal: 14, fontSize: 15, lineHeight: 21, marginBottom: 10 },
+  embed: { borderWidth: 1, borderRadius: 14, overflow: "hidden" },
+  embedBody: { padding: 10 },
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -223,4 +343,44 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   actionLabel: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  sheetBackdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.4)" },
+  sheet: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 18,
+    paddingBottom: 34,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: 14,
+  },
+  sheetInput: {
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 14,
+    minHeight: 64,
+    textAlignVertical: "top",
+    marginBottom: 12,
+  },
+  sheetPrimary: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 13,
+    borderRadius: 12,
+    marginBottom: 10,
+  },
+  sheetSecondary: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 13,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
 });

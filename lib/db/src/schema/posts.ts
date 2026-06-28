@@ -7,6 +7,7 @@ import {
   timestamp,
   uniqueIndex,
   index,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -24,6 +25,10 @@ export const postsTable = pgTable(
     privacy: privacyEnum("privacy").notNull().default("public"),
     groupId: integer("group_id"),
     pageId: integer("page_id"),
+    sharedPostId: integer("shared_post_id").references(
+      (): AnyPgColumn => postsTable.id,
+      { onDelete: "set null" },
+    ),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

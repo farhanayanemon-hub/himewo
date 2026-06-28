@@ -181,6 +181,33 @@ export const PostPrivacy = {
   private: 'private',
 } as const;
 
+export type SharedPostPrivacy = typeof SharedPostPrivacy[keyof typeof SharedPostPrivacy];
+
+
+export const SharedPostPrivacy = {
+  public: 'public',
+  friends: 'friends',
+  private: 'private',
+} as const;
+
+export interface SharedPost {
+  id: number;
+  author: Profile;
+  content: string;
+  privacy: SharedPostPrivacy;
+  /** @nullable */
+  groupId?: number | null;
+  /** @nullable */
+  pageId?: number | null;
+  media: MediaItem[];
+  reactions: ReactionSummary;
+  commentCount: number;
+  shareCount: number;
+  viewerHasSaved?: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface Post {
   id: number;
   author: Profile;
@@ -195,6 +222,7 @@ export interface Post {
   commentCount: number;
   shareCount: number;
   viewerHasSaved?: boolean;
+  sharedPost?: SharedPost | null;
   createdAt: string;
   updatedAt?: string;
 }

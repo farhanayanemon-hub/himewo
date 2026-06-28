@@ -1,12 +1,40 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
-import { MessageCircle, Share2, Loader2, Bookmark } from "lucide-react";
+import { MessageCircle, Share2, Loader2, Bookmark, Link2, Send, Check } from "lucide-react";
 import { Post, useSetPostReaction, useRemovePostReaction, useSharePost, useSaveItem, useUnsaveItem, ReactionType } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 import { getGetFeedQueryKey, getGetPostQueryKey, getGetUserPostsQueryKey, getListSavedItemsQueryKey } from "@workspace/api-client-react";
 import { ReactionControl, reactionConfig } from "@/components/reaction-picker";
+
+type SharedPost = NonNullable<Post["sharedPost"]>;
+
+function SharedPostEmbed({ shared }: { shared: SharedPost }) {
+  return (
+    <Link href={`/post/${shared.id}`} className="block mb-3 rounded-xl border border-border overflow-hidden hover:bg-muted/30 transition-colors">
+      {shared.media && shared.media.length > 0 && (
+        <div className="overflow-hidden border-b border-border">
+          {shared.media[0].type === "video" ? (
+            <video src={shared.media[0].url} className="w-full object-cover max-h-[360px]" />
+          ) : (
+            <img src={shared.media[0].url} className="w-full object-cover max-h-[360px]" alt="" />
+          )}
+        </div>
+      )}
+      <div className="p-3">
+        <div className="flex items-center gap-2 mb-1.5">
+          <img src={shared.author.avatarUrl || ""} className="w-7 h-7 rounded-full object-cover" alt="" />
+          <div>
+            <div className="text-sm font-semibold leading-tight">{shared.author.displayName}</div>
+            <div className="text-[11px] text-muted-foreground leading-tight">{formatDistanceToNow(new Date(shared.createdAt), { addSuffix: true })}</div>
+          </div>
+        </div>
+        {shared.content && <p className="text-sm text-foreground/90 line-clamp-4 whitespace-pre-wrap">{shared.content}</p>}
+      </div>
+    </Link>
+  );
+}
 
 export function PostCard({ post }: { post: Post }) {
   const queryClient = useQueryClient();
@@ -17,6 +45,11 @@ export function PostCard({ post }: { post: Post }) {
   const unsaveItem = useUnsaveItem();
   const [showShare, setShowShare] = useState(false);
   const [shareCaption, setShareCaption] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  // when sharing a repost, point friends/links at the original post
+  const targetId = post.sharedPost?.id ?? post.id;
+  const postUrl = typeof window !== "undefined" ? `${window.location.origin}/post/${targetId}` : `/post/${targetId}`;
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: getGetFeedQueryKey() });
@@ -53,7 +86,7 @@ export function PostCard({ post }: { post: Post }) {
     }
   };
 
-  const handleShare = () => {
+  const handleShareToFeed = () => {
     sharePost.mutate(
       { id: post.id, data: { caption: shareCaption.trim() || undefined } },
       {
@@ -66,6 +99,29 @@ export function PostCard({ post }: { post: Post }) {
     );
   };
 
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(postUrl);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const handleNativeShare = async () => {
+    const data = { title: `${post.author.displayName} on HiMewo`, text: post.content || "Check this out on HiMewo", url: postUrl };
+    if (navigator.share) {
+      try {
+        await navigator.share(data);
+      } catch {
+        /* user cancelled */
+      }
+    } else {
+      handleCopyLink();
+    }
+  };
+
   const viewerReaction = post.reactions.viewerReaction as ReactionType | null | undefined;
 
   return (
@@ -74,7 +130,10 @@ export function PostCard({ post }: { post: Post }) {
         <Link href={`/profile/${post.author.id}`} className="flex items-center gap-3 group">
           <img src={post.author.avatarUrl || ""} className="w-10 h-10 rounded-full object-cover group-hover:ring-2 ring-primary transition-all" alt="" />
           <div>
-            <div className="font-semibold group-hover:underline">{post.author.displayName}</div>
+            <div className="font-semibold group-hover:underline">
+              {post.author.displayName}
+              {post.sharedPost && <span className="font-normal text-muted-foreground"> shared a post</span>}
+            </div>
             <div className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</div>
           </div>
         </Link>
@@ -95,16 +154,20 @@ export function PostCard({ post }: { post: Post }) {
         </Button>
       </div>
 
-      <p className="text-[15px] whitespace-pre-wrap mb-3">{post.content}</p>
+      {post.content && <p className="text-[15px] whitespace-pre-wrap mb-3">{post.content}</p>}
 
-      {post.media && post.media.length > 0 && (
-        <div className="rounded-lg overflow-hidden border border-border mb-3">
-          {post.media[0].type === "video" ? (
-            <video src={post.media[0].url} controls className="w-full object-cover max-h-[500px]" />
-          ) : (
-            <img src={post.media[0].url} className="w-full object-cover max-h-[500px]" alt="" />
-          )}
-        </div>
+      {post.sharedPost ? (
+        <SharedPostEmbed shared={post.sharedPost} />
+      ) : (
+        post.media && post.media.length > 0 && (
+          <div className="rounded-lg overflow-hidden border border-border mb-3">
+            {post.media[0].type === "video" ? (
+              <video src={post.media[0].url} controls className="w-full object-cover max-h-[500px]" />
+            ) : (
+              <img src={post.media[0].url} className="w-full object-cover max-h-[500px]" alt="" />
+            )}
+          </div>
+        )
       )}
 
       <div className="flex justify-between items-center text-sm text-muted-foreground py-2 border-b border-border mb-1">
@@ -153,7 +216,7 @@ export function PostCard({ post }: { post: Post }) {
       </div>
 
       {showShare && (
-        <div className="mt-3 pt-3 border-t border-border space-y-2 animate-in fade-in slide-in-from-top-1">
+        <div className="mt-3 pt-3 border-t border-border space-y-3 animate-in fade-in slide-in-from-top-1">
           <textarea
             value={shareCaption}
             onChange={(e) => setShareCaption(e.target.value)}
@@ -161,11 +224,22 @@ export function PostCard({ post }: { post: Post }) {
             rows={2}
             className="w-full bg-muted/50 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-primary"
           />
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setShowShare(false)}>Cancel</Button>
-            <Button size="sm" disabled={sharePost.isPending} onClick={handleShare} className="rounded-lg">
-              {sharePost.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Share now"}
+          <Button size="sm" disabled={sharePost.isPending} onClick={handleShareToFeed} className="w-full rounded-lg flex items-center gap-2">
+            {sharePost.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
+            Share to your feed
+          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleCopyLink} className="flex-1 rounded-lg flex items-center gap-2">
+              {copied ? <Check className="w-4 h-4 text-green-500" /> : <Link2 className="w-4 h-4" />}
+              {copied ? "Copied!" : "Copy link"}
             </Button>
+            <Button variant="outline" size="sm" onClick={handleNativeShare} className="flex-1 rounded-lg flex items-center gap-2">
+              <Send className="w-4 h-4" />
+              Send to...
+            </Button>
+          </div>
+          <div className="flex justify-end">
+            <Button variant="ghost" size="sm" onClick={() => setShowShare(false)}>Cancel</Button>
           </div>
         </div>
       )}
