@@ -50,9 +50,21 @@ export interface Profile {
   /** @nullable */
   bio?: string | null;
   /** @nullable */
+  birthday?: string | null;
+  /** @nullable */
   location?: string | null;
   /** @nullable */
   work?: string | null;
+  /** @nullable */
+  education?: string | null;
+  /** @nullable */
+  hometown?: string | null;
+  /** @nullable */
+  hobbies?: string | null;
+  /** @nullable */
+  interests?: string | null;
+  /** @nullable */
+  website?: string | null;
   isVerified: boolean;
   createdAt: string;
   /** @nullable */
@@ -88,10 +100,18 @@ export interface ProfileUpdate {
   /** @minLength 1 */
   displayName?: string;
   bio?: string;
+  birthday?: string;
   avatarUrl?: string;
   coverUrl?: string;
   location?: string;
   work?: string;
+  education?: string;
+  hometown?: string;
+  hobbies?: string;
+  interests?: string;
+  website?: string;
+  email?: string;
+  phone?: string;
 }
 
 export type MediaItemType = typeof MediaItemType[keyof typeof MediaItemType];
@@ -174,6 +194,7 @@ export interface Post {
   reactions: ReactionSummary;
   commentCount: number;
   shareCount: number;
+  viewerHasSaved?: boolean;
   createdAt: string;
   updatedAt?: string;
 }
@@ -500,6 +521,104 @@ export interface PageInput {
   coverUrl?: string;
 }
 
+export type UserSettingsProfileVisibility = typeof UserSettingsProfileVisibility[keyof typeof UserSettingsProfileVisibility];
+
+
+export const UserSettingsProfileVisibility = {
+  public: 'public',
+  friends: 'friends',
+  only_me: 'only_me',
+} as const;
+
+export type UserSettingsPostVisibility = typeof UserSettingsPostVisibility[keyof typeof UserSettingsPostVisibility];
+
+
+export const UserSettingsPostVisibility = {
+  public: 'public',
+  friends: 'friends',
+  only_me: 'only_me',
+} as const;
+
+export type UserSettingsFriendRequestPrivacy = typeof UserSettingsFriendRequestPrivacy[keyof typeof UserSettingsFriendRequestPrivacy];
+
+
+export const UserSettingsFriendRequestPrivacy = {
+  everyone: 'everyone',
+  friends_of_friends: 'friends_of_friends',
+} as const;
+
+export type UserSettingsLanguage = typeof UserSettingsLanguage[keyof typeof UserSettingsLanguage];
+
+
+export const UserSettingsLanguage = {
+  banglish: 'banglish',
+  bn: 'bn',
+  en: 'en',
+} as const;
+
+export interface UserSettings {
+  profileVisibility: UserSettingsProfileVisibility;
+  postVisibility: UserSettingsPostVisibility;
+  friendRequestPrivacy: UserSettingsFriendRequestPrivacy;
+  showOnlineStatus: boolean;
+  notifyLikes: boolean;
+  notifyComments: boolean;
+  notifyFriendRequests: boolean;
+  notifyMessages: boolean;
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  language: UserSettingsLanguage;
+}
+
+export type UserSettingsUpdateProfileVisibility = typeof UserSettingsUpdateProfileVisibility[keyof typeof UserSettingsUpdateProfileVisibility];
+
+
+export const UserSettingsUpdateProfileVisibility = {
+  public: 'public',
+  friends: 'friends',
+  only_me: 'only_me',
+} as const;
+
+export type UserSettingsUpdatePostVisibility = typeof UserSettingsUpdatePostVisibility[keyof typeof UserSettingsUpdatePostVisibility];
+
+
+export const UserSettingsUpdatePostVisibility = {
+  public: 'public',
+  friends: 'friends',
+  only_me: 'only_me',
+} as const;
+
+export type UserSettingsUpdateFriendRequestPrivacy = typeof UserSettingsUpdateFriendRequestPrivacy[keyof typeof UserSettingsUpdateFriendRequestPrivacy];
+
+
+export const UserSettingsUpdateFriendRequestPrivacy = {
+  everyone: 'everyone',
+  friends_of_friends: 'friends_of_friends',
+} as const;
+
+export type UserSettingsUpdateLanguage = typeof UserSettingsUpdateLanguage[keyof typeof UserSettingsUpdateLanguage];
+
+
+export const UserSettingsUpdateLanguage = {
+  banglish: 'banglish',
+  bn: 'bn',
+  en: 'en',
+} as const;
+
+export interface UserSettingsUpdate {
+  profileVisibility?: UserSettingsUpdateProfileVisibility;
+  postVisibility?: UserSettingsUpdatePostVisibility;
+  friendRequestPrivacy?: UserSettingsUpdateFriendRequestPrivacy;
+  showOnlineStatus?: boolean;
+  notifyLikes?: boolean;
+  notifyComments?: boolean;
+  notifyFriendRequests?: boolean;
+  notifyMessages?: boolean;
+  emailNotifications?: boolean;
+  pushNotifications?: boolean;
+  language?: UserSettingsUpdateLanguage;
+}
+
 export type MarketplaceListingStatus = typeof MarketplaceListingStatus[keyof typeof MarketplaceListingStatus];
 
 
@@ -523,6 +642,7 @@ export interface MarketplaceListing {
   photos: string[];
   status: MarketplaceListingStatus;
   viewerIsSeller?: boolean;
+  viewerHasSaved?: boolean;
   createdAt: string;
 }
 
@@ -567,6 +687,54 @@ export interface SellingOverview {
   listings: MarketplaceListing[];
 }
 
+export type SavedItemEntityType = typeof SavedItemEntityType[keyof typeof SavedItemEntityType];
+
+
+export const SavedItemEntityType = {
+  post: 'post',
+  listing: 'listing',
+  reel: 'reel',
+} as const;
+
+export interface Reel {
+  id: number;
+  author: Profile;
+  videoUrl: string;
+  /** @nullable */
+  thumbnailUrl?: string | null;
+  /** @nullable */
+  caption?: string | null;
+  createdAt: string;
+  likeCount: number;
+  commentCount: number;
+  viewerHasLiked: boolean;
+  viewerHasSaved: boolean;
+}
+
+export interface SavedItem {
+  id: number;
+  entityType: SavedItemEntityType;
+  entityId: number;
+  post?: Post | null;
+  listing?: MarketplaceListing | null;
+  reel?: Reel | null;
+  createdAt: string;
+}
+
+export type SavedItemInputEntityType = typeof SavedItemInputEntityType[keyof typeof SavedItemInputEntityType];
+
+
+export const SavedItemInputEntityType = {
+  post: 'post',
+  listing: 'listing',
+  reel: 'reel',
+} as const;
+
+export interface SavedItemInput {
+  entityType: SavedItemInputEntityType;
+  entityId: number;
+}
+
 export type StoryMediaType = typeof StoryMediaType[keyof typeof StoryMediaType];
 
 
@@ -607,20 +775,6 @@ export interface StoryGroup {
   author: Profile;
   stories: Story[];
   hasUnseen: boolean;
-}
-
-export interface Reel {
-  id: number;
-  author: Profile;
-  videoUrl: string;
-  /** @nullable */
-  thumbnailUrl?: string | null;
-  /** @nullable */
-  caption?: string | null;
-  createdAt: string;
-  likeCount: number;
-  commentCount: number;
-  viewerHasLiked: boolean;
 }
 
 export interface ReelInput {
@@ -715,6 +869,10 @@ limit?: number;
 
 export type GetUserPostsParams = {
 cursor?: number;
+limit?: number;
+};
+
+export type GetUserFriendsParams = {
 limit?: number;
 };
 

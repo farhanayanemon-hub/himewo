@@ -21,6 +21,7 @@ tags:
   - name: reels
   - name: notifications
   - name: media
+  - name: settings
 
 paths:
   /healthz:
@@ -122,6 +123,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Profile"
+  /birthdays:
+    get:
+      operationId: getTodaysBirthdays
+      tags: [users]
+      summary: Friends whose birthday is today
+      responses:
+        "200":
+          description: Friends with a birthday today
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Profile" }
   /users/{id}:
     get:
       operationId: getUser
@@ -153,6 +167,22 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/Post" }
+  /users/{id}/friends:
+    get:
+      operationId: getUserFriends
+      tags: [users]
+      summary: List a user's friends
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+      responses:
+        "200":
+          description: Friends
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Profile" }
 
   # ---------------- Feed & Posts ----------------
   /feed:
@@ -695,6 +725,90 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/Post" }
 
+  # ---------------- Settings ----------------
+  /settings:
+    get:
+      operationId: getMySettings
+      tags: [settings]
+      summary: Get the authenticated user's settings & preferences
+      responses:
+        "200":
+          description: Settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserSettings" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    patch:
+      operationId: updateMySettings
+      tags: [settings]
+      summary: Update the authenticated user's settings & preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UserSettingsUpdate" }
+      responses:
+        "200":
+          description: Updated settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserSettings" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ---------------- Saved items ----------------
+  /saved:
+    get:
+      operationId: listSavedItems
+      tags: [saved]
+      summary: List the authenticated user's saved posts and listings
+      responses:
+        "200":
+          description: Saved items, most recent first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SavedItem" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: saveItem
+      tags: [saved]
+      summary: Save a post or marketplace listing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SavedItemInput" }
+      responses:
+        "201":
+          description: Saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SavedItem" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /saved/{entityType}/{entityId}:
+    delete:
+      operationId: unsaveItem
+      tags: [saved]
+      summary: Remove a saved post or listing
+      parameters:
+        - { name: entityType, in: path, required: true, schema: { type: string, enum: [post, listing, reel] } }
+        - { name: entityId, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Removed }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   # ---------------- Marketplace ----------------
   /marketplace:
     get:
@@ -1108,8 +1222,14 @@ components:
         avatarUrl: { type: ["string", "null"] }
         coverUrl: { type: ["string", "null"] }
         bio: { type: ["string", "null"] }
+        birthday: { type: ["string", "null"] }
         location: { type: ["string", "null"] }
         work: { type: ["string", "null"] }
+        education: { type: ["string", "null"] }
+        hometown: { type: ["string", "null"] }
+        hobbies: { type: ["string", "null"] }
+        interests: { type: ["string", "null"] }
+        website: { type: ["string", "null"] }
         isVerified: { type: boolean }
         createdAt: { type: string, format: date-time }
         friendCount: { type: ["integer", "null"] }
@@ -1139,10 +1259,18 @@ components:
       properties:
         displayName: { type: string, minLength: 1 }
         bio: { type: string }
+        birthday: { type: string }
         avatarUrl: { type: string }
         coverUrl: { type: string }
         location: { type: string }
         work: { type: string }
+        education: { type: string }
+        hometown: { type: string }
+        hobbies: { type: string }
+        interests: { type: string }
+        website: { type: string }
+        email: { type: string }
+        phone: { type: string }
 
     MediaItem:
       type: object
@@ -1208,6 +1336,7 @@ components:
         reactions: { $ref: "#/components/schemas/ReactionSummary" }
         commentCount: { type: integer }
         shareCount: { type: integer }
+        viewerHasSaved: { type: boolean }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
     PostInput:
@@ -1442,6 +1571,52 @@ components:
         avatarUrl: { type: string }
         coverUrl: { type: string }
 
+    UserSettings:
+      type: object
+      required:
+        [
+          profileVisibility,
+          postVisibility,
+          friendRequestPrivacy,
+          showOnlineStatus,
+          notifyLikes,
+          notifyComments,
+          notifyFriendRequests,
+          notifyMessages,
+          emailNotifications,
+          pushNotifications,
+          language,
+        ]
+      properties:
+        profileVisibility:
+          { type: string, enum: [public, friends, only_me] }
+        postVisibility: { type: string, enum: [public, friends, only_me] }
+        friendRequestPrivacy:
+          { type: string, enum: [everyone, friends_of_friends] }
+        showOnlineStatus: { type: boolean }
+        notifyLikes: { type: boolean }
+        notifyComments: { type: boolean }
+        notifyFriendRequests: { type: boolean }
+        notifyMessages: { type: boolean }
+        emailNotifications: { type: boolean }
+        pushNotifications: { type: boolean }
+        language: { type: string, enum: [banglish, bn, en] }
+    UserSettingsUpdate:
+      type: object
+      properties:
+        profileVisibility:
+          { type: string, enum: [public, friends, only_me] }
+        postVisibility: { type: string, enum: [public, friends, only_me] }
+        friendRequestPrivacy:
+          { type: string, enum: [everyone, friends_of_friends] }
+        showOnlineStatus: { type: boolean }
+        notifyLikes: { type: boolean }
+        notifyComments: { type: boolean }
+        notifyFriendRequests: { type: boolean }
+        notifyMessages: { type: boolean }
+        emailNotifications: { type: boolean }
+        pushNotifications: { type: boolean }
+        language: { type: string, enum: [banglish, bn, en] }
     MarketplaceListing:
       type: object
       required:
@@ -1472,6 +1647,7 @@ components:
           items: { type: string }
         status: { type: string, enum: [available, sold] }
         viewerIsSeller: { type: boolean }
+        viewerHasSaved: { type: boolean }
         createdAt: { type: string, format: date-time }
     MarketplaceListingInput:
       type: object
@@ -1511,6 +1687,33 @@ components:
           type: array
           items: { $ref: "#/components/schemas/MarketplaceListing" }
 
+    SavedItem:
+      type: object
+      required: [id, entityType, entityId, createdAt]
+      properties:
+        id: { type: integer }
+        entityType: { type: string, enum: [post, listing, reel] }
+        entityId: { type: integer }
+        post:
+          oneOf:
+            - { $ref: "#/components/schemas/Post" }
+            - { type: "null" }
+        listing:
+          oneOf:
+            - { $ref: "#/components/schemas/MarketplaceListing" }
+            - { type: "null" }
+        reel:
+          oneOf:
+            - { $ref: "#/components/schemas/Reel" }
+            - { type: "null" }
+        createdAt: { type: string, format: date-time }
+    SavedItemInput:
+      type: object
+      required: [entityType, entityId]
+      properties:
+        entityType: { type: string, enum: [post, listing, reel] }
+        entityId: { type: integer }
+
     Story:
       type: object
       required: [id, author, mediaUrl, mediaType, createdAt, expiresAt, viewCount, viewerHasViewed]
@@ -1544,7 +1747,7 @@ components:
 
     Reel:
       type: object
-      required: [id, author, videoUrl, createdAt, likeCount, commentCount, viewerHasLiked]
+      required: [id, author, videoUrl, createdAt, likeCount, commentCount, viewerHasLiked, viewerHasSaved]
       properties:
         id: { type: integer }
         author: { $ref: "#/components/schemas/Profile" }
@@ -1555,6 +1758,7 @@ components:
         likeCount: { type: integer }
         commentCount: { type: integer }
         viewerHasLiked: { type: boolean }
+        viewerHasSaved: { type: boolean }
     ReelInput:
       type: object
       required: [videoUrl]

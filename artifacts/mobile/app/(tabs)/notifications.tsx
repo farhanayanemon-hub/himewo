@@ -1,9 +1,9 @@
 import { useCallback } from "react";
 import {
   ActivityIndicator,
-  FlatList,
   Pressable,
   RefreshControl,
+  SectionList,
   Text,
   View,
   StyleSheet,
@@ -26,32 +26,32 @@ import { useColors } from "@/hooks/useColors";
 import { timeAgo } from "@/lib/format";
 
 function notificationText(n: Notification): string {
-  const actor = n.actor?.displayName ?? "Someone";
+  const actor = n.actor?.displayName ?? "Keu";
   switch (n.type) {
     case NotificationType.reaction:
-      return `${actor} reacted to your post.`;
+      return `${actor} apnar post-e react koreche.`;
     case NotificationType.comment:
-      return `${actor} commented on your post.`;
+      return `${actor} apnar post-e comment koreche.`;
     case NotificationType.friend_request:
-      return `${actor} sent you a friend request.`;
+      return `${actor} apnake friend request pathiyeche.`;
     case NotificationType.friend_accept:
-      return `${actor} accepted your friend request.`;
+      return `${actor} apnar friend request accept koreche.`;
     case NotificationType.follow:
-      return `${actor} started following you.`;
+      return `${actor} apnake follow koreche.`;
     case NotificationType.message:
-      return `${actor} sent you a message.`;
+      return `${actor} apnake message pathiyeche.`;
     case NotificationType.group_invite:
-      return `${actor} invited you to a group.`;
+      return `${actor} apnake ekta group-e invite koreche.`;
     case NotificationType.page_follow:
-      return `${actor} followed your page.`;
+      return `${actor} apnar page follow koreche.`;
     case NotificationType.mention:
-      return `${actor} mentioned you.`;
+      return `${actor} apnake mention koreche.`;
     case NotificationType.share:
-      return `${actor} shared your post.`;
+      return `${actor} apnar post share koreche.`;
     case NotificationType.story_view:
-      return `${actor} viewed your story.`;
+      return `${actor} apnar story dekheche.`;
     default:
-      return `${actor} sent you a notification.`;
+      return `${actor} apnake notification pathiyeche.`;
   }
 }
 
@@ -81,6 +81,8 @@ function notificationIcon(type: NotificationType): keyof typeof Ionicons.glyphMa
   }
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 export default function NotificationsScreen() {
   const c = useColors();
   const qc = useQueryClient();
@@ -108,6 +110,8 @@ export default function NotificationsScreen() {
   const navigateTarget = (n: Notification) => {
     if (n.entityType === "post" && n.entityId != null) {
       router.push(`/post/${n.entityId}`);
+    } else if (n.type === NotificationType.message) {
+      router.push("/messages");
     } else if (n.actor?.id) {
       router.push(`/profile/${n.actor.id}`);
     }
@@ -119,6 +123,19 @@ export default function NotificationsScreen() {
     }
     navigateTarget(n);
   };
+
+  const now = Date.now();
+  const fresh = notifications.filter(
+    (n) => !n.isRead || now - new Date(n.createdAt).getTime() < DAY_MS,
+  );
+  const earlier = notifications.filter(
+    (n) => n.isRead && now - new Date(n.createdAt).getTime() >= DAY_MS,
+  );
+
+  const sections = [
+    { title: "New", data: fresh },
+    { title: "Earlier", data: earlier },
+  ].filter((s) => s.data.length > 0);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top"]}>
@@ -134,9 +151,10 @@ export default function NotificationsScreen() {
       {isLoading ? (
         <ActivityIndicator color={c.primary} style={{ marginTop: 40 }} />
       ) : (
-        <FlatList
-          data={notifications}
+        <SectionList
+          sections={sections}
           keyExtractor={(item) => String(item.id)}
+          stickySectionHeadersEnabled={false}
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}
@@ -144,6 +162,16 @@ export default function NotificationsScreen() {
               tintColor={c.primary}
             />
           }
+          renderSectionHeader={({ section }) => (
+            <Text
+              style={[
+                styles.sectionHeader,
+                { color: c.foreground, backgroundColor: c.background },
+              ]}
+            >
+              {section.title}
+            </Text>
+          )}
           renderItem={({ item }) => (
             <Pressable
               style={[
@@ -209,6 +237,13 @@ const styles = StyleSheet.create({
   },
   title: { fontFamily: "Inter_700Bold", fontSize: 22 },
   markAll: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  sectionHeader: {
+    fontFamily: "Inter_700Bold",
+    fontSize: 16,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 6,
+  },
   row: {
     flexDirection: "row",
     alignItems: "center",

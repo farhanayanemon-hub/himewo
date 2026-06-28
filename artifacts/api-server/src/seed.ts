@@ -40,15 +40,26 @@ const cover = (seed: string) =>
 const photo = (seed: string) =>
   `https://picsum.photos/seed/${encodeURIComponent(seed)}/900/700`;
 
+// Today's month-day in Asia/Dhaka so a couple of seeded friends always have a
+// birthday "today" right after seeding (makes the Birthdays card demoable).
+const todayMmDd = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Asia/Dhaka",
+  month: "2-digit",
+  day: "2-digit",
+})
+  .format(new Date())
+  .slice(-5);
+const todayBirthday = `1998-${todayMmDd}`;
+
 const users = [
-  { id: uid(1), username: "ahnaf", displayName: "Ahnaf Karim", bio: "Cricket pagol. Dhaka te thaki.", work: "Software Engineer", location: "Dhaka", isVerified: true },
-  { id: uid(2), username: "mim", displayName: "Mim Tabassum", bio: "Chobi tuli, gaan shuni 🎵", work: "Photographer", location: "Chittagong", isVerified: true },
-  { id: uid(3), username: "rifat", displayName: "Rifat Hasan", bio: "Foodie + gamer. Biryani > everything.", work: "Student", location: "Sylhet", isVerified: false },
-  { id: uid(4), username: "tania", displayName: "Tania Akter", bio: "Travel kori, golpo likhi.", work: "Content Creator", location: "Khulna", isVerified: false },
-  { id: uid(5), username: "shuvo", displayName: "Shuvo Ahmed", bio: "Football + coding. Barca fan.", work: "Frontend Dev", location: "Dhaka", isVerified: false },
-  { id: uid(6), username: "nusrat", displayName: "Nusrat Jahan", bio: "Doctor. Cha chara chole na ☕", work: "Doctor", location: "Rajshahi", isVerified: true },
-  { id: uid(7), username: "tanvir", displayName: "Tanvir Islam", bio: "Startup life. Building cool things.", work: "Founder", location: "Dhaka", isVerified: false },
-  { id: uid(8), username: "shara", displayName: "Shara Rahman", bio: "Artist 🎨 + cat lover 🐱", work: "Designer", location: "Comilla", isVerified: false },
+  { id: uid(1), username: "ahnaf", displayName: "Ahnaf Karim", bio: "Cricket pagol. Dhaka te thaki.", work: "Software Engineer", location: "Dhaka", isVerified: true, birthday: "1996-03-14" },
+  { id: uid(2), username: "mim", displayName: "Mim Tabassum", bio: "Chobi tuli, gaan shuni 🎵", work: "Photographer", location: "Chittagong", isVerified: true, birthday: todayBirthday },
+  { id: uid(3), username: "rifat", displayName: "Rifat Hasan", bio: "Foodie + gamer. Biryani > everything.", work: "Student", location: "Sylhet", isVerified: false, birthday: todayBirthday },
+  { id: uid(4), username: "tania", displayName: "Tania Akter", bio: "Travel kori, golpo likhi.", work: "Content Creator", location: "Khulna", isVerified: false, birthday: "2000-07-22" },
+  { id: uid(5), username: "shuvo", displayName: "Shuvo Ahmed", bio: "Football + coding. Barca fan.", work: "Frontend Dev", location: "Dhaka", isVerified: false, birthday: "1999-11-05" },
+  { id: uid(6), username: "nusrat", displayName: "Nusrat Jahan", bio: "Doctor. Cha chara chole na ☕", work: "Doctor", location: "Rajshahi", isVerified: true, birthday: "1995-01-30" },
+  { id: uid(7), username: "tanvir", displayName: "Tanvir Islam", bio: "Startup life. Building cool things.", work: "Founder", location: "Dhaka", isVerified: false, birthday: "1994-09-18" },
+  { id: uid(8), username: "shara", displayName: "Shara Rahman", bio: "Artist 🎨 + cat lover 🐱", work: "Designer", location: "Comilla", isVerified: false, birthday: "2001-12-25" },
 ];
 
 async function main() {
@@ -65,6 +76,7 @@ async function main() {
       avatarUrl: avatar(u.username),
       coverUrl: cover(u.username),
       bio: u.bio,
+      birthday: u.birthday,
       work: u.work,
       location: u.location,
       isVerified: u.isVerified,

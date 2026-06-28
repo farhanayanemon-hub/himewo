@@ -22,9 +22,21 @@ export interface Profile {
   /** @nullable */
   bio?: string | null;
   /** @nullable */
+  birthday?: string | null;
+  /** @nullable */
   location?: string | null;
   /** @nullable */
   work?: string | null;
+  /** @nullable */
+  education?: string | null;
+  /** @nullable */
+  hometown?: string | null;
+  /** @nullable */
+  hobbies?: string | null;
+  /** @nullable */
+  interests?: string | null;
+  /** @nullable */
+  website?: string | null;
   isVerified: boolean;
   createdAt: Date;
   /** @nullable */

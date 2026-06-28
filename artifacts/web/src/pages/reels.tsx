@@ -3,9 +3,12 @@ import {
   useListReels,
   useLikeReel,
   useUnlikeReel,
+  useSaveItem,
+  useUnsaveItem,
   getListReelsQueryKey,
+  getListSavedItemsQueryKey,
 } from "@workspace/api-client-react";
-import { Heart, MessageCircle, Share2, Loader2 } from "lucide-react";
+import { Heart, MessageCircle, Share2, Loader2, Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -13,6 +16,8 @@ export default function ReelsPage() {
   const { data: reels, isLoading } = useListReels();
   const likeReel = useLikeReel();
   const unlikeReel = useUnlikeReel();
+  const saveItem = useSaveItem();
+  const unsaveItem = useUnsaveItem();
   const queryClient = useQueryClient();
 
   const toggleLike = (id: number, liked: boolean) => {
@@ -22,6 +27,21 @@ export default function ReelsPage() {
       unlikeReel.mutate({ id }, { onSuccess: onSettled });
     } else {
       likeReel.mutate({ id }, { onSuccess: onSettled });
+    }
+  };
+
+  const toggleSave = (id: number, saved: boolean) => {
+    const onSuccess = () => {
+      queryClient.invalidateQueries({ queryKey: getListReelsQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getListSavedItemsQueryKey() });
+    };
+    if (saved) {
+      unsaveItem.mutate({ entityType: "reel", entityId: id }, { onSuccess });
+    } else {
+      saveItem.mutate(
+        { data: { entityType: "reel", entityId: id } },
+        { onSuccess },
+      );
     }
   };
 
@@ -71,6 +91,21 @@ export default function ReelsPage() {
                     <MessageCircle className="w-6 h-6 text-white" />
                   </button>
                   <span className="text-white text-xs font-semibold mt-1 drop-shadow-md">{reel.commentCount}</span>
+                </div>
+
+                <div className="flex flex-col items-center">
+                  <button
+                    onClick={() => toggleSave(reel.id, reel.viewerHasSaved)}
+                    disabled={saveItem.isPending || unsaveItem.isPending}
+                    aria-label={reel.viewerHasSaved ? "Unsave reel" : "Save reel"}
+                    title={reel.viewerHasSaved ? "Unsave" : "Save"}
+                    className="w-12 h-12 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center hover:bg-black/40 transition-colors"
+                  >
+                    <Bookmark className={`w-6 h-6 ${reel.viewerHasSaved ? 'fill-white text-white' : 'text-white'}`} />
+                  </button>
+                  <span className="text-white text-xs font-semibold mt-1 drop-shadow-md">
+                    {reel.viewerHasSaved ? "Saved" : "Save"}
+                  </span>
                 </div>
 
                 <div className="flex flex-col items-center">

@@ -94,6 +94,16 @@ function RootNavigator() {
           headerTitleStyle: { fontFamily: "Inter_700Bold" },
         }}
       />
+      <Stack.Screen
+        name="saved"
+        options={{
+          title: "Saved",
+          headerShown: true,
+          headerStyle: { backgroundColor: c.card },
+          headerTintColor: c.foreground,
+          headerTitleStyle: { fontFamily: "Inter_700Bold" },
+        }}
+      />
     </Stack>
   );
 }

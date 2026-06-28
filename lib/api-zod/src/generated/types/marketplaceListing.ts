@@ -23,5 +23,6 @@ export interface MarketplaceListing {
   photos: string[];
   status: MarketplaceListingStatus;
   viewerIsSeller?: boolean;
+  viewerHasSaved?: boolean;
   createdAt: Date;
 }

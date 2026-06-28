@@ -19,4 +19,5 @@ export interface Reel {
   likeCount: number;
   commentCount: number;
   viewerHasLiked: boolean;
+  viewerHasSaved: boolean;
 }

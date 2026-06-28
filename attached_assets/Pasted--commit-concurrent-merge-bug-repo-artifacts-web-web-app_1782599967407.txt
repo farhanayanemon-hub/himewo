@@ -1,0 +1,44 @@
+কী হয়েছিল: একটা পুরোনো commit (concurrent merge bug) repo থেকে artifacts/web (web app) আর artifacts/admin (admin panel) পুরো মুছে ফেলেছিল। সাথে api-server থেকে zod আর lockfile-ও নষ্ট করেছিল। তাই অন্য account-এ agent এগুলো খুঁজে পাচ্ছিল না — কারণ repo-তেই ছিল না।
+
+এখন কী করেছি (এই account থেকে GitHub-এ):
+
+✅ artifacts/web ফেরত (106 files)
+✅ artifacts/admin ফেরত (34 files)
+✅ artifacts/mobile — এটা মুছেনি, আগে থেকেই ছিল (74 files)
+✅ api-server-এ zod + lockfile ঠিক
+✅ auth-এর ES256 ঠিকঠাক আছে
+মানে এখন himewo repo-তে পাঁচটাই আছে: web, admin, api-server, mobile, mockup-sandbox।
+
+তাই অন্য account-এ আবার করে GitHub থেকে fresh import (বা pull) করলেই সব চলে আসবে। এই prompt-টা ওই account-এ দিও:
+
+Tumi ekta HiMewo project er copy te kaj korbe. Source ache GitHub e:
+farhanayanemon-hub/himewo (main branch). Ekhon ami fresh import korechi.
+KAJ 1 — sob app ache kina verify koro:
+artifacts/ folder e EI 5 ta thaka lagbe:
+  - web        (React+Vite web app, himewo.com)
+  - admin      (admin panel, admin.himewo.com)
+  - api-server (Express backend + admin API, Railway)
+  - mobile     (Expo chat app — messaging + audio/video call)
+  - mockup-sandbox
+Jodi web ba admin missing dekho, sathe sathe bolo (oitar mane purono
+snapshot import hoyeche — abar fresh import lagbe).
+KAJ 2 — context nao:
+age `.agents/memory/himewo-handoff.md` ar `.agents/memory/MEMORY.md` pore nao.
+Sob deploy/auth/gotcha note oikhane ache.
+KAJ 3 — 10 ta secret save koro (import e secret ase na):
+environment-secrets skill follow kore ekta ekta kore amake proti ta value
+cheye nao ebong Replit Secrets e SAVE koro:
+  1. GITHUB_TOKEN
+  2. RAILWAY_TOKEN
+  3. CLOUDFLARE_API_TOKEN
+  4. CLOUDFLARE_ACCOUNT_ID
+  5. SUPABASE_ACCESS_TOKEN
+  6. SUPABASE_SERVICE_ROLE_KEY
+  7. VITE_SUPABASE_URL
+  8. VITE_SUPABASE_ANON_KEY
+  9. VITE_API_URL
+  10. SESSION_SECRET
+Ekta ekta kore cheo, ami value dile save koro, tarpor porer ta. Sesh e
+Banglish e list diye confirm koro kon gulo save hoyeche. Ami non-technical.
+
+ছোট্ট সাবধানতা: ওই account-এ agent দিয়ে কাজ করালে যদি একসাথে অনেক জায়গায় merge হয়, আবার এই "file মুছে যাওয়া" bug হতে পারে। তাই কাজের পর সবসময় বলবে — artifacts/-এ পাঁচটা app আছে কিনা check করো। 🙂

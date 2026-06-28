@@ -19,8 +19,17 @@ import PagesView from "@/pages/pages";
 import NotificationsPage from "@/pages/notifications";
 import SearchPage from "@/pages/search";
 import SettingsPage from "@/pages/settings";
+import SettingsAccountPage from "@/pages/settings-account";
+import SettingsPrivacyPage from "@/pages/settings-privacy";
+import SettingsSecurityPage from "@/pages/settings-security";
+import SettingsNotificationsPage from "@/pages/settings-notifications";
+import SettingsLanguagePage from "@/pages/settings-language";
+import SettingsHelpPage from "@/pages/settings-help";
+import EditProfilePage from "@/pages/edit-profile";
 import MePage from "@/pages/me";
 import StoriesPage from "@/pages/stories";
+import MemoriesPage from "@/pages/memories";
+import SavedPage from "@/pages/saved";
 import MarketplacePage, {
   MarketplaceListingPage,
   MarketplaceCreatePage,
@@ -52,6 +61,7 @@ function AppRoutes() {
       <Route path="/post/:id" component={PostPage} />
       <Route path="/profile/:id" component={ProfilePage} />
       <Route path="/me" component={MePage} />
+      <Route path="/edit-profile" component={EditProfilePage} />
       <Route path="/friends" component={FriendsPage} />
       <Route path="/messages" component={MessagesPage} />
       <Route path="/messages/:id" component={MessagesPage} />
@@ -69,7 +79,15 @@ function AppRoutes() {
       <Route path="/notifications" component={NotificationsPage} />
       <Route path="/search" component={SearchPage} />
       <Route path="/settings" component={SettingsPage} />
+      <Route path="/settings/account" component={SettingsAccountPage} />
+      <Route path="/settings/privacy" component={SettingsPrivacyPage} />
+      <Route path="/settings/security" component={SettingsSecurityPage} />
+      <Route path="/settings/notifications" component={SettingsNotificationsPage} />
+      <Route path="/settings/language" component={SettingsLanguagePage} />
+      <Route path="/settings/help" component={SettingsHelpPage} />
       <Route path="/stories" component={StoriesPage} />
+      <Route path="/memories" component={MemoriesPage} />
+      <Route path="/saved" component={SavedPage} />
       <Route component={NotFound} />
     </Switch>
   );

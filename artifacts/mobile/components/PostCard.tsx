@@ -7,8 +7,11 @@ import {
   ReactionType,
   useSetPostReaction,
   useRemovePostReaction,
+  useSaveItem,
+  useUnsaveItem,
   getGetFeedQueryKey,
   getGetPostQueryKey,
+  getListSavedItemsQueryKey,
   type Post,
   type ReactionSummary,
 } from "@workspace/api-client-react";
@@ -35,14 +38,34 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
   const c = useColors();
   const qc = useQueryClient();
   const [summary, setSummary] = useState<ReactionSummary>(post.reactions);
+  const [saved, setSaved] = useState<boolean>(post.viewerHasSaved ?? false);
   const setReaction = useSetPostReaction();
   const removeReaction = useRemovePostReaction();
+  const saveItem = useSaveItem();
+  const unsaveItem = useUnsaveItem();
 
   const viewerReaction = summary.viewerReaction ?? null;
 
   const syncServer = () => {
     qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
     qc.invalidateQueries({ queryKey: getGetPostQueryKey(post.id) });
+  };
+
+  const toggleSave = () => {
+    const next = !saved;
+    setSaved(next);
+    const onSettled = () => {
+      syncServer();
+      qc.invalidateQueries({ queryKey: getListSavedItemsQueryKey() });
+    };
+    if (next) {
+      saveItem.mutate(
+        { data: { entityType: "post", entityId: post.id } },
+        { onSettled },
+      );
+    } else {
+      unsaveItem.mutate({ entityType: "post", entityId: post.id }, { onSettled });
+    }
   };
 
   const applyReaction = (type: ReactionType) => {
@@ -105,8 +128,12 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
             <Ionicons name={privacyIcon(post.privacy)} size={11} color={c.mutedForeground} />
           </View>
         </View>
-        <Pressable hitSlop={8}>
-          <Ionicons name="ellipsis-horizontal" size={20} color={c.mutedForeground} />
+        <Pressable hitSlop={8} onPress={toggleSave}>
+          <Ionicons
+            name={saved ? "bookmark" : "bookmark-outline"}
+            size={20}
+            color={saved ? c.primary : c.mutedForeground}
+          />
         </Pressable>
       </Pressable>
 

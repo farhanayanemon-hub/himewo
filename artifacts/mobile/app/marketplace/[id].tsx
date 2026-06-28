@@ -18,10 +18,13 @@ import {
   useUpdateMarketplaceListing,
   useDeleteMarketplaceListing,
   useCreateConversation,
+  useSaveItem,
+  useUnsaveItem,
   ConversationType,
   getListMarketplaceListingsQueryKey,
   getGetMarketplaceListingQueryKey,
   getGetSellingDashboardQueryKey,
+  getListSavedItemsQueryKey,
 } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
 import { useColors } from "@/hooks/useColors";
@@ -38,6 +41,8 @@ export default function MarketplaceDetailScreen() {
   const updateListing = useUpdateMarketplaceListing();
   const deleteListing = useDeleteMarketplaceListing();
   const createConversation = useCreateConversation();
+  const saveItem = useSaveItem();
+  const unsaveItem = useUnsaveItem();
   const [activePhoto, setActivePhoto] = useState(0);
 
   const invalidate = () => {
@@ -45,6 +50,23 @@ export default function MarketplaceDetailScreen() {
     qc.invalidateQueries({ queryKey: getGetMarketplaceListingQueryKey(id) });
     qc.invalidateQueries({ queryKey: getGetSellingDashboardQueryKey() });
   };
+
+  const toggleSave = () => {
+    if (!listing) return;
+    const onSettled = () => {
+      invalidate();
+      qc.invalidateQueries({ queryKey: getListSavedItemsQueryKey() });
+    };
+    if (listing.viewerHasSaved) {
+      unsaveItem.mutate({ entityType: "listing", entityId: id }, { onSettled });
+    } else {
+      saveItem.mutate(
+        { data: { entityType: "listing", entityId: id } },
+        { onSettled },
+      );
+    }
+  };
+  const savePending = saveItem.isPending || unsaveItem.isPending;
 
   if (isLoading) {
     return (
@@ -203,6 +225,21 @@ export default function MarketplaceDetailScreen() {
               </Pressable>
               <Pressable
                 style={[styles.iconBtn, { backgroundColor: c.secondary }]}
+                onPress={toggleSave}
+                disabled={savePending}
+              >
+                {savePending ? (
+                  <ActivityIndicator color={c.primary} size="small" />
+                ) : (
+                  <Ionicons
+                    name={listing.viewerHasSaved ? "bookmark" : "bookmark-outline"}
+                    size={20}
+                    color={listing.viewerHasSaved ? c.primary : c.foreground}
+                  />
+                )}
+              </Pressable>
+              <Pressable
+                style={[styles.iconBtn, { backgroundColor: c.secondary }]}
                 onPress={confirmDelete}
                 disabled={deleteListing.isPending}
               >
@@ -210,20 +247,37 @@ export default function MarketplaceDetailScreen() {
               </Pressable>
             </View>
           ) : (
-            <Pressable
-              style={[styles.primaryBtn, { backgroundColor: c.primary }, glow(c.primary)]}
-              onPress={onMessageSeller}
-              disabled={createConversation.isPending}
-            >
-              {createConversation.isPending ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <>
-                  <Ionicons name="chatbubble-ellipses" size={18} color="#fff" />
-                  <Text style={[styles.primaryBtnText, { color: "#fff" }]}>Message seller</Text>
-                </>
-              )}
-            </Pressable>
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <Pressable
+                style={[styles.primaryBtn, { backgroundColor: c.primary, flex: 1 }, glow(c.primary)]}
+                onPress={onMessageSeller}
+                disabled={createConversation.isPending}
+              >
+                {createConversation.isPending ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <>
+                    <Ionicons name="chatbubble-ellipses" size={18} color="#fff" />
+                    <Text style={[styles.primaryBtnText, { color: "#fff" }]}>Message seller</Text>
+                  </>
+                )}
+              </Pressable>
+              <Pressable
+                style={[styles.iconBtn, { backgroundColor: c.secondary }]}
+                onPress={toggleSave}
+                disabled={savePending}
+              >
+                {savePending ? (
+                  <ActivityIndicator color={c.primary} size="small" />
+                ) : (
+                  <Ionicons
+                    name={listing.viewerHasSaved ? "bookmark" : "bookmark-outline"}
+                    size={20}
+                    color={listing.viewerHasSaved ? c.primary : c.foreground}
+                  />
+                )}
+              </Pressable>
+            </View>
           )}
         </View>
       </ScrollView>

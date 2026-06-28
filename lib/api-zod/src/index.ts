@@ -6,6 +6,7 @@ export * from "./generated/types";
 export {
   GetGroupPostsParams,
   GetUserPostsParams,
+  GetUserFriendsParams,
   ListCommentsParams,
   ListMessagesParams,
 } from "./generated/api";

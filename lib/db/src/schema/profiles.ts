@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, boolean, timestamp, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -12,8 +12,14 @@ export const profilesTable = pgTable("profiles", {
   avatarUrl: text("avatar_url"),
   coverUrl: text("cover_url"),
   bio: text("bio"),
+  birthday: date("birthday"),
   location: text("location"),
   work: text("work"),
+  education: text("education"),
+  hometown: text("hometown"),
+  hobbies: text("hobbies"),
+  interests: text("interests"),
+  website: text("website"),
   isVerified: boolean("is_verified").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

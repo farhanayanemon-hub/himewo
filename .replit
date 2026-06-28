@@ -1,4 +1,4 @@
-modules = ["nodejs-24", "python-3.11"]
+modules = ["nodejs-24", "postgresql-16"]
 
 [deployment]
 router = "application"
@@ -19,9 +19,5 @@ expertMode = true
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
 
-[userenv]
-
-[userenv.shared]
-EXPO_PUBLIC_DOMAIN = "api.himewo.com"
-EXPO_PUBLIC_SUPABASE_URL = "https://rzdfgbfyhnkvqbcegguk.supabase.co"
-EXPO_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6ZGZnYmZ5aG5rdnFiY2VnZ3VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MDgwODMsImV4cCI6MjA5Nzk4NDA4M30.8RlmkHFpDxDGmZ1KJg3bnswfy6my8FRT0Su_F1fu5CU"
+[nix]
+channel = "stable-25_05"

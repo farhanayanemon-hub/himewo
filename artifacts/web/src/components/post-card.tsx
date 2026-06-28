@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
-import { MessageCircle, Share2, MoreHorizontal, Loader2 } from "lucide-react";
-import { Post, useSetPostReaction, useRemovePostReaction, useSharePost, ReactionType } from "@workspace/api-client-react";
+import { MessageCircle, Share2, Loader2, Bookmark } from "lucide-react";
+import { Post, useSetPostReaction, useRemovePostReaction, useSharePost, useSaveItem, useUnsaveItem, ReactionType } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
-import { getGetFeedQueryKey, getGetPostQueryKey, getGetUserPostsQueryKey } from "@workspace/api-client-react";
+import { getGetFeedQueryKey, getGetPostQueryKey, getGetUserPostsQueryKey, getListSavedItemsQueryKey } from "@workspace/api-client-react";
 import { ReactionControl, reactionConfig } from "@/components/reaction-picker";
 
 export function PostCard({ post }: { post: Post }) {
@@ -13,6 +13,8 @@ export function PostCard({ post }: { post: Post }) {
   const setReaction = useSetPostReaction();
   const removeReaction = useRemovePostReaction();
   const sharePost = useSharePost();
+  const saveItem = useSaveItem();
+  const unsaveItem = useUnsaveItem();
   const [showShare, setShowShare] = useState(false);
   const [shareCaption, setShareCaption] = useState("");
 
@@ -21,6 +23,27 @@ export function PostCard({ post }: { post: Post }) {
     queryClient.invalidateQueries({ queryKey: getGetPostQueryKey(post.id) });
     queryClient.invalidateQueries({ queryKey: getGetUserPostsQueryKey(post.author.id) });
   };
+
+  const invalidateSaved = () => {
+    invalidate();
+    queryClient.invalidateQueries({ queryKey: getListSavedItemsQueryKey() });
+  };
+
+  const toggleSave = () => {
+    if (post.viewerHasSaved) {
+      unsaveItem.mutate(
+        { entityType: "post", entityId: post.id },
+        { onSuccess: invalidateSaved },
+      );
+    } else {
+      saveItem.mutate(
+        { data: { entityType: "post", entityId: post.id } },
+        { onSuccess: invalidateSaved },
+      );
+    }
+  };
+
+  const savePending = saveItem.isPending || unsaveItem.isPending;
 
   const handleReaction = (type: ReactionType) => {
     if (post.reactions.viewerReaction === type) {
@@ -55,8 +78,20 @@ export function PostCard({ post }: { post: Post }) {
             <div className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</div>
           </div>
         </Link>
-        <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-foreground">
-          <MoreHorizontal className="w-5 h-5" />
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleSave}
+          disabled={savePending}
+          aria-label={post.viewerHasSaved ? "Unsave post" : "Save post"}
+          title={post.viewerHasSaved ? "Saved — click to unsave" : "Save post"}
+          className={`rounded-full hover:text-foreground ${post.viewerHasSaved ? "text-primary" : "text-muted-foreground"}`}
+        >
+          {savePending ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <Bookmark className="w-5 h-5" fill={post.viewerHasSaved ? "currentColor" : "none"} />
+          )}
         </Button>
       </div>
 

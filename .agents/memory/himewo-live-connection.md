@@ -23,6 +23,22 @@ When these are set, `lib/supabase.ts` flips `isSupabaseConfigured=true`; the log
 screen shows real email/password/phone/Google instead of the dev-user picker. Restart
 the `artifacts/mobile: expo` workflow after changing env so Expo re-bundles.
 
+**GOTCHA — the dev script hardcodes a LOCAL domain that overrides any secret.** Each
+Expo app's `package.json` `dev` script inlines `EXPO_PUBLIC_DOMAIN=$REPLIT_DEV_DOMAIN`
+(plus it does NOT pass the Supabase vars at all), so setting `EXPO_PUBLIC_*` as
+Replit secrets does nothing — the inline assignment wins and Supabase stays unset
+(demo mode). To go live you must EDIT the `dev` script itself to map from the existing
+live secrets, e.g.:
+`EXPO_PUBLIC_DOMAIN=$(echo $VITE_API_URL | sed -e 's,^https*://,,' -e 's,/*$,,') EXPO_PUBLIC_SUPABASE_URL=$VITE_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY ...`
+This reuses the web/admin live secrets (`VITE_API_URL` / `VITE_SUPABASE_URL` /
+`VITE_SUPABASE_ANON_KEY`) — no need to read or duplicate secret values. **Must strip
+the scheme from `VITE_API_URL`** (it's stored WITH `https://`) because `lib/api.ts`
+does `https://${domain}` — passing a scheme-full value yields `https://https://…`.
+Keep `EXPO_PACKAGER_PROXY_URL` / `REACT_NATIVE_PACKAGER_HOSTNAME` on the Replit
+domain so Metro still serves the preview. Verified: login screen flips from the demo
+picker to a real Email/Phone/Google form once this is in place. Both Expo apps
+(`mobile`, `mobile-chat`) have the identical dev script and need the same edit.
+
 **Why dev tokens stop working once connected:** the live Railway backend runs
 `NODE_ENV=production`, and `resolveUserId` only accepts `dev:<uuid>` when
 `!env.isProduction`. So auth must go through Supabase.

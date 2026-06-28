@@ -7,10 +7,13 @@ import {
   useUpdateMarketplaceListing,
   useDeleteMarketplaceListing,
   useCreateConversation,
+  useSaveItem,
+  useUnsaveItem,
   getListMarketplaceListingsQueryKey,
   getGetSellingDashboardQueryKey,
   getGetMarketplaceListingQueryKey,
   getListConversationsQueryKey,
+  getListSavedItemsQueryKey,
 } from "@workspace/api-client-react";
 import { useParams, Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -37,6 +40,7 @@ import {
   Trash2,
   CheckCircle2,
   PackageOpen,
+  Bookmark,
 } from "lucide-react";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -203,6 +207,8 @@ export function MarketplaceListingPage() {
   const updateListing = useUpdateMarketplaceListing();
   const deleteListing = useDeleteMarketplaceListing();
   const createConversation = useCreateConversation();
+  const saveItem = useSaveItem();
+  const unsaveItem = useUnsaveItem();
   const [activePhoto, setActivePhoto] = useState(0);
 
   const messageSeller = () => {
@@ -223,6 +229,28 @@ export function MarketplaceListingPage() {
     queryClient.invalidateQueries({ queryKey: getGetMarketplaceListingQueryKey(listingId) });
     queryClient.invalidateQueries({ queryKey: getGetSellingDashboardQueryKey() });
   };
+
+  const invalidateSaved = () => {
+    invalidate();
+    queryClient.invalidateQueries({ queryKey: getListSavedItemsQueryKey() });
+  };
+
+  const toggleSave = () => {
+    if (!listing) return;
+    if (listing.viewerHasSaved) {
+      unsaveItem.mutate(
+        { entityType: "listing", entityId: listingId },
+        { onSuccess: invalidateSaved },
+      );
+    } else {
+      saveItem.mutate(
+        { data: { entityType: "listing", entityId: listingId } },
+        { onSuccess: invalidateSaved },
+      );
+    }
+  };
+
+  const savePending = saveItem.isPending || unsaveItem.isPending;
 
   if (isLoading) {
     return (
@@ -348,6 +376,23 @@ export function MarketplaceListingPage() {
                   {listing.status === "sold" ? "Mark available" : "Mark as sold"}
                 </Button>
                 <Button
+                  variant="secondary"
+                  className="press"
+                  disabled={savePending}
+                  aria-label={listing.viewerHasSaved ? "Unsave listing" : "Save listing"}
+                  title={listing.viewerHasSaved ? "Saved — click to unsave" : "Save listing"}
+                  onClick={toggleSave}
+                >
+                  {savePending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Bookmark
+                      className={`w-4 h-4 ${listing.viewerHasSaved ? "text-primary" : ""}`}
+                      fill={listing.viewerHasSaved ? "currentColor" : "none"}
+                    />
+                  )}
+                </Button>
+                <Button
                   variant="destructive"
                   className="press"
                   disabled={deleteListing.isPending}
@@ -368,14 +413,33 @@ export function MarketplaceListingPage() {
                 </Button>
               </div>
             ) : (
-              <Button
-                className="w-full mt-5 press"
-                disabled={createConversation.isPending}
-                onClick={messageSeller}
-              >
-                {createConversation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                Message seller
-              </Button>
+              <div className="flex gap-2 mt-5">
+                <Button
+                  className="flex-1 press"
+                  disabled={createConversation.isPending}
+                  onClick={messageSeller}
+                >
+                  {createConversation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                  Message seller
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="press"
+                  disabled={savePending}
+                  aria-label={listing.viewerHasSaved ? "Unsave listing" : "Save listing"}
+                  title={listing.viewerHasSaved ? "Saved — click to unsave" : "Save listing"}
+                  onClick={toggleSave}
+                >
+                  {savePending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Bookmark
+                      className={`w-4 h-4 ${listing.viewerHasSaved ? "text-primary" : ""}`}
+                      fill={listing.viewerHasSaved ? "currentColor" : "none"}
+                    />
+                  )}
+                </Button>
+              </div>
             )}
           </div>
         </div>
