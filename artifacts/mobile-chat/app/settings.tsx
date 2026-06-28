@@ -1,108 +1,37 @@
 import { Touchable } from "@/components/Touchable";
 import { fs } from "@/constants/typography";
 import { shadow, glow } from "@/constants/shadows";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import {
   Alert,
   Modal,
-  Pressable,
   ScrollView,
   Switch,
   Text,
-  TextInput,
   View,
   StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import * as ImagePicker from "expo-image-picker";
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  useUpdateMyProfile,
-  getGetCurrentUserQueryKey,
-  type ProfileUpdate,
-} from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
 import { useAuth } from "@/lib/auth";
 import { useColors } from "@/hooks/useColors";
 import { usePreferences } from "@/lib/preferences";
 import { openMainApp } from "@/lib/mainApp";
-import { uploadMedia, UploadUnavailableError, type PickedAsset } from "@/lib/upload";
 
 export default function SettingsScreen() {
   const c = useColors();
   const qc = useQueryClient();
-  const { user, refreshUser, signOut, supabaseEnabled, devUsers, signInAsDevUser } =
-    useAuth();
+  const { user, signOut, supabaseEnabled, devUsers, signInAsDevUser } = useAuth();
   const { themeMode, activeStatus, setThemeMode, setActiveStatus } = usePreferences();
-  const updateProfile = useUpdateMyProfile();
-
-  const [displayName, setDisplayName] = useState(user?.displayName ?? "");
-  const [bio, setBio] = useState(user?.bio ?? "");
-  const [location, setLocation] = useState(user?.location ?? "");
-  const [work, setWork] = useState(user?.work ?? "");
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.avatarUrl ?? null);
   const [switchOpen, setSwitchOpen] = useState(false);
-
-  // Auto-save profile text fields on blur. Skips when the name is empty so we
-  // never wipe the display name, and stays silent so it doesn't nag the user.
-  const commitProfile = useCallback(async () => {
-    if (!displayName.trim()) return;
-    try {
-      const data: ProfileUpdate = {
-        displayName: displayName.trim(),
-        bio: bio.trim(),
-        location: location.trim(),
-        work: work.trim(),
-      };
-      await updateProfile.mutateAsync({ data });
-      qc.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
-      await refreshUser();
-    } catch {
-      // Silent: the next blur (or another field) will retry.
-    }
-  }, [displayName, bio, location, work, updateProfile, qc, refreshUser]);
-
-  const pickAvatar = async () => {
-    const res = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-    if (res.canceled || !res.assets[0]) return;
-
-    const asset = res.assets[0];
-    setAvatarUrl(asset.uri);
-    try {
-      const uploaded = await uploadMedia(asset);
-      await updateProfile.mutateAsync({ data: { avatarUrl: uploaded.url } });
-      qc.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
-      await refreshUser();
-    } catch (err) {
-      setAvatarUrl(user?.avatarUrl ?? null);
-      Alert.alert(
-        err instanceof UploadUnavailableError
-          ? "Photo upload unavailable"
-          : "Error",
-        err instanceof UploadUnavailableError
-          ? "Storage isn't configured in this environment."
-          : "Could not update your photo. Please try again.",
-      );
-    }
-  };
 
   const confirmLogout = () => {
     Alert.alert("Log out", "Are you sure you want to log out?", [
       { text: "Cancel", style: "cancel" },
-      {
-        text: "Log out",
-        style: "destructive",
-        onPress: () => {
-          void signOut();
-        },
-      },
+      { text: "Log out", style: "destructive", onPress: () => void signOut() },
     ]);
   };
 
@@ -127,113 +56,52 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        <View style={styles.avatarSection}>
-          <Touchable onPress={pickAvatar} style={styles.avatarWrap}>
-            <Avatar uri={avatarUrl} name={displayName} size={96} />
-            <View style={[styles.cameraBadge, { backgroundColor: c.primary, borderColor: c.background }, glow(c.primary)]}>
-              <Ionicons name="camera" size={18} color="#fff" />
-            </View>
-          </Touchable>
-          <Text style={{ color: c.mutedForeground, fontFamily: "Inter_500Medium", fontSize: fs(13) }}>
-            @{user?.username}
-          </Text>
-        </View>
+        <Touchable
+          style={[styles.profile, { backgroundColor: c.card }, shadow("md")]}
+          onPress={() => router.push("/edit-profile")}
+        >
+          <Avatar uri={user?.avatarUrl} name={user?.displayName} size={60} />
+          <View style={{ flex: 1, marginLeft: 14 }}>
+            <Text style={{ color: c.foreground, fontFamily: "Inter_700Bold", fontSize: fs(18) }}>
+              {user?.displayName ?? "You"}
+            </Text>
+            <Text style={{ color: c.mutedForeground, fontSize: fs(13) }}>@{user?.username}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={c.mutedForeground} />
+        </Touchable>
 
-        <Text style={[styles.sectionTitle, { color: c.mutedForeground }]}>HIMEWO</Text>
+        <Text style={[styles.sectionTitle, { color: c.mutedForeground }]}>YOUR ACCOUNT</Text>
         <View style={[styles.card, { backgroundColor: c.card }, shadow("md")]}>
-          <ActionRow
-            c={c}
-            icon="apps"
-            title="Account Center"
-            subtitle="Manage your HiMewo account"
-            onPress={() => openMainApp("/settings")}
-          />
-          <ActionRow
-            c={c}
-            icon="swap-horizontal"
-            title="Switch profile"
-            subtitle={`Signed in as ${user?.displayName ?? ""}`}
-            onPress={() => setSwitchOpen(true)}
-            last
-          />
+          <Row c={c} icon="person-circle" iconColor={c.primary} title="Accounts Center"
+            subtitle="Password, security, personal details"
+            onPress={() => router.push("/accounts-center")} last />
         </View>
 
         <Text style={[styles.sectionTitle, { color: c.mutedForeground }]}>PREFERENCES</Text>
         <View style={[styles.card, { backgroundColor: c.card }, shadow("md")]}>
-          <ToggleRow
-            c={c}
-            icon="moon"
-            title="Dark mode"
-            subtitle="Use the dark theme"
-            value={themeMode === "dark"}
-            onValueChange={(v) => setThemeMode(v ? "dark" : "light")}
-          />
-          <ToggleRow
-            c={c}
-            icon="ellipse"
-            title="Active status"
-            subtitle="Show when you're active"
-            value={activeStatus}
-            onValueChange={setActiveStatus}
-            last
-          />
+          <ToggleRow c={c} icon="ellipse" iconColor="#31a24c" title="Active status"
+            subtitle={activeStatus ? "On" : "Off"} value={activeStatus} onValueChange={setActiveStatus} />
+          <ToggleRow c={c} icon="moon" iconColor="#a033ff" title="Dark mode"
+            subtitle={themeMode === "dark" ? "On" : "Off"} value={themeMode === "dark"}
+            onValueChange={(v) => setThemeMode(v ? "dark" : "light")} />
+          <Row c={c} icon="notifications" iconColor="#f3425f" title="Notifications and sounds"
+            onPress={() => router.push("/notification-settings")} />
+          <Row c={c} icon="shield-checkmark" iconColor="#0084ff" title="Privacy and safety"
+            onPress={() => router.push("/privacy-settings")} last />
         </View>
 
-        <Text style={[styles.sectionTitle, { color: c.mutedForeground }]}>PROFILE</Text>
+        <Text style={[styles.sectionTitle, { color: c.mutedForeground }]}>MORE</Text>
         <View style={[styles.card, { backgroundColor: c.card }, shadow("md")]}>
-          <Field label="Display name" c={c}>
-            <TextInput
-              value={displayName}
-              onChangeText={setDisplayName}
-              onBlur={commitProfile}
-              placeholder="Your name"
-              placeholderTextColor={c.mutedForeground}
-              style={[styles.input, { color: c.foreground }]}
-            />
-          </Field>
-          <Field label="Bio" c={c}>
-            <TextInput
-              value={bio}
-              onChangeText={setBio}
-              onBlur={commitProfile}
-              placeholder="Tell people about yourself"
-              placeholderTextColor={c.mutedForeground}
-              multiline
-              style={[styles.input, { color: c.foreground, minHeight: 60, textAlignVertical: "top" }]}
-            />
-          </Field>
-          <Field label="Location" c={c}>
-            <TextInput
-              value={location}
-              onChangeText={setLocation}
-              onBlur={commitProfile}
-              placeholder="Where you live"
-              placeholderTextColor={c.mutedForeground}
-              style={[styles.input, { color: c.foreground }]}
-            />
-          </Field>
-          <Field label="Work" c={c} last>
-            <TextInput
-              value={work}
-              onChangeText={setWork}
-              onBlur={commitProfile}
-              placeholder="Where you work"
-              placeholderTextColor={c.mutedForeground}
-              style={[styles.input, { color: c.foreground }]}
-            />
-          </Field>
-        </View>
-
-        <View style={{ paddingHorizontal: 16, marginTop: 24 }}>
-          <Touchable
-            style={[styles.logout, { borderColor: c.destructive }]}
-            onPress={confirmLogout}
-          >
-            <Ionicons name="log-out-outline" size={20} color={c.destructive} />
-            <Text style={{ color: c.destructive, fontFamily: "Inter_700Bold", fontSize: fs(15) }}>
-              Log out
-            </Text>
-          </Touchable>
+          <Row c={c} icon="apps" iconColor="#f5851f" title="Open HiMewo app"
+            subtitle="Go to the full social app" onPress={() => openMainApp()} />
+          <Row c={c} icon="archive" iconColor="#65676b" title="Archived chats"
+            onPress={() => router.push("/archive")} />
+          {!supabaseEnabled && (
+            <Row c={c} icon="swap-horizontal" iconColor="#0084ff" title="Switch profile"
+              subtitle={`Signed in as ${user?.displayName ?? ""}`} onPress={() => setSwitchOpen(true)} />
+          )}
+          <Row c={c} icon="log-out" iconColor={c.destructive} title="Log out"
+            titleColor={c.destructive} onPress={confirmLogout} last />
         </View>
       </ScrollView>
 
@@ -253,67 +121,65 @@ export default function SettingsScreen() {
             </Text>
             <View style={{ width: 24 }} />
           </View>
-          {supabaseEnabled ? (
-            <View style={{ padding: 24, alignItems: "center" }}>
-              <Text style={{ color: c.mutedForeground, textAlign: "center" }}>
-                Profile switching is available in demo mode only.
-              </Text>
-            </View>
-          ) : (
-            <ScrollView>
-              {devUsers.map((u) => (
-                <Touchable
-                  key={u.id}
-                  style={[styles.userRow, { borderBottomColor: c.border }]}
-                  onPress={() => switchTo(u.id)}
-                >
-                  <Avatar uri={u.avatarUrl} name={u.displayName} size={48} />
-                  <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: fs(16) }}>
-                      {u.displayName}
-                    </Text>
-                    <Text style={{ color: c.mutedForeground, fontSize: fs(13) }}>@{u.username}</Text>
-                  </View>
-                  {u.id === user?.id ? (
-                    <Ionicons name="checkmark-circle" size={22} color={c.primary} />
-                  ) : null}
-                </Touchable>
-              ))}
-            </ScrollView>
-          )}
+          <ScrollView>
+            {devUsers.map((u) => (
+              <Touchable
+                key={u.id}
+                style={[styles.userRow, { borderBottomColor: c.border }]}
+                onPress={() => switchTo(u.id)}
+              >
+                <Avatar uri={u.avatarUrl} name={u.displayName} size={48} />
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: fs(16) }}>
+                    {u.displayName}
+                  </Text>
+                  <Text style={{ color: c.mutedForeground, fontSize: fs(13) }}>@{u.username}</Text>
+                </View>
+                {u.id === user?.id ? (
+                  <Ionicons name="checkmark-circle" size={22} color={c.primary} />
+                ) : null}
+              </Touchable>
+            ))}
+          </ScrollView>
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
   );
 }
 
-function ActionRow({
+function Row({
   c,
   icon,
+  iconColor,
   title,
   subtitle,
+  titleColor,
   onPress,
   last,
 }: {
   c: ReturnType<typeof useColors>;
   icon: keyof typeof Ionicons.glyphMap;
+  iconColor: string;
   title: string;
   subtitle?: string;
+  titleColor?: string;
   onPress: () => void;
   last?: boolean;
 }) {
   return (
     <Touchable
-      style={[styles.settingRow, !last && { borderBottomColor: c.border, borderBottomWidth: StyleSheet.hairlineWidth }]}
+      style={[styles.row, !last && { borderBottomColor: c.border, borderBottomWidth: StyleSheet.hairlineWidth }]}
       onPress={onPress}
     >
-      <Ionicons name={icon} size={22} color={c.foreground} />
+      <View style={[styles.iconWrap, { backgroundColor: iconColor }]}>
+        <Ionicons name={icon} size={18} color="#fff" />
+      </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: fs(15) }}>
+        <Text style={{ color: titleColor ?? c.foreground, fontFamily: "Inter_600SemiBold", fontSize: fs(15) }}>
           {title}
         </Text>
         {subtitle ? (
-          <Text numberOfLines={1} style={{ color: c.mutedForeground, fontFamily: "Inter_400Regular", fontSize: fs(13) }}>
+          <Text numberOfLines={1} style={{ color: c.mutedForeground, fontSize: fs(12), marginTop: 2 }}>
             {subtitle}
           </Text>
         ) : null}
@@ -326,6 +192,7 @@ function ActionRow({
 function ToggleRow({
   c,
   icon,
+  iconColor,
   title,
   subtitle,
   value,
@@ -334,6 +201,7 @@ function ToggleRow({
 }: {
   c: ReturnType<typeof useColors>;
   icon: keyof typeof Ionicons.glyphMap;
+  iconColor: string;
   title: string;
   subtitle?: string;
   value: boolean;
@@ -341,46 +209,17 @@ function ToggleRow({
   last?: boolean;
 }) {
   return (
-    <View
-      style={[styles.settingRow, !last && { borderBottomColor: c.border, borderBottomWidth: StyleSheet.hairlineWidth }]}
-    >
-      <Ionicons name={icon} size={22} color={c.foreground} />
+    <View style={[styles.row, !last && { borderBottomColor: c.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
+      <View style={[styles.iconWrap, { backgroundColor: iconColor }]}>
+        <Ionicons name={icon} size={18} color="#fff" />
+      </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: fs(15) }}>
-          {title}
-        </Text>
+        <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: fs(15) }}>{title}</Text>
         {subtitle ? (
-          <Text style={{ color: c.mutedForeground, fontFamily: "Inter_400Regular", fontSize: fs(13) }}>
-            {subtitle}
-          </Text>
+          <Text style={{ color: c.mutedForeground, fontSize: fs(12), marginTop: 2 }}>{subtitle}</Text>
         ) : null}
       </View>
-      <Switch
-        value={value}
-        onValueChange={onValueChange}
-        trackColor={{ true: c.primary }}
-      />
-    </View>
-  );
-}
-
-function Field({
-  label,
-  children,
-  c,
-  last,
-}: {
-  label: string;
-  children: React.ReactNode;
-  c: ReturnType<typeof useColors>;
-  last?: boolean;
-}) {
-  return (
-    <View style={[styles.field, !last && { borderBottomColor: c.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
-      <Text style={{ color: c.mutedForeground, fontFamily: "Inter_500Medium", fontSize: fs(12), marginBottom: 4 }}>
-        {label}
-      </Text>
-      {children}
+      <Switch value={value} onValueChange={onValueChange} trackColor={{ true: c.primary }} />
     </View>
   );
 }
@@ -394,18 +233,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     zIndex: 2,
   },
-  avatarSection: { alignItems: "center", gap: 8, paddingVertical: 24 },
-  avatarWrap: { position: "relative" },
-  cameraBadge: {
-    position: "absolute",
-    right: 0,
-    bottom: 0,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 3,
+  profile: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    marginHorizontal: 16,
+    marginTop: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderRadius: 16,
   },
   sectionTitle: {
     fontFamily: "Inter_600SemiBold",
@@ -413,35 +248,28 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginLeft: 16,
     marginBottom: 8,
-    marginTop: 16,
+    marginTop: 20,
   },
-  card: {
-    marginHorizontal: 16,
-    borderRadius: 16,
-  },
-  settingRow: {
+  card: { marginHorizontal: 16, borderRadius: 16 },
+  row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 14,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 13,
   },
-  field: { paddingHorizontal: 14, paddingVertical: 10 },
-  input: { fontFamily: "Inter_400Regular", fontSize: fs(15), padding: 0 },
+  iconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   userRow: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  logout: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingVertical: 14,
   },
 });
