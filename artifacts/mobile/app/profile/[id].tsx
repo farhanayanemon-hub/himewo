@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Pressable,
   RefreshControl,
@@ -17,6 +16,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetUser,
   useGetUserPosts,
+  useGetUserFriends,
   useSendFriendRequest,
   useRemoveFriend,
   useFollowUser,
@@ -24,6 +24,7 @@ import {
   useCreateConversation,
   getGetUserQueryKey,
   getGetUserPostsQueryKey,
+  getGetUserFriendsQueryKey,
   ConversationType,
   type Post,
 } from "@workspace/api-client-react";
@@ -57,7 +58,19 @@ export default function ProfileScreen() {
     undefined,
     { query: { enabled: !!userId, queryKey: getGetUserPostsQueryKey(userId) } },
   );
+  const { data: friendsData, refetch: refetchFriends } = useGetUserFriends(
+    userId,
+    undefined,
+    { query: { enabled: !!userId, queryKey: getGetUserFriendsQueryKey(userId) } },
+  );
   const posts = (postsData ?? []) as Post[];
+  const friends = friendsData ?? [];
+
+  const photoUrls = posts
+    .flatMap((p) => p.media ?? [])
+    .filter((m) => m.type === "image")
+    .map((m) => m.url)
+    .slice(0, 9);
 
   const sendFriendRequest = useSendFriendRequest();
   const removeFriend = useRemoveFriend();
@@ -72,9 +85,11 @@ export default function ProfileScreen() {
   const onRefresh = useCallback(() => {
     qc.invalidateQueries({ queryKey: getGetUserQueryKey(userId) });
     qc.invalidateQueries({ queryKey: getGetUserPostsQueryKey(userId) });
+    qc.invalidateQueries({ queryKey: getGetUserFriendsQueryKey(userId) });
     refetch();
     refetchPosts();
-  }, [qc, userId, refetch, refetchPosts]);
+    refetchFriends();
+  }, [qc, userId, refetch, refetchPosts, refetchFriends]);
 
   const onToggleFriend = () => {
     if (!profile) return;
@@ -118,6 +133,20 @@ export default function ProfileScreen() {
     : profile?.viewerHasPendingRequest
       ? "time"
       : "person-add";
+
+  type IntroRow = { icon: keyof typeof Ionicons.glyphMap; label: string };
+  const introRows: IntroRow[] = [];
+  if (profile) {
+    if (profile.work) introRows.push({ icon: "briefcase-outline", label: `Works at ${profile.work}` });
+    if (profile.education) introRows.push({ icon: "school-outline", label: `Studied at ${profile.education}` });
+    if (profile.location) introRows.push({ icon: "location-outline", label: `Lives in ${profile.location}` });
+    if (profile.hometown) introRows.push({ icon: "home-outline", label: `From ${profile.hometown}` });
+    if (profile.hobbies) introRows.push({ icon: "heart-outline", label: `Hobbies: ${profile.hobbies}` });
+    if (profile.interests) introRows.push({ icon: "sparkles-outline", label: `Interests: ${profile.interests}` });
+    if (profile.website) introRows.push({ icon: "globe-outline", label: profile.website });
+    if (profile.email) introRows.push({ icon: "mail-outline", label: profile.email });
+    if (profile.phone) introRows.push({ icon: "call-outline", label: profile.phone });
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top"]}>
@@ -173,28 +202,6 @@ export default function ProfileScreen() {
                 <Text style={[styles.username, { color: c.mutedForeground }]}>
                   @{profile.username}
                 </Text>
-                {!!profile.bio && (
-                  <Text style={[styles.bio, { color: c.foreground }]}>{profile.bio}</Text>
-                )}
-
-                <View style={styles.metaRow}>
-                  {!!profile.location && (
-                    <View style={styles.metaItem}>
-                      <Ionicons name="location-outline" size={14} color={c.mutedForeground} />
-                      <Text style={{ color: c.mutedForeground, fontSize: 13 }}>
-                        {profile.location}
-                      </Text>
-                    </View>
-                  )}
-                  {!!profile.work && (
-                    <View style={styles.metaItem}>
-                      <Ionicons name="briefcase-outline" size={14} color={c.mutedForeground} />
-                      <Text style={{ color: c.mutedForeground, fontSize: 13 }}>
-                        {profile.work}
-                      </Text>
-                    </View>
-                  )}
-                </View>
 
                 <View style={styles.counts}>
                   {profile.friendCount != null && (
@@ -227,7 +234,7 @@ export default function ProfileScreen() {
                   {isOwn ? (
                     <Pressable
                       style={[styles.actionBtn, styles.primaryBtn, { backgroundColor: c.primary }]}
-                      onPress={() => router.push("/settings")}
+                      onPress={() => router.push("/edit-profile")}
                     >
                       <Ionicons name="create-outline" size={18} color={c.primaryForeground} />
                       <Text style={[styles.primaryLabel, { color: c.primaryForeground }]}>
@@ -283,6 +290,88 @@ export default function ProfileScreen() {
                 </View>
               </View>
 
+              {/* Intro card */}
+              <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+                <Text style={[styles.cardTitle, { color: c.foreground }]}>Intro</Text>
+                {!!profile.bio && (
+                  <Text style={[styles.bio, { color: c.foreground }]}>{profile.bio}</Text>
+                )}
+                {introRows.length > 0 ? (
+                  <View style={{ gap: 10, marginTop: profile.bio ? 12 : 0 }}>
+                    {introRows.map((row, i) => (
+                      <View key={i} style={styles.introRow}>
+                        <Ionicons name={row.icon} size={18} color={c.mutedForeground} />
+                        <Text style={[styles.introText, { color: c.foreground }]}>{row.label}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : (
+                  !profile.bio && (
+                    <Text style={{ color: c.mutedForeground, fontSize: 14 }}>
+                      {isOwn ? "Add details about yourself." : "No details yet."}
+                    </Text>
+                  )
+                )}
+                {isOwn && (
+                  <Pressable
+                    style={[styles.editDetails, { backgroundColor: c.secondary }]}
+                    onPress={() => router.push("/edit-profile")}
+                  >
+                    <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 14 }}>
+                      Edit details
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
+
+              {/* Friends */}
+              <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+                <View style={styles.cardHeaderRow}>
+                  <Text style={[styles.cardTitle, { color: c.foreground, marginBottom: 0 }]}>Friends</Text>
+                  {profile.friendCount != null && (
+                    <Text style={{ color: c.mutedForeground, fontSize: 13 }}>
+                      {formatCount(profile.friendCount)}
+                    </Text>
+                  )}
+                </View>
+                {friends.length > 0 ? (
+                  <View style={styles.grid}>
+                    {friends.slice(0, 9).map((f) => (
+                      <Pressable
+                        key={f.id}
+                        style={styles.gridItem}
+                        onPress={() => router.push(`/profile/${f.id}`)}
+                      >
+                        <Image
+                          source={{ uri: f.avatarUrl ?? undefined }}
+                          style={styles.gridImage}
+                          contentFit="cover"
+                        />
+                        <Text style={[styles.gridLabel, { color: c.foreground }]} numberOfLines={1}>
+                          {f.displayName}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                ) : (
+                  <Text style={{ color: c.mutedForeground, fontSize: 14 }}>No friends to show yet.</Text>
+                )}
+              </View>
+
+              {/* Photos */}
+              <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+                <Text style={[styles.cardTitle, { color: c.foreground }]}>Photos</Text>
+                {photoUrls.length > 0 ? (
+                  <View style={styles.photoGrid}>
+                    {photoUrls.map((url, i) => (
+                      <Image key={i} source={{ uri: url }} style={styles.photo} contentFit="cover" />
+                    ))}
+                  </View>
+                ) : (
+                  <Text style={{ color: c.mutedForeground, fontSize: 14 }}>No photos yet.</Text>
+                )}
+              </View>
+
               <View style={[styles.sectionHeader, { borderTopColor: c.border }]}>
                 <Text style={[styles.sectionTitle, { color: c.foreground }]}>Posts</Text>
               </View>
@@ -336,9 +425,7 @@ const styles = StyleSheet.create({
   info: { paddingHorizontal: 16, paddingTop: 8 },
   name: { fontFamily: "Inter_700Bold", fontSize: 22 },
   username: { fontSize: 14, marginTop: 2 },
-  bio: { fontSize: 15, lineHeight: 21, marginTop: 10 },
-  metaRow: { flexDirection: "row", flexWrap: "wrap", gap: 14, marginTop: 10 },
-  metaItem: { flexDirection: "row", alignItems: "center", gap: 4 },
+  bio: { fontSize: 15, lineHeight: 21 },
   counts: { flexDirection: "row", gap: 24, marginTop: 14 },
   countItem: { flexDirection: "row", alignItems: "center", gap: 5 },
   countValue: { fontFamily: "Inter_700Bold", fontSize: 15 },
@@ -356,10 +443,38 @@ const styles = StyleSheet.create({
   primaryBtn: {},
   actionLabel: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
   primaryLabel: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  section: {
+    marginHorizontal: 12,
+    marginTop: 12,
+    padding: 16,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  cardTitle: { fontFamily: "Inter_700Bold", fontSize: 18, marginBottom: 10 },
+  cardHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  introRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  introText: { fontSize: 15, flex: 1 },
+  editDetails: {
+    marginTop: 14,
+    paddingVertical: 9,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  gridItem: { width: "31.5%" },
+  gridImage: { width: "100%", aspectRatio: 1, borderRadius: 8, backgroundColor: "#88888822" },
+  gridLabel: { fontSize: 12, fontFamily: "Inter_500Medium", marginTop: 4 },
+  photoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  photo: { width: "31.5%", aspectRatio: 1, borderRadius: 8, backgroundColor: "#88888822" },
   sectionHeader: {
     paddingHorizontal: 16,
     paddingVertical: 14,
-    marginTop: 8,
+    marginTop: 12,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   sectionTitle: { fontFamily: "Inter_700Bold", fontSize: 17 },

@@ -15,6 +15,8 @@ import notificationsRouter from "./notifications";
 import mediaRouter from "./media";
 import callsRouter from "./calls";
 import marketplaceRouter from "./marketplace";
+import settingsRouter from "./settings";
+import savedRouter from "./saved";
 
 const router: IRouter = Router();
 
@@ -36,5 +38,7 @@ router.use(notificationsRouter);
 router.use(mediaRouter);
 router.use(callsRouter);
 router.use(marketplaceRouter);
+router.use(settingsRouter);
+router.use(savedRouter);
 
 export default router;

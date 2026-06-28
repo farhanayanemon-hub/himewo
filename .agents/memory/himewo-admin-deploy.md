@@ -94,3 +94,18 @@ permissions; users/reports/announcements/settings/roles endpoints 200.
 `Argument list too long` and can leave an EMPTY blob in the tree (broke main's
 lockfile once). **Use `gh api ... --input <jsonfile>`** (Contents API PUT with a
 JSON body file) for large files instead of inline `-f`.
+
+## Railway lockfile + manual-deploy race (api-server)
+Frozen install fails two ways: (1) ERR_PNPM_OUTDATED_LOCKFILE if the repo lockfile
+is missing deps that exist in a package.json; (2) ERR_PNPM_LOCKFILE_CONFIG_MISMATCH
+(autoInstallPeers) if you regenerate the lockfile WITHOUT the repo `.npmrc`. **Fix:**
+regen in an isolated /tmp dir that CONTAINS the repo `.npmrc`, with the matching pnpm:
+`corepack pnpm@9.15.9 install --lockfile-only --ignore-scripts` → yields
+`autoInstallPeers: false` to match Railway's derived config. Lockfile lives at repo
+root, which does NOT match watchPattern `/artifacts/api-server/**`, so a lockfile-only
+push is SKIPPED (no auto-deploy) — you must trigger `serviceInstanceDeploy` manually.
+**Race:** firing the manual deploy in the same breath as the push builds the PREVIOUS
+HEAD (Railway hasn't synced the new commit yet) → it rebuilds the stale/bad lockfile
+and fails identically. Wait until `git/ref/heads/main` confirms your SHA is HEAD AND
+Railway has synced, then trigger; verify the route with `curl api.himewo.com/api/<x>`
+(401 = deployed behind requireAuth, 404 = not deployed).

@@ -22,9 +22,12 @@ import {
   useListReels,
   useLikeReel,
   useUnlikeReel,
+  useSaveItem,
+  useUnsaveItem,
   useListReelComments,
   useCreateReelComment,
   getListReelCommentsQueryKey,
+  getListSavedItemsQueryKey,
   type Reel,
   type ReelComment,
 } from "@workspace/api-client-react";
@@ -44,11 +47,15 @@ interface ReelItemProps {
 
 function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
   const c = useColors();
+  const qc = useQueryClient();
   const [liked, setLiked] = useState(reel.viewerHasLiked);
   const [likeCount, setLikeCount] = useState(reel.likeCount);
+  const [saved, setSaved] = useState(reel.viewerHasSaved);
 
   const likeReel = useLikeReel();
   const unlikeReel = useUnlikeReel();
+  const saveItem = useSaveItem();
+  const unsaveItem = useUnsaveItem();
 
   const player = useVideoPlayer(reel.videoUrl, (p) => {
     p.loop = true;
@@ -72,6 +79,24 @@ function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
       setLiked(true);
       setLikeCount((n) => n + 1);
       likeReel.mutate({ id: reel.id });
+    }
+  };
+
+  const toggleSave = () => {
+    const invalidate = () =>
+      qc.invalidateQueries({ queryKey: getListSavedItemsQueryKey() });
+    if (saved) {
+      setSaved(false);
+      unsaveItem.mutate(
+        { entityType: "reel", entityId: reel.id },
+        { onSuccess: invalidate },
+      );
+    } else {
+      setSaved(true);
+      saveItem.mutate(
+        { data: { entityType: "reel", entityId: reel.id } },
+        { onSuccess: invalidate },
+      );
     }
   };
 
@@ -119,6 +144,14 @@ function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
             <Text style={styles.actionLabel}>
               {formatCount(reel.commentCount)}
             </Text>
+          </Pressable>
+          <Pressable style={styles.action} onPress={toggleSave}>
+            <Ionicons
+              name={saved ? "bookmark" : "bookmark-outline"}
+              size={30}
+              color={saved ? c.primary : "#fff"}
+            />
+            <Text style={styles.actionLabel}>{saved ? "Saved" : "Save"}</Text>
           </Pressable>
           <Pressable style={styles.action}>
             <Ionicons name="arrow-redo-outline" size={32} color="#fff" />

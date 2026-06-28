@@ -26,6 +26,7 @@ import {
   reelCommentsTable,
   notificationsTable,
   marketplaceListingsTable,
+  savedItemsTable,
   type Profile as ProfileRow,
   type MarketplaceListing as MarketplaceListingRow,
   type Post as PostRow,
@@ -52,18 +53,24 @@ import {
 } from "drizzle-orm";
 
 // ---------------- Profiles ----------------
-export function toProfile(row: ProfileRow) {
+export function toProfile(row: ProfileRow, includeContact = false) {
   return {
     id: row.id,
     username: row.username,
     displayName: row.displayName,
-    email: row.email,
-    phone: row.phone,
+    email: includeContact ? row.email : null,
+    phone: includeContact ? row.phone : null,
     avatarUrl: row.avatarUrl,
     coverUrl: row.coverUrl,
     bio: row.bio,
+    birthday: row.birthday,
     location: row.location,
     work: row.work,
+    education: row.education,
+    hometown: row.hometown,
+    hobbies: row.hobbies,
+    interests: row.interests,
+    website: row.website,
     isVerified: row.isVerified,
     createdAt: row.createdAt,
   };
@@ -157,7 +164,7 @@ export async function buildProfileDetail(userId: string, viewerId?: string) {
   }
 
   return {
-    ...toProfile(row),
+    ...toProfile(row, viewerId === userId),
     friendCount: friends?.value ?? 0,
     followerCount: followers?.value ?? 0,
     followingCount: following?.value ?? 0,
@@ -174,8 +181,14 @@ export async function buildPosts(rows: PostRow[], viewerId?: string) {
   const ids = rows.map((r) => r.id);
   const authorMap = await loadProfileMap(rows.map((r) => r.authorId));
 
-  const [mediaRows, reactRows, viewerReacts, commentCounts, shareCounts] =
-    await Promise.all([
+  const [
+    mediaRows,
+    reactRows,
+    viewerReacts,
+    commentCounts,
+    shareCounts,
+    viewerSaves,
+  ] = await Promise.all([
       db
         .select()
         .from(postMediaTable)
@@ -211,6 +224,18 @@ export async function buildPosts(rows: PostRow[], viewerId?: string) {
         .from(sharesTable)
         .where(inArray(sharesTable.postId, ids))
         .groupBy(sharesTable.postId),
+      viewerId
+        ? db
+            .select({ entityId: savedItemsTable.entityId })
+            .from(savedItemsTable)
+            .where(
+              and(
+                eq(savedItemsTable.userId, viewerId),
+                eq(savedItemsTable.entityType, "post"),
+                inArray(savedItemsTable.entityId, ids),
+              ),
+            )
+        : Promise.resolve([]),
     ]);
 
   const mediaByPost = new Map<number, typeof mediaRows>();
@@ -230,6 +255,7 @@ export async function buildPosts(rows: PostRow[], viewerId?: string) {
   for (const r of viewerReacts) viewerReactByPost.set(r.postId, r.type);
   const commentCountByPost = new Map(commentCounts.map((c) => [c.postId, c.value]));
   const shareCountByPost = new Map(shareCounts.map((s) => [s.postId, s.value]));
+  const savedPostSet = new Set(viewerSaves.map((s) => s.entityId));
 
   return rows.map((row) => {
     const summary = reactByPost.get(row.id) ?? { total: 0, byType: {} };
@@ -257,6 +283,7 @@ export async function buildPosts(rows: PostRow[], viewerId?: string) {
       },
       commentCount: commentCountByPost.get(row.id) ?? 0,
       shareCount: shareCountByPost.get(row.id) ?? 0,
+      viewerHasSaved: savedPostSet.has(row.id),
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };
@@ -651,7 +678,7 @@ export async function buildReels(rows: ReelRow[], viewerId?: string) {
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);
   const authorMap = await loadProfileMap(rows.map((r) => r.authorId));
-  const [likeCounts, viewerLikes, commentCounts] = await Promise.all([
+  const [likeCounts, viewerLikes, commentCounts, viewerSaves] = await Promise.all([
     db
       .select({ reelId: reelLikesTable.reelId, value: count() })
       .from(reelLikesTable)
@@ -673,10 +700,23 @@ export async function buildReels(rows: ReelRow[], viewerId?: string) {
       .from(reelCommentsTable)
       .where(inArray(reelCommentsTable.reelId, ids))
       .groupBy(reelCommentsTable.reelId),
+    viewerId
+      ? db
+          .select({ entityId: savedItemsTable.entityId })
+          .from(savedItemsTable)
+          .where(
+            and(
+              eq(savedItemsTable.userId, viewerId),
+              eq(savedItemsTable.entityType, "reel"),
+              inArray(savedItemsTable.entityId, ids),
+            ),
+          )
+      : Promise.resolve([]),
   ]);
   const likeCountByReel = new Map(likeCounts.map((l) => [l.reelId, l.value]));
   const likedSet = new Set(viewerLikes.map((l) => l.reelId));
   const commentCountByReel = new Map(commentCounts.map((c) => [c.reelId, c.value]));
+  const savedReelSet = new Set(viewerSaves.map((s) => s.entityId));
   return rows.map((row) => ({
     id: row.id,
     author: authorMap.get(row.authorId)!,
@@ -687,6 +727,7 @@ export async function buildReels(rows: ReelRow[], viewerId?: string) {
     likeCount: likeCountByReel.get(row.id) ?? 0,
     commentCount: commentCountByReel.get(row.id) ?? 0,
     viewerHasLiked: likedSet.has(row.id),
+    viewerHasSaved: savedReelSet.has(row.id),
   }));
 }
 
@@ -721,7 +762,24 @@ export async function buildListings(
   rows: MarketplaceListingRow[],
   viewerId?: string,
 ) {
-  const profiles = await loadProfileMap(rows.map((r) => r.sellerId));
+  if (rows.length === 0) return [];
+  const ids = rows.map((r) => r.id);
+  const [profiles, viewerSaves] = await Promise.all([
+    loadProfileMap(rows.map((r) => r.sellerId)),
+    viewerId
+      ? db
+          .select({ entityId: savedItemsTable.entityId })
+          .from(savedItemsTable)
+          .where(
+            and(
+              eq(savedItemsTable.userId, viewerId),
+              eq(savedItemsTable.entityType, "listing"),
+              inArray(savedItemsTable.entityId, ids),
+            ),
+          )
+      : Promise.resolve([]),
+  ]);
+  const savedSet = new Set(viewerSaves.map((s) => s.entityId));
   return rows
     .map((r) => {
       const seller = profiles.get(r.sellerId);
@@ -739,6 +797,68 @@ export async function buildListings(
         photos: r.photos ?? [],
         status: r.status,
         viewerIsSeller: viewerId ? r.sellerId === viewerId : false,
+        viewerHasSaved: savedSet.has(r.id),
+        createdAt: r.createdAt,
+      };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null);
+}
+
+// ---------------- Saved items ----------------
+export async function buildSavedItems(
+  rows: { id: number; entityType: string; entityId: number; createdAt: Date }[],
+  viewerId: string,
+) {
+  if (rows.length === 0) return [];
+  const postIds = rows
+    .filter((r) => r.entityType === "post")
+    .map((r) => r.entityId);
+  const listingIds = rows
+    .filter((r) => r.entityType === "listing")
+    .map((r) => r.entityId);
+  const reelIds = rows
+    .filter((r) => r.entityType === "reel")
+    .map((r) => r.entityId);
+
+  const [postRows, listingRows, reelRows] = await Promise.all([
+    postIds.length
+      ? db.select().from(postsTable).where(inArray(postsTable.id, postIds))
+      : Promise.resolve([]),
+    listingIds.length
+      ? db
+          .select()
+          .from(marketplaceListingsTable)
+          .where(inArray(marketplaceListingsTable.id, listingIds))
+      : Promise.resolve([]),
+    reelIds.length
+      ? db.select().from(reelsTable).where(inArray(reelsTable.id, reelIds))
+      : Promise.resolve([]),
+  ]);
+
+  const [builtPosts, builtListings, builtReels] = await Promise.all([
+    buildPosts(postRows, viewerId),
+    buildListings(listingRows, viewerId),
+    buildReels(reelRows, viewerId),
+  ]);
+  const postMap = new Map(builtPosts.map((p) => [p.id, p]));
+  const listingMap = new Map(builtListings.map((l) => [l.id, l]));
+  const reelMap = new Map(builtReels.map((r) => [r.id, r]));
+
+  return rows
+    .map((r) => {
+      const post = r.entityType === "post" ? (postMap.get(r.entityId) ?? null) : null;
+      const listing =
+        r.entityType === "listing" ? (listingMap.get(r.entityId) ?? null) : null;
+      const reel = r.entityType === "reel" ? (reelMap.get(r.entityId) ?? null) : null;
+      // Skip saved rows whose underlying entity was deleted.
+      if (!post && !listing && !reel) return null;
+      return {
+        id: r.id,
+        entityType: r.entityType,
+        entityId: r.entityId,
+        post,
+        listing,
+        reel,
         createdAt: r.createdAt,
       };
     })

@@ -1,100 +1,67 @@
-import { useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
   Text,
-  TextInput,
   View,
   StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import * as ImagePicker from "expo-image-picker";
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useQueryClient } from "@tanstack/react-query";
-import {
-  useUpdateMyProfile,
-  getGetCurrentUserQueryKey,
-  type ProfileUpdate,
-} from "@workspace/api-client-react";
-import { Avatar } from "@/components/Avatar";
 import { useAuth } from "@/lib/auth";
 import { useColors } from "@/hooks/useColors";
-import { uploadMedia, UploadUnavailableError, type PickedAsset } from "@/lib/upload";
+
+const SECTIONS: {
+  href: Href;
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  desc: string;
+}[] = [
+  {
+    href: "/settings/account",
+    icon: "person-circle-outline",
+    title: "Account Center",
+    desc: "Personal details, profile",
+  },
+  {
+    href: "/settings/privacy",
+    icon: "shield-checkmark-outline",
+    title: "Privacy",
+    desc: "Ke ki dekhte parbe, friend requests",
+  },
+  {
+    href: "/settings/security",
+    icon: "lock-closed-outline",
+    title: "Password & security",
+    desc: "Password change, login info",
+  },
+  {
+    href: "/settings/notifications",
+    icon: "notifications-outline",
+    title: "Notifications",
+    desc: "Like, comment, message notification",
+  },
+  {
+    href: "/settings/language",
+    icon: "globe-outline",
+    title: "Language",
+    desc: "App er bhasha",
+  },
+  {
+    href: "/settings/help",
+    icon: "help-circle-outline",
+    title: "Help & support",
+    desc: "Common proshno r jogajog",
+  },
+];
 
 export default function SettingsScreen() {
   const c = useColors();
-  const qc = useQueryClient();
-  const { user, refreshUser, signOut } = useAuth();
-  const updateProfile = useUpdateMyProfile();
-
-  const [displayName, setDisplayName] = useState(user?.displayName ?? "");
-  const [bio, setBio] = useState(user?.bio ?? "");
-  const [location, setLocation] = useState(user?.location ?? "");
-  const [work, setWork] = useState(user?.work ?? "");
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.avatarUrl ?? null);
-  const [pendingAvatar, setPendingAvatar] = useState<PickedAsset | null>(null);
-  const [saving, setSaving] = useState(false);
-
-  const pickAvatar = async () => {
-    const res = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-    if (!res.canceled && res.assets[0]) {
-      const asset = res.assets[0];
-      setPendingAvatar(asset);
-      setAvatarUrl(asset.uri);
-    }
-  };
-
-  const save = async () => {
-    if (!displayName.trim()) {
-      Alert.alert("Name required", "Please enter a display name.");
-      return;
-    }
-    setSaving(true);
-    try {
-      const data: ProfileUpdate = {
-        displayName: displayName.trim(),
-        bio: bio.trim(),
-        location: location.trim(),
-        work: work.trim(),
-      };
-
-      if (pendingAvatar) {
-        try {
-          const uploaded = await uploadMedia(pendingAvatar);
-          data.avatarUrl = uploaded.url;
-        } catch (err) {
-          if (err instanceof UploadUnavailableError) {
-            Alert.alert(
-              "Photo upload unavailable",
-              "Storage isn't configured in this environment. Your other changes will still be saved.",
-            );
-          } else {
-            throw err;
-          }
-        }
-      }
-
-      await updateProfile.mutateAsync({ data });
-      qc.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
-      await refreshUser();
-      router.back();
-    } catch {
-      Alert.alert("Error", "Could not save your changes. Please try again.");
-    } finally {
-      setSaving(false);
-    }
-  };
+  const { user, signOut } = useAuth();
 
   const confirmLogout = () => {
-    Alert.alert("Log out", "Are you sure you want to log out?", [
+    Alert.alert("Log out", "Apni ki log out korte chan?", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Log out",
@@ -112,87 +79,89 @@ export default function SettingsScreen() {
         <Pressable onPress={() => router.back()} hitSlop={8}>
           <Ionicons name="arrow-back" size={24} color={c.foreground} />
         </Pressable>
-        <Text style={{ color: c.foreground, fontFamily: "Inter_700Bold", fontSize: 18 }}>
-          Settings
+        <Text
+          style={{
+            color: c.foreground,
+            fontFamily: "Inter_700Bold",
+            fontSize: 18,
+          }}
+        >
+          Settings & privacy
         </Text>
-        <Pressable onPress={save} disabled={saving} hitSlop={8}>
-          {saving ? (
-            <ActivityIndicator color={c.primary} size="small" />
-          ) : (
-            <Text style={{ color: c.primary, fontFamily: "Inter_700Bold", fontSize: 16 }}>
-              Save
-            </Text>
-          )}
-        </Pressable>
+        <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        <View style={styles.avatarSection}>
-          <Pressable onPress={pickAvatar} style={styles.avatarWrap}>
-            <Avatar uri={avatarUrl} name={displayName} size={96} />
-            <View style={[styles.cameraBadge, { backgroundColor: c.primary, borderColor: c.background }]}>
-              <Ionicons name="camera" size={18} color="#fff" />
-            </View>
-          </Pressable>
-          <Text style={{ color: c.mutedForeground, fontFamily: "Inter_500Medium", fontSize: 13 }}>
-            @{user?.username}
-          </Text>
-        </View>
-
-        <Text style={[styles.sectionTitle, { color: c.mutedForeground }]}>ACCOUNT</Text>
-        <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
-          <Field label="Display name" c={c}>
-            <TextInput
-              value={displayName}
-              onChangeText={setDisplayName}
-              placeholder="Your name"
-              placeholderTextColor={c.mutedForeground}
-              style={[styles.input, { color: c.foreground }]}
-            />
-          </Field>
-          <Field label="Bio" c={c}>
-            <TextInput
-              value={bio}
-              onChangeText={setBio}
-              placeholder="Tell people about yourself"
-              placeholderTextColor={c.mutedForeground}
-              multiline
-              style={[styles.input, { color: c.foreground, minHeight: 60, textAlignVertical: "top" }]}
-            />
-          </Field>
-          <Field label="Location" c={c}>
-            <TextInput
-              value={location}
-              onChangeText={setLocation}
-              placeholder="Where you live"
-              placeholderTextColor={c.mutedForeground}
-              style={[styles.input, { color: c.foreground }]}
-            />
-          </Field>
-          <Field label="Work" c={c} last>
-            <TextInput
-              value={work}
-              onChangeText={setWork}
-              placeholder="Where you work"
-              placeholderTextColor={c.mutedForeground}
-              style={[styles.input, { color: c.foreground }]}
-            />
-          </Field>
-        </View>
-
-        <Text style={[styles.sectionTitle, { color: c.mutedForeground }]}>APPEARANCE</Text>
-        <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
-          <View style={styles.appearanceRow}>
-            <Ionicons name="contrast" size={22} color={c.foreground} />
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}>
-                Theme
-              </Text>
-              <Text style={{ color: c.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 13 }}>
-                Follows your system appearance
-              </Text>
-            </View>
+      <ScrollView contentContainerStyle={{ paddingBottom: 40, paddingTop: 12 }}>
+        <Pressable
+          onPress={() => user && router.push(`/profile/${user.id}`)}
+          style={[styles.profileCard, { backgroundColor: c.card, borderColor: c.border }]}
+        >
+          <View>
+            <Text
+              style={{
+                color: c.foreground,
+                fontFamily: "Inter_700Bold",
+                fontSize: 16,
+              }}
+            >
+              {user?.displayName ?? "HiMewo user"}
+            </Text>
+            <Text
+              style={{
+                color: c.mutedForeground,
+                fontFamily: "Inter_400Regular",
+                fontSize: 13,
+                marginTop: 2,
+              }}
+            >
+              @{user?.username ?? ""}
+            </Text>
           </View>
+          <Ionicons name="chevron-forward" size={20} color={c.mutedForeground} />
+        </Pressable>
+
+        <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+          {SECTIONS.map((s, i) => (
+            <Pressable
+              key={s.title}
+              onPress={() => router.push(s.href)}
+              style={[
+                styles.row,
+                i < SECTIONS.length - 1 && {
+                  borderBottomColor: c.border,
+                  borderBottomWidth: StyleSheet.hairlineWidth,
+                },
+              ]}
+            >
+              <View
+                style={[styles.iconWrap, { backgroundColor: c.primary + "1A" }]}
+              >
+                <Ionicons name={s.icon} size={20} color={c.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    color: c.foreground,
+                    fontFamily: "Inter_600SemiBold",
+                    fontSize: 15,
+                  }}
+                >
+                  {s.title}
+                </Text>
+                <Text
+                  style={{
+                    color: c.mutedForeground,
+                    fontFamily: "Inter_400Regular",
+                    fontSize: 13,
+                    marginTop: 2,
+                  }}
+                >
+                  {s.desc}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={c.mutedForeground} />
+            </Pressable>
+          ))}
         </View>
 
         <View style={{ paddingHorizontal: 16, marginTop: 24 }}>
@@ -201,34 +170,19 @@ export default function SettingsScreen() {
             onPress={confirmLogout}
           >
             <Ionicons name="log-out-outline" size={20} color={c.destructive} />
-            <Text style={{ color: c.destructive, fontFamily: "Inter_700Bold", fontSize: 15 }}>
+            <Text
+              style={{
+                color: c.destructive,
+                fontFamily: "Inter_700Bold",
+                fontSize: 15,
+              }}
+            >
               Log out
             </Text>
           </Pressable>
         </View>
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-function Field({
-  label,
-  children,
-  c,
-  last,
-}: {
-  label: string;
-  children: React.ReactNode;
-  c: ReturnType<typeof useColors>;
-  last?: boolean;
-}) {
-  return (
-    <View style={[styles.field, !last && { borderBottomColor: c.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
-      <Text style={{ color: c.mutedForeground, fontFamily: "Inter_500Medium", fontSize: 12, marginBottom: 4 }}>
-        {label}
-      </Text>
-      {children}
-    </View>
   );
 }
 
@@ -241,26 +195,16 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  avatarSection: { alignItems: "center", gap: 8, paddingVertical: 24 },
-  avatarWrap: { position: "relative" },
-  cameraBadge: {
-    position: "absolute",
-    right: 0,
-    bottom: 0,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 3,
+  profileCard: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-  },
-  sectionTitle: {
-    fontFamily: "Inter_600SemiBold",
-    fontSize: 12,
-    letterSpacing: 0.5,
-    marginLeft: 16,
-    marginBottom: 8,
-    marginTop: 8,
+    justifyContent: "space-between",
+    marginHorizontal: 16,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   card: {
     marginHorizontal: 16,
@@ -268,9 +212,20 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
   },
-  field: { paddingHorizontal: 14, paddingVertical: 10 },
-  input: { fontFamily: "Inter_400Regular", fontSize: 15, padding: 0 },
-  appearanceRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 14 },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  iconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   logout: {
     flexDirection: "row",
     alignItems: "center",

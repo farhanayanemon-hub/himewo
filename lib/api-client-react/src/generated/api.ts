@@ -32,6 +32,7 @@ import type {
   FriendRequestInput,
   GetFeedParams,
   GetGroupPostsParams,
+  GetUserFriendsParams,
   GetUserPostsParams,
   Group,
   GroupInput,
@@ -66,6 +67,8 @@ import type {
   ReelComment,
   ReelCommentInput,
   ReelInput,
+  SavedItem,
+  SavedItemInput,
   SearchUsersParams,
   SellingOverview,
   ShareInput,
@@ -75,7 +78,9 @@ import type {
   UnauthorizedResponse,
   UnreadCount,
   UploadUrlInput,
-  UploadUrlResponse
+  UploadUrlResponse,
+  UserSettings,
+  UserSettingsUpdate
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -560,6 +565,83 @@ export const useUpdateMyProfile = <TError = ErrorType<unknown>,
       return useMutation(getUpdateMyProfileMutationOptions(options));
     }
 
+export const getGetTodaysBirthdaysUrl = () => {
+
+
+
+
+  return `/api/birthdays`
+}
+
+/**
+ * @summary Friends whose birthday is today
+ */
+export const getTodaysBirthdays = async ( options?: RequestInit): Promise<Profile[]> => {
+
+  return customFetch<Profile[]>(getGetTodaysBirthdaysUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetTodaysBirthdaysQueryKey = () => {
+    return [
+    `/api/birthdays`
+    ] as const;
+    }
+
+
+export const getGetTodaysBirthdaysQueryOptions = <TData = Awaited<ReturnType<typeof getTodaysBirthdays>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTodaysBirthdays>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTodaysBirthdaysQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTodaysBirthdays>>> = ({ signal }) => getTodaysBirthdays({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTodaysBirthdays>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetTodaysBirthdaysQueryResult = NonNullable<Awaited<ReturnType<typeof getTodaysBirthdays>>>
+export type GetTodaysBirthdaysQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Friends whose birthday is today
+ */
+
+export function useGetTodaysBirthdays<TData = Awaited<ReturnType<typeof getTodaysBirthdays>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTodaysBirthdays>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetTodaysBirthdaysQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getGetUserUrl = (id: string,) => {
 
 
@@ -702,6 +784,95 @@ export function useGetUserPosts<TData = Awaited<ReturnType<typeof getUserPosts>>
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetUserPostsQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetUserFriendsUrl = (id: string,
+    params?: GetUserFriendsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/users/${id}/friends?${stringifiedParams}` : `/api/users/${id}/friends`
+}
+
+/**
+ * @summary List a user's friends
+ */
+export const getUserFriends = async (id: string,
+    params?: GetUserFriendsParams, options?: RequestInit): Promise<Profile[]> => {
+
+  return customFetch<Profile[]>(getGetUserFriendsUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetUserFriendsQueryKey = (id: string,
+    params?: GetUserFriendsParams,) => {
+    return [
+    `/api/users/${id}/friends`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetUserFriendsQueryOptions = <TData = Awaited<ReturnType<typeof getUserFriends>>, TError = ErrorType<unknown>>(id: string,
+    params?: GetUserFriendsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUserFriends>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetUserFriendsQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getUserFriends>>> = ({ signal }) => getUserFriends(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getUserFriends>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetUserFriendsQueryResult = NonNullable<Awaited<ReturnType<typeof getUserFriends>>>
+export type GetUserFriendsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List a user's friends
+ */
+
+export function useGetUserFriends<TData = Awaited<ReturnType<typeof getUserFriends>>, TError = ErrorType<unknown>>(
+ id: string,
+    params?: GetUserFriendsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUserFriends>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetUserFriendsQueryOptions(id,params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -3483,6 +3654,372 @@ export function useGetGroupPosts<TData = Awaited<ReturnType<typeof getGroupPosts
 
 
 
+
+export const getGetMySettingsUrl = () => {
+
+
+
+
+  return `/api/settings`
+}
+
+/**
+ * @summary Get the authenticated user's settings & preferences
+ */
+export const getMySettings = async ( options?: RequestInit): Promise<UserSettings> => {
+
+  return customFetch<UserSettings>(getGetMySettingsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMySettingsQueryKey = () => {
+    return [
+    `/api/settings`
+    ] as const;
+    }
+
+
+export const getGetMySettingsQueryOptions = <TData = Awaited<ReturnType<typeof getMySettings>>, TError = ErrorType<UnauthorizedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMySettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMySettingsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMySettings>>> = ({ signal }) => getMySettings({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMySettings>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMySettingsQueryResult = NonNullable<Awaited<ReturnType<typeof getMySettings>>>
+export type GetMySettingsQueryError = ErrorType<UnauthorizedResponse>
+
+
+/**
+ * @summary Get the authenticated user's settings & preferences
+ */
+
+export function useGetMySettings<TData = Awaited<ReturnType<typeof getMySettings>>, TError = ErrorType<UnauthorizedResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMySettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMySettingsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateMySettingsUrl = () => {
+
+
+
+
+  return `/api/settings`
+}
+
+/**
+ * @summary Update the authenticated user's settings & preferences
+ */
+export const updateMySettings = async (userSettingsUpdate: UserSettingsUpdate, options?: RequestInit): Promise<UserSettings> => {
+
+  return customFetch<UserSettings>(getUpdateMySettingsUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(userSettingsUpdate)
+  }
+);}
+
+
+
+
+export const getUpdateMySettingsMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMySettings>>, TError,{data: BodyType<UserSettingsUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateMySettings>>, TError,{data: BodyType<UserSettingsUpdate>}, TContext> => {
+
+const mutationKey = ['updateMySettings'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateMySettings>>, {data: BodyType<UserSettingsUpdate>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateMySettings(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateMySettingsMutationResult = NonNullable<Awaited<ReturnType<typeof updateMySettings>>>
+    export type UpdateMySettingsMutationBody = BodyType<UserSettingsUpdate>
+    export type UpdateMySettingsMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse>
+
+    /**
+ * @summary Update the authenticated user's settings & preferences
+ */
+export const useUpdateMySettings = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMySettings>>, TError,{data: BodyType<UserSettingsUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateMySettings>>,
+        TError,
+        {data: BodyType<UserSettingsUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateMySettingsMutationOptions(options));
+    }
+
+export const getListSavedItemsUrl = () => {
+
+
+
+
+  return `/api/saved`
+}
+
+/**
+ * @summary List the authenticated user's saved posts and listings
+ */
+export const listSavedItems = async ( options?: RequestInit): Promise<SavedItem[]> => {
+
+  return customFetch<SavedItem[]>(getListSavedItemsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSavedItemsQueryKey = () => {
+    return [
+    `/api/saved`
+    ] as const;
+    }
+
+
+export const getListSavedItemsQueryOptions = <TData = Awaited<ReturnType<typeof listSavedItems>>, TError = ErrorType<UnauthorizedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSavedItems>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSavedItemsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSavedItems>>> = ({ signal }) => listSavedItems({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSavedItems>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSavedItemsQueryResult = NonNullable<Awaited<ReturnType<typeof listSavedItems>>>
+export type ListSavedItemsQueryError = ErrorType<UnauthorizedResponse>
+
+
+/**
+ * @summary List the authenticated user's saved posts and listings
+ */
+
+export function useListSavedItems<TData = Awaited<ReturnType<typeof listSavedItems>>, TError = ErrorType<UnauthorizedResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSavedItems>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSavedItemsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSaveItemUrl = () => {
+
+
+
+
+  return `/api/saved`
+}
+
+/**
+ * @summary Save a post or marketplace listing
+ */
+export const saveItem = async (savedItemInput: SavedItemInput, options?: RequestInit): Promise<SavedItem> => {
+
+  return customFetch<SavedItem>(getSaveItemUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(savedItemInput)
+  }
+);}
+
+
+
+
+export const getSaveItemMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveItem>>, TError,{data: BodyType<SavedItemInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof saveItem>>, TError,{data: BodyType<SavedItemInput>}, TContext> => {
+
+const mutationKey = ['saveItem'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof saveItem>>, {data: BodyType<SavedItemInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  saveItem(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SaveItemMutationResult = NonNullable<Awaited<ReturnType<typeof saveItem>>>
+    export type SaveItemMutationBody = BodyType<SavedItemInput>
+    export type SaveItemMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse>
+
+    /**
+ * @summary Save a post or marketplace listing
+ */
+export const useSaveItem = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveItem>>, TError,{data: BodyType<SavedItemInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof saveItem>>,
+        TError,
+        {data: BodyType<SavedItemInput>},
+        TContext
+      > => {
+      return useMutation(getSaveItemMutationOptions(options));
+    }
+
+export const getUnsaveItemUrl = (entityType: 'post' | 'listing' | 'reel',
+    entityId: number,) => {
+
+
+
+
+  return `/api/saved/${entityType}/${entityId}`
+}
+
+/**
+ * @summary Remove a saved post or listing
+ */
+export const unsaveItem = async (entityType: 'post' | 'listing' | 'reel',
+    entityId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getUnsaveItemUrl(entityType,entityId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getUnsaveItemMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unsaveItem>>, TError,{entityType: 'post' | 'listing' | 'reel';entityId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof unsaveItem>>, TError,{entityType: 'post' | 'listing' | 'reel';entityId: number}, TContext> => {
+
+const mutationKey = ['unsaveItem'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unsaveItem>>, {entityType: 'post' | 'listing' | 'reel';entityId: number}> = (props) => {
+          const {entityType,entityId} = props ?? {};
+
+          return  unsaveItem(entityType,entityId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnsaveItemMutationResult = NonNullable<Awaited<ReturnType<typeof unsaveItem>>>
+
+    export type UnsaveItemMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse>
+
+    /**
+ * @summary Remove a saved post or listing
+ */
+export const useUnsaveItem = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unsaveItem>>, TError,{entityType: 'post' | 'listing' | 'reel';entityId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof unsaveItem>>,
+        TError,
+        {entityType: 'post' | 'listing' | 'reel';entityId: number},
+        TContext
+      > => {
+      return useMutation(getUnsaveItemMutationOptions(options));
+    }
 
 export const getListMarketplaceListingsUrl = (params?: ListMarketplaceListingsParams,) => {
   const normalizedParams = new URLSearchParams();

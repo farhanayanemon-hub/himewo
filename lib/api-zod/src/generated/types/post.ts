@@ -23,6 +23,7 @@ export interface Post {
   reactions: ReactionSummary;
   commentCount: number;
   shareCount: number;
+  viewerHasSaved?: boolean;
   createdAt: Date;
   updatedAt?: Date;
 }

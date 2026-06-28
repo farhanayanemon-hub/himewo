@@ -14,7 +14,10 @@ import {
   LogOut,
   UsersRound,
   FileText,
-  Store
+  Store,
+  Clock,
+  Bookmark,
+  Clapperboard
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -38,6 +41,12 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
     { href: "/groups", icon: UsersRound, label: "Groups" },
     { href: "/pages", icon: FileText, label: "Pages" },
     { href: "/marketplace", icon: Store, label: "Marketplace" },
+  ];
+
+  const shortcutItems = [
+    { href: "/stories", icon: Clapperboard, label: "Stories" },
+    { href: "/memories", icon: Clock, label: "Memories" },
+    { href: "/saved", icon: Bookmark, label: "Saved" },
   ];
 
   return (
@@ -118,6 +127,15 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
                 </Link>
               );
             })}
+            {shortcutItems.map(item => {
+              const Icon = item.icon;
+              return (
+                <Link key={item.href} href={item.href} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
+                  <Icon className="w-6 h-6 text-primary" />
+                  <span className="font-medium">{item.label}</span>
+                </Link>
+              );
+            })}
             <div className="my-4 border-t border-border" />
             <Link href="/settings" className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
               <Settings className="w-6 h-6" />
@@ -135,14 +153,18 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
           {children}
         </main>
 
-        {/* Right Sidebar (Contacts) */}
-        <aside className="hidden xl:block w-[280px] shrink-0 sticky top-[88px] h-[calc(100vh-88px)] overflow-y-auto pb-6">
-          <div className="mb-4">
-            <h3 className="text-muted-foreground font-semibold px-2">Contacts</h3>
-          </div>
-          <div className="space-y-1">
-            {rightSidebar ?? <div className="p-2 text-sm text-muted-foreground text-center">No contacts yet.</div>}
-          </div>
+        {/* Right Sidebar */}
+        <aside className="hidden xl:block w-[300px] shrink-0 sticky top-[88px] h-[calc(100vh-88px)] overflow-y-auto pb-6">
+          {rightSidebar ?? (
+            <>
+              <div className="mb-4">
+                <h3 className="text-muted-foreground font-semibold px-2">Contacts</h3>
+              </div>
+              <div className="space-y-1 p-2 text-sm text-muted-foreground text-center">
+                No contacts yet.
+              </div>
+            </>
+          )}
         </aside>
       </div>
     </div>

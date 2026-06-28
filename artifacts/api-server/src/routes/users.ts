@@ -13,6 +13,7 @@ import {
   lt,
   desc,
   ilike,
+  inArray,
   notInArray,
   isNull,
 } from "drizzle-orm";
@@ -30,6 +31,10 @@ import {
   GetUserPostsParams,
   GetUserPostsQueryParams,
   GetUserPostsResponse,
+  GetUserFriendsParams,
+  GetUserFriendsQueryParams,
+  GetUserFriendsResponse,
+  GetTodaysBirthdaysResponse,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -54,7 +59,7 @@ router.get("/users", requireAuth, async (req, res): Promise<void> => {
         )
         .limit(limit)
     : await db.select().from(profilesTable).limit(limit);
-  res.json(SearchUsersResponse.parse(rows.map(toProfile)));
+  res.json(SearchUsersResponse.parse(rows.map((r) => toProfile(r))));
 });
 
 router.get(
@@ -80,7 +85,7 @@ router.get(
       .from(profilesTable)
       .where(notInArray(profilesTable.id, exclude))
       .limit(10);
-    res.json(GetFriendSuggestionsResponse.parse(rows.map(toProfile)));
+    res.json(GetFriendSuggestionsResponse.parse(rows.map((r) => toProfile(r))));
   },
 );
 
@@ -90,9 +95,14 @@ router.patch("/users/me", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
+  const updates: Record<string, unknown> = { ...parsed.data };
+  if ("birthday" in updates) {
+    const b = String(updates.birthday ?? "").trim();
+    updates.birthday = b.length ? b : null;
+  }
   await db
     .update(profilesTable)
-    .set(parsed.data)
+    .set(updates)
     .where(eq(profilesTable.id, req.userId!));
   const profile = await buildProfileDetail(req.userId!, req.userId);
   res.json(UpdateMyProfileResponse.parse(profile));
@@ -156,6 +166,80 @@ router.get("/users/:id/posts", requireAuth, async (req, res): Promise<void> => {
     .limit(limit ?? 20);
   const posts = await buildPosts(rows, req.userId);
   res.json(GetUserPostsResponse.parse(posts));
+});
+
+router.get(
+  "/users/:id/friends",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = GetUserFriendsParams.safeParse(req.params);
+    const query = GetUserFriendsQueryParams.safeParse(req.query);
+    if (!params.success || !query.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    const target = params.data.id;
+    const limit = query.data.limit ?? 50;
+    const rows = await db
+      .select()
+      .from(friendshipsTable)
+      .where(
+        or(
+          eq(friendshipsTable.userAId, target),
+          eq(friendshipsTable.userBId, target),
+        ),
+      );
+    const friendIds = rows.map((f) =>
+      f.userAId === target ? f.userBId : f.userAId,
+    );
+    if (friendIds.length === 0) {
+      res.json(GetUserFriendsResponse.parse([]));
+      return;
+    }
+    const profiles = await db
+      .select()
+      .from(profilesTable)
+      .where(inArray(profilesTable.id, friendIds))
+      .limit(limit);
+    res.json(GetUserFriendsResponse.parse(profiles.map((p) => toProfile(p))));
+  },
+);
+
+router.get("/birthdays", requireAuth, async (req, res): Promise<void> => {
+  const viewer = req.userId!;
+  const rows = await db
+    .select()
+    .from(friendshipsTable)
+    .where(
+      or(
+        eq(friendshipsTable.userAId, viewer),
+        eq(friendshipsTable.userBId, viewer),
+      ),
+    );
+  const friendIds = rows.map((f) =>
+    f.userAId === viewer ? f.userBId : f.userAId,
+  );
+  if (friendIds.length === 0) {
+    res.json(GetTodaysBirthdaysResponse.parse([]));
+    return;
+  }
+  const profiles = await db
+    .select()
+    .from(profilesTable)
+    .where(inArray(profilesTable.id, friendIds));
+
+  // Compare on month-day in Asia/Dhaka (HiMewo's primary timezone).
+  const todayMmDd = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Dhaka",
+    month: "2-digit",
+    day: "2-digit",
+  })
+    .format(new Date())
+    .slice(-5); // "MM-DD"
+  const birthdayFriends = profiles.filter(
+    (p) => p.birthday && p.birthday.slice(5) === todayMmDd,
+  );
+  res.json(GetTodaysBirthdaysResponse.parse(birthdayFriends.map((p) => toProfile(p))));
 });
 
 export default router;

@@ -81,7 +81,7 @@ router.get(
       .select()
       .from(profilesTable)
       .where(inArray(profilesTable.id, viewerIds));
-    res.json(ListStoryViewsResponse.parse(profiles.map(toProfile)));
+    res.json(ListStoryViewsResponse.parse(profiles.map((p) => toProfile(p))));
   },
 );
 

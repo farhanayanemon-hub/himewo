@@ -16,6 +16,7 @@ import {
   getFeed,
   getGetFeedQueryKey,
   useSharePost,
+  useGetTodaysBirthdays,
   type Post,
 } from "@workspace/api-client-react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
@@ -120,6 +121,7 @@ export default function HomeScreen() {
           ListHeaderComponent={
             <>
               <StoryBar />
+              <BirthdayBanner />
               <Pressable
                 style={[styles.composer, { backgroundColor: c.card }]}
                 onPress={() => router.push("/create-post")}
@@ -159,6 +161,27 @@ export default function HomeScreen() {
   );
 }
 
+function BirthdayBanner() {
+  const c = useColors();
+  const { data: birthdays } = useGetTodaysBirthdays();
+  if (!birthdays?.length) return null;
+  const names = birthdays.map((b) => b.displayName).join(", ");
+  return (
+    <Pressable
+      style={[styles.birthday, { backgroundColor: c.card }]}
+      onPress={() => router.push(`/profile/${birthdays[0].id}`)}
+    >
+      <View style={[styles.birthdayIcon, { backgroundColor: c.primary }]}>
+        <Ionicons name="gift" size={20} color="#fff" />
+      </View>
+      <Text style={{ color: c.foreground, flex: 1, fontFamily: "Inter_500Medium" }}>
+        <Text style={{ fontFamily: "Inter_700Bold" }}>{names}</Text>
+        {birthdays.length > 1 ? "-der" : "-er"} aaj birthday! 🎂
+      </Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
@@ -188,5 +211,19 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
+  },
+  birthday: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 12,
+    marginBottom: 8,
+  },
+  birthdayIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

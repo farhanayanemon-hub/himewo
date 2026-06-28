@@ -10,8 +10,16 @@ export interface ProfileUpdate {
   /** @minLength 1 */
   displayName?: string;
   bio?: string;
+  birthday?: string;
   avatarUrl?: string;
   coverUrl?: string;
   location?: string;
   work?: string;
+  education?: string;
+  hometown?: string;
+  hobbies?: string;
+  interests?: string;
+  website?: string;
+  email?: string;
+  phone?: string;
 }
