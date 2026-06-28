@@ -8,6 +8,15 @@ HiMewo is a Facebook-style, Banglish-friendly social platform with three client 
 
 Think Facebook + Messenger: the website and the main mobile app are the social platform; HiMewo Chat is the standalone messenger.
 
+### Mobile preview web links (view-only)
+
+The two Expo apps can't both be previewed in Replit at once (shared Expo domain), so each is also mirrored as a standalone web build on Cloudflare Pages — for viewing in any browser, NOT the real native app:
+
+- Social main app → https://himewo-mobile.pages.dev (orange theme)
+- Messenger / Chat → https://himewo-chat.pages.dev (blue theme)
+
+Rebuild steps + the OOM build gotcha live in memory `himewo-preview-web-links.md`.
+
 ## Run & Operate
 
 - `pnpm --filter @workspace/web run dev` — social website
