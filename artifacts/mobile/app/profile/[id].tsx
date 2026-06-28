@@ -312,16 +312,6 @@ export default function ProfileScreen() {
                     </Text>
                   )
                 )}
-                {isOwn && (
-                  <Pressable
-                    style={[styles.editDetails, { backgroundColor: c.secondary }]}
-                    onPress={() => router.push("/edit-profile")}
-                  >
-                    <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 14 }}>
-                      Edit details
-                    </Text>
-                  </Pressable>
-                )}
               </View>
 
               {/* Friends */}
@@ -459,12 +449,6 @@ const styles = StyleSheet.create({
   },
   introRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   introText: { fontSize: 15, flex: 1 },
-  editDetails: {
-    marginTop: 14,
-    paddingVertical: 9,
-    borderRadius: 8,
-    alignItems: "center",
-  },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   gridItem: { width: "31.5%" },
   gridImage: { width: "100%", aspectRatio: 1, borderRadius: 8, backgroundColor: "#88888822" },

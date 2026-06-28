@@ -128,13 +128,6 @@ export function ProfileView({
                 </p>
               )
             )}
-            {isOwnProfile && (
-              <Link href="/edit-profile">
-                <button className="mt-4 w-full bg-muted hover:bg-muted/70 text-foreground font-medium py-2 rounded-lg text-sm">
-                  Edit details
-                </button>
-              </Link>
-            )}
           </div>
 
           {/* Friends */}

@@ -1,6 +1,6 @@
 import { MainLayout } from "@/components/layout/main-layout";
 import { useGetUser, useGetUserPosts, useSendFriendRequest, useFollowUser, useUnfollowUser, getGetUserQueryKey, getGetUserPostsQueryKey } from "@workspace/api-client-react";
-import { useParams } from "wouter";
+import { useParams, Link } from "wouter";
 import { ProfileView } from "@/components/profile-view";
 import { Loader2, Check, UserPlus, UserCheck } from "lucide-react";
 import { useAuth } from "@/lib/auth";
@@ -88,7 +88,13 @@ export default function ProfilePage() {
         {isFollowing ? "Following" : "Follow"}
       </button>
     </>
-  ) : null;
+  ) : (
+    <Link href="/edit-profile">
+      <button className="bg-muted text-foreground px-4 py-2 rounded-lg font-medium text-sm hover:bg-muted/70">
+        Edit profile
+      </button>
+    </Link>
+  );
 
   return (
     <MainLayout>
