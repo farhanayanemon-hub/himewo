@@ -2,3 +2,4 @@
 - [Home placeholders](himewo-home-placeholders.md) — home Birthdays card + /saved + /memories are intentional empty states (no DOB/saved data yet), not bugs.
 - [Expo typed routes](himewo-expo-typed-routes.md) — new mobile route file → typecheck "not assignable to Href" until Metro regenerates `.expo/types/router.d.ts`; run expo briefly, don't hand-edit.
 - [Saved items](himewo-saved-items.md) — polymorphic saved_items (post/listing/reel); checklist to add a type; viewerHasSaved must be REQUIRED; stories excluded (ephemeral).
+- [Deploy pipeline](himewo-deploy.md) — web/admin via wrangler-from-/tmp; API auto-builds from GitHub main; Railway token=GraphQL-only; MUST pin pnpm@10.26.1 or frozen install fails; git CLI blocked→push via REST.
