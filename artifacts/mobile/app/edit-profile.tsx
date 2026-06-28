@@ -181,7 +181,7 @@ export default function EditProfileScreen() {
             <TextInput value={displayName} onChangeText={setDisplayName} placeholder="Your name" placeholderTextColor={c.mutedForeground} style={[styles.input, { color: c.foreground }]} />
           </Field>
           <Field label="Bio / Intro" c={c} last>
-            <TextInput value={bio} onChangeText={setBio} placeholder="Nijer somporke kichu likhun" placeholderTextColor={c.mutedForeground} multiline style={[styles.input, { color: c.foreground, minHeight: 60, textAlignVertical: "top" }]} />
+            <TextInput value={bio} onChangeText={setBio} placeholder="Write something about yourself" placeholderTextColor={c.mutedForeground} multiline style={[styles.input, { color: c.foreground, minHeight: 60, textAlignVertical: "top" }]} />
           </Field>
         </View>
 
@@ -191,19 +191,19 @@ export default function EditProfileScreen() {
             <TextInput value={birthday} onChangeText={setBirthday} placeholder="1998-06-28" placeholderTextColor={c.mutedForeground} autoCapitalize="none" style={[styles.input, { color: c.foreground }]} />
           </Field>
           <Field label="Work" c={c}>
-            <TextInput value={work} onChangeText={setWork} placeholder="Kothay kaj koren" placeholderTextColor={c.mutedForeground} style={[styles.input, { color: c.foreground }]} />
+            <TextInput value={work} onChangeText={setWork} placeholder="Where do you work?" placeholderTextColor={c.mutedForeground} style={[styles.input, { color: c.foreground }]} />
           </Field>
           <Field label="Education" c={c}>
-            <TextInput value={education} onChangeText={setEducation} placeholder="Kothay porashona korechen" placeholderTextColor={c.mutedForeground} style={[styles.input, { color: c.foreground }]} />
+            <TextInput value={education} onChangeText={setEducation} placeholder="Where did you study?" placeholderTextColor={c.mutedForeground} style={[styles.input, { color: c.foreground }]} />
           </Field>
           <Field label="Current city" c={c}>
-            <TextInput value={location} onChangeText={setLocation} placeholder="Ekhon kothay thaken" placeholderTextColor={c.mutedForeground} style={[styles.input, { color: c.foreground }]} />
+            <TextInput value={location} onChangeText={setLocation} placeholder="Where do you live now?" placeholderTextColor={c.mutedForeground} style={[styles.input, { color: c.foreground }]} />
           </Field>
           <Field label="Hometown" c={c}>
-            <TextInput value={hometown} onChangeText={setHometown} placeholder="Apnar nijer elaka" placeholderTextColor={c.mutedForeground} style={[styles.input, { color: c.foreground }]} />
+            <TextInput value={hometown} onChangeText={setHometown} placeholder="Your hometown" placeholderTextColor={c.mutedForeground} style={[styles.input, { color: c.foreground }]} />
           </Field>
           <Field label="Hobbies" c={c}>
-            <TextInput value={hobbies} onChangeText={setHobbies} placeholder="Cricket, gaan, ranna..." placeholderTextColor={c.mutedForeground} style={[styles.input, { color: c.foreground }]} />
+            <TextInput value={hobbies} onChangeText={setHobbies} placeholder="Cricket, music, cooking..." placeholderTextColor={c.mutedForeground} style={[styles.input, { color: c.foreground }]} />
           </Field>
           <Field label="Interests" c={c} last>
             <TextInput value={interests} onChangeText={setInterests} placeholder="Travel, technology..." placeholderTextColor={c.mutedForeground} style={[styles.input, { color: c.foreground }]} />

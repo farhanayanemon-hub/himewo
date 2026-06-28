@@ -28,7 +28,7 @@ const SECTIONS: {
     href: "/settings/privacy",
     icon: "shield-checkmark-outline",
     title: "Privacy",
-    desc: "Ke ki dekhte parbe, friend requests",
+    desc: "Who can see what, friend requests",
   },
   {
     href: "/settings/security",
@@ -46,13 +46,13 @@ const SECTIONS: {
     href: "/settings/language",
     icon: "globe-outline",
     title: "Language",
-    desc: "App er bhasha",
+    desc: "App language",
   },
   {
     href: "/settings/help",
     icon: "help-circle-outline",
     title: "Help & support",
-    desc: "Common proshno r jogajog",
+    desc: "Common questions and contact",
   },
 ];
 
@@ -61,7 +61,7 @@ export default function SettingsScreen() {
   const { user, signOut } = useAuth();
 
   const confirmLogout = () => {
-    Alert.alert("Log out", "Apni ki log out korte chan?", [
+    Alert.alert("Log out", "Are you sure you want to log out?", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Log out",

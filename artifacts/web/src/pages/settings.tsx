@@ -18,13 +18,13 @@ const SECTIONS = [
     href: "/settings/account",
     icon: UserCog,
     title: "Account Center",
-    desc: "Personal details, naam, profile photo",
+    desc: "Personal details, name, profile photo",
   },
   {
     href: "/settings/privacy",
     icon: ShieldCheck,
     title: "Privacy",
-    desc: "Ke ki dekhte parbe, friend request settings",
+    desc: "Who can see what, friend request settings",
   },
   {
     href: "/settings/security",
@@ -36,19 +36,19 @@ const SECTIONS = [
     href: "/settings/notifications",
     icon: Bell,
     title: "Notifications",
-    desc: "Like, comment, message er notification",
+    desc: "Like, comment, and message notifications",
   },
   {
     href: "/settings/language",
     icon: Globe,
     title: "Language",
-    desc: "App er bhasha set korun",
+    desc: "Set the app language",
   },
   {
     href: "/settings/help",
     icon: HelpCircle,
     title: "Help & support",
-    desc: "Common proshno r jogajog",
+    desc: "Common questions and contact",
   },
 ];
 
@@ -61,8 +61,8 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-bold mb-1">Settings & privacy</h1>
         <p className="text-sm text-muted-foreground mb-5">
           {user?.displayName
-            ? `${user.displayName} er account manage korun`
-            : "Apnar account manage korun"}
+            ? `Manage ${user.displayName}'s account`
+            : "Manage your account"}
         </p>
 
         <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden divide-y divide-border">

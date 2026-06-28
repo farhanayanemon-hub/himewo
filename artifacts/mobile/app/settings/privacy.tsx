@@ -35,14 +35,14 @@ export default function PrivacySettingsScreen() {
   }
 
   const visibilityOptions = [
-    { value: "public", label: "Public (shobai)" },
+    { value: "public", label: "Public (everyone)" },
     { value: "friends", label: "Friends" },
     { value: "only_me", label: "Only me" },
   ];
 
   return (
     <SettingsScreen title="Privacy">
-      <Section title="Profile ke dekhte parbe">
+      <Section title="Who can see your profile">
         {visibilityOptions.map((o, i) => (
           <ChoiceRow
             key={o.value}
@@ -54,7 +54,7 @@ export default function PrivacySettingsScreen() {
         ))}
       </Section>
 
-      <Section title="Post ke dekhte parbe">
+      <Section title="Who can see your posts">
         {visibilityOptions.map((o, i) => (
           <ChoiceRow
             key={o.value}
@@ -68,7 +68,7 @@ export default function PrivacySettingsScreen() {
 
       <Section title="Friend requests">
         <ChoiceRow
-          label="Everyone (shobai)"
+          label="Everyone"
           selected={data.friendRequestPrivacy === "everyone"}
           onPress={() => save({ friendRequestPrivacy: "everyone" })}
         />
@@ -82,8 +82,8 @@ export default function PrivacySettingsScreen() {
 
       <Section title="Activity">
         <Row
-          title="Online status dekhabo"
-          subtitle="Friends ra dekhbe apni online ki na"
+          title="Show online status"
+          subtitle="Friends can see if you're online"
           last
           right={
             <Switch

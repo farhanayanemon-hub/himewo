@@ -159,7 +159,7 @@ function SignUpForm() {
         type="text"
         aria-label="Full name"
         autoComplete="name"
-        placeholder="Tomar nam"
+        placeholder="Your name"
         value={displayName}
         onChange={(e) => setDisplayName(e.target.value)}
         required
@@ -192,7 +192,7 @@ function SignUpForm() {
         type="password"
         aria-label="New password"
         autoComplete="new-password"
-        placeholder="Notun password"
+        placeholder="New password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         required
@@ -305,7 +305,7 @@ function PhoneAuth() {
         required
         className={inputClass}
       />
-      <p className="text-xs text-muted-foreground">Country code soho dao.</p>
+      <p className="text-xs text-muted-foreground">Include your country code.</p>
       {error && <p className="text-sm text-destructive">{error}</p>}
       <Button
         type="submit"
@@ -346,8 +346,8 @@ function FacebookCard() {
                 type="button"
                 onClick={() =>
                   toast({
-                    title: "Shige asche",
-                    description: "Password reset feature ekhono toiri hochche.",
+                    title: "Coming soon",
+                    description: "Password reset is still being built.",
                   })
                 }
                 className="text-sm text-[#1877F2] hover:underline"
@@ -388,7 +388,7 @@ function FacebookCard() {
               onClick={() => setMode("phone")}
               className="block w-full text-center text-sm text-[#1877F2] hover:underline"
             >
-              Phone number diye login koro
+              Log in with phone number
             </button>
           </>
         )}
@@ -396,8 +396,8 @@ function FacebookCard() {
         {mode === "signup" && (
           <>
             <div className="text-center pb-3 border-b border-[#dadde1] dark:border-[#3e4042]">
-              <h2 className="text-2xl font-bold">Notun account khulun</h2>
-              <p className="text-sm text-muted-foreground">Sohoj ar druto.</p>
+              <h2 className="text-2xl font-bold">Create a new account</h2>
+              <p className="text-sm text-muted-foreground">It's quick and easy.</p>
             </div>
             <SignUpForm />
             <button
@@ -405,7 +405,7 @@ function FacebookCard() {
               onClick={() => setMode("login")}
               className="block w-full text-center text-sm text-[#1877F2] hover:underline"
             >
-              Already account ache? Log in
+              Already have an account? Log in
             </button>
           </>
         )}
@@ -413,7 +413,7 @@ function FacebookCard() {
         {mode === "phone" && (
           <>
             <div className="text-center pb-3 border-b border-[#dadde1] dark:border-[#3e4042]">
-              <h2 className="text-2xl font-bold">Phone diye login</h2>
+              <h2 className="text-2xl font-bold">Log in with phone</h2>
             </div>
             <PhoneAuth />
             <button
@@ -421,7 +421,7 @@ function FacebookCard() {
               onClick={() => setMode("login")}
               className="block w-full text-center text-sm text-[#1877F2] hover:underline"
             >
-              ← Email diye login koro
+              ← Log in with email
             </button>
           </>
         )}
@@ -448,7 +448,7 @@ export default function AuthPage() {
               HiMewo
             </h1>
             <p className="mt-3 text-xl md:text-2xl leading-snug text-foreground max-w-md mx-auto md:mx-0">
-              HiMewo tomake tomar bondhu ar poribar er sathe connect kore rakhe. 💙
+              HiMewo keeps you connected with your friends and family. 💙
             </p>
           </div>
 

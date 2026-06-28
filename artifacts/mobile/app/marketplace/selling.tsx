@@ -48,7 +48,7 @@ export default function MarketplaceSellingScreen() {
             <View style={styles.empty}>
               <Ionicons name="pricetags-outline" size={40} color={c.mutedForeground} />
               <Text style={[styles.emptyText, { color: c.mutedForeground }]}>
-                Tumi ekhono kichu listing koroni.
+                You haven't listed anything yet.
               </Text>
             </View>
           )

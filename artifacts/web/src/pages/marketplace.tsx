@@ -99,7 +99,7 @@ export default function MarketplacePage() {
             </div>
             <div>
               <h1 className="text-xl font-extrabold leading-tight">Marketplace</h1>
-              <p className="text-xs text-muted-foreground">Kena-becha shob ek jaygay</p>
+              <p className="text-xs text-muted-foreground">Buy and sell, all in one place</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -162,7 +162,7 @@ export default function MarketplacePage() {
       ) : !listings || listings.length === 0 ? (
         <div className="py-16 text-center bg-card border border-border rounded-2xl card-depth">
           <Store className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
-          <p className="text-muted-foreground">Kono listing nei. Prothom-ta tumi-i banao!</p>
+          <p className="text-muted-foreground">No listings yet. Be the first to create one!</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -397,7 +397,7 @@ export function MarketplaceListingPage() {
                   className="press"
                   disabled={deleteListing.isPending}
                   onClick={() => {
-                    if (!confirm("Eta delete korbe?")) return;
+                    if (!confirm("Delete this listing?")) return;
                     deleteListing.mutate(
                       { id: listingId },
                       {
@@ -675,7 +675,7 @@ export function MarketplaceSellingPage() {
       ) : !data || data.listings.length === 0 ? (
         <div className="py-16 text-center bg-card border border-border rounded-2xl card-depth">
           <PackageOpen className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
-          <p className="text-muted-foreground">Tumi ekhono kichu listing koroni.</p>
+          <p className="text-muted-foreground">You haven't listed anything yet.</p>
         </div>
       ) : (
         <div className="space-y-2">

@@ -25,9 +25,9 @@ export default function SettingsLanguagePage() {
       {
         onSuccess: () => {
           qc.invalidateQueries({ queryKey: getGetMySettingsQueryKey() });
-          toast.success("Language update hoyeche");
+          toast.success("Language updated");
         },
-        onError: () => toast.error("Update hoyni, abar try korun"),
+        onError: () => toast.error("Couldn't update, please try again"),
       },
     );
   };
@@ -43,7 +43,7 @@ export default function SettingsLanguagePage() {
   }
 
   return (
-    <SettingsShell title="Language" description="App er bhasha set korun">
+    <SettingsShell title="Language" description="Set the app language">
       <SettingsCard>
         {LANGUAGES.map((l) => (
           <button

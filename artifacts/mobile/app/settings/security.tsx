@@ -14,29 +14,29 @@ export default function SecuritySettingsScreen() {
 
   const changePassword = async () => {
     if (password.length < 6) {
-      Alert.alert("Password chhoto", "Kompokkhe 6 character din.");
+      Alert.alert("Password too short", "Use at least 6 characters.");
       return;
     }
     if (password !== confirm) {
-      Alert.alert("Mile nai", "Duita password ek hote hobe.");
+      Alert.alert("Doesn't match", "Both passwords must be the same.");
       return;
     }
     if (!isSupabaseConfigured || !supabase) {
-      Alert.alert("Unavailable", "Ei environment e password change kora jachhe na.");
+      Alert.alert("Unavailable", "You can't change your password in this environment.");
       return;
     }
     setSaving(true);
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) {
-        Alert.alert("Error", error.message || "Password change hoyni.");
+        Alert.alert("Error", error.message || "Couldn't change password.");
       } else {
-        Alert.alert("Done", "Password change hoyeche.");
+        Alert.alert("Done", "Your password has been changed.");
         setPassword("");
         setConfirm("");
       }
     } catch {
-      Alert.alert("Error", "Password change hoyni, abar try korun.");
+      Alert.alert("Error", "Couldn't change password. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -71,7 +71,7 @@ export default function SecuritySettingsScreen() {
         />
       </Section>
 
-      <Section title="Password change korun">
+      <Section title="Change password">
         <View style={{ paddingHorizontal: 14, paddingVertical: 12, gap: 12 }}>
           <View>
             <Text
@@ -82,12 +82,12 @@ export default function SecuritySettingsScreen() {
                 marginBottom: 4,
               }}
             >
-              Notun password
+              New password
             </Text>
             <TextInput
               value={password}
               onChangeText={setPassword}
-              placeholder="Kompokkhe 6 character"
+              placeholder="At least 6 characters"
               placeholderTextColor={c.mutedForeground}
               secureTextEntry
               style={inputStyle}
@@ -102,7 +102,7 @@ export default function SecuritySettingsScreen() {
                 marginBottom: 4,
               }}
             >
-              Password abar din
+              Re-enter password
             </Text>
             <TextInput
               value={confirm}
@@ -132,7 +132,7 @@ export default function SecuritySettingsScreen() {
             <ActivityIndicator color="#fff" />
           ) : (
             <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: 15 }}>
-              Password change korun
+              Change password
             </Text>
           )}
         </Pressable>

@@ -8,20 +8,20 @@ import {
 
 const FAQ = [
   {
-    q: "Kivabe password change korbo?",
-    a: "Settings → Password & security te jaan, sekhane notun password set korte parben.",
+    q: "How do I change my password?",
+    a: "Go to Settings → Password & security, where you can set a new password.",
   },
   {
-    q: "Ke amar post dekhte parbe?",
-    a: "Settings → Privacy te 'Post ke dekhte parbe' option theke audience control korun.",
+    q: "Who can see my posts?",
+    a: "In Settings → Privacy, control your audience from the 'Who can see your posts' option.",
   },
   {
-    q: "Notification bondho korbo kivabe?",
-    a: "Settings → Notifications te giye je notification chan na seta off kore din.",
+    q: "How do I turn off notifications?",
+    a: "Go to Settings → Notifications and switch off any notifications you don't want.",
   },
   {
-    q: "Profile edit korbo kothay?",
-    a: "Settings → Account Center theke 'Edit profile' e click korun.",
+    q: "Where do I edit my profile?",
+    a: "Go to Settings → Account Center and click 'Edit profile'.",
   },
 ];
 
@@ -29,7 +29,7 @@ export default function SettingsHelpPage() {
   return (
     <SettingsShell
       title="Help & support"
-      description="Common proshno r uttor"
+      description="Answers to common questions"
     >
       <SettingsCard>
         <div className="px-5 py-2">
@@ -50,9 +50,9 @@ export default function SettingsHelpPage() {
 
       <SettingsCard>
         <div className="px-5 py-4">
-          <p className="font-medium">Aro help dorkar?</p>
+          <p className="font-medium">Need more help?</p>
           <p className="text-sm text-muted-foreground mt-1">
-            HiMewo support team er sathe jogajog korun:{" "}
+            Get in touch with the HiMewo support team:{" "}
             <a
               href="mailto:support@himewo.app"
               className="text-primary hover:underline"

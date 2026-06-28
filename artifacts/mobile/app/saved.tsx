@@ -49,9 +49,9 @@ export default function SavedScreen() {
         {
           onSuccess: () => {
             qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
-            Alert.alert("Shared", "Post tomar timeline-e share kora hoyeche.");
+            Alert.alert("Shared", "Post shared to your timeline.");
           },
-          onError: () => Alert.alert("Error", "Share kora gelo na."),
+          onError: () => Alert.alert("Error", "Couldn't share. Please try again."),
         },
       );
     },
@@ -98,11 +98,11 @@ export default function SavedScreen() {
             <Ionicons name="bookmark-outline" size={32} color={c.mutedForeground} />
           </View>
           <Text style={[styles.emptyTitle, { color: c.foreground }]}>
-            Akhono kichu save kora nei
+            Nothing saved yet
           </Text>
           <Text style={[styles.emptyText, { color: c.mutedForeground }]}>
-            Feed ba Marketplace theke kichu pochondo hole save kore rakhun, pore
-            ekhane khuje paben.
+            Save things you like from Feed or Marketplace and find them here
+            later.
           </Text>
         </View>
       </SafeAreaView>

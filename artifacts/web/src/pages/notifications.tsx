@@ -29,32 +29,32 @@ import { useLocation } from "wouter";
 import { timeAgo } from "@/lib/format";
 
 function notificationText(n: Notification): string {
-  const actor = n.actor?.displayName ?? "Keu";
+  const actor = n.actor?.displayName ?? "Someone";
   switch (n.type) {
     case NotificationType.reaction:
-      return `${actor} apnar post-e react koreche.`;
+      return `${actor} reacted to your post.`;
     case NotificationType.comment:
-      return `${actor} apnar post-e comment koreche.`;
+      return `${actor} commented on your post.`;
     case NotificationType.friend_request:
-      return `${actor} apnake friend request pathiyeche.`;
+      return `${actor} sent you a friend request.`;
     case NotificationType.friend_accept:
-      return `${actor} apnar friend request accept koreche.`;
+      return `${actor} accepted your friend request.`;
     case NotificationType.follow:
-      return `${actor} apnake follow koreche.`;
+      return `${actor} started following you.`;
     case NotificationType.message:
-      return `${actor} apnake message pathiyeche.`;
+      return `${actor} sent you a message.`;
     case NotificationType.group_invite:
-      return `${actor} apnake ekta group-e invite koreche.`;
+      return `${actor} invited you to a group.`;
     case NotificationType.page_follow:
-      return `${actor} apnar page follow koreche.`;
+      return `${actor} followed your page.`;
     case NotificationType.mention:
-      return `${actor} apnake mention koreche.`;
+      return `${actor} mentioned you.`;
     case NotificationType.share:
-      return `${actor} apnar post share koreche.`;
+      return `${actor} shared your post.`;
     case NotificationType.story_view:
-      return `${actor} apnar story dekheche.`;
+      return `${actor} viewed your story.`;
     default:
-      return `${actor} apnar sathe interact koreche.`;
+      return `${actor} interacted with you.`;
   }
 }
 
