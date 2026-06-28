@@ -8,12 +8,14 @@ import {
   Animated,
   findNodeHandle,
   UIManager,
+  useWindowDimensions,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
 import { ReactionType } from "@workspace/api-client-react";
 import { reactionConfig, reactionOrder } from "@/constants/reactions";
 import { useColors } from "@/hooks/useColors";
+import { useSounds } from "@/lib/sounds";
 
 interface ReactionBarProps {
   viewerReaction?: ReactionType | null;
@@ -21,13 +23,22 @@ interface ReactionBarProps {
   size?: "default" | "sm";
 }
 
+const SCREEN_MARGIN = 12;
+const PICKER_PAD = 8;
+const PICKER_GAP = 4;
+const MAX_ITEM = 44;
+
 function AnimatedReaction({
   type,
   index,
+  itemWidth,
+  emojiSize,
   onPick,
 }: {
   type: ReactionType;
   index: number;
+  itemWidth: number;
+  emojiSize: number;
   onPick: (t: ReactionType) => void;
 }) {
   const scale = useRef(new Animated.Value(0)).current;
@@ -52,10 +63,12 @@ function AnimatedReaction({
       onPressOut={() =>
         Animated.spring(press, { toValue: 1, useNativeDriver: true, friction: 4 }).start()
       }
-      style={styles.reaction}
+      style={[styles.reaction, { width: itemWidth }]}
       hitSlop={4}
     >
-      <Animated.Text style={{ fontSize: 32, transform: [{ scale: Animated.multiply(scale, press) }] }}>
+      <Animated.Text
+        style={{ fontSize: emojiSize, transform: [{ scale: Animated.multiply(scale, press) }] }}
+      >
         {reactionConfig[type].emoji}
       </Animated.Text>
     </Pressable>
@@ -68,18 +81,29 @@ export function ReactionBar({
   size = "default",
 }: ReactionBarProps) {
   const c = useColors();
+  const { play } = useSounds();
+  const { width: screenW } = useWindowDimensions();
   const [open, setOpen] = useState(false);
-  const [anchor, setAnchor] = useState({ x: 16, y: 200 });
+  const [anchor, setAnchor] = useState({ x: SCREEN_MARGIN, y: 200 });
   const btnRef = useRef<View>(null);
   const active = viewerReaction ? reactionConfig[viewerReaction] : null;
   const isSm = size === "sm";
+
+  // Size the picker so it always fits on screen, no matter how narrow.
+  const count = reactionOrder.length;
+  const available = screenW - SCREEN_MARGIN * 2 - PICKER_PAD * 2 - (count - 1) * PICKER_GAP;
+  const itemWidth = Math.max(28, Math.min(MAX_ITEM, Math.floor(available / count)));
+  const emojiSize = Math.round(itemWidth * 0.74);
+  const pickerWidth = count * itemWidth + (count - 1) * PICKER_GAP + PICKER_PAD * 2;
 
   const showPicker = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const node = btnRef.current && findNodeHandle(btnRef.current);
     if (node) {
       UIManager.measureInWindow(node, (x, y) => {
-        setAnchor({ x: Math.max(12, x - 8), y: Math.max(80, y - 70) });
+        const maxLeft = Math.max(SCREEN_MARGIN, screenW - pickerWidth - SCREEN_MARGIN);
+        const left = Math.min(Math.max(SCREEN_MARGIN, x - 8), maxLeft);
+        setAnchor({ x: left, y: Math.max(80, y - 70) });
         setOpen(true);
       });
     } else {
@@ -90,6 +114,7 @@ export function ReactionBar({
   const pick = (t: ReactionType) => {
     setOpen(false);
     Haptics.selectionAsync();
+    play("reaction");
     onReact(t);
   };
 
@@ -97,7 +122,10 @@ export function ReactionBar({
     <>
       <Pressable
         ref={btnRef}
-        onPress={() => onReact(viewerReaction || ReactionType.like)}
+        onPress={() => {
+          play("reaction");
+          onReact(viewerReaction || ReactionType.like);
+        }}
         onLongPress={showPicker}
         delayLongPress={220}
         style={styles.btn}
@@ -131,13 +159,21 @@ export function ReactionBar({
               {
                 top: anchor.y,
                 left: anchor.x,
+                width: pickerWidth,
                 backgroundColor: c.card,
                 borderColor: c.border,
               },
             ]}
           >
             {reactionOrder.map((t, i) => (
-              <AnimatedReaction key={t} type={t} index={i} onPick={pick} />
+              <AnimatedReaction
+                key={t}
+                type={t}
+                index={i}
+                itemWidth={itemWidth}
+                emojiSize={emojiSize}
+                onPick={pick}
+              />
             ))}
           </View>
         </Pressable>
@@ -152,8 +188,8 @@ const styles = StyleSheet.create({
   picker: {
     position: "absolute",
     flexDirection: "row",
-    gap: 4,
-    paddingHorizontal: 8,
+    gap: PICKER_GAP,
+    paddingHorizontal: PICKER_PAD,
     paddingVertical: 6,
     borderRadius: 999,
     borderWidth: 1,
@@ -163,5 +199,5 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     elevation: 8,
   },
-  reaction: { paddingHorizontal: 2 },
+  reaction: { alignItems: "center", justifyContent: "center" },
 });
