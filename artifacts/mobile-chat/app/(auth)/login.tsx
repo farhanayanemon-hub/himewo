@@ -134,9 +134,9 @@ export default function LoginScreen() {
           <View style={[styles.logo, { backgroundColor: c.primary }, glow(c.primary)]}>
             <Ionicons name="chatbubble-ellipses" size={34} color="#fff" />
           </View>
-          <Text style={[styles.title, { color: c.primary }]}>HiMewo</Text>
+          <Text style={[styles.title, { color: c.primary }]}>HiMewo Chat</Text>
           <Text style={{ color: c.mutedForeground, fontSize: fs(14) }}>
-            Connect with friends and the world
+            Message, call & connect — instantly
           </Text>
         </View>
 
