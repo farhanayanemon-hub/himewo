@@ -14,6 +14,7 @@ import reelsRouter from "./reels";
 import notificationsRouter from "./notifications";
 import mediaRouter from "./media";
 import callsRouter from "./calls";
+import marketplaceRouter from "./marketplace";
 
 const router: IRouter = Router();
 
@@ -34,5 +35,6 @@ router.use(reelsRouter);
 router.use(notificationsRouter);
 router.use(mediaRouter);
 router.use(callsRouter);
+router.use(marketplaceRouter);
 
 export default router;
