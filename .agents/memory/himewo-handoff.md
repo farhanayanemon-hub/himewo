@@ -10,8 +10,9 @@ The real app is the EXTERNAL GitHub repo **github.com/farhanayanemon-hub/himewo*
 (see `himewo-github-push.md`). The Replit project is mostly memory + skills +
 tooling.
 
-## Current live state (as of 2026-06-27)
+## Current live state (as of 2026-06-28)
 - **web**: himewo.com — Cloudflare Pages (project `himewo`), auto-deploys on push to main via GitHub Actions.
+- **mobile previews** (view-only web mirrors): social → https://himewo-mobile.pages.dev, Messenger/chat → https://himewo-chat.pages.dev (rebuild steps in `himewo-preview-web-links.md`). Messenger app was rebuilt to a Facebook-Messenger UI (4-tab shell incl. Notifications, Messenger settings menu, 2-tab message requests) — all wired to the live backend.
 - **admin**: admin.himewo.com — Cloudflare Pages (project `himewo-admin`), own Action. Login = Supabase email+password, gated by `/api/admin/me` (role admin/moderator/support). WORKING.
 - **api-server**: api.himewo.com — Railway (project `hospitable-nourishment`, builder RAILPACK, pnpm 9.15.9). `/api/admin/*` suite is LIVE (deploy fixed 2026-06-27).
 - **DB/Auth**: Supabase project ref `rzdfgbfyhnkvqbcegguk` (Postgres + Auth, ES256 JWTs). Admin user ovirajemon11@gmail.com (role=admin).
