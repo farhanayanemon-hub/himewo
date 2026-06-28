@@ -51,6 +51,7 @@ import {
   count,
   isNull,
 } from "drizzle-orm";
+import { canViewPost } from "./authz";
 
 // ---------------- Profiles ----------------
 export function toProfile(row: ProfileRow, includeContact = false) {
@@ -200,7 +201,16 @@ export async function buildPosts(
         .select()
         .from(postsTable)
         .where(inArray(postsTable.id, sharedIds));
-      const built = await buildPosts(sharedRows, viewerId, false);
+      // Only embed originals the viewer is actually allowed to see, so a public
+      // repost can never leak a friends-only / private / group original.
+      const visibleRows: typeof sharedRows = [];
+      for (const sr of sharedRows) {
+        const ok = viewerId
+          ? await canViewPost(sr, viewerId)
+          : sr.privacy === "public" && sr.groupId == null;
+        if (ok) visibleRows.push(sr);
+      }
+      const built = await buildPosts(visibleRows, viewerId, false);
       for (const p of built) sharedMap.set(p.id, p);
     }
   }
