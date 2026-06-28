@@ -108,7 +108,7 @@ export default function MarketplaceDetailScreen() {
   };
 
   const confirmDelete = () =>
-    Alert.alert("Delete listing", "Eta delete korbe?", [
+    Alert.alert("Delete listing", "Are you sure you want to delete this?", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete",

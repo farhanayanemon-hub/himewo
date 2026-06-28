@@ -17,29 +17,29 @@ export default function SettingsSecurityPage() {
   const changePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password.length < 6) {
-      toast.error("Password kompokkhe 6 character hote hobe");
+      toast.error("Password must be at least 6 characters");
       return;
     }
     if (password !== confirm) {
-      toast.error("Duita password mile nai");
+      toast.error("Passwords don't match");
       return;
     }
     if (!isSupabaseConfigured || !supabase) {
-      toast.error("Ei environment e password change kora jachhe na");
+      toast.error("Password can't be changed in this environment");
       return;
     }
     setSaving(true);
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) {
-        toast.error(error.message || "Password change hoyni");
+        toast.error(error.message || "Couldn't change password");
       } else {
-        toast.success("Password change hoyeche");
+        toast.success("Password changed");
         setPassword("");
         setConfirm("");
       }
     } catch {
-      toast.error("Password change hoyni, abar try korun");
+      toast.error("Couldn't change password, please try again");
     } finally {
       setSaving(false);
     }
@@ -48,7 +48,7 @@ export default function SettingsSecurityPage() {
   return (
     <SettingsShell
       title="Password & security"
-      description="Password change r login info"
+      description="Password change and login info"
     >
       <SettingsCard title="Login info">
         <SettingsRow
@@ -67,34 +67,34 @@ export default function SettingsSecurityPage() {
         />
       </SettingsCard>
 
-      <SettingsCard title="Password change korun">
+      <SettingsCard title="Change password">
         <form onSubmit={changePassword} className="px-5 py-4 space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="new-password">Notun password</Label>
+            <Label htmlFor="new-password">New password</Label>
             <Input
               id="new-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Kompokkhe 6 character"
+              placeholder="At least 6 characters"
               autoComplete="new-password"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="confirm-password">Password abar din</Label>
+            <Label htmlFor="confirm-password">Confirm password</Label>
             <Input
               id="confirm-password"
               type="password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              placeholder="Same password din"
+              placeholder="Re-enter the same password"
               autoComplete="new-password"
             />
           </div>
           <div className="flex justify-end">
             <Button type="submit" disabled={saving}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              Password change korun
+              Change password
             </Button>
           </div>
         </form>

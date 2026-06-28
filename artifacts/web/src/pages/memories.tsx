@@ -9,16 +9,16 @@ export default function MemoriesPage() {
           <Clock className="w-6 h-6 text-primary" /> Memories
         </h1>
         <p className="text-muted-foreground text-sm mb-8">
-          Ekhane apnar purono din-er post-gulo abar dekha jabe.
+          Look back on your posts from days gone by, right here.
         </p>
         <div className="flex flex-col items-center text-center py-12">
           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
             <Clock className="w-8 h-8 text-muted-foreground" />
           </div>
-          <p className="text-foreground font-semibold">Akhono kono memory nei</p>
+          <p className="text-foreground font-semibold">No memories yet</p>
           <p className="text-muted-foreground text-sm mt-1 max-w-sm">
-            Apni jokhon beshi din post korben, tokhon "is din-e ki holo" ekhane
-            dekhte parben.
+            Once you've been posting for a while, you'll see "on this day"
+            memories here.
           </p>
         </div>
       </div>

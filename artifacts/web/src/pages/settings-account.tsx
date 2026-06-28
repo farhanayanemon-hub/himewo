@@ -9,10 +9,10 @@ export default function SettingsAccountPage() {
   return (
     <SettingsShell
       title="Account Center"
-      description="Apnar personal details r account info"
+      description="Your personal details and account info"
     >
       <SettingsCard title="Personal details">
-        <SettingsRow title="Naam" control={<span className="text-muted-foreground">{user?.displayName || "—"}</span>} />
+        <SettingsRow title="Name" control={<span className="text-muted-foreground">{user?.displayName || "—"}</span>} />
         <SettingsRow title="Username" control={<span className="text-muted-foreground">@{user?.username || "—"}</span>} />
         {user?.email ? (
           <SettingsRow title="Email" control={<span className="text-muted-foreground">{user.email}</span>} />
@@ -25,9 +25,9 @@ export default function SettingsAccountPage() {
       <SettingsCard>
         <div className="px-5 py-4 flex items-center justify-between gap-4">
           <div>
-            <p className="font-medium">Profile edit korun</p>
+            <p className="font-medium">Edit your profile</p>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Bio, photo, work, education update korun
+              Update your bio, photo, work, and education
             </p>
           </div>
           <Link href="/edit-profile">

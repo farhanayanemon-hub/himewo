@@ -106,7 +106,7 @@ export default function MarketplaceBrowseScreen() {
             <View style={styles.empty}>
               <Ionicons name="storefront-outline" size={40} color={c.mutedForeground} />
               <Text style={[styles.emptyText, { color: c.mutedForeground }]}>
-                Kono listing nei. Prothom-ta tumi-i banao!
+                No listings yet. Be the first to create one!
               </Text>
             </View>
           )

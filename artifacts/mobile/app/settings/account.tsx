@@ -12,7 +12,7 @@ export default function AccountSettingsScreen() {
     <SettingsScreen title="Account Center">
       <Section title="Personal details">
         <Row
-          title="Naam"
+          title="Name"
           right={
             <Text style={{ color: c.mutedForeground, fontFamily: "Inter_400Regular" }}>
               {user?.displayName ?? "—"}
@@ -58,7 +58,7 @@ export default function AccountSettingsScreen() {
                 marginTop: 2,
               }}
             >
-              Bio, photo, work, education update korun
+              Update bio, photo, work, education
             </Text>
           </View>
         </Pressable>

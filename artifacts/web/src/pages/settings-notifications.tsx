@@ -20,9 +20,9 @@ export default function SettingsNotificationsPage() {
       {
         onSuccess: () => {
           qc.invalidateQueries({ queryKey: getGetMySettingsQueryKey() });
-          toast.success("Notification settings update hoyeche");
+          toast.success("Notification settings updated");
         },
-        onError: () => toast.error("Update hoyni, abar try korun"),
+        onError: () => toast.error("Couldn't update, please try again"),
       },
     );
   };
@@ -38,16 +38,16 @@ export default function SettingsNotificationsPage() {
   }
 
   const rows: { key: keyof typeof data; title: string; desc: string }[] = [
-    { key: "notifyLikes", title: "Likes & reactions", desc: "Keu apnar post e react korle" },
-    { key: "notifyComments", title: "Comments", desc: "Apnar post e comment korle" },
-    { key: "notifyFriendRequests", title: "Friend requests", desc: "Notun friend request asle" },
-    { key: "notifyMessages", title: "Messages", desc: "Notun message asle" },
+    { key: "notifyLikes", title: "Likes & reactions", desc: "When someone reacts to your post" },
+    { key: "notifyComments", title: "Comments", desc: "When someone comments on your post" },
+    { key: "notifyFriendRequests", title: "Friend requests", desc: "When you get a new friend request" },
+    { key: "notifyMessages", title: "Messages", desc: "When you get a new message" },
   ];
 
   return (
     <SettingsShell
       title="Notifications"
-      description="Kon kaaj er jonno notification paben"
+      description="Choose what you get notified about"
     >
       <SettingsCard title="Activity">
         {rows.map((r) => (
@@ -68,7 +68,7 @@ export default function SettingsNotificationsPage() {
       <SettingsCard title="Delivery">
         <SettingsRow
           title="Push notifications"
-          description="Phone/browser e push paben"
+          description="Get push alerts on your phone or browser"
           control={
             <Switch
               checked={data.pushNotifications}
@@ -78,7 +78,7 @@ export default function SettingsNotificationsPage() {
         />
         <SettingsRow
           title="Email notifications"
-          description="Email e summary paben"
+          description="Get a summary by email"
           control={
             <Switch
               checked={data.emailNotifications}

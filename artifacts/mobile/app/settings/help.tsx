@@ -6,20 +6,20 @@ import { useColors } from "@/hooks/useColors";
 
 const FAQ = [
   {
-    q: "Kivabe password change korbo?",
-    a: "Settings → Password & security te giye notun password set korun.",
+    q: "How do I change my password?",
+    a: "Go to Settings → Password & security and set a new password.",
   },
   {
-    q: "Ke amar post dekhte parbe?",
-    a: "Settings → Privacy te 'Post ke dekhte parbe' theke audience set korun.",
+    q: "Who can see my posts?",
+    a: "Go to Settings → Privacy and set the audience under 'Who can see your posts'.",
   },
   {
-    q: "Notification bondho korbo kivabe?",
-    a: "Settings → Notifications te giye je notification chan na off korun.",
+    q: "How do I turn off notifications?",
+    a: "Go to Settings → Notifications and turn off the ones you don't want.",
   },
   {
-    q: "Profile edit korbo kothay?",
-    a: "Settings → Account Center theke 'Edit profile' e jaan.",
+    q: "Where do I edit my profile?",
+    a: "Go to Settings → Account Center and tap 'Edit profile'.",
   },
 ];
 
@@ -29,7 +29,7 @@ export default function HelpSettingsScreen() {
 
   return (
     <SettingsScreen title="Help & support">
-      <Section title="Common proshno">
+      <Section title="Common questions">
         {FAQ.map((item, i) => (
           <Pressable
             key={i}
@@ -82,7 +82,7 @@ export default function HelpSettingsScreen() {
         ))}
       </Section>
 
-      <Section title="Aro help">
+      <Section title="More help">
         <Pressable
           onPress={() => Linking.openURL("mailto:support@himewo.app")}
           style={{ paddingHorizontal: 14, paddingVertical: 16 }}
@@ -94,7 +94,7 @@ export default function HelpSettingsScreen() {
               fontSize: 15,
             }}
           >
-            Support team ke email korun
+            Email our support team
           </Text>
           <Text
             style={{

@@ -176,7 +176,7 @@ function BirthdayBanner() {
       </View>
       <Text style={{ color: c.foreground, flex: 1, fontFamily: "Inter_500Medium" }}>
         <Text style={{ fontFamily: "Inter_700Bold" }}>{names}</Text>
-        {birthdays.length > 1 ? "-der" : "-er"} aaj birthday! 🎂
+        {birthdays.length > 1 ? " have birthdays today! 🎂" : " has a birthday today! 🎂"}
       </Text>
     </Pressable>
   );

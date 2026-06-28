@@ -27,9 +27,9 @@ export default function SettingsPrivacyPage() {
       {
         onSuccess: () => {
           qc.invalidateQueries({ queryKey: getGetMySettingsQueryKey() });
-          toast.success("Privacy settings update hoyeche");
+          toast.success("Privacy settings updated");
         },
-        onError: () => toast.error("Update hoyni, abar try korun"),
+        onError: () => toast.error("Couldn't update, please try again"),
       },
     );
   };
@@ -47,12 +47,12 @@ export default function SettingsPrivacyPage() {
   return (
     <SettingsShell
       title="Privacy"
-      description="Ke ki dekhte parbe ta control korun"
+      description="Control who can see what"
     >
-      <SettingsCard title="Ke dekhte parbe">
+      <SettingsCard title="Who can see">
         <SettingsRow
-          title="Profile ke dekhte parbe"
-          description="Apnar profile public naki sudhu friends"
+          title="Who can see your profile"
+          description="Make your profile public or friends only"
           control={
             <Select
               value={data.profileVisibility}
@@ -62,7 +62,7 @@ export default function SettingsPrivacyPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="public">Public (shobai)</SelectItem>
+                <SelectItem value="public">Public (everyone)</SelectItem>
                 <SelectItem value="friends">Friends</SelectItem>
                 <SelectItem value="only_me">Only me</SelectItem>
               </SelectContent>
@@ -70,8 +70,8 @@ export default function SettingsPrivacyPage() {
           }
         />
         <SettingsRow
-          title="Post ke dekhte parbe"
-          description="Notun post er default audience"
+          title="Who can see your posts"
+          description="Default audience for new posts"
           control={
             <Select
               value={data.postVisibility}
@@ -81,7 +81,7 @@ export default function SettingsPrivacyPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="public">Public (shobai)</SelectItem>
+                <SelectItem value="public">Public (everyone)</SelectItem>
                 <SelectItem value="friends">Friends</SelectItem>
                 <SelectItem value="only_me">Only me</SelectItem>
               </SelectContent>
@@ -92,7 +92,7 @@ export default function SettingsPrivacyPage() {
 
       <SettingsCard title="Friend requests">
         <SettingsRow
-          title="Ke friend request pathate parbe"
+          title="Who can send you friend requests"
           control={
             <Select
               value={data.friendRequestPrivacy}
@@ -102,7 +102,7 @@ export default function SettingsPrivacyPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="everyone">Everyone (shobai)</SelectItem>
+                <SelectItem value="everyone">Everyone</SelectItem>
                 <SelectItem value="friends_of_friends">
                   Friends of friends
                 </SelectItem>
@@ -114,8 +114,8 @@ export default function SettingsPrivacyPage() {
 
       <SettingsCard title="Activity">
         <SettingsRow
-          title="Online status dekhabo"
-          description="Friends ra dekhte parbe apni online ki na"
+          title="Show online status"
+          description="Let friends see when you're online"
           control={
             <Switch
               checked={data.showOnlineStatus}

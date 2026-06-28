@@ -57,7 +57,7 @@ export default function SavedPage() {
           <Bookmark className="w-6 h-6 text-primary" /> Saved
         </h1>
         <p className="text-muted-foreground text-sm">
-          Apnar save kora post, reel o item-gulo ekhane thakbe.
+          Your saved posts, reels, and items will live here.
         </p>
       </div>
 
@@ -71,16 +71,16 @@ export default function SavedPage() {
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
               <Bookmark className="w-8 h-8 text-muted-foreground" />
             </div>
-            <p className="text-foreground font-semibold">Akhono kichu save kora nei</p>
+            <p className="text-foreground font-semibold">Nothing saved yet</p>
             <p className="text-muted-foreground text-sm mt-1 max-w-sm">
-              Feed ba Marketplace theke kichu pochondo hole save kore rakhun, pore
-              ekhane khuje paben.
+              Save anything you like from your Feed or Marketplace, and find it
+              here later.
             </p>
             <Link
               href="/"
               className="mt-5 bg-primary text-primary-foreground px-5 py-2 rounded-lg text-sm font-semibold"
             >
-              Feed-e jan
+              Go to Feed
             </Link>
           </div>
         </div>

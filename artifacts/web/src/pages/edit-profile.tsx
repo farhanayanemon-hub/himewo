@@ -171,7 +171,7 @@ export default function EditProfilePage() {
 
           <div className="space-y-2">
             <Label htmlFor="bio">Bio / Intro</Label>
-            <Textarea id="bio" value={formData.bio} onChange={(e) => set("bio", e.target.value)} className="bg-muted/50 resize-none" rows={3} placeholder="Nijer somporke kichu likhun" />
+            <Textarea id="bio" value={formData.bio} onChange={(e) => set("bio", e.target.value)} className="bg-muted/50 resize-none" rows={3} placeholder="Write something about yourself" />
           </div>
 
           <div>
@@ -183,23 +183,23 @@ export default function EditProfilePage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="work">Work</Label>
-                <Input id="work" value={formData.work} onChange={(e) => set("work", e.target.value)} className="bg-muted/50" placeholder="Kothay kaj koren" />
+                <Input id="work" value={formData.work} onChange={(e) => set("work", e.target.value)} className="bg-muted/50" placeholder="Where do you work?" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="education">Education</Label>
-                <Input id="education" value={formData.education} onChange={(e) => set("education", e.target.value)} className="bg-muted/50" placeholder="Kothay porashona korechen" />
+                <Input id="education" value={formData.education} onChange={(e) => set("education", e.target.value)} className="bg-muted/50" placeholder="Where did you study?" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="location">Current city</Label>
-                <Input id="location" value={formData.location} onChange={(e) => set("location", e.target.value)} className="bg-muted/50" placeholder="Ekhon kothay thaken" />
+                <Input id="location" value={formData.location} onChange={(e) => set("location", e.target.value)} className="bg-muted/50" placeholder="Where do you live now?" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="hometown">Hometown</Label>
-                <Input id="hometown" value={formData.hometown} onChange={(e) => set("hometown", e.target.value)} className="bg-muted/50" placeholder="Apnar nijer elaka" />
+                <Input id="hometown" value={formData.hometown} onChange={(e) => set("hometown", e.target.value)} className="bg-muted/50" placeholder="Your hometown" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="hobbies">Hobbies</Label>
-                <Input id="hobbies" value={formData.hobbies} onChange={(e) => set("hobbies", e.target.value)} className="bg-muted/50" placeholder="Cricket, gaan, ranna..." />
+                <Input id="hobbies" value={formData.hobbies} onChange={(e) => set("hobbies", e.target.value)} className="bg-muted/50" placeholder="Cricket, music, cooking..." />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="interests">Interests</Label>

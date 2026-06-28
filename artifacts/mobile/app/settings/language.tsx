@@ -42,7 +42,7 @@ export default function LanguageSettingsScreen() {
 
   return (
     <SettingsScreen title="Language">
-      <Section title="App er bhasha">
+      <Section title="App language">
         {LANGUAGES.map((l, i) => (
           <ChoiceRow
             key={l.value}

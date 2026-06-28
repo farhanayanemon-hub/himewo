@@ -91,7 +91,7 @@ function PostComposer() {
             onChange={(e) => setContent(e.target.value)}
             rows={content || media.length ? 3 : 1}
             className="w-full bg-muted/50 border-none rounded-2xl px-4 py-2.5 text-base focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-muted-foreground resize-none"
-            placeholder={`Ki obostha, ${user?.displayName?.split(" ")[0] || ""}?`}
+            placeholder={`What's on your mind, ${user?.displayName?.split(" ")[0] || ""}?`}
           />
         </div>
       </div>
@@ -277,7 +277,7 @@ function BirthdaysRail() {
         <div className="flex items-start gap-3 p-2 rounded-xl">
           <Cake className="w-8 h-8 text-primary shrink-0" />
           <p className="text-sm text-muted-foreground">
-            Aaj karo birthday nei. Bondhura kichu add korle ekhane dekha jabe.
+            No birthdays today. They'll show up here once your friends add theirs.
           </p>
         </div>
       ) : (
@@ -296,7 +296,7 @@ function BirthdaysRail() {
               </div>
               <p className="text-sm text-foreground">
                 <span className="font-semibold">{friend.displayName}</span>
-                <span className="text-muted-foreground">{" "}-er aaj birthday! 🎂</span>
+                <span className="text-muted-foreground">{" "}has a birthday today! 🎂</span>
               </p>
             </Link>
           ))}
@@ -413,7 +413,7 @@ export default function HomePage() {
               <Loader2 className="w-6 h-6 animate-spin mx-auto" />
             </div>
           ) : posts.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground bg-card border border-border rounded-xl">No posts yet. Make one!</div>
+            <div className="text-center py-10 text-muted-foreground bg-card border border-border rounded-xl">No posts yet. Create one!</div>
           ) : (
             posts.map((post) => <PostCard key={post.id} post={post} />)
           )}

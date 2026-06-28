@@ -39,10 +39,10 @@ export default function NotificationSettingsScreen() {
     title: string;
     subtitle: string;
   }[] = [
-    { key: "notifyLikes", title: "Likes & reactions", subtitle: "Post e react korle" },
-    { key: "notifyComments", title: "Comments", subtitle: "Post e comment korle" },
-    { key: "notifyFriendRequests", title: "Friend requests", subtitle: "Notun request asle" },
-    { key: "notifyMessages", title: "Messages", subtitle: "Notun message asle" },
+    { key: "notifyLikes", title: "Likes & reactions", subtitle: "When someone reacts to your post" },
+    { key: "notifyComments", title: "Comments", subtitle: "When someone comments on your post" },
+    { key: "notifyFriendRequests", title: "Friend requests", subtitle: "When you get a new request" },
+    { key: "notifyMessages", title: "Messages", subtitle: "When you get a new message" },
   ];
 
   return (
@@ -68,7 +68,7 @@ export default function NotificationSettingsScreen() {
       <Section title="Delivery">
         <Row
           title="Push notifications"
-          subtitle="Phone e push paben"
+          subtitle="Get push on your phone"
           right={
             <Switch
               value={data.pushNotifications}
@@ -79,7 +79,7 @@ export default function NotificationSettingsScreen() {
         />
         <Row
           title="Email notifications"
-          subtitle="Email e summary paben"
+          subtitle="Get a summary by email"
           last
           right={
             <Switch

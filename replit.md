@@ -58,7 +58,8 @@ HiMewo lets users post, react, comment, share, watch/post reels and stories, joi
 
 ## User preferences
 
-- User is non-technical and writes in Banglish — reply in simple Banglish. Seed data and copy use Banglish/Bangla context.
+- User is non-technical and writes in Banglish — reply in simple Banglish.
+- All in-app UI text (web, mobile, chat) is in ENGLISH. (Keep the `৳` currency symbol and the বাংলা/Banglish entries in language pickers as-is — those are valid options/symbols, not UI copy.) This overrides the earlier "copy uses Banglish/Bangla" note.
 - NOTHING gets deleted. Keep everything correctly named (folder/title must match purpose).
 - Keep the three-app model: Web (social) + Mobile (social main app) + Messenger. The two mobile apps are different products — do not let them collapse into one.
 - Keep GitHub (`github.com/farhanayanemon-hub/himewo`) in sync.
