@@ -315,19 +315,29 @@ router.post("/posts/:id/share", requireAuth, async (req, res): Promise<void> => 
     res.status(404).json({ error: "Post not found" });
     return;
   }
+  const originalId = post.sharedPostId ?? params.data.id;
   await db.insert(sharesTable).values({
-    postId: params.data.id,
+    postId: originalId,
     userId: req.userId!,
     caption: parsed.data.caption ?? null,
   });
+  const [repost] = await db
+    .insert(postsTable)
+    .values({
+      authorId: req.userId!,
+      content: parsed.data.caption?.trim() ?? "",
+      privacy: "public",
+      sharedPostId: originalId,
+    })
+    .returning();
   await createNotification({
     userId: post.authorId,
     actorId: req.userId!,
     type: "share",
     entityType: "post",
-    entityId: post.id,
+    entityId: originalId,
   });
-  const built = await buildPostById(params.data.id, req.userId);
+  const built = await buildPostById(repost.id, req.userId);
   res.status(201).json(SharePostResponse.parse(built));
 });
 

@@ -1337,6 +1337,29 @@ components:
         commentCount: { type: integer }
         shareCount: { type: integer }
         viewerHasSaved: { type: boolean }
+        sharedPost:
+          oneOf:
+            - { $ref: "#/components/schemas/SharedPost" }
+            - { type: "null" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    SharedPost:
+      type: object
+      required: [id, author, content, privacy, media, reactions, commentCount, shareCount, createdAt]
+      properties:
+        id: { type: integer }
+        author: { $ref: "#/components/schemas/Profile" }
+        content: { type: string }
+        privacy: { type: string, enum: [public, friends, private] }
+        groupId: { type: ["integer", "null"] }
+        pageId: { type: ["integer", "null"] }
+        media:
+          type: array
+          items: { $ref: "#/components/schemas/MediaItem" }
+        reactions: { $ref: "#/components/schemas/ReactionSummary" }
+        commentCount: { type: integer }
+        shareCount: { type: integer }
+        viewerHasSaved: { type: boolean }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
     PostInput:

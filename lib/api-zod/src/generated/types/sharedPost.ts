@@ -6,16 +6,15 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { MediaItem } from './mediaItem';
-import type { PostPrivacy } from './postPrivacy';
 import type { Profile } from './profile';
 import type { ReactionSummary } from './reactionSummary';
-import type { SharedPost } from './sharedPost';
+import type { SharedPostPrivacy } from './sharedPostPrivacy';
 
-export interface Post {
+export interface SharedPost {
   id: number;
   author: Profile;
   content: string;
-  privacy: PostPrivacy;
+  privacy: SharedPostPrivacy;
   /** @nullable */
   groupId?: number | null;
   /** @nullable */
@@ -25,7 +24,6 @@ export interface Post {
   commentCount: number;
   shareCount: number;
   viewerHasSaved?: boolean;
-  sharedPost?: SharedPost | null;
   createdAt: Date;
   updatedAt?: Date;
 }

@@ -176,10 +176,34 @@ export async function buildProfileDetail(userId: string, viewerId?: string) {
 }
 
 // ---------------- Posts ----------------
-export async function buildPosts(rows: PostRow[], viewerId?: string) {
+export async function buildPosts(
+  rows: PostRow[],
+  viewerId?: string,
+  embedShared = true,
+) {
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);
   const authorMap = await loadProfileMap(rows.map((r) => r.authorId));
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sharedMap = new Map<number, any>();
+  if (embedShared) {
+    const sharedIds = Array.from(
+      new Set(
+        rows
+          .map((r) => r.sharedPostId)
+          .filter((v): v is number => typeof v === "number"),
+      ),
+    );
+    if (sharedIds.length > 0) {
+      const sharedRows = await db
+        .select()
+        .from(postsTable)
+        .where(inArray(postsTable.id, sharedIds));
+      const built = await buildPosts(sharedRows, viewerId, false);
+      for (const p of built) sharedMap.set(p.id, p);
+    }
+  }
 
   const [
     mediaRows,
@@ -284,6 +308,10 @@ export async function buildPosts(rows: PostRow[], viewerId?: string) {
       commentCount: commentCountByPost.get(row.id) ?? 0,
       shareCount: shareCountByPost.get(row.id) ?? 0,
       viewerHasSaved: savedPostSet.has(row.id),
+      sharedPost:
+        row.sharedPostId != null
+          ? sharedMap.get(row.sharedPostId) ?? null
+          : null,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };
