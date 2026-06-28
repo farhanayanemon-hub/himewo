@@ -315,28 +315,51 @@ router.post("/posts/:id/share", requireAuth, async (req, res): Promise<void> => 
     res.status(404).json({ error: "Post not found" });
     return;
   }
-  const originalId = post.sharedPostId ?? params.data.id;
-  await db.insert(sharesTable).values({
-    postId: originalId,
-    userId: req.userId!,
-    caption: parsed.data.caption ?? null,
+  // Resolve the TRUE original so re-sharing a repost points at the source,
+  // never builds a nested chain.
+  let original = post;
+  if (post.sharedPostId != null) {
+    const [orig] = await db
+      .select()
+      .from(postsTable)
+      .where(eq(postsTable.id, post.sharedPostId));
+    if (orig) original = orig;
+  }
+  const originalId = original.id;
+  // Only public originals (or your own) may be reshared, so a public repost can
+  // never surface restricted content to people who shouldn't see it.
+  if (original.privacy !== "public" && original.authorId !== req.userId!) {
+    res.status(403).json({ error: "Only public posts can be shared" });
+    return;
+  }
+  // Keep the share record and the repost consistent: either both land or neither.
+  const repost = await db.transaction(async (tx) => {
+    await tx.insert(sharesTable).values({
+      postId: originalId,
+      userId: req.userId!,
+      caption: parsed.data.caption ?? null,
+    });
+    const [rp] = await tx
+      .insert(postsTable)
+      .values({
+        authorId: req.userId!,
+        content: parsed.data.caption?.trim() ?? "",
+        privacy: "public",
+        sharedPostId: originalId,
+      })
+      .returning();
+    return rp;
   });
-  const [repost] = await db
-    .insert(postsTable)
-    .values({
-      authorId: req.userId!,
-      content: parsed.data.caption?.trim() ?? "",
-      privacy: "public",
-      sharedPostId: originalId,
-    })
-    .returning();
-  await createNotification({
-    userId: post.authorId,
-    actorId: req.userId!,
-    type: "share",
-    entityType: "post",
-    entityId: originalId,
-  });
+  // Notify the ORIGINAL author (the content owner), never yourself.
+  if (original.authorId !== req.userId!) {
+    await createNotification({
+      userId: original.authorId,
+      actorId: req.userId!,
+      type: "share",
+      entityType: "post",
+      entityId: originalId,
+    });
+  }
   const built = await buildPostById(repost.id, req.userId);
   res.status(201).json(SharePostResponse.parse(built));
 });
