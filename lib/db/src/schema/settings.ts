@@ -15,6 +15,7 @@ export const userSettingsTable = pgTable("user_settings", {
     .notNull()
     .default("everyone"),
   showOnlineStatus: boolean("show_online_status").notNull().default(true),
+  isLocked: boolean("is_locked").notNull().default(false),
 
   // Notifications
   notifyLikes: boolean("notify_likes").notNull().default(true),

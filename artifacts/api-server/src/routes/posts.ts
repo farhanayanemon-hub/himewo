@@ -8,8 +8,9 @@ import {
   sharesTable,
   profilesTable,
   friendshipsTable,
+  userSettingsTable,
 } from "@workspace/db";
-import { and, or, eq, lt, asc, desc, inArray, isNull } from "drizzle-orm";
+import { and, or, eq, ne, lt, asc, desc, inArray, isNull } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import {
   toProfile,
@@ -20,7 +21,8 @@ import {
   buildCommentById,
 } from "../lib/serialize";
 import { createNotification } from "../lib/notify";
-import { canViewPost } from "../lib/authz";
+import { awardPoints } from "../lib/earnings";
+import { canViewPost, filterVisiblePosts } from "../lib/authz";
 import {
   GetFeedQueryParams,
   GetFeedResponse,
@@ -88,7 +90,12 @@ router.get("/feed", requireAuth, async (req, res): Promise<void> => {
     )
     .orderBy(desc(postsTable.id))
     .limit(limit ?? 20);
-  const posts = await buildPosts(rows, viewer);
+  // The SQL above is a coarse net (public OR self/friend authored). Run every
+  // row through the shared visibility policy so the author's effective audience
+  // (lock / profileVisibility incl. only_me) AND per-post privacy are honored —
+  // e.g. a friend's only_me or private posts must never leak into the feed.
+  const visibleRows = await filterVisiblePosts(rows, viewer);
+  const posts = await buildPosts(visibleRows, viewer);
   res.json(GetFeedResponse.parse(posts));
 });
 
@@ -99,12 +106,26 @@ router.post("/posts", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   const { content, privacy, groupId, pageId, media } = parsed.data;
+  // Resolve the audience for a new timeline post. An explicit `privacy` wins;
+  // otherwise apply the user's "Default audience for new posts" setting
+  // (postVisibility). Group/page posts keep "public" since their reach is
+  // governed by group membership / page followers, not the author's default.
+  let effectivePrivacy: "public" | "friends" | "private" = privacy ?? "public";
+  if (!privacy && groupId == null && pageId == null) {
+    const [settings] = await db
+      .select({ postVisibility: userSettingsTable.postVisibility })
+      .from(userSettingsTable)
+      .where(eq(userSettingsTable.userId, req.userId!));
+    const pv = settings?.postVisibility ?? "public";
+    effectivePrivacy =
+      pv === "only_me" ? "private" : pv === "friends" ? "friends" : "public";
+  }
   const [post] = await db
     .insert(postsTable)
     .values({
       authorId: req.userId!,
       content,
-      privacy: privacy ?? "public",
+      privacy: effectivePrivacy,
       groupId: groupId ?? null,
       pageId: pageId ?? null,
     })
@@ -123,6 +144,13 @@ router.post("/posts", requireAuth, async (req, res): Promise<void> => {
       })),
     );
   }
+  await awardPoints({
+    userId: req.userId!,
+    action: "post",
+    entityType: "post",
+    entityId: post.id,
+    ip: req.ip,
+  });
   const built = await buildPostById(post.id, req.userId);
   res.status(201).json(CreatePostResponse.parse(built));
 });
@@ -222,6 +250,10 @@ router.put(
       res.status(404).json({ error: "Post not found" });
       return;
     }
+    if (!post.reactionsEnabled) {
+      res.status(403).json({ error: "Reactions are turned off for this post" });
+      return;
+    }
     await db
       .insert(postReactionsTable)
       .values({
@@ -239,6 +271,14 @@ router.put(
       type: "reaction",
       entityType: "post",
       entityId: post.id,
+    });
+    await awardPoints({
+      userId: req.userId!,
+      action: "like",
+      entityType: "post",
+      entityId: post.id,
+      contentOwnerId: post.authorId,
+      ip: req.ip,
     });
     const summary = await buildReactionSummary(params.data.id, req.userId);
     res.json(SetPostReactionResponse.parse(summary));
@@ -315,52 +355,32 @@ router.post("/posts/:id/share", requireAuth, async (req, res): Promise<void> => 
     res.status(404).json({ error: "Post not found" });
     return;
   }
-  // Resolve the TRUE original so re-sharing a repost points at the source,
-  // never builds a nested chain.
-  let original = post;
-  if (post.sharedPostId != null) {
-    const [orig] = await db
-      .select()
-      .from(postsTable)
-      .where(eq(postsTable.id, post.sharedPostId));
-    if (orig) original = orig;
-  }
-  const originalId = original.id;
-  // Only public originals (or your own) may be reshared, so a public repost can
-  // never surface restricted content to people who shouldn't see it.
-  if (original.privacy !== "public" && original.authorId !== req.userId!) {
-    res.status(403).json({ error: "Only public posts can be shared" });
-    return;
-  }
-  // Keep the share record and the repost consistent: either both land or neither.
-  const repost = await db.transaction(async (tx) => {
-    await tx.insert(sharesTable).values({
-      postId: originalId,
+  const [share] = await db
+    .insert(sharesTable)
+    .values({
+      postId: params.data.id,
       userId: req.userId!,
       caption: parsed.data.caption ?? null,
-    });
-    const [rp] = await tx
-      .insert(postsTable)
-      .values({
-        authorId: req.userId!,
-        content: parsed.data.caption?.trim() ?? "",
-        privacy: "public",
-        sharedPostId: originalId,
-      })
-      .returning();
-    return rp;
+    })
+    .returning();
+  await createNotification({
+    userId: post.authorId,
+    actorId: req.userId!,
+    type: "share",
+    entityType: "post",
+    entityId: post.id,
   });
-  // Notify the ORIGINAL author (the content owner), never yourself.
-  if (original.authorId !== req.userId!) {
-    await createNotification({
-      userId: original.authorId,
-      actorId: req.userId!,
-      type: "share",
-      entityType: "post",
-      entityId: originalId,
-    });
-  }
-  const built = await buildPostById(repost.id, req.userId);
+  // Award per share (keyed by the share row), bounded by the daily cap — the
+  // spec relies on the cap rather than once-per-post idempotency for shares.
+  await awardPoints({
+    userId: req.userId!,
+    action: "share",
+    entityType: "share",
+    entityId: share.id,
+    contentOwnerId: post.authorId,
+    ip: req.ip,
+  });
+  const built = await buildPostById(params.data.id, req.userId);
   res.status(201).json(SharePostResponse.parse(built));
 });
 
@@ -413,6 +433,10 @@ router.post(
       res.status(404).json({ error: "Post not found" });
       return;
     }
+    if (!post.commentsEnabled) {
+      res.status(403).json({ error: "Comments are turned off for this post" });
+      return;
+    }
     const [comment] = await db
       .insert(commentsTable)
       .values({
@@ -444,6 +468,30 @@ router.post(
           entityId: parent.id,
         });
       }
+    }
+    // Award per comment (keyed by the comment row), bounded by the daily cap,
+    // plus a duplicate-text guard: only the first time a user uses a given
+    // comment text earns — reposting identical text never farms points.
+    const [dupe] = await db
+      .select({ id: commentsTable.id })
+      .from(commentsTable)
+      .where(
+        and(
+          eq(commentsTable.authorId, req.userId!),
+          eq(commentsTable.content, parsed.data.content),
+          ne(commentsTable.id, comment.id),
+        ),
+      )
+      .limit(1);
+    if (!dupe) {
+      await awardPoints({
+        userId: req.userId!,
+        action: "comment",
+        entityType: "comment",
+        entityId: comment.id,
+        contentOwnerId: post.authorId,
+        ip: req.ip,
+      });
     }
     const built = await buildCommentById(comment.id, req.userId);
     res.status(201).json(CreateCommentResponse.parse(built));

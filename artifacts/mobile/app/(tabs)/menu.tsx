@@ -11,6 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Avatar } from "@/components/Avatar";
 import { useAuth } from "@/lib/auth";
 import { useColors } from "@/hooks/useColors";
+import { useGetEarningsSummary } from "@workspace/api-client-react";
 
 interface Shortcut {
   label: string;
@@ -31,9 +32,21 @@ const SHORTCUTS: Shortcut[] = [
   { label: "Settings", icon: "settings", color: "#64748b", href: "/settings" },
 ];
 
+const EARNINGS_SHORTCUT: Shortcut = {
+  label: "Earnings",
+  icon: "wallet",
+  color: "#16a34a",
+  href: "/earnings",
+};
+
 export default function MenuScreen() {
   const c = useColors();
   const { user, signOut } = useAuth();
+  const { data: earnings } = useGetEarningsSummary();
+
+  const shortcuts = earnings?.enabled
+    ? [...SHORTCUTS, EARNINGS_SHORTCUT]
+    : SHORTCUTS;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top"]}>
@@ -61,7 +74,7 @@ export default function MenuScreen() {
         </Pressable>
 
         <View style={styles.grid}>
-          {SHORTCUTS.map((item) => (
+          {shortcuts.map((item) => (
             <Pressable
               key={item.label}
               style={[styles.gridCard, { backgroundColor: c.card, borderColor: c.border }]}

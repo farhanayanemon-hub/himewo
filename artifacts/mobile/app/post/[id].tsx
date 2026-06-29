@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -19,7 +18,6 @@ import {
   useGetPost,
   useListComments,
   useCreateComment,
-  useSharePost,
   getGetPostQueryKey,
   getGetFeedQueryKey,
   getListCommentsQueryKey,
@@ -27,14 +25,13 @@ import {
 } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
 import { PostCard } from "@/components/PostCard";
+import { ShareSheet } from "@/components/ShareSheet";
 import { EmojiPickerSheet } from "@/components/EmojiPickerSheet";
 import { useColors } from "@/hooks/useColors";
-import { useSounds } from "@/lib/sounds";
 import { timeAgo } from "@/lib/format";
 
 export default function PostDetailScreen() {
   const c = useColors();
-  const { play } = useSounds();
   const qc = useQueryClient();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -42,6 +39,7 @@ export default function PostDetailScreen() {
 
   const [text, setText] = useState("");
   const [emojiOpen, setEmojiOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const {
     data: post,
@@ -66,21 +64,10 @@ export default function PostDetailScreen() {
   const comments = (commentsData ?? []) as Comment[];
 
   const createComment = useCreateComment();
-  const sharePost = useSharePost();
 
   const onShare = () => {
     if (!Number.isFinite(postId)) return;
-    sharePost.mutate(
-      { id: postId, data: {} },
-      {
-        onSuccess: () => {
-          qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
-          qc.invalidateQueries({ queryKey: getGetPostQueryKey(postId) });
-          Alert.alert("Shared", "This post has been shared to your timeline.");
-        },
-        onError: () => Alert.alert("Error", "Could not share this post."),
-      },
-    );
+    setShareOpen(true);
   };
 
   const send = () => {
@@ -91,7 +78,6 @@ export default function PostDetailScreen() {
       { id: postId, data: { content } },
       {
         onSuccess: () => {
-          play("comment");
           qc.invalidateQueries({ queryKey: getListCommentsQueryKey(postId) });
           qc.invalidateQueries({ queryKey: getGetPostQueryKey(postId) });
           qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
@@ -124,6 +110,24 @@ export default function PostDetailScreen() {
               This post could not be found.
             </Text>
           </View>
+        ) : post.commentsEnabled === false ? (
+          <FlatList
+            data={[]}
+            keyExtractor={() => "none"}
+            renderItem={null}
+            contentContainerStyle={{ paddingBottom: 16 }}
+            ListHeaderComponent={
+              <View>
+                <PostCard post={post} onShare={onShare} />
+                <View style={[styles.commentsHeader, { borderTopColor: c.border }]}>
+                  <Text style={[styles.commentsTitle, { color: c.foreground }]}>Comments</Text>
+                  <Text style={{ color: c.mutedForeground, fontSize: 13, marginTop: 6 }}>
+                    Comments are turned off for this post.
+                  </Text>
+                </View>
+              </View>
+            }
+          />
         ) : (
           <FlatList
             data={comments}
@@ -183,37 +187,56 @@ export default function PostDetailScreen() {
           />
         )}
 
-        <View
-          style={[
-            styles.inputRow,
-            { borderTopColor: c.border, backgroundColor: c.card, paddingBottom: insets.bottom + 8 },
-          ]}
-        >
-          <Pressable onPress={() => setEmojiOpen(true)} hitSlop={8}>
-            <Ionicons name="happy-outline" size={24} color={c.mutedForeground} />
-          </Pressable>
-          <TextInput
-            value={text}
-            onChangeText={setText}
-            placeholder="Write a comment..."
-            placeholderTextColor={c.mutedForeground}
-            style={[styles.input, { backgroundColor: c.secondary, color: c.foreground }]}
-            multiline
-          />
-          <Pressable onPress={send} disabled={!text.trim()} hitSlop={8}>
-            <Ionicons
-              name="send"
-              size={22}
-              color={text.trim() ? c.primary : c.mutedForeground}
+        {post?.commentsEnabled === false ? (
+          <View
+            style={[
+              styles.disabledRow,
+              { borderTopColor: c.border, backgroundColor: c.card, paddingBottom: insets.bottom + 8 },
+            ]}
+          >
+            <Text style={{ color: c.mutedForeground, fontSize: 13 }}>
+              Comments are turned off for this post.
+            </Text>
+          </View>
+        ) : (
+          <View
+            style={[
+              styles.inputRow,
+              { borderTopColor: c.border, backgroundColor: c.card, paddingBottom: insets.bottom + 8 },
+            ]}
+          >
+            <Pressable onPress={() => setEmojiOpen(true)} hitSlop={8}>
+              <Ionicons name="happy-outline" size={24} color={c.mutedForeground} />
+            </Pressable>
+            <TextInput
+              value={text}
+              onChangeText={setText}
+              placeholder="Write a comment..."
+              placeholderTextColor={c.mutedForeground}
+              style={[styles.input, { backgroundColor: c.secondary, color: c.foreground }]}
+              multiline
             />
-          </Pressable>
-        </View>
+            <Pressable onPress={send} disabled={!text.trim()} hitSlop={8}>
+              <Ionicons
+                name="send"
+                size={22}
+                color={text.trim() ? c.primary : c.mutedForeground}
+              />
+            </Pressable>
+          </View>
+        )}
       </KeyboardAvoidingView>
 
       <EmojiPickerSheet
         visible={emojiOpen}
         onClose={() => setEmojiOpen(false)}
         onSelect={(e) => setText((t) => t + e)}
+      />
+
+      <ShareSheet
+        postId={Number.isFinite(postId) ? postId : null}
+        visible={shareOpen}
+        onClose={() => setShareOpen(false)}
       />
     </SafeAreaView>
   );
@@ -253,5 +276,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     maxHeight: 100,
     fontSize: 15,
+  },
+  disabledRow: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+    paddingTop: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
 });

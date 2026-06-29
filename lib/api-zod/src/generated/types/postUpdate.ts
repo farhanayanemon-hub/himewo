@@ -10,4 +10,6 @@ import type { PostUpdatePrivacy } from './postUpdatePrivacy';
 export interface PostUpdate {
   content?: string;
   privacy?: PostUpdatePrivacy;
+  commentsEnabled?: boolean;
+  reactionsEnabled?: boolean;
 }

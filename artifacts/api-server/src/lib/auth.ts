@@ -1,6 +1,6 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { jwtVerify, createRemoteJWKSet, type JWTVerifyGetKey } from "jose";
-import { env } from "./env";
+import { env, isAdminUser } from "./env";
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -87,6 +87,26 @@ export function requireAuth(
 ): void {
   if (!req.userId) {
     res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  next();
+}
+
+/**
+ * Guards admin-only endpoints. Must run after authMiddleware. Returns 401 when
+ * unauthenticated and 403 when authenticated but not an admin.
+ */
+export function requireAdmin(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
+  if (!req.userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  if (!isAdminUser(req.userId)) {
+    res.status(403).json({ error: "Forbidden" });
     return;
   }
   next();

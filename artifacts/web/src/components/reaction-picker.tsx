@@ -33,8 +33,6 @@ export function ReactionControl({ viewerReaction, onReact, count, size = "defaul
   };
 
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const heldOpen = useRef(false);
   const open = () => {
     if (hideTimer.current) clearTimeout(hideTimer.current);
     setShowPicker(true);
@@ -43,21 +41,10 @@ export function ReactionControl({ viewerReaction, onReact, count, size = "defaul
     hideTimer.current = setTimeout(() => setShowPicker(false), 120);
   };
 
-  const startHold = () => {
-    heldOpen.current = false;
-    holdTimer.current = setTimeout(() => {
-      heldOpen.current = true;
-      open();
-    }, 300);
-  };
-  const cancelHold = () => {
-    if (holdTimer.current) clearTimeout(holdTimer.current);
-  };
-
   return (
     <div className="relative inline-flex" onMouseEnter={open} onMouseLeave={close}>
       {showPicker && (
-        <div className="absolute -top-14 left-0 bg-popover border border-popover-border rounded-full flex gap-0.5 p-1.5 z-30 animate-in fade-in zoom-in-90 slide-in-from-bottom-2 duration-150" style={{ boxShadow: "var(--shadow-pop)" }}>
+        <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-popover border border-popover-border rounded-full flex gap-0.5 p-1.5 z-30 animate-in fade-in zoom-in-90 slide-in-from-bottom-2 duration-150" style={{ boxShadow: "var(--shadow-pop)" }}>
           {Object.entries(reactionConfig).map(([type, config], i) => (
             <button
               key={type}
@@ -70,7 +57,7 @@ export function ReactionControl({ viewerReaction, onReact, count, size = "defaul
               <span className="absolute -top-7 px-2 py-0.5 rounded-full bg-foreground text-background text-[10px] font-semibold opacity-0 group-hover/emoji:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                 {config.label}
               </span>
-              <span className="reaction-idle" style={{ animationDelay: `${i * 120}ms` }}>{config.emoji}</span>
+              {config.emoji}
             </button>
           ))}
         </div>
@@ -78,17 +65,7 @@ export function ReactionControl({ viewerReaction, onReact, count, size = "defaul
 
       <button
         type="button"
-        onClick={() => {
-          if (heldOpen.current) {
-            heldOpen.current = false;
-            return;
-          }
-          fire(viewerReaction || ReactionType.like);
-        }}
-        onPointerDown={startHold}
-        onPointerUp={cancelHold}
-        onPointerLeave={cancelHold}
-        onContextMenu={(e) => e.preventDefault()}
+        onClick={() => fire(viewerReaction || ReactionType.like)}
         className={`flex items-center gap-1.5 font-semibold press transition-colors ${
           isSm ? "text-xs" : ""
         } ${active ? active.color : "text-muted-foreground hover:text-foreground"}`}

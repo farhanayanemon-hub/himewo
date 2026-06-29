@@ -9,13 +9,14 @@ import type { MediaItem } from './mediaItem';
 import type { PostPrivacy } from './postPrivacy';
 import type { Profile } from './profile';
 import type { ReactionSummary } from './reactionSummary';
-import type { SharedPost } from './sharedPost';
 
 export interface Post {
   id: number;
   author: Profile;
   content: string;
   privacy: PostPrivacy;
+  commentsEnabled: boolean;
+  reactionsEnabled: boolean;
   /** @nullable */
   groupId?: number | null;
   /** @nullable */
@@ -25,7 +26,6 @@ export interface Post {
   commentCount: number;
   shareCount: number;
   viewerHasSaved?: boolean;
-  sharedPost?: SharedPost | null;
   createdAt: Date;
   updatedAt?: Date;
 }

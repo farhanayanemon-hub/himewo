@@ -58,10 +58,17 @@ export default function ProfileScreen() {
     undefined,
     { query: { enabled: !!userId, queryKey: getGetUserPostsQueryKey(userId) } },
   );
+  const showLocked =
+    !!profile?.isLocked && !isOwn && !profile?.viewerIsFriend;
   const { data: friendsData, refetch: refetchFriends } = useGetUserFriends(
     userId,
     undefined,
-    { query: { enabled: !!userId, queryKey: getGetUserFriendsQueryKey(userId) } },
+    {
+      query: {
+        enabled: !!userId && !showLocked,
+        queryKey: getGetUserFriendsQueryKey(userId),
+      },
+    },
   );
   const posts = (postsData ?? []) as Post[];
   const friends = friendsData ?? [];
@@ -112,10 +119,24 @@ export default function ProfileScreen() {
     }
   };
 
-  const onMessage = () => {
-    router.push("/messages");
+  const onMessage = async () => {
+    try {
+      const conv = await createConversation.mutateAsync({
+        data: { type: ConversationType.direct, memberIds: [userId] },
+      });
+      router.push(`/messages/${conv.id}`);
+    } catch {
+      router.push("/messages");
+    }
   };
 
+  // Hide the friend button when the only remaining action would be "Add
+  // Friend" but the server won't accept the request (friendRequestPrivacy).
+  const showFriendButton =
+    !!profile &&
+    (profile.viewerIsFriend ||
+      profile.viewerHasPendingRequest ||
+      profile.viewerCanSendRequest);
   const friendLabel = profile?.viewerIsFriend
     ? "Friends"
     : profile?.viewerHasPendingRequest
@@ -164,7 +185,7 @@ export default function ProfileScreen() {
         </View>
       ) : (
         <FlatList
-          data={posts}
+          data={showLocked ? [] : posts}
           keyExtractor={(item) => String(item.id)}
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={onRefresh} tintColor={c.primary} />
@@ -190,6 +211,9 @@ export default function ProfileScreen() {
                   <Text style={[styles.name, { color: c.foreground }]}>{profile.displayName}</Text>
                   {profile.isVerified && (
                     <Ionicons name="checkmark-circle" size={18} color={c.primary} />
+                  )}
+                  {profile.isLocked && (
+                    <Ionicons name="lock-closed" size={16} color={c.mutedForeground} />
                   )}
                 </View>
                 <Text style={[styles.username, { color: c.mutedForeground }]}>
@@ -236,29 +260,31 @@ export default function ProfileScreen() {
                     </Pressable>
                   ) : (
                     <>
-                      <Pressable
-                        style={[
-                          styles.actionBtn,
-                          profile.viewerIsFriend
-                            ? { backgroundColor: c.secondary }
-                            : { backgroundColor: c.primary },
-                        ]}
-                        onPress={onToggleFriend}
-                      >
-                        <Ionicons
-                          name={friendIcon}
-                          size={18}
-                          color={profile.viewerIsFriend ? c.foreground : c.primaryForeground}
-                        />
-                        <Text
+                      {showFriendButton && (
+                        <Pressable
                           style={[
-                            styles.actionLabel,
-                            { color: profile.viewerIsFriend ? c.foreground : c.primaryForeground },
+                            styles.actionBtn,
+                            profile.viewerIsFriend
+                              ? { backgroundColor: c.secondary }
+                              : { backgroundColor: c.primary },
                           ]}
+                          onPress={onToggleFriend}
                         >
-                          {friendLabel}
-                        </Text>
-                      </Pressable>
+                          <Ionicons
+                            name={friendIcon}
+                            size={18}
+                            color={profile.viewerIsFriend ? c.foreground : c.primaryForeground}
+                          />
+                          <Text
+                            style={[
+                              styles.actionLabel,
+                              { color: profile.viewerIsFriend ? c.foreground : c.primaryForeground },
+                            ]}
+                          >
+                            {friendLabel}
+                          </Text>
+                        </Pressable>
+                      )}
                       <Pressable
                         style={[styles.actionBtn, { backgroundColor: c.secondary }]}
                         onPress={onToggleFollow}
@@ -283,6 +309,23 @@ export default function ProfileScreen() {
                 </View>
               </View>
 
+              {showLocked ? (
+                <View
+                  style={[
+                    styles.section,
+                    { backgroundColor: c.card, borderColor: c.border, alignItems: "center", paddingVertical: 32 },
+                  ]}
+                >
+                  <Ionicons name="lock-closed" size={28} color={c.mutedForeground} />
+                  <Text style={[styles.cardTitle, { color: c.foreground, marginTop: 12, marginBottom: 4 }]}>
+                    This profile is locked
+                  </Text>
+                  <Text style={{ color: c.mutedForeground, fontSize: 14, textAlign: "center" }}>
+                    Only {profile.displayName}'s friends can see their posts, photos and details.
+                  </Text>
+                </View>
+              ) : (
+              <>
               {/* Intro card */}
               <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
                 <Text style={[styles.cardTitle, { color: c.foreground }]}>Intro</Text>
@@ -355,21 +398,53 @@ export default function ProfileScreen() {
                 )}
               </View>
 
+              {isOwn && (
+                <Pressable
+                  onPress={() => router.push("/create-post")}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 10,
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    backgroundColor: c.card,
+                  }}
+                >
+                  <Avatar uri={user?.avatarUrl} name={user?.displayName} size={40} />
+                  <View
+                    style={{
+                      flex: 1,
+                      borderRadius: 20,
+                      paddingHorizontal: 16,
+                      paddingVertical: 10,
+                      backgroundColor: c.secondary,
+                    }}
+                  >
+                    <Text style={{ color: c.mutedForeground }}>What's on your mind?</Text>
+                  </View>
+                  <Ionicons name="images" size={24} color="#31a24c" />
+                </Pressable>
+              )}
+
               <View style={[styles.sectionHeader, { borderTopColor: c.border }]}>
                 <Text style={[styles.sectionTitle, { color: c.foreground }]}>Posts</Text>
               </View>
+              </>
+              )}
             </View>
           }
           renderItem={({ item }) => (
             <PostCard post={item} onComment={() => setActivePost(item.id)} />
           )}
           ListEmptyComponent={
-            <View style={{ alignItems: "center", marginTop: 30, paddingHorizontal: 20 }}>
-              <Ionicons name="newspaper-outline" size={40} color={c.mutedForeground} />
-              <Text style={{ color: c.mutedForeground, marginTop: 10, textAlign: "center" }}>
-                No posts yet.
-              </Text>
-            </View>
+            showLocked ? null : (
+              <View style={{ alignItems: "center", marginTop: 30, paddingHorizontal: 20 }}>
+                <Ionicons name="newspaper-outline" size={40} color={c.mutedForeground} />
+                <Text style={{ color: c.mutedForeground, marginTop: 10, textAlign: "center" }}>
+                  No posts yet.
+                </Text>
+              </View>
+            )
           }
         />
       )}

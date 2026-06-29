@@ -44,6 +44,7 @@ export default function ProfilePage() {
 
   const friendPending = !!profile?.viewerHasPendingRequest;
   const isFriend = !!profile?.viewerIsFriend;
+  const canSendRequest = !!profile?.viewerCanSendRequest;
   const isFollowing = !!profile?.viewerFollows;
   const followBusy = followUser.isPending || unfollowUser.isPending;
 
@@ -65,7 +66,7 @@ export default function ProfilePage() {
         <button disabled className="bg-muted text-muted-foreground px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-1.5">
           <Check className="w-4 h-4" /> Request Sent
         </button>
-      ) : (
+      ) : canSendRequest ? (
         <button
           onClick={handleAddFriend}
           disabled={sendRequest.isPending}
@@ -74,7 +75,7 @@ export default function ProfilePage() {
           {sendRequest.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
           Add Friend
         </button>
-      )}
+      ) : null}
       <button
         onClick={handleToggleFollow}
         disabled={followBusy}

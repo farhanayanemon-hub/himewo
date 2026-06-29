@@ -19,7 +19,6 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { CallProvider } from "@/components/CallProvider";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { RealtimeProvider } from "@/lib/realtime";
-import { SoundProvider } from "@/lib/sounds";
 import { useColors } from "@/hooks/useColors";
 
 SplashScreen.preventAutoHideAsync();
@@ -105,6 +104,7 @@ function RootNavigator() {
           headerTitleStyle: { fontFamily: "Inter_700Bold" },
         }}
       />
+      <Stack.Screen name="earnings" />
     </Stack>
   );
 }
@@ -116,11 +116,9 @@ function ThemedRoot() {
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
       <AuthProvider>
         <RealtimeProvider>
-          <SoundProvider>
-            <CallProvider>
-              <RootNavigator />
-            </CallProvider>
-          </SoundProvider>
+          <CallProvider>
+            <RootNavigator />
+          </CallProvider>
         </RealtimeProvider>
       </AuthProvider>
     </>

@@ -1,7 +1,8 @@
 import { Router, type IRouter } from "express";
-import { db, savedItemsTable } from "@workspace/db";
+import { db, savedItemsTable, postsTable } from "@workspace/db";
 import { and, eq, desc } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
+import { canViewPost } from "../lib/authz";
 import { buildSavedItems } from "../lib/serialize";
 import {
   ListSavedItemsResponse,
@@ -29,6 +30,22 @@ router.post("/saved", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   const { entityType, entityId } = parsed.data;
+  // Don't let a viewer save a post they can't see (e.g. a locked non-friend's
+  // post) — otherwise the saved-list read path would have to silently drop it.
+  if (entityType === "post") {
+    const [post] = await db
+      .select({
+        authorId: postsTable.authorId,
+        privacy: postsTable.privacy,
+        groupId: postsTable.groupId,
+      })
+      .from(postsTable)
+      .where(eq(postsTable.id, entityId));
+    if (!post || !(await canViewPost(post, req.userId!))) {
+      res.status(404).json({ error: "Post not found" });
+      return;
+    }
+  }
   const [row] = await db
     .insert(savedItemsTable)
     .values({ userId: req.userId!, entityType, entityId })

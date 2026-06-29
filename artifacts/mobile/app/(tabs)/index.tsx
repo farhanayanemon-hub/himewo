@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Pressable,
   RefreshControl,
@@ -15,7 +14,6 @@ import { Ionicons } from "@expo/vector-icons";
 import {
   getFeed,
   getGetFeedQueryKey,
-  useSharePost,
   useGetTodaysBirthdays,
   type Post,
 } from "@workspace/api-client-react";
@@ -24,6 +22,7 @@ import { Avatar } from "@/components/Avatar";
 import { PostCard } from "@/components/PostCard";
 import { StoryBar } from "@/components/StoryBar";
 import { CommentsSheet } from "@/components/CommentsSheet";
+import { ShareSheet } from "@/components/ShareSheet";
 import { useAuth } from "@/lib/auth";
 import { useColors } from "@/hooks/useColors";
 
@@ -34,6 +33,7 @@ export default function HomeScreen() {
   const qc = useQueryClient();
   const { user } = useAuth();
   const [activePost, setActivePost] = useState<number | null>(null);
+  const [sharePostId, setSharePostId] = useState<number | null>(null);
 
   const {
     data,
@@ -53,8 +53,6 @@ export default function HomeScreen() {
   });
   const posts = (data?.pages.flat() ?? []) as Post[];
 
-  const sharePost = useSharePost();
-
   const onRefresh = useCallback(() => {
     qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
     refetch();
@@ -66,21 +64,9 @@ export default function HomeScreen() {
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const onShare = useCallback(
-    (postId: number) => {
-      sharePost.mutate(
-        { id: postId, data: {} },
-        {
-          onSuccess: () => {
-            qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
-            Alert.alert("Shared", "This post has been shared to your timeline.");
-          },
-          onError: () => Alert.alert("Error", "Could not share this post."),
-        },
-      );
-    },
-    [sharePost, qc],
-  );
+  const onShare = useCallback((postId: number) => {
+    setSharePostId(postId);
+  }, []);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top"]}>
@@ -156,6 +142,12 @@ export default function HomeScreen() {
         postId={activePost}
         visible={activePost != null}
         onClose={() => setActivePost(null)}
+      />
+
+      <ShareSheet
+        postId={sharePostId}
+        visible={sharePostId != null}
+        onClose={() => setSharePostId(null)}
       />
     </SafeAreaView>
   );

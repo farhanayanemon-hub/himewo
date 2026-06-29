@@ -2,7 +2,16 @@
 - [Home placeholders](himewo-home-placeholders.md) — home Birthdays card + /saved + /memories are intentional empty states (no DOB/saved data yet), not bugs.
 - [Expo typed routes](himewo-expo-typed-routes.md) — new mobile route file → typecheck "not assignable to Href" until Metro regenerates `.expo/types/router.d.ts`; run expo briefly, don't hand-edit.
 - [Saved items](himewo-saved-items.md) — polymorphic saved_items (post/listing/reel); checklist to add a type; viewerHasSaved must be REQUIRED; stories excluded (ephemeral).
+- [Repost / share](himewo-repost-share.md) — share creates a real repost embedding the original; embed MUST be gated by canViewPost + only public posts reshareable (privacy leak guard).
 - [@types/react skew](himewo-types-react-skew.md) — two @types/react versions (web 19.2 vs expo 19.1.17) break unused vendored shadcn calendar/button-group/spinner typecheck; fix with local-type casts, not reinstall.
 - [Mobile preview web links](himewo-preview-web-links.md) — both Expo apps mirrored as web on Cloudflare Pages (himewo-mobile / himewo-chat .pages.dev); rebuild steps + OOM build gotcha.
 - [Live login fails](himewo-live-auth-login.md) — "stays on login": check (1) Supabase email-confirm/SMTP, (2) live DB schema drift → /api/auth/me 500. NEVER blind drizzle-push to live (drops admin cols).
 - [Deploy pipeline](himewo-deploy.md) — web/admin via wrangler-from-/tmp; API auto-builds from GitHub main; Railway token=GraphQL-only; MUST pin pnpm@10.26.1 or frozen install fails; git CLI blocked→push via REST.
+- [App sounds](himewo-sound-system.md) — client-side expo-audio SoundProvider in both apps; call ringtone handled GLOBALLY via realtime events (not CallEngine); reaction sound is FB-only.
+- [Main app → Chat app](himewo-chat-app-promo.md) — main mobile app has NO in-app chat; /messages is an animated promo pushing users to the HiMewo Chat app (scheme `mobilechat://`); [id] redirects; Play Store pkg still placeholder.
+- [reanimated not wired](himewo-reanimated-not-wired.md) — artifacts/mobile has reanimated in package.json but NO babel worklets plugin → it crashes; use RN built-in Animated instead.
+- [Mobile mirror rebuild](himewo-preview-web-links.md) — expo export/wrangler deploy must run FOREGROUND (detached nohup silently no-ops); tool-timeout's inner `timeout` child survives→poll it; update lockfile before pushing mobile dep changes.
+- [Admin permission gating](himewo-admin-permissions.md) — gate an admin-only page by adding a frontend-only permission; admin role short-circuits can(), backend never grants it so non-admins are hidden. Use when backend route is requireAdmin.
+- [Points & Earnings](himewo-earnings-points.md) — marketing points→USD (NOT video monetization); anti-farm + daily-cap + money-integrity invariants and the posts-only earning scope.
+- [API test harness](himewo-api-test-harness.md) — vitest hits REAL Postgres; route tests use in-process `createServer(app)` + `Bearer dev:<uuid>`; profile-lock enforced in 3 layers (feed route, users route, serialize).
+- [Contract drift guard](himewo-contract-drift-guard.md) — consumer typechecks MUST use `tsc -b` (not `tsc -p`) or they read stale gitignored client `dist/*.d.ts` and miss renamed/removed generated members.

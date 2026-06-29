@@ -1,14 +1,12 @@
 import { useState } from "react";
 import {
+  Alert,
+  Modal,
   Pressable,
   Text,
+  TextInput,
   View,
   StyleSheet,
-  Modal,
-  Share,
-  TextInput,
-  Alert,
-  ScrollView,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,22 +17,23 @@ import {
   useRemovePostReaction,
   useSaveItem,
   useUnsaveItem,
-  useSharePost,
-  useListPostReactions,
+  useUpdatePost,
+  useDeletePost,
   getGetFeedQueryKey,
   getGetPostQueryKey,
+  getGetUserPostsQueryKey,
   getListSavedItemsQueryKey,
   type Post,
   type ReactionSummary,
+  type PostUpdatePrivacy,
 } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
 import { MediaGrid } from "@/components/MediaGrid";
 import { ReactionBar } from "@/components/ReactionBar";
 import { reactionConfig } from "@/constants/reactions";
 import { useColors } from "@/hooks/useColors";
+import { useAuth } from "@/lib/auth";
 import { timeAgo, formatCount } from "@/lib/format";
-
-type SharedPost = NonNullable<Post["sharedPost"]>;
 
 interface PostCardProps {
   post: Post;
@@ -48,56 +47,43 @@ function privacyIcon(privacy: string): keyof typeof Ionicons.glyphMap {
   return "earth";
 }
 
-function SharedPostEmbed({ shared }: { shared: SharedPost }) {
-  const c = useColors();
-  return (
-    <Pressable
-      onPress={() => router.push(`/post/${shared.id}`)}
-      style={[styles.embed, { borderColor: c.border }]}
-    >
-      <View style={styles.embedBody}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 }}>
-          <Avatar uri={shared.author.avatarUrl} name={shared.author.displayName} size={28} />
-          <View>
-            <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 13 }}>
-              {shared.author.displayName}
-            </Text>
-            <Text style={{ color: c.mutedForeground, fontSize: 11 }}>{timeAgo(shared.createdAt)}</Text>
-          </View>
-        </View>
-        {shared.content.length > 0 && (
-          <Text numberOfLines={4} style={{ color: c.foreground, fontSize: 14, lineHeight: 19 }}>
-            {shared.content}
-          </Text>
-        )}
-      </View>
-      {shared.media.length > 0 && <MediaGrid media={shared.media} />}
-    </Pressable>
-  );
-}
+const privacyOptions: {
+  value: PostUpdatePrivacy;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+}[] = [
+  { value: "public", label: "Public", icon: "earth" },
+  { value: "friends", label: "Friends", icon: "people" },
+  { value: "private", label: "Only me", icon: "lock-closed" },
+];
 
-export function PostCard({ post, onComment }: PostCardProps) {
+export function PostCard({ post, onComment, onShare }: PostCardProps) {
   const c = useColors();
   const qc = useQueryClient();
+  const { user } = useAuth();
   const [summary, setSummary] = useState<ReactionSummary>(post.reactions);
   const [saved, setSaved] = useState<boolean>(post.viewerHasSaved ?? false);
-  const [shareOpen, setShareOpen] = useState(false);
-  const [shareCaption, setShareCaption] = useState("");
-  const [showReactors, setShowReactors] = useState(false);
-  const reactors = useListPostReactions(post.id, { query: { enabled: showReactors } });
+  const [commentsEnabled, setCommentsEnabled] = useState<boolean>(post.commentsEnabled);
+  const [reactionsEnabled, setReactionsEnabled] = useState<boolean>(post.reactionsEnabled);
+  const [privacy, setPrivacy] = useState<string>(post.privacy);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [draft, setDraft] = useState(post.content);
+
   const setReaction = useSetPostReaction();
   const removeReaction = useRemovePostReaction();
   const saveItem = useSaveItem();
   const unsaveItem = useUnsaveItem();
-  const sharePost = useSharePost();
+  const updatePost = useUpdatePost();
+  const deletePost = useDeletePost();
 
+  const isOwner = !!user && user.id === post.author.id;
   const viewerReaction = summary.viewerReaction ?? null;
-  const targetId = post.sharedPost?.id ?? post.id;
-  const postUrl = `https://himewo.com/post/${targetId}`;
 
   const syncServer = () => {
     qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
     qc.invalidateQueries({ queryKey: getGetPostQueryKey(post.id) });
+    qc.invalidateQueries({ queryKey: getGetUserPostsQueryKey(post.author.id) });
   };
 
   const toggleSave = () => {
@@ -143,31 +129,55 @@ export function PostCard({ post, onComment }: PostCardProps) {
     setReaction.mutate({ id: post.id, data: { type } }, { onSettled: syncServer });
   };
 
-  const shareToFeed = () => {
-    sharePost.mutate(
-      { id: post.id, data: { caption: shareCaption.trim() || undefined } },
+  const saveCaption = () => {
+    updatePost.mutate(
+      { id: post.id, data: { content: draft } },
       {
-        onSuccess: () => {
-          setShareOpen(false);
-          setShareCaption("");
-          syncServer();
-          Alert.alert("Shared", "This post is now on your timeline.");
-        },
-        onError: () => Alert.alert("Error", "Could not share this post."),
+        onSettled: syncServer,
       },
+    );
+    setEditOpen(false);
+  };
+
+  const toggleComments = () => {
+    const next = !commentsEnabled;
+    setCommentsEnabled(next);
+    setMenuOpen(false);
+    updatePost.mutate(
+      { id: post.id, data: { commentsEnabled: next } },
+      { onSettled: syncServer },
     );
   };
 
-  const sendToFriends = async () => {
-    setShareOpen(false);
-    try {
-      await Share.share({
-        message: `${post.content || "Check this out on HiMewo"}\n${postUrl}`,
-        url: postUrl,
-      });
-    } catch {
-      /* cancelled */
-    }
+  const toggleReactions = () => {
+    const next = !reactionsEnabled;
+    setReactionsEnabled(next);
+    setMenuOpen(false);
+    updatePost.mutate(
+      { id: post.id, data: { reactionsEnabled: next } },
+      { onSettled: syncServer },
+    );
+  };
+
+  const changePrivacy = (value: PostUpdatePrivacy) => {
+    setPrivacy(value);
+    updatePost.mutate(
+      { id: post.id, data: { privacy: value } },
+      { onSettled: syncServer },
+    );
+  };
+
+  const confirmDelete = () => {
+    setMenuOpen(false);
+    Alert.alert("Delete post?", "This can't be undone.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () =>
+          deletePost.mutate({ id: post.id }, { onSettled: syncServer }),
+      },
+    ]);
   };
 
   const topReactions = Object.entries(summary.byType)
@@ -194,25 +204,27 @@ export function PostCard({ post, onComment }: PostCardProps) {
             {post.author.isVerified && (
               <Ionicons name="checkmark-circle" size={14} color={c.primary} />
             )}
-            {post.sharedPost && (
-              <Text style={{ color: c.mutedForeground, fontSize: 13 }}>shared a post</Text>
-            )}
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
             <Text style={{ color: c.mutedForeground, fontSize: 12 }}>
               {timeAgo(post.createdAt)}
             </Text>
             <Text style={{ color: c.mutedForeground, fontSize: 12 }}>·</Text>
-            <Ionicons name={privacyIcon(post.privacy)} size={11} color={c.mutedForeground} />
+            <Ionicons name={privacyIcon(privacy)} size={11} color={c.mutedForeground} />
           </View>
         </View>
-        <Pressable hitSlop={8} onPress={toggleSave}>
+        <Pressable hitSlop={8} onPress={toggleSave} style={{ marginRight: isOwner ? 4 : 0 }}>
           <Ionicons
             name={saved ? "bookmark" : "bookmark-outline"}
             size={20}
             color={saved ? c.primary : c.mutedForeground}
           />
         </Pressable>
+        {isOwner && (
+          <Pressable hitSlop={8} onPress={() => setMenuOpen(true)}>
+            <Ionicons name="ellipsis-horizontal" size={20} color={c.mutedForeground} />
+          </Pressable>
+        )}
       </Pressable>
 
       {post.content.length > 0 && (
@@ -221,36 +233,28 @@ export function PostCard({ post, onComment }: PostCardProps) {
         </Pressable>
       )}
 
-      {post.sharedPost ? (
-        <View style={{ paddingHorizontal: 14, marginBottom: 8 }}>
-          <SharedPostEmbed shared={post.sharedPost} />
-        </View>
-      ) : (
-        post.media.length > 0 && (
-          <Pressable onPress={() => router.push(`/post/${post.id}`)}>
-            <MediaGrid media={post.media} />
-          </Pressable>
-        )
+      {post.media.length > 0 && (
+        <Pressable onPress={() => router.push(`/post/${post.id}`)}>
+          <MediaGrid media={post.media} />
+        </Pressable>
       )}
 
-      {(summary.total > 0 || post.commentCount > 0 || post.shareCount > 0) && (
+      {((reactionsEnabled && summary.total > 0) ||
+        (commentsEnabled && post.commentCount > 0) ||
+        post.shareCount > 0) && (
         <View style={styles.statsRow}>
-          <Pressable
-            style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
-            onPress={() => summary.total > 0 && setShowReactors(true)}
-            hitSlop={6}
-          >
-            {topReactions.length > 0 && (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            {reactionsEnabled && topReactions.length > 0 && (
               <Text style={{ fontSize: 13 }}>{topReactions.join("")}</Text>
             )}
-            {summary.total > 0 && (
+            {reactionsEnabled && summary.total > 0 && (
               <Text style={{ color: c.mutedForeground, fontSize: 13 }}>
                 {formatCount(summary.total)}
               </Text>
             )}
-          </Pressable>
+          </View>
           <View style={{ flexDirection: "row", gap: 12 }}>
-            {post.commentCount > 0 && (
+            {commentsEnabled && post.commentCount > 0 && (
               <Text style={{ color: c.mutedForeground, fontSize: 13 }}>
                 {formatCount(post.commentCount)} comments
               </Text>
@@ -267,92 +271,124 @@ export function PostCard({ post, onComment }: PostCardProps) {
       <View style={[styles.divider, { backgroundColor: c.border }]} />
 
       <View style={styles.actions}>
-        <View style={styles.actionItem}>
-          <ReactionBar viewerReaction={viewerReaction} onReact={applyReaction} />
-        </View>
-        <Pressable style={styles.actionItem} onPress={onComment} hitSlop={6}>
-          <Ionicons name="chatbubble-outline" size={18} color={c.mutedForeground} />
-          <Text style={[styles.actionLabel, { color: c.mutedForeground }]}>Comment</Text>
-        </Pressable>
-        <Pressable style={styles.actionItem} onPress={() => setShareOpen(true)} hitSlop={6}>
+        {reactionsEnabled && (
+          <View style={styles.actionItem}>
+            <ReactionBar viewerReaction={viewerReaction} onReact={applyReaction} />
+          </View>
+        )}
+        {commentsEnabled && (
+          <Pressable style={styles.actionItem} onPress={onComment} hitSlop={6}>
+            <Ionicons name="chatbubble-outline" size={18} color={c.mutedForeground} />
+            <Text style={[styles.actionLabel, { color: c.mutedForeground }]}>Comment</Text>
+          </Pressable>
+        )}
+        <Pressable style={styles.actionItem} onPress={onShare} hitSlop={6}>
           <Ionicons name="arrow-redo-outline" size={18} color={c.mutedForeground} />
           <Text style={[styles.actionLabel, { color: c.mutedForeground }]}>Share</Text>
         </Pressable>
       </View>
 
-      <Modal visible={showReactors} transparent animationType="slide" onRequestClose={() => setShowReactors(false)}>
-        <Pressable style={styles.sheetBackdrop} onPress={() => setShowReactors(false)}>
-          <Pressable style={[styles.sheet, { backgroundColor: c.card, maxHeight: "70%" }]} onPress={(e) => e.stopPropagation()}>
-            <View style={[styles.sheetHandle, { backgroundColor: c.border }]} />
-            <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 16, marginBottom: 12 }}>
-              Reactions
-            </Text>
-            <ScrollView>
-              {reactors.isLoading ? (
-                <Text style={{ color: c.mutedForeground, textAlign: "center", paddingVertical: 24 }}>Loading…</Text>
-              ) : reactors.data && reactors.data.length > 0 ? (
-                reactors.data.map((r) => (
-                  <Pressable
-                    key={r.user.id}
-                    style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}
-                    onPress={() => {
-                      setShowReactors(false);
-                      router.push(`/profile/${r.user.id}`);
-                    }}
-                  >
-                    <View>
-                      <Avatar uri={r.user.avatarUrl} name={r.user.displayName} size={40} />
-                      <Text style={{ position: "absolute", bottom: -2, right: -2, fontSize: 15 }}>
-                        {reactionConfig[r.type]?.emoji}
-                      </Text>
-                    </View>
-                    <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}>
-                      {r.user.displayName}
-                    </Text>
-                  </Pressable>
-                ))
-              ) : (
-                <Text style={{ color: c.mutedForeground, textAlign: "center", paddingVertical: 24 }}>No reactions yet</Text>
-              )}
-            </ScrollView>
+      {/* Owner menu bottom sheet */}
+      <Modal visible={menuOpen} transparent animationType="slide" onRequestClose={() => setMenuOpen(false)}>
+        <Pressable style={styles.backdrop} onPress={() => setMenuOpen(false)}>
+          <Pressable
+            style={[styles.sheet, { backgroundColor: c.card }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={[styles.handle, { backgroundColor: c.border }]} />
+
+            <Pressable
+              style={styles.row}
+              onPress={() => {
+                setDraft(post.content);
+                setMenuOpen(false);
+                setEditOpen(true);
+              }}
+            >
+              <Ionicons name="create-outline" size={22} color={c.foreground} />
+              <Text style={[styles.rowLabel, { color: c.foreground }]}>Edit caption</Text>
+            </Pressable>
+
+            <Pressable style={styles.row} onPress={toggleComments}>
+              <Ionicons
+                name={commentsEnabled ? "chatbubble-outline" : "chatbubbles"}
+                size={22}
+                color={c.foreground}
+              />
+              <Text style={[styles.rowLabel, { color: c.foreground }]}>
+                {commentsEnabled ? "Turn off comments" : "Turn on comments"}
+              </Text>
+            </Pressable>
+
+            <Pressable style={styles.row} onPress={toggleReactions}>
+              <Ionicons
+                name={reactionsEnabled ? "heart-outline" : "heart"}
+                size={22}
+                color={c.foreground}
+              />
+              <Text style={[styles.rowLabel, { color: c.foreground }]}>
+                {reactionsEnabled ? "Turn off likes" : "Turn on likes"}
+              </Text>
+            </Pressable>
+
+            <View style={[styles.sheetDivider, { backgroundColor: c.border }]} />
+            <Text style={[styles.sheetLabel, { color: c.mutedForeground }]}>Who can see this</Text>
+            {privacyOptions.map((opt) => {
+              const active = privacy === opt.value;
+              return (
+                <Pressable
+                  key={opt.value}
+                  style={styles.row}
+                  onPress={() => changePrivacy(opt.value)}
+                >
+                  <Ionicons name={opt.icon} size={22} color={c.foreground} />
+                  <Text style={[styles.rowLabel, { color: c.foreground }]}>{opt.label}</Text>
+                  {active && (
+                    <Ionicons name="checkmark" size={20} color={c.primary} />
+                  )}
+                </Pressable>
+              );
+            })}
+
+            <View style={[styles.sheetDivider, { backgroundColor: c.border }]} />
+            <Pressable style={styles.row} onPress={confirmDelete}>
+              <Ionicons name="trash-outline" size={22} color={c.destructive} />
+              <Text style={[styles.rowLabel, { color: c.destructive }]}>Delete post</Text>
+            </Pressable>
           </Pressable>
         </Pressable>
       </Modal>
 
-      <Modal visible={shareOpen} transparent animationType="slide" onRequestClose={() => setShareOpen(false)}>
-        <Pressable style={styles.sheetBackdrop} onPress={() => setShareOpen(false)}>
-          <Pressable style={[styles.sheet, { backgroundColor: c.card }]} onPress={(e) => e.stopPropagation()}>
-            <View style={[styles.sheetHandle, { backgroundColor: c.border }]} />
-            <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 16, marginBottom: 12 }}>
-              Share this post
-            </Text>
+      {/* Edit caption modal */}
+      <Modal visible={editOpen} transparent animationType="fade" onRequestClose={() => setEditOpen(false)}>
+        <Pressable style={styles.editBackdrop} onPress={() => setEditOpen(false)}>
+          <Pressable
+            style={[styles.editCard, { backgroundColor: c.card }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <Text style={[styles.editTitle, { color: c.foreground }]}>Edit caption</Text>
             <TextInput
-              value={shareCaption}
-              onChangeText={setShareCaption}
-              placeholder="Say something about this..."
-              placeholderTextColor={c.mutedForeground}
+              value={draft}
+              onChangeText={setDraft}
               multiline
-              style={[styles.sheetInput, { color: c.foreground, backgroundColor: c.secondary }]}
+              placeholder="What's on your mind?"
+              placeholderTextColor={c.mutedForeground}
+              style={[
+                styles.editInput,
+                { color: c.foreground, backgroundColor: c.secondary },
+              ]}
             />
-            <Pressable
-              style={[styles.sheetPrimary, { backgroundColor: c.primary }]}
-              onPress={shareToFeed}
-              disabled={sharePost.isPending}
-            >
-              <Ionicons name="repeat" size={18} color="#fff" />
-              <Text style={{ color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 15 }}>
-                {sharePost.isPending ? "Sharing..." : "Share to your feed"}
-              </Text>
-            </Pressable>
-            <Pressable
-              style={[styles.sheetSecondary, { borderColor: c.border }]}
-              onPress={sendToFriends}
-            >
-              <Ionicons name="paper-plane-outline" size={18} color={c.foreground} />
-              <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}>
-                Send to friends & other apps
-              </Text>
-            </Pressable>
+            <View style={styles.editActions}>
+              <Pressable style={styles.editBtn} onPress={() => setEditOpen(false)}>
+                <Text style={{ color: c.mutedForeground, fontFamily: "Inter_600SemiBold" }}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.editBtn, styles.editSave, { backgroundColor: c.primary }]}
+                onPress={saveCaption}
+              >
+                <Text style={{ color: c.primaryForeground, fontFamily: "Inter_600SemiBold" }}>Save</Text>
+              </Pressable>
+            </View>
           </Pressable>
         </Pressable>
       </Modal>
@@ -370,8 +406,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   content: { paddingHorizontal: 14, fontSize: 15, lineHeight: 21, marginBottom: 10 },
-  embed: { borderWidth: 1, borderRadius: 14, overflow: "hidden" },
-  embedBody: { padding: 10 },
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -390,44 +424,68 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   actionLabel: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
-  sheetBackdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.4)" },
+  backdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "#0006" },
   sheet: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: 18,
-    paddingBottom: 34,
+    paddingBottom: 32,
+    paddingTop: 8,
+    paddingHorizontal: 8,
   },
-  sheetHandle: {
+  handle: {
     width: 40,
     height: 4,
     borderRadius: 2,
     alignSelf: "center",
-    marginBottom: 14,
+    marginBottom: 8,
   },
-  sheetInput: {
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+  },
+  rowLabel: { fontSize: 16, fontFamily: "Inter_500Medium", flex: 1 },
+  sheetDivider: { height: StyleSheet.hairlineWidth, marginVertical: 4, marginHorizontal: 12 },
+  sheetLabel: {
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    paddingHorizontal: 12,
+    paddingTop: 4,
+    paddingBottom: 2,
+    textTransform: "uppercase",
+  },
+  editBackdrop: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#0008",
+    paddingHorizontal: 24,
+  },
+  editCard: {
+    width: "100%",
+    borderRadius: 16,
+    padding: 16,
+  },
+  editTitle: { fontSize: 17, fontFamily: "Inter_700Bold", marginBottom: 12 },
+  editInput: {
+    minHeight: 96,
     borderRadius: 12,
     padding: 12,
-    fontSize: 14,
-    minHeight: 64,
+    fontSize: 15,
     textAlignVertical: "top",
-    marginBottom: 12,
   },
-  sheetPrimary: {
+  editActions: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-end",
     gap: 8,
-    paddingVertical: 13,
-    borderRadius: 12,
-    marginBottom: 10,
+    marginTop: 12,
   },
-  sheetSecondary: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 13,
-    borderRadius: 12,
-    borderWidth: 1,
+  editBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 10,
   },
+  editSave: {},
 });

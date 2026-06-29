@@ -95,8 +95,16 @@ export default function MarketplaceDetailScreen() {
       { onSuccess: invalidate },
     );
 
-  const onMessageSeller = () => {
-    router.push("/messages");
+  const onMessageSeller = async () => {
+    if (!listing) return;
+    try {
+      const conv = await createConversation.mutateAsync({
+        data: { type: ConversationType.direct, memberIds: [listing.seller.id] },
+      });
+      router.push(`/messages/${conv.id}`);
+    } catch {
+      router.push("/messages");
+    }
   };
 
   const confirmDelete = () =>

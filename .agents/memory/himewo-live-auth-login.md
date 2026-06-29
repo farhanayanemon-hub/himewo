@@ -40,6 +40,22 @@ before touching client code. Both are server/data side, not the app.
   `information_schema.columns` and compare with the Drizzle schema. Same class of
   bug can hide in other tables/endpoints.
 
+## 3. Missing `saved_items` table → `/api/feed` AND `/api/reels` 500
+- `buildPosts`/`buildReels` (serialize.ts) ALWAYS query `saved_items`
+  (viewer's saved entityIds) inside a `Promise.all`. The live DB was missing the
+  `saved_items` table entirely → every feed/reel request threw "Failed query:
+  select entity_id from saved_items" → 500. Feed/reels render nothing on live.
+- This 500 is independent of how much content exists — even 1 post 500s. Symptom
+  looks like "posts/reels don't show on live" with no client error.
+- **Fix:** additive create of `saved_items` on live (id serial PK, user_id uuid
+  FK→profiles ON DELETE CASCADE, entity_type text, entity_id integer, created_at
+  timestamptz default now, + unique idx (user_id,entity_type,entity_id) + idx
+  (user_id,created_at)) — schema in `lib/db/src/schema/saved.ts`. Use
+  `CREATE TABLE IF NOT EXISTS` via Management API SQL, never drizzle push.
+- **Lesson:** the live DB has missing TABLES too, not just missing columns —
+  any table referenced unconditionally in a serializer (saved_items, post_media,
+  etc.) must exist on live or the whole endpoint 500s.
+
 ## Reproducing the live flow safely (no user password needed)
 Use SERVICE_ROLE_KEY to create an auto-confirmed temp user → sign in via anon key
 (`/auth/v1/token?grant_type=password`) to get a token → call live

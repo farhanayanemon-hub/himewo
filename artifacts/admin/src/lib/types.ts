@@ -20,6 +20,8 @@ export const PERMISSIONS = [
   "audit.view",
   "verification.view",
   "verification.manage",
+  "earnings.view",
+  "earnings.manage",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -227,4 +229,48 @@ export interface AuditRow {
   metadata: unknown;
   createdAt: string;
   actor: AdminProfile | null;
+}
+
+export interface PointConfig {
+  enabled: boolean;
+  pointsPerPost: number;
+  pointsPerLike: number;
+  pointsPerComment: number;
+  pointsPerShare: number;
+  pointsPerDollar: number;
+  minWithdrawDollars: number;
+  dailyPointCap: number;
+  updatedAt: string | null;
+}
+
+export type PointConfigUpdate = Partial<Omit<PointConfig, "updatedAt">>;
+
+export type WithdrawalStatus = "pending" | "approved" | "paid" | "rejected";
+
+export interface AdminWithdrawalRequest {
+  id: number;
+  userId: string;
+  amountDollars: number;
+  pointsSpent: number;
+  method: string;
+  details: Record<string, string>;
+  status: WithdrawalStatus;
+  adminNote: string | null;
+  processedBy: string | null;
+  createdAt: string;
+  processedAt: string | null;
+  user: AdminProfile | null;
+}
+
+export interface AdjustPointsResult {
+  balancePoints: number;
+  balanceDollars: number;
+}
+
+export interface AdminEarningsSummary {
+  totalPaidDollars: number;
+  pendingPayoutDollars: number;
+  pendingPayoutCount: number;
+  outstandingPoints: number;
+  outstandingDollars: number;
 }

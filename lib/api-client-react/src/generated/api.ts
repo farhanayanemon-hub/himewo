@@ -20,6 +20,10 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AdjustPointsInput,
+  AdjustPointsResult,
+  AdminEarningsSummary,
+  AdminWithdrawalRequest,
   BadRequestResponse,
   Comment,
   CommentInput,
@@ -27,9 +31,11 @@ import type {
   Conversation,
   ConversationInput,
   ConversationUpdate,
+  EarningsSummary,
   ForbiddenResponse,
   FriendRequest,
   FriendRequestInput,
+  GetEarningsHistoryParams,
   GetFeedParams,
   GetGroupPostsParams,
   GetUserFriendsParams,
@@ -37,6 +43,7 @@ import type {
   Group,
   GroupInput,
   HealthStatus,
+  ListAdminWithdrawalsParams,
   ListCommentsParams,
   ListMarketplaceListingsParams,
   ListMessagesParams,
@@ -53,9 +60,13 @@ import type {
   Notification,
   Page,
   PageInput,
+  PointConfig,
+  PointConfigUpdate,
+  PointTransaction,
   Post,
   PostInput,
   PostUpdate,
+  ProcessWithdrawalInput,
   Profile,
   ProfileInput,
   ProfileUpdate,
@@ -80,7 +91,11 @@ import type {
   UploadUrlInput,
   UploadUrlResponse,
   UserSettings,
-  UserSettingsUpdate
+  UserSettingsUpdate,
+  WithdrawalAccount,
+  WithdrawalAccountInput,
+  WithdrawalRequest,
+  WithdrawalRequestInput
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -5866,5 +5881,1051 @@ export const useCreateUploadUrl = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getCreateUploadUrlMutationOptions(options));
+    }
+
+export const getGetEarningsSummaryUrl = () => {
+
+
+
+
+  return `/api/earnings/summary`
+}
+
+/**
+ * Returns the master `enabled` flag plus the user's dollar balance and activity. When the feature is disabled, `enabled` is false and the numeric fields are zero so clients can hide the feature entirely.
+ * @summary Earnings overview for the authenticated user (always callable)
+ */
+export const getEarningsSummary = async ( options?: RequestInit): Promise<EarningsSummary> => {
+
+  return customFetch<EarningsSummary>(getGetEarningsSummaryUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetEarningsSummaryQueryKey = () => {
+    return [
+    `/api/earnings/summary`
+    ] as const;
+    }
+
+
+export const getGetEarningsSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getEarningsSummary>>, TError = ErrorType<UnauthorizedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEarningsSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEarningsSummaryQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEarningsSummary>>> = ({ signal }) => getEarningsSummary({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEarningsSummary>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetEarningsSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getEarningsSummary>>>
+export type GetEarningsSummaryQueryError = ErrorType<UnauthorizedResponse>
+
+
+/**
+ * @summary Earnings overview for the authenticated user (always callable)
+ */
+
+export function useGetEarningsSummary<TData = Awaited<ReturnType<typeof getEarningsSummary>>, TError = ErrorType<UnauthorizedResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEarningsSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetEarningsSummaryQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetEarningsHistoryUrl = (params?: GetEarningsHistoryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/earnings/history?${stringifiedParams}` : `/api/earnings/history`
+}
+
+/**
+ * @summary Paginated point ledger for the authenticated user
+ */
+export const getEarningsHistory = async (params?: GetEarningsHistoryParams, options?: RequestInit): Promise<PointTransaction[]> => {
+
+  return customFetch<PointTransaction[]>(getGetEarningsHistoryUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetEarningsHistoryQueryKey = (params?: GetEarningsHistoryParams,) => {
+    return [
+    `/api/earnings/history`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetEarningsHistoryQueryOptions = <TData = Awaited<ReturnType<typeof getEarningsHistory>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(params?: GetEarningsHistoryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEarningsHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEarningsHistoryQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEarningsHistory>>> = ({ signal }) => getEarningsHistory(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEarningsHistory>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetEarningsHistoryQueryResult = NonNullable<Awaited<ReturnType<typeof getEarningsHistory>>>
+export type GetEarningsHistoryQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary Paginated point ledger for the authenticated user
+ */
+
+export function useGetEarningsHistory<TData = Awaited<ReturnType<typeof getEarningsHistory>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+ params?: GetEarningsHistoryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEarningsHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetEarningsHistoryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListWithdrawalAccountsUrl = () => {
+
+
+
+
+  return `/api/earnings/withdrawal-accounts`
+}
+
+/**
+ * @summary List the user's saved payout accounts
+ */
+export const listWithdrawalAccounts = async ( options?: RequestInit): Promise<WithdrawalAccount[]> => {
+
+  return customFetch<WithdrawalAccount[]>(getListWithdrawalAccountsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListWithdrawalAccountsQueryKey = () => {
+    return [
+    `/api/earnings/withdrawal-accounts`
+    ] as const;
+    }
+
+
+export const getListWithdrawalAccountsQueryOptions = <TData = Awaited<ReturnType<typeof listWithdrawalAccounts>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listWithdrawalAccounts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListWithdrawalAccountsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listWithdrawalAccounts>>> = ({ signal }) => listWithdrawalAccounts({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listWithdrawalAccounts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListWithdrawalAccountsQueryResult = NonNullable<Awaited<ReturnType<typeof listWithdrawalAccounts>>>
+export type ListWithdrawalAccountsQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary List the user's saved payout accounts
+ */
+
+export function useListWithdrawalAccounts<TData = Awaited<ReturnType<typeof listWithdrawalAccounts>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listWithdrawalAccounts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListWithdrawalAccountsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAddWithdrawalAccountUrl = () => {
+
+
+
+
+  return `/api/earnings/withdrawal-accounts`
+}
+
+/**
+ * @summary Save a payout account (PayPal, Binance, Wise, Bybit, bKash, Nagad)
+ */
+export const addWithdrawalAccount = async (withdrawalAccountInput: WithdrawalAccountInput, options?: RequestInit): Promise<WithdrawalAccount> => {
+
+  return customFetch<WithdrawalAccount>(getAddWithdrawalAccountUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(withdrawalAccountInput)
+  }
+);}
+
+
+
+
+export const getAddWithdrawalAccountMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addWithdrawalAccount>>, TError,{data: BodyType<WithdrawalAccountInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addWithdrawalAccount>>, TError,{data: BodyType<WithdrawalAccountInput>}, TContext> => {
+
+const mutationKey = ['addWithdrawalAccount'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addWithdrawalAccount>>, {data: BodyType<WithdrawalAccountInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  addWithdrawalAccount(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddWithdrawalAccountMutationResult = NonNullable<Awaited<ReturnType<typeof addWithdrawalAccount>>>
+    export type AddWithdrawalAccountMutationBody = BodyType<WithdrawalAccountInput>
+    export type AddWithdrawalAccountMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>
+
+    /**
+ * @summary Save a payout account (PayPal, Binance, Wise, Bybit, bKash, Nagad)
+ */
+export const useAddWithdrawalAccount = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addWithdrawalAccount>>, TError,{data: BodyType<WithdrawalAccountInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addWithdrawalAccount>>,
+        TError,
+        {data: BodyType<WithdrawalAccountInput>},
+        TContext
+      > => {
+      return useMutation(getAddWithdrawalAccountMutationOptions(options));
+    }
+
+export const getDeleteWithdrawalAccountUrl = (id: number,) => {
+
+
+
+
+  return `/api/earnings/withdrawal-accounts/${id}`
+}
+
+/**
+ * @summary Remove a saved payout account
+ */
+export const deleteWithdrawalAccount = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteWithdrawalAccountUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteWithdrawalAccountMutationOptions = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteWithdrawalAccount>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteWithdrawalAccount>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteWithdrawalAccount'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteWithdrawalAccount>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteWithdrawalAccount(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteWithdrawalAccountMutationResult = NonNullable<Awaited<ReturnType<typeof deleteWithdrawalAccount>>>
+
+    export type DeleteWithdrawalAccountMutationError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Remove a saved payout account
+ */
+export const useDeleteWithdrawalAccount = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteWithdrawalAccount>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteWithdrawalAccount>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteWithdrawalAccountMutationOptions(options));
+    }
+
+export const getListMyWithdrawalsUrl = () => {
+
+
+
+
+  return `/api/earnings/withdrawals`
+}
+
+/**
+ * @summary List the user's withdrawal requests
+ */
+export const listMyWithdrawals = async ( options?: RequestInit): Promise<WithdrawalRequest[]> => {
+
+  return customFetch<WithdrawalRequest[]>(getListMyWithdrawalsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMyWithdrawalsQueryKey = () => {
+    return [
+    `/api/earnings/withdrawals`
+    ] as const;
+    }
+
+
+export const getListMyWithdrawalsQueryOptions = <TData = Awaited<ReturnType<typeof listMyWithdrawals>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyWithdrawals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMyWithdrawalsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMyWithdrawals>>> = ({ signal }) => listMyWithdrawals({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMyWithdrawals>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMyWithdrawalsQueryResult = NonNullable<Awaited<ReturnType<typeof listMyWithdrawals>>>
+export type ListMyWithdrawalsQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary List the user's withdrawal requests
+ */
+
+export function useListMyWithdrawals<TData = Awaited<ReturnType<typeof listMyWithdrawals>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyWithdrawals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMyWithdrawalsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateWithdrawalUrl = () => {
+
+
+
+
+  return `/api/earnings/withdrawals`
+}
+
+/**
+ * @summary Request a payout against the user's dollar balance
+ */
+export const createWithdrawal = async (withdrawalRequestInput: WithdrawalRequestInput, options?: RequestInit): Promise<WithdrawalRequest> => {
+
+  return customFetch<WithdrawalRequest>(getCreateWithdrawalUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(withdrawalRequestInput)
+  }
+);}
+
+
+
+
+export const getCreateWithdrawalMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createWithdrawal>>, TError,{data: BodyType<WithdrawalRequestInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createWithdrawal>>, TError,{data: BodyType<WithdrawalRequestInput>}, TContext> => {
+
+const mutationKey = ['createWithdrawal'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createWithdrawal>>, {data: BodyType<WithdrawalRequestInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createWithdrawal(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateWithdrawalMutationResult = NonNullable<Awaited<ReturnType<typeof createWithdrawal>>>
+    export type CreateWithdrawalMutationBody = BodyType<WithdrawalRequestInput>
+    export type CreateWithdrawalMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>
+
+    /**
+ * @summary Request a payout against the user's dollar balance
+ */
+export const useCreateWithdrawal = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createWithdrawal>>, TError,{data: BodyType<WithdrawalRequestInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createWithdrawal>>,
+        TError,
+        {data: BodyType<WithdrawalRequestInput>},
+        TContext
+      > => {
+      return useMutation(getCreateWithdrawalMutationOptions(options));
+    }
+
+export const getGetAdminEarningsSummaryUrl = () => {
+
+
+
+
+  return `/api/admin/earnings/summary`
+}
+
+/**
+ * @summary Program-wide payout health (paid out, pending payout, outstanding balances)
+ */
+export const getAdminEarningsSummary = async ( options?: RequestInit): Promise<AdminEarningsSummary> => {
+
+  return customFetch<AdminEarningsSummary>(getGetAdminEarningsSummaryUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminEarningsSummaryQueryKey = () => {
+    return [
+    `/api/admin/earnings/summary`
+    ] as const;
+    }
+
+
+export const getGetAdminEarningsSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getAdminEarningsSummary>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminEarningsSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminEarningsSummaryQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminEarningsSummary>>> = ({ signal }) => getAdminEarningsSummary({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminEarningsSummary>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminEarningsSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminEarningsSummary>>>
+export type GetAdminEarningsSummaryQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary Program-wide payout health (paid out, pending payout, outstanding balances)
+ */
+
+export function useGetAdminEarningsSummary<TData = Awaited<ReturnType<typeof getAdminEarningsSummary>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminEarningsSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminEarningsSummaryQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPointConfigUrl = () => {
+
+
+
+
+  return `/api/admin/earnings/config`
+}
+
+/**
+ * @summary Get the global earning configuration
+ */
+export const getPointConfig = async ( options?: RequestInit): Promise<PointConfig> => {
+
+  return customFetch<PointConfig>(getGetPointConfigUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPointConfigQueryKey = () => {
+    return [
+    `/api/admin/earnings/config`
+    ] as const;
+    }
+
+
+export const getGetPointConfigQueryOptions = <TData = Awaited<ReturnType<typeof getPointConfig>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPointConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPointConfigQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPointConfig>>> = ({ signal }) => getPointConfig({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPointConfig>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPointConfigQueryResult = NonNullable<Awaited<ReturnType<typeof getPointConfig>>>
+export type GetPointConfigQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary Get the global earning configuration
+ */
+
+export function useGetPointConfig<TData = Awaited<ReturnType<typeof getPointConfig>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPointConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPointConfigQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdatePointConfigUrl = () => {
+
+
+
+
+  return `/api/admin/earnings/config`
+}
+
+/**
+ * @summary Update the global earning configuration (incl. master on/off)
+ */
+export const updatePointConfig = async (pointConfigUpdate: PointConfigUpdate, options?: RequestInit): Promise<PointConfig> => {
+
+  return customFetch<PointConfig>(getUpdatePointConfigUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(pointConfigUpdate)
+  }
+);}
+
+
+
+
+export const getUpdatePointConfigMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePointConfig>>, TError,{data: BodyType<PointConfigUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updatePointConfig>>, TError,{data: BodyType<PointConfigUpdate>}, TContext> => {
+
+const mutationKey = ['updatePointConfig'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePointConfig>>, {data: BodyType<PointConfigUpdate>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updatePointConfig(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdatePointConfigMutationResult = NonNullable<Awaited<ReturnType<typeof updatePointConfig>>>
+    export type UpdatePointConfigMutationBody = BodyType<PointConfigUpdate>
+    export type UpdatePointConfigMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>
+
+    /**
+ * @summary Update the global earning configuration (incl. master on/off)
+ */
+export const useUpdatePointConfig = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePointConfig>>, TError,{data: BodyType<PointConfigUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updatePointConfig>>,
+        TError,
+        {data: BodyType<PointConfigUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdatePointConfigMutationOptions(options));
+    }
+
+export const getListAdminWithdrawalsUrl = (params?: ListAdminWithdrawalsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/earnings/withdrawals?${stringifiedParams}` : `/api/admin/earnings/withdrawals`
+}
+
+/**
+ * @summary List withdrawal requests across all users
+ */
+export const listAdminWithdrawals = async (params?: ListAdminWithdrawalsParams, options?: RequestInit): Promise<AdminWithdrawalRequest[]> => {
+
+  return customFetch<AdminWithdrawalRequest[]>(getListAdminWithdrawalsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminWithdrawalsQueryKey = (params?: ListAdminWithdrawalsParams,) => {
+    return [
+    `/api/admin/earnings/withdrawals`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListAdminWithdrawalsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminWithdrawals>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(params?: ListAdminWithdrawalsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminWithdrawals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminWithdrawalsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminWithdrawals>>> = ({ signal }) => listAdminWithdrawals(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminWithdrawals>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminWithdrawalsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminWithdrawals>>>
+export type ListAdminWithdrawalsQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary List withdrawal requests across all users
+ */
+
+export function useListAdminWithdrawals<TData = Awaited<ReturnType<typeof listAdminWithdrawals>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+ params?: ListAdminWithdrawalsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminWithdrawals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminWithdrawalsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getProcessWithdrawalUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/earnings/withdrawals/${id}/process`
+}
+
+/**
+ * @summary Process a withdrawal (approve / mark paid / reject; reject refunds the points)
+ */
+export const processWithdrawal = async (id: number,
+    processWithdrawalInput: ProcessWithdrawalInput, options?: RequestInit): Promise<AdminWithdrawalRequest> => {
+
+  return customFetch<AdminWithdrawalRequest>(getProcessWithdrawalUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(processWithdrawalInput)
+  }
+);}
+
+
+
+
+export const getProcessWithdrawalMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof processWithdrawal>>, TError,{id: number;data: BodyType<ProcessWithdrawalInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof processWithdrawal>>, TError,{id: number;data: BodyType<ProcessWithdrawalInput>}, TContext> => {
+
+const mutationKey = ['processWithdrawal'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof processWithdrawal>>, {id: number;data: BodyType<ProcessWithdrawalInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  processWithdrawal(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ProcessWithdrawalMutationResult = NonNullable<Awaited<ReturnType<typeof processWithdrawal>>>
+    export type ProcessWithdrawalMutationBody = BodyType<ProcessWithdrawalInput>
+    export type ProcessWithdrawalMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Process a withdrawal (approve / mark paid / reject; reject refunds the points)
+ */
+export const useProcessWithdrawal = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof processWithdrawal>>, TError,{id: number;data: BodyType<ProcessWithdrawalInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof processWithdrawal>>,
+        TError,
+        {id: number;data: BodyType<ProcessWithdrawalInput>},
+        TContext
+      > => {
+      return useMutation(getProcessWithdrawalMutationOptions(options));
+    }
+
+export const getAdjustUserPointsUrl = (userId: string,) => {
+
+
+
+
+  return `/api/admin/earnings/users/${userId}/adjust`
+}
+
+/**
+ * @summary Manually add or remove points for a user
+ */
+export const adjustUserPoints = async (userId: string,
+    adjustPointsInput: AdjustPointsInput, options?: RequestInit): Promise<AdjustPointsResult> => {
+
+  return customFetch<AdjustPointsResult>(getAdjustUserPointsUrl(userId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adjustPointsInput)
+  }
+);}
+
+
+
+
+export const getAdjustUserPointsMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adjustUserPoints>>, TError,{userId: string;data: BodyType<AdjustPointsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof adjustUserPoints>>, TError,{userId: string;data: BodyType<AdjustPointsInput>}, TContext> => {
+
+const mutationKey = ['adjustUserPoints'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adjustUserPoints>>, {userId: string;data: BodyType<AdjustPointsInput>}> = (props) => {
+          const {userId,data} = props ?? {};
+
+          return  adjustUserPoints(userId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AdjustUserPointsMutationResult = NonNullable<Awaited<ReturnType<typeof adjustUserPoints>>>
+    export type AdjustUserPointsMutationBody = BodyType<AdjustPointsInput>
+    export type AdjustUserPointsMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Manually add or remove points for a user
+ */
+export const useAdjustUserPoints = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adjustUserPoints>>, TError,{userId: string;data: BodyType<AdjustPointsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof adjustUserPoints>>,
+        TError,
+        {userId: string;data: BodyType<AdjustPointsInput>},
+        TContext
+      > => {
+      return useMutation(getAdjustUserPointsMutationOptions(options));
+    }
+
+export const getResetUserPointsUrl = (userId: string,) => {
+
+
+
+
+  return `/api/admin/earnings/users/${userId}/reset`
+}
+
+/**
+ * @summary Reset a user's points balance to zero
+ */
+export const resetUserPoints = async (userId: string, options?: RequestInit): Promise<AdjustPointsResult> => {
+
+  return customFetch<AdjustPointsResult>(getResetUserPointsUrl(userId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getResetUserPointsMutationOptions = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetUserPoints>>, TError,{userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof resetUserPoints>>, TError,{userId: string}, TContext> => {
+
+const mutationKey = ['resetUserPoints'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resetUserPoints>>, {userId: string}> = (props) => {
+          const {userId} = props ?? {};
+
+          return  resetUserPoints(userId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResetUserPointsMutationResult = NonNullable<Awaited<ReturnType<typeof resetUserPoints>>>
+
+    export type ResetUserPointsMutationError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Reset a user's points balance to zero
+ */
+export const useResetUserPoints = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetUserPoints>>, TError,{userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof resetUserPoints>>,
+        TError,
+        {userId: string},
+        TContext
+      > => {
+      return useMutation(getResetUserPointsMutationOptions(options));
     }
 

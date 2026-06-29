@@ -35,3 +35,20 @@ commands (`pkill`, `free`) get OOM-killed (exit 137/143).
   `node`/`metro`. (`pkill` forks and gets OOM-killed itself.) This also stops the two expo
   workflows — restart them (`restart_workflow`) after the build. Warm metro cache makes the
   2nd export much faster.
+
+## Detached (`nohup … &`) export/deploy silently does nothing — run FOREGROUND
+**Symptom:** `nohup pnpm exec expo export …` and `nohup npx wrangler pages deploy …` exit in
+~10s with an EMPTY log and no output dir. The background wrapper dies without doing the work.
+**How to apply:** run these in the FOREGROUND with `timeout 115 …`. The bash *tool* may return
+exit -1 at its own ~120s cap, but the inner `timeout` child (the real `node`/metro/wrangler
+process) SURVIVES that and keeps running to completion. So after a tool-timeout, DON'T re-run —
+find the surviving node pid (`/proc/*/cmdline` match `expo export`/metro/wrangler) and poll it
+(`kill -0 $pid`) until it exits, then check the output dir / curl the live `.pages.dev` bundle
+hash. Warm metro cache means the 2nd (social) export usually finishes within one foreground call.
+
+## Lockfile must be updated before pushing a mobile dep change
+Adding a dep to one mobile app (e.g. `expo-audio` to `artifacts/mobile`) still needs a
+`pnpm-lock.yaml` update even if another workspace pkg already depends on it — the per-importer
+entry changes, so the API/Railway **frozen** install fails otherwise. Cheap fix:
+`pnpm install --lockfile-only`, then push the lock with the code. (Web/admin Actions use
+`--no-frozen-lockfile` so only the API build is at risk.)

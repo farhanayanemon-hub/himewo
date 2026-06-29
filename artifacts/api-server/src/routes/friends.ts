@@ -12,6 +12,7 @@ import { and, or, eq, inArray } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import { toProfile } from "../lib/serialize";
 import { createNotification } from "../lib/notify";
+import { canSendFriendRequest } from "../lib/authz";
 import {
   ListFriendsResponse,
   ListFriendRequestsResponse,
@@ -114,6 +115,13 @@ router.post("/friends/requests", requireAuth, async (req, res): Promise<void> =>
   }
   if (parsed.data.addresseeId === req.userId) {
     res.status(400).json({ error: "Cannot friend yourself" });
+    return;
+  }
+  // Honor the addressee's "who can send me friend requests" setting.
+  if (!(await canSendFriendRequest(req.userId!, parsed.data.addresseeId))) {
+    res.status(403).json({
+      error: "This person only accepts requests from friends of friends",
+    });
     return;
   }
   const [row] = await db

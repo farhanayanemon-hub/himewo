@@ -19,7 +19,6 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { CallProvider } from "@/components/CallProvider";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { RealtimeProvider } from "@/lib/realtime";
-import { SoundProvider } from "@/lib/sounds";
 import { PreferencesProvider, usePreferencesOptional } from "@/lib/preferences";
 import { useColors } from "@/hooks/useColors";
 
@@ -77,11 +76,9 @@ function ThemedRoot() {
       <StatusBar style={effective === "dark" ? "light" : "dark"} />
       <AuthProvider>
         <RealtimeProvider>
-          <SoundProvider>
-            <CallProvider>
-              <RootNavigator />
-            </CallProvider>
-          </SoundProvider>
+          <CallProvider>
+            <RootNavigator />
+          </CallProvider>
         </RealtimeProvider>
       </AuthProvider>
     </>

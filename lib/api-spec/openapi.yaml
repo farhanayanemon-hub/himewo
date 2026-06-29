@@ -22,6 +22,8 @@ tags:
   - name: notifications
   - name: media
   - name: settings
+  - name: earnings
+  - name: earnings-admin
 
 paths:
   /healthz:
@@ -1172,6 +1174,281 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/UploadUrlResponse" }
 
+  # ---------------- Earnings (marketing points -> dollars) ----------------
+  /earnings/summary:
+    get:
+      operationId: getEarningsSummary
+      tags: [earnings]
+      summary: Earnings overview for the authenticated user (always callable)
+      description: >
+        Returns the master `enabled` flag plus the user's dollar balance and
+        activity. When the feature is disabled, `enabled` is false and the
+        numeric fields are zero so clients can hide the feature entirely.
+      responses:
+        "200":
+          description: Earnings summary
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EarningsSummary" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /earnings/history:
+    get:
+      operationId: getEarningsHistory
+      tags: [earnings]
+      summary: Paginated point ledger for the authenticated user
+      parameters:
+        - { name: cursor, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, default: 30, minimum: 1, maximum: 100 } }
+      responses:
+        "200":
+          description: Ledger entries, most recent first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PointTransaction" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /earnings/withdrawal-accounts:
+    get:
+      operationId: listWithdrawalAccounts
+      tags: [earnings]
+      summary: List the user's saved payout accounts
+      responses:
+        "200":
+          description: Saved payout accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/WithdrawalAccount" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: addWithdrawalAccount
+      tags: [earnings]
+      summary: Save a payout account (PayPal, Binance, Wise, Bybit, bKash, Nagad)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WithdrawalAccountInput" }
+      responses:
+        "201":
+          description: Saved account
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WithdrawalAccount" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /earnings/withdrawal-accounts/{id}:
+    delete:
+      operationId: deleteWithdrawalAccount
+      tags: [earnings]
+      summary: Remove a saved payout account
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Removed }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /earnings/withdrawals:
+    get:
+      operationId: listMyWithdrawals
+      tags: [earnings]
+      summary: List the user's withdrawal requests
+      responses:
+        "200":
+          description: Withdrawal requests, most recent first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/WithdrawalRequest" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: createWithdrawal
+      tags: [earnings]
+      summary: Request a payout against the user's dollar balance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WithdrawalRequestInput" }
+      responses:
+        "201":
+          description: Created withdrawal request (pending admin payout)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WithdrawalRequest" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ---------------- Earnings admin (admin-only) ----------------
+  /admin/earnings/summary:
+    get:
+      operationId: getAdminEarningsSummary
+      tags: [earnings-admin]
+      summary: Program-wide payout health (paid out, pending payout, outstanding balances)
+      responses:
+        "200":
+          description: Aggregate earnings stats across all users (USD)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminEarningsSummary" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /admin/earnings/config:
+    get:
+      operationId: getPointConfig
+      tags: [earnings-admin]
+      summary: Get the global earning configuration
+      responses:
+        "200":
+          description: Point configuration
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PointConfig" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    put:
+      operationId: updatePointConfig
+      tags: [earnings-admin]
+      summary: Update the global earning configuration (incl. master on/off)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PointConfigUpdate" }
+      responses:
+        "200":
+          description: Updated configuration
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PointConfig" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /admin/earnings/withdrawals:
+    get:
+      operationId: listAdminWithdrawals
+      tags: [earnings-admin]
+      summary: List withdrawal requests across all users
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [pending, approved, paid, rejected] } }
+        - { name: cursor, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, default: 30, minimum: 1, maximum: 100 } }
+      responses:
+        "200":
+          description: Withdrawal requests, most recent first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdminWithdrawalRequest" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /admin/earnings/withdrawals/{id}/process:
+    post:
+      operationId: processWithdrawal
+      tags: [earnings-admin]
+      summary: Process a withdrawal (approve / mark paid / reject; reject refunds the points)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProcessWithdrawalInput" }
+      responses:
+        "200":
+          description: Updated withdrawal request
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminWithdrawalRequest" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /admin/earnings/users/{userId}/adjust:
+    post:
+      operationId: adjustUserPoints
+      tags: [earnings-admin]
+      summary: Manually add or remove points for a user
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdjustPointsInput" }
+      responses:
+        "200":
+          description: New balance for the user
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdjustPointsResult" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /admin/earnings/users/{userId}/reset:
+    post:
+      operationId: resetUserPoints
+      tags: [earnings-admin]
+      summary: Reset a user's points balance to zero
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: New balance for the user (zero)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdjustPointsResult" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
 components:
   responses:
     Unauthorized:
@@ -1239,6 +1516,8 @@ components:
         viewerIsFriend: { type: ["boolean", "null"] }
         viewerHasPendingRequest: { type: ["boolean", "null"] }
         viewerFollows: { type: ["boolean", "null"] }
+        viewerCanSendRequest: { type: ["boolean", "null"] }
+        isLocked: { type: ["boolean", "null"] }
         presence:
           type: ["object", "null"]
           properties:
@@ -1322,35 +1601,14 @@ components:
 
     Post:
       type: object
-      required: [id, author, content, privacy, media, reactions, commentCount, shareCount, createdAt]
+      required: [id, author, content, privacy, commentsEnabled, reactionsEnabled, media, reactions, commentCount, shareCount, createdAt]
       properties:
         id: { type: integer }
         author: { $ref: "#/components/schemas/Profile" }
         content: { type: string }
         privacy: { type: string, enum: [public, friends, private] }
-        groupId: { type: ["integer", "null"] }
-        pageId: { type: ["integer", "null"] }
-        media:
-          type: array
-          items: { $ref: "#/components/schemas/MediaItem" }
-        reactions: { $ref: "#/components/schemas/ReactionSummary" }
-        commentCount: { type: integer }
-        shareCount: { type: integer }
-        viewerHasSaved: { type: boolean }
-        sharedPost:
-          oneOf:
-            - { $ref: "#/components/schemas/SharedPost" }
-            - { type: "null" }
-        createdAt: { type: string, format: date-time }
-        updatedAt: { type: string, format: date-time }
-    SharedPost:
-      type: object
-      required: [id, author, content, privacy, media, reactions, commentCount, shareCount, createdAt]
-      properties:
-        id: { type: integer }
-        author: { $ref: "#/components/schemas/Profile" }
-        content: { type: string }
-        privacy: { type: string, enum: [public, friends, private] }
+        commentsEnabled: { type: boolean }
+        reactionsEnabled: { type: boolean }
         groupId: { type: ["integer", "null"] }
         pageId: { type: ["integer", "null"] }
         media:
@@ -1378,6 +1636,8 @@ components:
       properties:
         content: { type: string }
         privacy: { type: string, enum: [public, friends, private] }
+        commentsEnabled: { type: boolean }
+        reactionsEnabled: { type: boolean }
 
     Comment:
       type: object
@@ -1602,6 +1862,7 @@ components:
           postVisibility,
           friendRequestPrivacy,
           showOnlineStatus,
+          isLocked,
           notifyLikes,
           notifyComments,
           notifyFriendRequests,
@@ -1617,6 +1878,7 @@ components:
         friendRequestPrivacy:
           { type: string, enum: [everyone, friends_of_friends] }
         showOnlineStatus: { type: boolean }
+        isLocked: { type: boolean }
         notifyLikes: { type: boolean }
         notifyComments: { type: boolean }
         notifyFriendRequests: { type: boolean }
@@ -1633,6 +1895,7 @@ components:
         friendRequestPrivacy:
           { type: string, enum: [everyone, friends_of_friends] }
         showOnlineStatus: { type: boolean }
+        isLocked: { type: boolean }
         notifyLikes: { type: boolean }
         notifyComments: { type: boolean }
         notifyFriendRequests: { type: boolean }
@@ -1841,3 +2104,197 @@ components:
         publicUrl: { type: string }
         path: { type: string }
         token: { type: ["string", "null"] }
+
+    # ---------------- Earnings ----------------
+    EarningsRewards:
+      type: object
+      required: [post, like, comment, share]
+      properties:
+        post: { type: integer }
+        like: { type: integer }
+        comment: { type: integer }
+        share: { type: integer }
+    EarningsSummary:
+      type: object
+      required:
+        [
+          enabled,
+          balancePoints,
+          balanceDollars,
+          pointsPerDollar,
+          minWithdrawDollars,
+          todayPoints,
+          monthPoints,
+          totalEarnedPoints,
+          pendingWithdrawalDollars,
+          rewards,
+        ]
+      properties:
+        enabled: { type: boolean }
+        balancePoints: { type: integer }
+        balanceDollars: { type: number }
+        pointsPerDollar: { type: integer }
+        minWithdrawDollars: { type: integer }
+        dailyPointCap: { type: integer }
+        todayPoints: { type: integer }
+        monthPoints: { type: integer }
+        totalEarnedPoints: { type: integer }
+        pendingWithdrawalDollars: { type: number }
+        rewards: { $ref: "#/components/schemas/EarningsRewards" }
+    PointTransaction:
+      type: object
+      required: [id, action, points, createdAt]
+      properties:
+        id: { type: integer }
+        action: { type: string }
+        points: { type: integer }
+        entityType: { type: ["string", "null"] }
+        entityId: { type: ["integer", "null"] }
+        note: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+    WithdrawalAccount:
+      type: object
+      required: [id, method, details, createdAt]
+      properties:
+        id: { type: integer }
+        method:
+          type: string
+          enum: [paypal, binance, wise, bybit, bkash, nagad]
+        label: { type: ["string", "null"] }
+        details:
+          type: object
+          additionalProperties: { type: string }
+        createdAt: { type: string, format: date-time }
+    WithdrawalAccountInput:
+      type: object
+      required: [method, details]
+      properties:
+        method:
+          type: string
+          enum: [paypal, binance, wise, bybit, bkash, nagad]
+        label: { type: string }
+        details:
+          type: object
+          additionalProperties: { type: string }
+    WithdrawalRequest:
+      type: object
+      required:
+        [id, amountDollars, pointsSpent, method, details, status, createdAt]
+      properties:
+        id: { type: integer }
+        amountDollars: { type: integer }
+        pointsSpent: { type: integer }
+        method: { type: string }
+        details:
+          type: object
+          additionalProperties: { type: string }
+        status: { type: string, enum: [pending, approved, paid, rejected] }
+        adminNote: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        processedAt: { type: ["string", "null"], format: date-time }
+    WithdrawalRequestInput:
+      type: object
+      required: [amountDollars, accountId]
+      properties:
+        amountDollars: { type: integer, minimum: 1 }
+        accountId: { type: integer }
+    AdminWithdrawalRequest:
+      type: object
+      required:
+        [id, userId, amountDollars, pointsSpent, method, details, status, createdAt]
+      properties:
+        id: { type: integer }
+        userId: { type: string }
+        amountDollars: { type: integer }
+        pointsSpent: { type: integer }
+        method: { type: string }
+        details:
+          type: object
+          additionalProperties: { type: string }
+        status: { type: string, enum: [pending, approved, paid, rejected] }
+        adminNote: { type: ["string", "null"] }
+        processedBy: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        processedAt: { type: ["string", "null"], format: date-time }
+        user:
+          oneOf:
+            - { $ref: "#/components/schemas/Profile" }
+            - { type: "null" }
+    PointConfig:
+      type: object
+      required:
+        [
+          enabled,
+          pointsPerPost,
+          pointsPerLike,
+          pointsPerComment,
+          pointsPerShare,
+          pointsPerDollar,
+          minWithdrawDollars,
+          dailyPointCap,
+        ]
+      properties:
+        enabled: { type: boolean }
+        pointsPerPost: { type: integer }
+        pointsPerLike: { type: integer }
+        pointsPerComment: { type: integer }
+        pointsPerShare: { type: integer }
+        pointsPerDollar: { type: integer }
+        minWithdrawDollars: { type: integer }
+        dailyPointCap: { type: integer }
+        updatedAt: { type: ["string", "null"], format: date-time }
+    PointConfigUpdate:
+      type: object
+      properties:
+        enabled: { type: boolean }
+        pointsPerPost: { type: integer, minimum: 0 }
+        pointsPerLike: { type: integer, minimum: 0 }
+        pointsPerComment: { type: integer, minimum: 0 }
+        pointsPerShare: { type: integer, minimum: 0 }
+        pointsPerDollar: { type: integer, minimum: 1 }
+        minWithdrawDollars: { type: integer, minimum: 1 }
+        dailyPointCap: { type: integer, minimum: 0 }
+    ProcessWithdrawalInput:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [approved, paid, rejected] }
+        adminNote: { type: string }
+    AdjustPointsInput:
+      type: object
+      required: [points]
+      properties:
+        points: { type: integer }
+        note: { type: string }
+    AdjustPointsResult:
+      type: object
+      required: [balancePoints, balanceDollars]
+      properties:
+        balancePoints: { type: integer }
+        balanceDollars: { type: number }
+    AdminEarningsSummary:
+      type: object
+      required:
+        [
+          totalPaidDollars,
+          pendingPayoutDollars,
+          pendingPayoutCount,
+          outstandingPoints,
+          outstandingDollars,
+        ]
+      properties:
+        totalPaidDollars:
+          type: number
+          description: Sum of amounts for withdrawals marked paid.
+        pendingPayoutDollars:
+          type: number
+          description: Sum of amounts requested but not yet paid (pending + approved).
+        pendingPayoutCount:
+          type: integer
+          description: Number of withdrawal requests awaiting payout (pending + approved).
+        outstandingPoints:
+          type: integer
+          description: Total points held across all user balances (positive balances only).
+        outstandingDollars:
+          type: number
+          description: USD value of outstanding points at the current conversion rate.

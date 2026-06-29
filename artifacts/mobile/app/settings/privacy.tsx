@@ -66,6 +66,21 @@ export default function PrivacySettingsScreen() {
         ))}
       </Section>
 
+      <Section title="Lock profile">
+        <Row
+          title="Lock your profile"
+          subtitle="Only friends see your posts, photos and intro. Others see just your name and picture."
+          last
+          right={
+            <Switch
+              value={Boolean(data.isLocked)}
+              onValueChange={(v) => save({ isLocked: v })}
+              trackColor={{ true: c.primary }}
+            />
+          }
+        />
+      </Section>
+
       <Section title="Friend requests">
         <ChoiceRow
           label="Everyone"

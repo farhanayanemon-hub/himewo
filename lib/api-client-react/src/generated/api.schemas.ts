@@ -82,6 +82,10 @@ export interface Profile {
   /** @nullable */
   viewerFollows?: boolean | null;
   /** @nullable */
+  viewerCanSendRequest?: boolean | null;
+  /** @nullable */
+  isLocked?: boolean | null;
+  /** @nullable */
   presence?: ProfilePresence;
 }
 
@@ -181,38 +185,13 @@ export const PostPrivacy = {
   private: 'private',
 } as const;
 
-export type SharedPostPrivacy = typeof SharedPostPrivacy[keyof typeof SharedPostPrivacy];
-
-
-export const SharedPostPrivacy = {
-  public: 'public',
-  friends: 'friends',
-  private: 'private',
-} as const;
-
-export interface SharedPost {
-  id: number;
-  author: Profile;
-  content: string;
-  privacy: SharedPostPrivacy;
-  /** @nullable */
-  groupId?: number | null;
-  /** @nullable */
-  pageId?: number | null;
-  media: MediaItem[];
-  reactions: ReactionSummary;
-  commentCount: number;
-  shareCount: number;
-  viewerHasSaved?: boolean;
-  createdAt: string;
-  updatedAt?: string;
-}
-
 export interface Post {
   id: number;
   author: Profile;
   content: string;
   privacy: PostPrivacy;
+  commentsEnabled: boolean;
+  reactionsEnabled: boolean;
   /** @nullable */
   groupId?: number | null;
   /** @nullable */
@@ -222,7 +201,6 @@ export interface Post {
   commentCount: number;
   shareCount: number;
   viewerHasSaved?: boolean;
-  sharedPost?: SharedPost | null;
   createdAt: string;
   updatedAt?: string;
 }
@@ -256,6 +234,8 @@ export const PostUpdatePrivacy = {
 export interface PostUpdate {
   content?: string;
   privacy?: PostUpdatePrivacy;
+  commentsEnabled?: boolean;
+  reactionsEnabled?: boolean;
 }
 
 export interface Comment {
@@ -589,6 +569,7 @@ export interface UserSettings {
   postVisibility: UserSettingsPostVisibility;
   friendRequestPrivacy: UserSettingsFriendRequestPrivacy;
   showOnlineStatus: boolean;
+  isLocked: boolean;
   notifyLikes: boolean;
   notifyComments: boolean;
   notifyFriendRequests: boolean;
@@ -638,6 +619,7 @@ export interface UserSettingsUpdate {
   postVisibility?: UserSettingsUpdatePostVisibility;
   friendRequestPrivacy?: UserSettingsUpdateFriendRequestPrivacy;
   showOnlineStatus?: boolean;
+  isLocked?: boolean;
   notifyLikes?: boolean;
   notifyComments?: boolean;
   notifyFriendRequests?: boolean;
@@ -870,6 +852,213 @@ export interface UploadUrlResponse {
   token?: string | null;
 }
 
+export interface EarningsRewards {
+  post: number;
+  like: number;
+  comment: number;
+  share: number;
+}
+
+export interface EarningsSummary {
+  enabled: boolean;
+  balancePoints: number;
+  balanceDollars: number;
+  pointsPerDollar: number;
+  minWithdrawDollars: number;
+  dailyPointCap?: number;
+  todayPoints: number;
+  monthPoints: number;
+  totalEarnedPoints: number;
+  pendingWithdrawalDollars: number;
+  rewards: EarningsRewards;
+}
+
+export interface PointTransaction {
+  id: number;
+  action: string;
+  points: number;
+  /** @nullable */
+  entityType?: string | null;
+  /** @nullable */
+  entityId?: number | null;
+  /** @nullable */
+  note?: string | null;
+  createdAt: string;
+}
+
+export type WithdrawalAccountMethod = typeof WithdrawalAccountMethod[keyof typeof WithdrawalAccountMethod];
+
+
+export const WithdrawalAccountMethod = {
+  paypal: 'paypal',
+  binance: 'binance',
+  wise: 'wise',
+  bybit: 'bybit',
+  bkash: 'bkash',
+  nagad: 'nagad',
+} as const;
+
+export type WithdrawalAccountDetails = {[key: string]: string};
+
+export interface WithdrawalAccount {
+  id: number;
+  method: WithdrawalAccountMethod;
+  /** @nullable */
+  label?: string | null;
+  details: WithdrawalAccountDetails;
+  createdAt: string;
+}
+
+export type WithdrawalAccountInputMethod = typeof WithdrawalAccountInputMethod[keyof typeof WithdrawalAccountInputMethod];
+
+
+export const WithdrawalAccountInputMethod = {
+  paypal: 'paypal',
+  binance: 'binance',
+  wise: 'wise',
+  bybit: 'bybit',
+  bkash: 'bkash',
+  nagad: 'nagad',
+} as const;
+
+export type WithdrawalAccountInputDetails = {[key: string]: string};
+
+export interface WithdrawalAccountInput {
+  method: WithdrawalAccountInputMethod;
+  label?: string;
+  details: WithdrawalAccountInputDetails;
+}
+
+export type WithdrawalRequestDetails = {[key: string]: string};
+
+export type WithdrawalRequestStatus = typeof WithdrawalRequestStatus[keyof typeof WithdrawalRequestStatus];
+
+
+export const WithdrawalRequestStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  paid: 'paid',
+  rejected: 'rejected',
+} as const;
+
+export interface WithdrawalRequest {
+  id: number;
+  amountDollars: number;
+  pointsSpent: number;
+  method: string;
+  details: WithdrawalRequestDetails;
+  status: WithdrawalRequestStatus;
+  /** @nullable */
+  adminNote?: string | null;
+  createdAt: string;
+  /** @nullable */
+  processedAt?: string | null;
+}
+
+export interface WithdrawalRequestInput {
+  /** @minimum 1 */
+  amountDollars: number;
+  accountId: number;
+}
+
+export type AdminWithdrawalRequestDetails = {[key: string]: string};
+
+export type AdminWithdrawalRequestStatus = typeof AdminWithdrawalRequestStatus[keyof typeof AdminWithdrawalRequestStatus];
+
+
+export const AdminWithdrawalRequestStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  paid: 'paid',
+  rejected: 'rejected',
+} as const;
+
+export interface AdminWithdrawalRequest {
+  id: number;
+  userId: string;
+  amountDollars: number;
+  pointsSpent: number;
+  method: string;
+  details: AdminWithdrawalRequestDetails;
+  status: AdminWithdrawalRequestStatus;
+  /** @nullable */
+  adminNote?: string | null;
+  /** @nullable */
+  processedBy?: string | null;
+  createdAt: string;
+  /** @nullable */
+  processedAt?: string | null;
+  user?: Profile | null;
+}
+
+export interface PointConfig {
+  enabled: boolean;
+  pointsPerPost: number;
+  pointsPerLike: number;
+  pointsPerComment: number;
+  pointsPerShare: number;
+  pointsPerDollar: number;
+  minWithdrawDollars: number;
+  dailyPointCap: number;
+  /** @nullable */
+  updatedAt?: string | null;
+}
+
+export interface PointConfigUpdate {
+  enabled?: boolean;
+  /** @minimum 0 */
+  pointsPerPost?: number;
+  /** @minimum 0 */
+  pointsPerLike?: number;
+  /** @minimum 0 */
+  pointsPerComment?: number;
+  /** @minimum 0 */
+  pointsPerShare?: number;
+  /** @minimum 1 */
+  pointsPerDollar?: number;
+  /** @minimum 1 */
+  minWithdrawDollars?: number;
+  /** @minimum 0 */
+  dailyPointCap?: number;
+}
+
+export type ProcessWithdrawalInputStatus = typeof ProcessWithdrawalInputStatus[keyof typeof ProcessWithdrawalInputStatus];
+
+
+export const ProcessWithdrawalInputStatus = {
+  approved: 'approved',
+  paid: 'paid',
+  rejected: 'rejected',
+} as const;
+
+export interface ProcessWithdrawalInput {
+  status: ProcessWithdrawalInputStatus;
+  adminNote?: string;
+}
+
+export interface AdjustPointsInput {
+  points: number;
+  note?: string;
+}
+
+export interface AdjustPointsResult {
+  balancePoints: number;
+  balanceDollars: number;
+}
+
+export interface AdminEarningsSummary {
+  /** Sum of amounts for withdrawals marked paid. */
+  totalPaidDollars: number;
+  /** Sum of amounts requested but not yet paid (pending + approved). */
+  pendingPayoutDollars: number;
+  /** Number of withdrawal requests awaiting payout (pending + approved). */
+  pendingPayoutCount: number;
+  /** Total points held across all user balances (positive balances only). */
+  outstandingPoints: number;
+  /** USD value of outstanding points at the current conversion rate. */
+  outstandingDollars: number;
+}
+
 /**
  * Unauthorized
  */
@@ -947,4 +1136,39 @@ export type ListNotificationsParams = {
 cursor?: number;
 limit?: number;
 };
+
+export type GetEarningsHistoryParams = {
+/**
+ * @minimum 1
+ */
+cursor?: number;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+};
+
+export type ListAdminWithdrawalsParams = {
+status?: ListAdminWithdrawalsStatus;
+/**
+ * @minimum 1
+ */
+cursor?: number;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+};
+
+export type ListAdminWithdrawalsStatus = typeof ListAdminWithdrawalsStatus[keyof typeof ListAdminWithdrawalsStatus];
+
+
+export const ListAdminWithdrawalsStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  paid: 'paid',
+  rejected: 'rejected',
+} as const;
 

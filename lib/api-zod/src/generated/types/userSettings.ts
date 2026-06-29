@@ -15,6 +15,7 @@ export interface UserSettings {
   postVisibility: UserSettingsPostVisibility;
   friendRequestPrivacy: UserSettingsFriendRequestPrivacy;
   showOnlineStatus: boolean;
+  isLocked: boolean;
   notifyLikes: boolean;
   notifyComments: boolean;
   notifyFriendRequests: boolean;

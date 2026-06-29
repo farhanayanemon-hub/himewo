@@ -18,6 +18,7 @@ function toSettings(row: SettingsRow) {
     postVisibility: row.postVisibility,
     friendRequestPrivacy: row.friendRequestPrivacy,
     showOnlineStatus: row.showOnlineStatus,
+    isLocked: row.isLocked,
     notifyLikes: row.notifyLikes,
     notifyComments: row.notifyComments,
     notifyFriendRequests: row.notifyFriendRequests,
