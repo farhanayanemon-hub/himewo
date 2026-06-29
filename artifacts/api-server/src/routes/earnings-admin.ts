@@ -285,6 +285,7 @@ router.post(
       action: "admin_adjust",
       points: parsed.data.points,
       note: parsed.data.note ?? null,
+      createdBy: req.userId!,
     });
     const config = await getPointConfig();
     const balancePoints = await getBalancePoints(params.data.userId);
@@ -333,6 +334,7 @@ router.post(
           action: "admin_adjust",
           points: -balance,
           note: "Admin reset balance to zero",
+          createdBy: req.userId!,
         });
       }
     });
