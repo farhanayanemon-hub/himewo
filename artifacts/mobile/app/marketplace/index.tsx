@@ -91,7 +91,10 @@ export default function MarketplaceBrowseScreen() {
 
             <LocationAutocomplete
               value={locText}
-              onChangeText={setLocText}
+              onChangeText={(v) => {
+                setLocText(v);
+                setCenter(null);
+              }}
               onPick={(r) => setCenter({ lat: r.lat, lng: r.lng })}
               placeholder="Filter by location (e.g. Dhaka)"
             />
