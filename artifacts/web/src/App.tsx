@@ -27,6 +27,7 @@ import SettingsLanguagePage from "@/pages/settings-language";
 import SettingsHelpPage from "@/pages/settings-help";
 import EditProfilePage from "@/pages/edit-profile";
 import MePage from "@/pages/me";
+import EarningsPage from "@/pages/earnings";
 import StoriesPage from "@/pages/stories";
 import MemoriesPage from "@/pages/memories";
 import SavedPage from "@/pages/saved";
@@ -85,6 +86,7 @@ function AppRoutes() {
       <Route path="/settings/notifications" component={SettingsNotificationsPage} />
       <Route path="/settings/language" component={SettingsLanguagePage} />
       <Route path="/settings/help" component={SettingsHelpPage} />
+      <Route path="/earnings" component={EarningsPage} />
       <Route path="/stories" component={StoriesPage} />
       <Route path="/memories" component={MemoriesPage} />
       <Route path="/saved" component={SavedPage} />

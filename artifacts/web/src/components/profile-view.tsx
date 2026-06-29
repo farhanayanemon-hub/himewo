@@ -2,10 +2,13 @@ import { Link } from "wouter";
 import {
   useGetUserFriends,
   getGetUserFriendsQueryKey,
+  getGetUserPostsQueryKey,
   type Profile,
   type Post,
 } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { PostCard } from "@/components/post-card";
+import { PostComposer } from "@/components/post-composer";
 import {
   Loader2,
   Briefcase,
@@ -17,6 +20,7 @@ import {
   Globe,
   Mail,
   Phone,
+  Lock,
 } from "lucide-react";
 
 function IntroRow({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
@@ -43,10 +47,19 @@ export function ProfileView({
   postsLoading: boolean;
   headerActions: React.ReactNode;
 }) {
+  const queryClient = useQueryClient();
+  const isLocked = Boolean(profile.isLocked);
+  const showLocked = isLocked && !isOwnProfile && !profile.viewerIsFriend;
+
   const { data: friends } = useGetUserFriends(
     userId,
     undefined,
-    { query: { enabled: !!userId, queryKey: getGetUserFriendsQueryKey(userId) } },
+    {
+      query: {
+        enabled: !!userId && !showLocked,
+        queryKey: getGetUserFriendsQueryKey(userId),
+      },
+    },
   );
 
   const photoUrls = (posts ?? [])
@@ -86,7 +99,12 @@ export function ProfileView({
               alt="Avatar"
             />
             <div className="flex-1 sm:pb-2">
-              <h1 className="text-2xl font-bold">{profile.displayName}</h1>
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                {profile.displayName}
+                {isLocked && (
+                  <Lock className="w-5 h-5 text-muted-foreground" aria-label="Locked profile" />
+                )}
+              </h1>
               <p className="text-muted-foreground text-sm">@{profile.username}</p>
               <div className="flex gap-4 text-sm text-muted-foreground font-medium mt-1">
                 <span>{profile.friendCount || 0} Friends</span>
@@ -98,7 +116,18 @@ export function ProfileView({
         </div>
       </div>
 
-      {/* Two-column: Intro + Friends + Photos | Posts */}
+      {showLocked ? (
+        <div className="bg-card border border-border rounded-xl shadow-sm p-10 text-center">
+          <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-7 h-7 text-muted-foreground" />
+          </div>
+          <h2 className="font-bold text-lg mb-1">This profile is locked</h2>
+          <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+            Only {profile.displayName}'s friends can see their posts, photos and details.
+          </p>
+        </div>
+      ) : (
+      /* Two-column: Intro + Friends + Photos | Posts */
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-start">
         <div className="lg:col-span-2 space-y-4">
           {/* Intro */}
@@ -183,6 +212,13 @@ export function ProfileView({
 
         {/* Posts */}
         <div className="lg:col-span-3 space-y-4">
+          {isOwnProfile && (
+            <PostComposer
+              onPosted={() =>
+                queryClient.invalidateQueries({ queryKey: getGetUserPostsQueryKey(userId) })
+              }
+            />
+          )}
           <h2 className="font-bold text-lg px-2">Posts</h2>
           {postsLoading ? (
             <div className="py-4 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" /></div>
@@ -195,6 +231,7 @@ export function ProfileView({
           )}
         </div>
       </div>
+      )}
     </>
   );
 }

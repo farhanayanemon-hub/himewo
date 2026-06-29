@@ -54,5 +54,9 @@ export interface Profile {
   /** @nullable */
   viewerFollows?: boolean | null;
   /** @nullable */
+  viewerCanSendRequest?: boolean | null;
+  /** @nullable */
+  isLocked?: boolean | null;
+  /** @nullable */
   presence?: ProfilePresence;
 }

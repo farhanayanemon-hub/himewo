@@ -4,10 +4,10 @@ import {
   uuid,
   text,
   integer,
+  boolean,
   timestamp,
   uniqueIndex,
   index,
-  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -23,12 +23,10 @@ export const postsTable = pgTable(
       .references(() => profilesTable.id, { onDelete: "cascade" }),
     content: text("content").notNull().default(""),
     privacy: privacyEnum("privacy").notNull().default("public"),
+    commentsEnabled: boolean("comments_enabled").notNull().default(true),
+    reactionsEnabled: boolean("reactions_enabled").notNull().default(true),
     groupId: integer("group_id"),
     pageId: integer("page_id"),
-    sharedPostId: integer("shared_post_id").references(
-      (): AnyPgColumn => postsTable.id,
-      { onDelete: "set null" },
-    ),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

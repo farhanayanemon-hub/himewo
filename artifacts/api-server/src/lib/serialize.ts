@@ -27,6 +27,7 @@ import {
   notificationsTable,
   marketplaceListingsTable,
   savedItemsTable,
+  userSettingsTable,
   type Profile as ProfileRow,
   type MarketplaceListing as MarketplaceListingRow,
   type Post as PostRow,
@@ -51,10 +52,20 @@ import {
   count,
   isNull,
 } from "drizzle-orm";
-import { canViewPost } from "./authz";
+import { canViewPost, canSendFriendRequest } from "./authz";
 
 // ---------------- Profiles ----------------
-export function toProfile(row: ProfileRow, includeContact = false) {
+/**
+ * Serialize a profile. Intro/bio details are ONLY included on the full profile
+ * page (`includeIntro`), never on embedded profiles (post/reel/story authors,
+ * reaction users, list results) — this keeps a locked user's intro from leaking
+ * to non-friends through those payloads. Contact (email/phone) is owner-only.
+ */
+export function toProfile(
+  row: ProfileRow,
+  includeContact = false,
+  includeIntro = false,
+) {
   return {
     id: row.id,
     username: row.username,
@@ -63,15 +74,15 @@ export function toProfile(row: ProfileRow, includeContact = false) {
     phone: includeContact ? row.phone : null,
     avatarUrl: row.avatarUrl,
     coverUrl: row.coverUrl,
-    bio: row.bio,
-    birthday: row.birthday,
-    location: row.location,
-    work: row.work,
-    education: row.education,
-    hometown: row.hometown,
-    hobbies: row.hobbies,
-    interests: row.interests,
-    website: row.website,
+    bio: includeIntro ? row.bio : null,
+    birthday: includeIntro ? row.birthday : null,
+    location: includeIntro ? row.location : null,
+    work: includeIntro ? row.work : null,
+    education: includeIntro ? row.education : null,
+    hometown: includeIntro ? row.hometown : null,
+    hobbies: includeIntro ? row.hobbies : null,
+    interests: includeIntro ? row.interests : null,
+    website: includeIntro ? row.website : null,
     isVerified: row.isVerified,
     createdAt: row.createdAt,
   };
@@ -85,6 +96,27 @@ async function loadProfileMap(ids: string[]) {
     .from(profilesTable)
     .where(inArray(profilesTable.id, unique));
   return new Map(rows.map((r) => [r.id, toProfile(r)]));
+}
+
+/**
+ * Serialize a list of profiles (search, suggestions, friends lists). Intro
+ * details are already excluded by `toProfile`; this only attaches `isLocked`
+ * so clients can render a lock indicator next to locked users.
+ */
+export async function buildListProfiles(rows: ProfileRow[]) {
+  if (rows.length === 0) return [];
+  const ids = rows.map((r) => r.id);
+  const lockedRows = await db
+    .select({ userId: userSettingsTable.userId })
+    .from(userSettingsTable)
+    .where(
+      and(
+        inArray(userSettingsTable.userId, ids),
+        eq(userSettingsTable.isLocked, true),
+      ),
+    );
+  const lockedSet = new Set(lockedRows.map((l) => l.userId));
+  return rows.map((r) => ({ ...toProfile(r), isLocked: lockedSet.has(r.id) }));
 }
 
 export async function buildProfileDetail(userId: string, viewerId?: string) {
@@ -121,6 +153,7 @@ export async function buildProfileDetail(userId: string, viewerId?: string) {
   let viewerIsFriend: boolean | undefined;
   let viewerHasPendingRequest: boolean | undefined;
   let viewerFollows: boolean | undefined;
+  let viewerCanSendRequest: boolean | undefined;
   if (viewerId && viewerId !== userId) {
     const [a, b] = userId < viewerId ? [userId, viewerId] : [viewerId, userId];
     const [friendRow] = await db
@@ -162,10 +195,44 @@ export async function buildProfileDetail(userId: string, viewerId?: string) {
         ),
       );
     viewerFollows = Boolean(followRow);
+    // Surface the server-side friend-request rule (friendRequestPrivacy) so
+    // clients can hide/disable "Add Friend" instead of letting it 403. Only
+    // meaningful when not already friends and no request is pending.
+    viewerCanSendRequest =
+      !viewerIsFriend &&
+      !viewerHasPendingRequest &&
+      (await canSendFriendRequest(viewerId, userId));
   }
 
+  const [settingsRow] = await db
+    .select({
+      isLocked: userSettingsTable.isLocked,
+      profileVisibility: userSettingsTable.profileVisibility,
+    })
+    .from(userSettingsTable)
+    .where(eq(userSettingsTable.userId, userId));
+  const isOwnerView = viewerId === userId;
+  // Effective audience combines the lock toggle and the profileVisibility
+  // setting. "only_me" hides details from everyone but the owner; "friends"
+  // (or an enabled lock) hides them from non-friends.
+  const audience: "public" | "friends" | "only_me" = !settingsRow
+    ? "public"
+    : settingsRow.profileVisibility === "only_me"
+      ? "only_me"
+      : settingsRow.isLocked || settingsRow.profileVisibility === "friends"
+        ? "friends"
+        : "public";
+  const restricted =
+    !isOwnerView &&
+    (audience === "only_me" || (audience === "friends" && !viewerIsFriend));
+  // Restricted viewer: hide intro/bio details. Posts/friends are already
+  // excluded by the /users/:id/posts and /users/:id/friends routes. Surface
+  // the restriction via `isLocked` so both clients render the locked state.
+  const includeIntro = !restricted;
+  const isLocked = isOwnerView ? Boolean(settingsRow?.isLocked) : restricted;
+
   return {
-    ...toProfile(row, viewerId === userId),
+    ...toProfile(row, isOwnerView, includeIntro),
     friendCount: friends?.value ?? 0,
     followerCount: followers?.value ?? 0,
     followingCount: following?.value ?? 0,
@@ -173,47 +240,16 @@ export async function buildProfileDetail(userId: string, viewerId?: string) {
     viewerIsFriend,
     viewerHasPendingRequest,
     viewerFollows,
+    viewerCanSendRequest,
+    isLocked,
   };
 }
 
 // ---------------- Posts ----------------
-export async function buildPosts(
-  rows: PostRow[],
-  viewerId?: string,
-  embedShared = true,
-) {
+export async function buildPosts(rows: PostRow[], viewerId?: string) {
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);
   const authorMap = await loadProfileMap(rows.map((r) => r.authorId));
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sharedMap = new Map<number, any>();
-  if (embedShared) {
-    const sharedIds = Array.from(
-      new Set(
-        rows
-          .map((r) => r.sharedPostId)
-          .filter((v): v is number => typeof v === "number"),
-      ),
-    );
-    if (sharedIds.length > 0) {
-      const sharedRows = await db
-        .select()
-        .from(postsTable)
-        .where(inArray(postsTable.id, sharedIds));
-      // Only embed originals the viewer is actually allowed to see, so a public
-      // repost can never leak a friends-only / private / group original.
-      const visibleRows: typeof sharedRows = [];
-      for (const sr of sharedRows) {
-        const ok = viewerId
-          ? await canViewPost(sr, viewerId)
-          : sr.privacy === "public" && sr.groupId == null;
-        if (ok) visibleRows.push(sr);
-      }
-      const built = await buildPosts(visibleRows, viewerId, false);
-      for (const p of built) sharedMap.set(p.id, p);
-    }
-  }
 
   const [
     mediaRows,
@@ -298,6 +334,8 @@ export async function buildPosts(
       author: authorMap.get(row.authorId)!,
       content: row.content,
       privacy: row.privacy,
+      commentsEnabled: row.commentsEnabled,
+      reactionsEnabled: row.reactionsEnabled,
       groupId: row.groupId,
       pageId: row.pageId,
       media: (mediaByPost.get(row.id) ?? []).map((m) => ({
@@ -318,10 +356,6 @@ export async function buildPosts(
       commentCount: commentCountByPost.get(row.id) ?? 0,
       shareCount: shareCountByPost.get(row.id) ?? 0,
       viewerHasSaved: savedPostSet.has(row.id),
-      sharedPost:
-        row.sharedPostId != null
-          ? sharedMap.get(row.sharedPostId) ?? null
-          : null,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };
@@ -858,7 +892,7 @@ export async function buildSavedItems(
     .filter((r) => r.entityType === "reel")
     .map((r) => r.entityId);
 
-  const [postRows, listingRows, reelRows] = await Promise.all([
+  const [postRowsRaw, listingRows, reelRows] = await Promise.all([
     postIds.length
       ? db.select().from(postsTable).where(inArray(postsTable.id, postIds))
       : Promise.resolve([]),
@@ -872,6 +906,14 @@ export async function buildSavedItems(
       ? db.select().from(reelsTable).where(inArray(reelsTable.id, reelIds))
       : Promise.resolve([]),
   ]);
+
+  // Re-check visibility at read time: a post saved earlier may now be hidden
+  // (e.g. its author locked their profile, or changed privacy). Without this a
+  // non-friend could keep retrieving a locked user's post via stale saved IDs.
+  const postVisibility = await Promise.all(
+    postRowsRaw.map((p) => canViewPost(p, viewerId)),
+  );
+  const postRows = postRowsRaw.filter((_, i) => postVisibility[i]);
 
   const [builtPosts, builtListings, builtReels] = await Promise.all([
     buildPosts(postRows, viewerId),

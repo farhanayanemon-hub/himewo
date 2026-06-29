@@ -26,7 +26,25 @@ export const env = {
   // When unset, the calls token endpoint returns 503 and the app degrades.
   streamApiKey: process.env.STREAM_API_KEY,
   streamApiSecret: process.env.STREAM_API_SECRET,
+  // Comma-separated Supabase user ids allowed to call admin-only endpoints.
+  // In production an empty list means nobody is an admin (endpoints deny all).
+  adminUserIds: (process.env.ADMIN_USER_IDS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean),
 };
+
+/**
+ * Whether a user id is permitted to use admin-only endpoints. Admins are
+ * configured via the ADMIN_USER_IDS env var. As a development convenience, when
+ * no allowlist is configured and we're not in production, any authenticated
+ * user is treated as an admin so the admin tooling is testable locally.
+ */
+export function isAdminUser(userId: string): boolean {
+  if (env.adminUserIds.includes(userId)) return true;
+  if (!env.isProduction && env.adminUserIds.length === 0) return true;
+  return false;
+}
 
 export function isSupabaseConfigured(): boolean {
   return Boolean(env.supabaseUrl && env.supabaseServiceRoleKey);

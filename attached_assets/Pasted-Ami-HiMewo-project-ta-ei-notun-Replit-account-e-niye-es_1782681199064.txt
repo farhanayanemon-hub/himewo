@@ -1,0 +1,33 @@
+Ami HiMewo project ta ei notun Replit account-e niye eshechi. Asol app-er সব code external GitHub repo-te ache: github.com/farhanayanemon-hub/himewo — eta import/clone kore shuru koro. Replit project-ta mainly memory + tooling.
+
+STEP 1 — Memory poড়ো (আগে): .agents/memory/ folder-er sob file poড়ো, biশেষ kore:
+
+himewo-handoff.md — live state + ki ki secret lagbe
+himewo-github-push.md — GitHub-e push korar niyom (git binary blocked, REST API lagbe)
+himewo-live-connection.md — backend/auth connection
+himewo-preview-web-links.md — mobile preview build/deploy
+MEMORY.md — index (baki sob memory-r pointer)
+STEP 2 — Secrets ask kore set koro: Replit-er secret gulo transfer hoy NA, tai amake ekta ekta kore jiges kore ei key gula set koro (ami value debo purono account ba provider theke):
+
+GITHUB_TOKEN (repo + workflow scope) — repo-te push
+RAILWAY_TOKEN — api-server deploy
+CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID — web/admin Pages deploy
+SUPABASE_ACCESS_TOKEN — Supabase management
+SUPABASE_SERVICE_ROLE_KEY — server-side Supabase
+VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY — client Supabase
+VITE_API_URL — frontend → api base url
+SESSION_SECRET — session signing
+Ekta ekta kore amake jiges koro, ami diye dile set koro. Sob set howar আগে build/deploy/login kichu kaj korbe na.
+
+STEP 3 — Verify: Secrets set hole amake bolো — (১) sob key thik ache kina, (২) live state thik kina: web himewo.com (Cloudflare Pages), api api.himewo.com (Railway), Supabase DB/Auth, ar mobile preview links (social himewo-mobile.pages.dev, Messenger himewo-chat.pages.dev). Tarpor amra ekhan thekei kaj continue korbo.
+
+MONE RAKHBE (গুরুত্বপূর্ণ niyom):
+
+Ami non-technical, Banglish-e likhi — tumi-o shoboshomoy simple Banglish-e uttor diyo.
+App-er sob UI text English-e thakbe (শুধু ৳ symbol ar language picker-er বাংলা option thakbe).
+Kichu delete korbe na — folder/title সবসময় purpose-er sathe match korbe.
+Tin ta আলাদা app rakhbe: Web (social), Mobile (social main app), Messenger (chat) — egula ek hoye jabe na.
+GitHub-e changes push korte hobe REST API diye (git push blocked) — himewo-github-push.md follow koro.
+Kaj sesh hole সবসময় auto GitHub push + live deploy korbe, prottek bar jiges korbe na.
+Deploy: web/admin → push korle GitHub Actions diye Cloudflare-e auto; api-server → Railway; mobile preview → Cloudflare Pages export (himewo-preview-web-links.md).
+Ami credit-e কম thaki — efficient theko, beশি credit puড়িয়ো na.

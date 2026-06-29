@@ -105,32 +105,38 @@ export default function PostPage() {
         
         <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
           <h3 className="font-semibold mb-4">Comments</h3>
-          
-          <form onSubmit={handleSubmit} className="flex gap-2 mb-6 items-center">
-            <div className="flex-1 flex items-center bg-muted/50 rounded-full pr-1 focus-within:ring-1 focus-within:ring-primary">
-              <input 
-                type="text" 
-                value={content}
-                onChange={e => setContent(e.target.value)}
-                placeholder="Write a comment..." 
-                className="flex-1 bg-transparent rounded-full px-4 py-2 text-sm focus:outline-none"
-              />
-              <EmojiPickerButton onSelect={(emoji) => setContent((prev) => prev + emoji)} />
-            </div>
-            <Button type="submit" disabled={!content.trim() || createComment.isPending} className="rounded-full">Post</Button>
-          </form>
 
-          <div className="space-y-4">
-            {commentsLoading ? (
-              <div className="py-4 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" /></div>
-            ) : comments?.length === 0 ? (
-              <div className="text-center text-sm text-muted-foreground py-4">No comments yet.</div>
-            ) : (
-              comments?.map(comment => (
-                <CommentItem key={comment.id} comment={comment} postId={postId} />
-              ))
-            )}
-          </div>
+          {post.commentsEnabled ? (
+            <>
+              <form onSubmit={handleSubmit} className="flex gap-2 mb-6 items-center">
+                <div className="flex-1 flex items-center bg-muted/50 rounded-full pr-1 focus-within:ring-1 focus-within:ring-primary">
+                  <input
+                    type="text"
+                    value={content}
+                    onChange={e => setContent(e.target.value)}
+                    placeholder="Write a comment..."
+                    className="flex-1 bg-transparent rounded-full px-4 py-2 text-sm focus:outline-none"
+                  />
+                  <EmojiPickerButton onSelect={(emoji) => setContent((prev) => prev + emoji)} />
+                </div>
+                <Button type="submit" disabled={!content.trim() || createComment.isPending} className="rounded-full">Post</Button>
+              </form>
+
+              <div className="space-y-4">
+                {commentsLoading ? (
+                  <div className="py-4 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" /></div>
+                ) : comments?.length === 0 ? (
+                  <div className="text-center text-sm text-muted-foreground py-4">No comments yet.</div>
+                ) : (
+                  comments?.map(comment => (
+                    <CommentItem key={comment.id} comment={comment} postId={postId} />
+                  ))
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="text-center text-sm text-muted-foreground py-4">Comments are turned off for this post.</div>
+          )}
         </div>
       </div>
     </MainLayout>

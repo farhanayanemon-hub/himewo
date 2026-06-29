@@ -11,6 +11,7 @@ import {
   Settings,
   ShieldCheck,
   ScrollText,
+  Coins,
   LogOut,
 } from "lucide-react";
 import { useAuth } from "../lib/auth";
@@ -47,6 +48,7 @@ const NAV: NavItem[] = [
     icon: Megaphone,
     perm: "announcements.view",
   },
+  { href: "/earnings", label: "Earnings", icon: Coins, perm: "earnings.view" },
   { href: "/roles", label: "Roles", icon: ShieldCheck, perm: "roles.view" },
   { href: "/settings", label: "Settings", icon: Settings, perm: "settings.view" },
   { href: "/audit", label: "Audit log", icon: ScrollText, perm: "audit.view" },

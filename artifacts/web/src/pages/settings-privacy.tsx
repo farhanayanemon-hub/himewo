@@ -90,6 +90,19 @@ export default function SettingsPrivacyPage() {
         />
       </SettingsCard>
 
+      <SettingsCard title="Lock profile">
+        <SettingsRow
+          title="Lock your profile"
+          description="Only friends can see your posts, photos and intro. Others see just your name and profile picture."
+          control={
+            <Switch
+              checked={Boolean(data.isLocked)}
+              onCheckedChange={(v) => save({ isLocked: v })}
+            />
+          }
+        />
+      </SettingsCard>
+
       <SettingsCard title="Friend requests">
         <SettingsRow
           title="Who can send you friend requests"

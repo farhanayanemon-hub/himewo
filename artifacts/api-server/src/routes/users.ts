@@ -18,8 +18,13 @@ import {
   isNull,
 } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
-import { toProfile, buildProfileDetail, buildPosts } from "../lib/serialize";
-import { areFriends } from "../lib/authz";
+import {
+  toProfile,
+  buildProfileDetail,
+  buildPosts,
+  buildListProfiles,
+} from "../lib/serialize";
+import { areFriends, canViewProfileDetails } from "../lib/authz";
 import {
   SearchUsersQueryParams,
   SearchUsersResponse,
@@ -59,7 +64,9 @@ router.get("/users", requireAuth, async (req, res): Promise<void> => {
         )
         .limit(limit)
     : await db.select().from(profilesTable).limit(limit);
-  res.json(SearchUsersResponse.parse(rows.map((r) => toProfile(r))));
+  res.json(
+    SearchUsersResponse.parse(await buildListProfiles(rows)),
+  );
 });
 
 router.get(
@@ -85,7 +92,11 @@ router.get(
       .from(profilesTable)
       .where(notInArray(profilesTable.id, exclude))
       .limit(10);
-    res.json(GetFriendSuggestionsResponse.parse(rows.map((r) => toProfile(r))));
+    res.json(
+      GetFriendSuggestionsResponse.parse(
+        await buildListProfiles(rows),
+      ),
+    );
   },
 );
 
@@ -140,6 +151,12 @@ router.get("/users/:id/posts", requireAuth, async (req, res): Promise<void> => {
   const target = params.data.id;
   const isOwner = viewer === target;
   const friend = isOwner ? false : await areFriends(viewer, target);
+  // Restricted profile (lock / profileVisibility): unauthorized viewers get an
+  // empty timeline.
+  if (!(await canViewProfileDetails(target, viewer))) {
+    res.json(GetUserPostsResponse.parse([]));
+    return;
+  }
   // Owner sees all; friends see public + friends; others see public only.
   // Group posts are excluded from the profile timeline.
   const privacyClause = isOwner
@@ -179,6 +196,13 @@ router.get(
       return;
     }
     const target = params.data.id;
+    const viewer = req.userId!;
+    // Restricted profile (lock / profileVisibility): unauthorized viewers
+    // cannot see the friends list.
+    if (!(await canViewProfileDetails(target, viewer))) {
+      res.json(GetUserFriendsResponse.parse([]));
+      return;
+    }
     const limit = query.data.limit ?? 50;
     const rows = await db
       .select()
@@ -201,7 +225,9 @@ router.get(
       .from(profilesTable)
       .where(inArray(profilesTable.id, friendIds))
       .limit(limit);
-    res.json(GetUserFriendsResponse.parse(profiles.map((p) => toProfile(p))));
+    res.json(
+      GetUserFriendsResponse.parse(await buildListProfiles(profiles)),
+    );
   },
 );
 

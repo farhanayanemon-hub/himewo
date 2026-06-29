@@ -192,19 +192,3 @@
   animation: float-up 0.7s ease-out forwards;
   pointer-events: none;
 }
-
-@keyframes reaction-idle {
-  0%,
-  100% {
-    transform: translateY(0) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-3px) rotate(-4deg);
-  }
-}
-.reaction-idle {
-  animation: reaction-idle 1.6s ease-in-out infinite;
-}
-.reaction-emoji:hover .reaction-idle {
-  animation-play-state: paused;
-}

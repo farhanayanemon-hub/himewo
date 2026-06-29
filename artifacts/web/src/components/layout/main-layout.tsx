@@ -1,7 +1,10 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
-import { useGetUnreadNotificationCount } from "@workspace/api-client-react";
+import {
+  useGetUnreadNotificationCount,
+  useGetEarningsSummary,
+} from "@workspace/api-client-react";
 import { 
   Home, 
   Users, 
@@ -17,7 +20,8 @@ import {
   Store,
   Clock,
   Bookmark,
-  Clapperboard
+  Clapperboard,
+  Wallet
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -25,6 +29,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
   const { user, signOut } = useAuth();
   const [location, navigate] = useLocation();
   const { data: unreadCount } = useGetUnreadNotificationCount();
+  const { data: earnings } = useGetEarningsSummary();
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleSearch = (e: React.FormEvent) => {
@@ -41,6 +46,9 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
     { href: "/groups", icon: UsersRound, label: "Groups" },
     { href: "/pages", icon: FileText, label: "Pages" },
     { href: "/marketplace", icon: Store, label: "Marketplace" },
+    ...(earnings?.enabled
+      ? [{ href: "/earnings", icon: Wallet, label: "Earnings" }]
+      : []),
   ];
 
   const shortcutItems = [
