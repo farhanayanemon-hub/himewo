@@ -1,6 +1,16 @@
 import { Router, type IRouter } from "express";
 import { db, marketplaceListingsTable } from "@workspace/db";
-import { and, eq, lt, desc, ilike, count } from "drizzle-orm";
+import {
+  and,
+  eq,
+  lt,
+  desc,
+  ilike,
+  count,
+  sql,
+  isNotNull,
+  getTableColumns,
+} from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import { buildListings, buildListingById } from "../lib/serialize";
 import {
@@ -15,9 +25,40 @@ import {
   UpdateMarketplaceListingBody,
   UpdateMarketplaceListingResponse,
   DeleteMarketplaceListingParams,
+  GeocodeLocationResponse,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
+
+// Free, keyless geocoding via OpenStreetMap Nominatim. Nominatim requires a
+// descriptive User-Agent and is rate-limited (~1 req/sec), which is fine for
+// our scale. No API key needed.
+async function geocode(
+  q: string,
+): Promise<{ displayName: string; lat: number; lng: number }[]> {
+  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&addressdetails=0&q=${encodeURIComponent(q)}`;
+  const resp = await fetch(url, {
+    headers: {
+      "User-Agent": "HiMewo/1.0 (marketplace location search; https://himewo.com)",
+      "Accept-Language": "en",
+    },
+  });
+  if (!resp.ok) return [];
+  const data = (await resp.json()) as Array<{
+    display_name?: string;
+    lat?: string;
+    lon?: string;
+  }>;
+  return data
+    .map((d) => ({
+      displayName: d.display_name ?? "",
+      lat: Number(d.lat),
+      lng: Number(d.lon),
+    }))
+    .filter(
+      (d) => d.displayName && Number.isFinite(d.lat) && Number.isFinite(d.lng),
+    );
+}
 
 router.get("/marketplace", requireAuth, async (req, res): Promise<void> => {
   const query = ListMarketplaceListingsQueryParams.safeParse(req.query);
@@ -25,7 +66,40 @@ router.get("/marketplace", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: query.error.message });
     return;
   }
-  const { category, search, cursor, limit } = query.data;
+  const { category, search, cursor, limit, lat, lng, radiusKm } = query.data;
+  const useGeo = lat != null && lng != null;
+
+  if (useGeo) {
+    // Haversine distance (km) from the viewer's point to each listing.
+    const distExpr = sql<number>`(6371 * acos(least(1, greatest(-1,
+      cos(radians(${lat})) * cos(radians(${marketplaceListingsTable.lat})) *
+      cos(radians(${marketplaceListingsTable.lng}) - radians(${lng})) +
+      sin(radians(${lat})) * sin(radians(${marketplaceListingsTable.lat}))
+    ))))`;
+    const radius = radiusKm ?? 25;
+    const rows = await db
+      .select({ ...getTableColumns(marketplaceListingsTable), dist: distExpr })
+      .from(marketplaceListingsTable)
+      .where(
+        and(
+          eq(marketplaceListingsTable.status, "available"),
+          category ? eq(marketplaceListingsTable.category, category) : undefined,
+          search
+            ? ilike(marketplaceListingsTable.title, `%${search}%`)
+            : undefined,
+          isNotNull(marketplaceListingsTable.lat),
+          isNotNull(marketplaceListingsTable.lng),
+          sql`${distExpr} <= ${radius}`,
+        ),
+      )
+      .orderBy(distExpr)
+      .limit(limit ?? 20);
+    const distances = new Map(rows.map((r) => [r.id, r.dist]));
+    const built = await buildListings(rows, req.userId, distances);
+    res.json(ListMarketplaceListingsResponse.parse(built));
+    return;
+  }
+
   const rows = await db
     .select()
     .from(marketplaceListingsTable)
@@ -42,6 +116,20 @@ router.get("/marketplace", requireAuth, async (req, res): Promise<void> => {
   const built = await buildListings(rows, req.userId);
   res.json(ListMarketplaceListingsResponse.parse(built));
 });
+
+router.get(
+  "/marketplace/geocode",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const q = String(req.query.q ?? "").trim();
+    if (q.length < 2) {
+      res.json([]);
+      return;
+    }
+    const results = await geocode(q);
+    res.json(GeocodeLocationResponse.parse(results));
+  },
+);
 
 router.post("/marketplace", requireAuth, async (req, res): Promise<void> => {
   const parsed = CreateMarketplaceListingBody.safeParse(req.body);
@@ -60,6 +148,8 @@ router.post("/marketplace", requireAuth, async (req, res): Promise<void> => {
       condition: parsed.data.condition ?? "used_good",
       description: parsed.data.description ?? "",
       location: parsed.data.location ?? null,
+      lat: parsed.data.lat ?? null,
+      lng: parsed.data.lng ?? null,
       photos: parsed.data.photos ?? [],
     })
     .returning();
@@ -161,6 +251,8 @@ router.patch(
         ...(body.data.location !== undefined
           ? { location: body.data.location }
           : {}),
+        ...(body.data.lat !== undefined ? { lat: body.data.lat } : {}),
+        ...(body.data.lng !== undefined ? { lng: body.data.lng } : {}),
         ...(body.data.photos !== undefined ? { photos: body.data.photos } : {}),
         ...(body.data.status !== undefined ? { status: body.data.status } : {}),
       })

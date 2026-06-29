@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Save } from "lucide-react";
+import { AlertTriangle, Save, MapPin } from "lucide-react";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import type { SettingsResponse } from "../lib/types";
@@ -68,6 +68,28 @@ export function Settings() {
         title="Settings"
         description="Feature flags, branding and maintenance mode."
       />
+
+      <Card className="mb-6 border-emerald-200">
+        <CardHeader
+          title="Marketplace location"
+          subtitle="How buyers find listings near them."
+        />
+        <div className="flex items-start gap-3 px-5 py-4">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+            <MapPin className="h-5 w-5" />
+          </div>
+          <div className="space-y-1 text-sm">
+            <p className="font-medium text-slate-700">
+              Connected — OpenStreetMap (free)
+            </p>
+            <p className="text-slate-500">
+              Location search and "near me" distance are powered by OpenStreetMap
+              (Nominatim). It is completely free and needs no API key — there is
+              nothing to paste or configure here. It works automatically.
+            </p>
+          </div>
+        </div>
+      </Card>
 
       {query.isLoading && <Loading />}
       <ErrorNote error={query.error || setFlag.error || setSetting.error} />

@@ -2729,6 +2729,9 @@ export const ListSavedItemsResponseItem = zod.object({
   "condition": zod.string(),
   "description": zod.string().nullish(),
   "location": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "distanceKm": zod.number().nullish(),
   "photos": zod.array(zod.string()),
   "status": zod.enum(['available', 'sold']),
   "viewerIsSeller": zod.boolean().optional(),
@@ -2900,6 +2903,9 @@ export const SaveItemResponse = zod.object({
   "condition": zod.string(),
   "description": zod.string().nullish(),
   "location": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "distanceKm": zod.number().nullish(),
   "photos": zod.array(zod.string()),
   "status": zod.enum(['available', 'sold']),
   "viewerIsSeller": zod.boolean().optional(),
@@ -2969,13 +2975,18 @@ export const UnsaveItemResponse = zod.void()
 export const listMarketplaceListingsQueryLimitDefault = 20;
 export const listMarketplaceListingsQueryLimitMax = 50;
 
+export const listMarketplaceListingsQueryRadiusKmMax = 500;
+
 
 
 export const ListMarketplaceListingsQueryParams = zod.object({
   "category": zod.coerce.string().optional(),
   "search": zod.coerce.string().optional(),
   "cursor": zod.coerce.number().min(1).optional(),
-  "limit": zod.coerce.number().min(1).max(listMarketplaceListingsQueryLimitMax).default(listMarketplaceListingsQueryLimitDefault)
+  "limit": zod.coerce.number().min(1).max(listMarketplaceListingsQueryLimitMax).default(listMarketplaceListingsQueryLimitDefault),
+  "lat": zod.coerce.number().optional(),
+  "lng": zod.coerce.number().optional(),
+  "radiusKm": zod.coerce.number().min(1).max(listMarketplaceListingsQueryRadiusKmMax).optional()
 })
 
 export const ListMarketplaceListingsResponseItem = zod.object({
@@ -3020,6 +3031,9 @@ export const ListMarketplaceListingsResponseItem = zod.object({
   "condition": zod.string(),
   "description": zod.string().nullish(),
   "location": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "distanceKm": zod.number().nullish(),
   "photos": zod.array(zod.string()),
   "status": zod.enum(['available', 'sold']),
   "viewerIsSeller": zod.boolean().optional(),
@@ -3042,6 +3056,8 @@ export const CreateMarketplaceListingBody = zod.object({
   "condition": zod.string().optional(),
   "description": zod.string().optional(),
   "location": zod.string().optional(),
+  "lat": zod.number().optional(),
+  "lng": zod.number().optional(),
   "photos": zod.array(zod.string()).optional()
 })
 
@@ -3087,12 +3103,27 @@ export const CreateMarketplaceListingResponse = zod.object({
   "condition": zod.string(),
   "description": zod.string().nullish(),
   "location": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "distanceKm": zod.number().nullish(),
   "photos": zod.array(zod.string()),
   "status": zod.enum(['available', 'sold']),
   "viewerIsSeller": zod.boolean().optional(),
   "viewerHasSaved": zod.boolean().optional(),
   "createdAt": zod.coerce.date()
 })
+
+
+export const GeocodeLocationQueryParams = zod.object({
+  "q": zod.coerce.string()
+})
+
+export const GeocodeLocationResponseItem = zod.object({
+  "displayName": zod.string(),
+  "lat": zod.number(),
+  "lng": zod.number()
+})
+export const GeocodeLocationResponse = zod.array(GeocodeLocationResponseItem)
 
 
 export const GetSellingDashboardResponse = zod.object({
@@ -3141,6 +3172,9 @@ export const GetSellingDashboardResponse = zod.object({
   "condition": zod.string(),
   "description": zod.string().nullish(),
   "location": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "distanceKm": zod.number().nullish(),
   "photos": zod.array(zod.string()),
   "status": zod.enum(['available', 'sold']),
   "viewerIsSeller": zod.boolean().optional(),
@@ -3196,6 +3230,9 @@ export const GetMarketplaceListingResponse = zod.object({
   "condition": zod.string(),
   "description": zod.string().nullish(),
   "location": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "distanceKm": zod.number().nullish(),
   "photos": zod.array(zod.string()),
   "status": zod.enum(['available', 'sold']),
   "viewerIsSeller": zod.boolean().optional(),
@@ -3220,6 +3257,8 @@ export const UpdateMarketplaceListingBody = zod.object({
   "condition": zod.string().optional(),
   "description": zod.string().optional(),
   "location": zod.string().optional(),
+  "lat": zod.number().optional(),
+  "lng": zod.number().optional(),
   "photos": zod.array(zod.string()).optional(),
   "status": zod.enum(['available', 'sold']).optional()
 })
@@ -3266,6 +3305,9 @@ export const UpdateMarketplaceListingResponse = zod.object({
   "condition": zod.string(),
   "description": zod.string().nullish(),
   "location": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "distanceKm": zod.number().nullish(),
   "photos": zod.array(zod.string()),
   "status": zod.enum(['available', 'sold']),
   "viewerIsSeller": zod.boolean().optional(),

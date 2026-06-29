@@ -16,6 +16,8 @@ export interface MarketplaceListingUpdate {
   condition?: string;
   description?: string;
   location?: string;
+  lat?: number;
+  lng?: number;
   photos?: string[];
   status?: MarketplaceListingUpdateStatus;
 }

@@ -34,6 +34,8 @@ export * from './forbiddenResponse';
 export * from './friendRequest';
 export * from './friendRequestInput';
 export * from './friendRequestStatus';
+export * from './geocodeLocationParams';
+export * from './geocodeResult';
 export * from './getEarningsHistoryParams';
 export * from './getFeedParams';
 export * from './getGroupPostsParams';

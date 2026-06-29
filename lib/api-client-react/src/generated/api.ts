@@ -35,6 +35,8 @@ import type {
   ForbiddenResponse,
   FriendRequest,
   FriendRequestInput,
+  GeocodeLocationParams,
+  GeocodeResult,
   GetEarningsHistoryParams,
   GetFeedParams,
   GetGroupPostsParams,
@@ -4177,6 +4179,84 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getCreateMarketplaceListingMutationOptions(options));
     }
+
+export const getGeocodeLocationUrl = (params: GeocodeLocationParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/marketplace/geocode?${stringifiedParams}` : `/api/marketplace/geocode`
+}
+
+export const geocodeLocation = async (params: GeocodeLocationParams, options?: RequestInit): Promise<GeocodeResult[]> => {
+
+  return customFetch<GeocodeResult[]>(getGeocodeLocationUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGeocodeLocationQueryKey = (params?: GeocodeLocationParams,) => {
+    return [
+    `/api/marketplace/geocode`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGeocodeLocationQueryOptions = <TData = Awaited<ReturnType<typeof geocodeLocation>>, TError = ErrorType<unknown>>(params: GeocodeLocationParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof geocodeLocation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGeocodeLocationQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof geocodeLocation>>> = ({ signal }) => geocodeLocation(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof geocodeLocation>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GeocodeLocationQueryResult = NonNullable<Awaited<ReturnType<typeof geocodeLocation>>>
+export type GeocodeLocationQueryError = ErrorType<unknown>
+
+
+
+export function useGeocodeLocation<TData = Awaited<ReturnType<typeof geocodeLocation>>, TError = ErrorType<unknown>>(
+ params: GeocodeLocationParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof geocodeLocation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGeocodeLocationQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetSellingDashboardUrl = () => {
 

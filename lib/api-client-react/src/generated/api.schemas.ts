@@ -649,11 +649,23 @@ export interface MarketplaceListing {
   description?: string | null;
   /** @nullable */
   location?: string | null;
+  /** @nullable */
+  lat?: number | null;
+  /** @nullable */
+  lng?: number | null;
+  /** @nullable */
+  distanceKm?: number | null;
   photos: string[];
   status: MarketplaceListingStatus;
   viewerIsSeller?: boolean;
   viewerHasSaved?: boolean;
   createdAt: string;
+}
+
+export interface GeocodeResult {
+  displayName: string;
+  lat: number;
+  lng: number;
 }
 
 export interface MarketplaceListingInput {
@@ -666,6 +678,8 @@ export interface MarketplaceListingInput {
   condition?: string;
   description?: string;
   location?: string;
+  lat?: number;
+  lng?: number;
   photos?: string[];
 }
 
@@ -686,6 +700,8 @@ export interface MarketplaceListingUpdate {
   condition?: string;
   description?: string;
   location?: string;
+  lat?: number;
+  lng?: number;
   photos?: string[];
   status?: MarketplaceListingUpdateStatus;
 }
@@ -1125,6 +1141,17 @@ cursor?: number;
  * @maximum 50
  */
 limit?: number;
+lat?: number;
+lng?: number;
+/**
+ * @minimum 1
+ * @maximum 500
+ */
+radiusKm?: number;
+};
+
+export type GeocodeLocationParams = {
+q: string;
 };
 
 export type ListReelsParams = {

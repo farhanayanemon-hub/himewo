@@ -13,19 +13,53 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as Location from "expo-location";
 import { useListMarketplaceListings } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { CATEGORIES, formatPrice } from "@/constants/marketplace";
 import { shadow, glow } from "@/constants/shadows";
+import { LocationAutocomplete } from "@/components/LocationAutocomplete";
+
+const RADIUS_OPTIONS = [5, 10, 25, 50, 100, 200];
 
 export default function MarketplaceBrowseScreen() {
   const c = useColors();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string | undefined>(undefined);
+  const [locText, setLocText] = useState("");
+  const [center, setCenter] = useState<{ lat: number; lng: number } | null>(null);
+  const [radiusKm, setRadiusKm] = useState(25);
+  const [locating, setLocating] = useState(false);
+
+  const clearLocation = () => {
+    setCenter(null);
+    setLocText("");
+  };
+
+  const useMyLocation = async () => {
+    try {
+      setLocating(true);
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        setLocating(false);
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      setCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      setLocText("My current location");
+    } catch {
+      // ignore — user can search manually
+    } finally {
+      setLocating(false);
+    }
+  };
 
   const { data: listings, isLoading } = useListMarketplaceListings({
     ...(category ? { category } : {}),
     ...(search.trim() ? { search: search.trim() } : {}),
+    ...(center ? { lat: center.lat, lng: center.lng, radiusKm } : {}),
   });
 
   return (
@@ -53,6 +87,57 @@ export default function MarketplaceBrowseScreen() {
                 placeholderTextColor={c.mutedForeground}
                 style={[styles.searchInput, { color: c.foreground }]}
               />
+            </View>
+
+            <LocationAutocomplete
+              value={locText}
+              onChangeText={setLocText}
+              onPick={(r) => setCenter({ lat: r.lat, lng: r.lng })}
+              placeholder="Filter by location (e.g. Dhaka)"
+            />
+
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <Pressable
+                style={[styles.nearBtn, { backgroundColor: c.secondary }]}
+                onPress={useMyLocation}
+                disabled={locating}
+              >
+                {locating ? (
+                  <ActivityIndicator size="small" color={c.foreground} />
+                ) : (
+                  <Ionicons name="locate" size={16} color={c.foreground} />
+                )}
+                <Text style={[styles.actionText, { color: c.foreground }]}>Near me</Text>
+              </Pressable>
+              {center ? (
+                <>
+                  {RADIUS_OPTIONS.map((r) => (
+                    <Pressable
+                      key={r}
+                      onPress={() => setRadiusKm(r)}
+                      style={[
+                        styles.radiusChip,
+                        {
+                          backgroundColor: radiusKm === r ? c.primary : c.secondary,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={{
+                          color: radiusKm === r ? "#fff" : c.foreground,
+                          fontFamily: "Inter_600SemiBold",
+                          fontSize: 12,
+                        }}
+                      >
+                        {r} km
+                      </Text>
+                    </Pressable>
+                  ))}
+                  <Pressable onPress={clearLocation} style={styles.clearBtn}>
+                    <Ionicons name="close-circle" size={18} color={c.mutedForeground} />
+                  </Pressable>
+                </>
+              ) : null}
             </View>
 
             <View style={styles.actionsRow}>
@@ -139,6 +224,13 @@ export default function MarketplaceBrowseScreen() {
                   {item.location}
                 </Text>
               ) : null}
+              {item.distanceKm != null ? (
+                <Text style={[styles.cardDistance, { color: c.primary }]} numberOfLines={1}>
+                  {item.distanceKm < 1
+                    ? "Less than 1 km away"
+                    : `${Math.round(item.distanceKm)} km away`}
+                </Text>
+              ) : null}
             </View>
           </Pressable>
         )}
@@ -201,6 +293,22 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   actionText: { fontFamily: "Inter_700Bold", fontSize: 14 },
+  nearBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    height: 38,
+    borderRadius: 12,
+  },
+  radiusChip: {
+    paddingHorizontal: 12,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  clearBtn: { padding: 4 },
   chip: {
     paddingHorizontal: 14,
     height: 34,
@@ -223,6 +331,7 @@ const styles = StyleSheet.create({
   price: { fontFamily: "Inter_700Bold", fontSize: 16 },
   cardTitle: { fontFamily: "Inter_500Medium", fontSize: 14, marginTop: 2 },
   cardMeta: { fontFamily: "Inter_400Regular", fontSize: 12, marginTop: 2 },
+  cardDistance: { fontFamily: "Inter_600SemiBold", fontSize: 12, marginTop: 2 },
   empty: { alignItems: "center", gap: 10, marginTop: 48, paddingHorizontal: 32 },
   emptyText: { fontFamily: "Inter_500Medium", fontSize: 15, textAlign: "center" },
 });
