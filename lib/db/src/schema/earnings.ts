@@ -68,6 +68,11 @@ export const pointTransactionsTable = pgTable(
     entityId: integer("entity_id"),
     note: text("note"),
     ip: text("ip"),
+    // For admin-initiated ledger movements (admin_adjust from the adjust/reset
+    // handlers), the id of the admin who performed the action. Null for the
+    // user's own organic earns/withdrawals. This is the audit trail of who
+    // touched a balance manually — the most sensitive, real-money lever.
+    createdBy: uuid("created_by"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

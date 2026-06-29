@@ -37,3 +37,17 @@ Three live surfaces, three mechanisms:
 
 ## Verify API live
 - `curl -o /dev/null -w "%{http_code}"` the routes. Auth routes flip **404→401** once new code is live (401 = route exists, needs login). `/api/healthz` = 200.
+
+## Post-merge setup script (scripts/post-merge.sh)
+The post-merge script must, in order: `pnpm install --frozen-lockfile`,
+regenerate codegen, then push the schema to the env DB. Pitfalls that have
+silently broken the dev DB / typecheck after a merge:
+- DB filter must be `@workspace/db` (NOT `db`) or `pnpm --filter` matches no
+  package and the migration silently never runs → next merge's new columns are
+  missing → every write 500s ("column ... does not exist").
+- Use `push-force` (drizzle-kit push --force), never plain `push`: stdin is
+  closed during post-merge, so interactive push gets EOF and fails/hangs.
+- `lib/*/dist` is gitignored and `lib/api-zod/src/generated` is tracked but
+  must be regenerated; `pnpm --filter @workspace/api-spec run codegen` runs
+  orval AND `typecheck:libs` (tsc --build), which rebuilds the lib declarations
+  that per-package `tsc -p` consumers (e.g. api-server typecheck) read.
