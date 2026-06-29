@@ -57,7 +57,7 @@ export function ReactionControl({ viewerReaction, onReact, count, size = "defaul
   return (
     <div className="relative inline-flex" onMouseEnter={open} onMouseLeave={close}>
       {showPicker && (
-        <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-popover border border-popover-border rounded-full flex gap-0.5 p-1.5 z-30 animate-in fade-in zoom-in-90 slide-in-from-bottom-2 duration-150" style={{ boxShadow: "var(--shadow-pop)" }}>
+        <div className="absolute -top-14 left-0 bg-popover border border-popover-border rounded-full flex gap-0.5 p-1.5 z-30 animate-in fade-in zoom-in-90 slide-in-from-bottom-2 duration-150" style={{ boxShadow: "var(--shadow-pop)" }}>
           {Object.entries(reactionConfig).map(([type, config], i) => (
             <button
               key={type}

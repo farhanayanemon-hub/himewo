@@ -8,6 +8,7 @@ import {
   Share,
   TextInput,
   Alert,
+  ScrollView,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,6 +20,7 @@ import {
   useSaveItem,
   useUnsaveItem,
   useSharePost,
+  useListPostReactions,
   getGetFeedQueryKey,
   getGetPostQueryKey,
   getListSavedItemsQueryKey,
@@ -53,7 +55,6 @@ function SharedPostEmbed({ shared }: { shared: SharedPost }) {
       onPress={() => router.push(`/post/${shared.id}`)}
       style={[styles.embed, { borderColor: c.border }]}
     >
-      {shared.media.length > 0 && <MediaGrid media={shared.media} />}
       <View style={styles.embedBody}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 }}>
           <Avatar uri={shared.author.avatarUrl} name={shared.author.displayName} size={28} />
@@ -70,6 +71,7 @@ function SharedPostEmbed({ shared }: { shared: SharedPost }) {
           </Text>
         )}
       </View>
+      {shared.media.length > 0 && <MediaGrid media={shared.media} />}
     </Pressable>
   );
 }
@@ -81,6 +83,8 @@ export function PostCard({ post, onComment }: PostCardProps) {
   const [saved, setSaved] = useState<boolean>(post.viewerHasSaved ?? false);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareCaption, setShareCaption] = useState("");
+  const [showReactors, setShowReactors] = useState(false);
+  const reactors = useListPostReactions(post.id, { query: { enabled: showReactors } });
   const setReaction = useSetPostReaction();
   const removeReaction = useRemovePostReaction();
   const saveItem = useSaveItem();
@@ -231,7 +235,11 @@ export function PostCard({ post, onComment }: PostCardProps) {
 
       {(summary.total > 0 || post.commentCount > 0 || post.shareCount > 0) && (
         <View style={styles.statsRow}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+          <Pressable
+            style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+            onPress={() => summary.total > 0 && setShowReactors(true)}
+            hitSlop={6}
+          >
             {topReactions.length > 0 && (
               <Text style={{ fontSize: 13 }}>{topReactions.join("")}</Text>
             )}
@@ -240,7 +248,7 @@ export function PostCard({ post, onComment }: PostCardProps) {
                 {formatCount(summary.total)}
               </Text>
             )}
-          </View>
+          </Pressable>
           <View style={{ flexDirection: "row", gap: 12 }}>
             {post.commentCount > 0 && (
               <Text style={{ color: c.mutedForeground, fontSize: 13 }}>
@@ -271,6 +279,45 @@ export function PostCard({ post, onComment }: PostCardProps) {
           <Text style={[styles.actionLabel, { color: c.mutedForeground }]}>Share</Text>
         </Pressable>
       </View>
+
+      <Modal visible={showReactors} transparent animationType="slide" onRequestClose={() => setShowReactors(false)}>
+        <Pressable style={styles.sheetBackdrop} onPress={() => setShowReactors(false)}>
+          <Pressable style={[styles.sheet, { backgroundColor: c.card, maxHeight: "70%" }]} onPress={(e) => e.stopPropagation()}>
+            <View style={[styles.sheetHandle, { backgroundColor: c.border }]} />
+            <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 16, marginBottom: 12 }}>
+              Reactions
+            </Text>
+            <ScrollView>
+              {reactors.isLoading ? (
+                <Text style={{ color: c.mutedForeground, textAlign: "center", paddingVertical: 24 }}>Loading…</Text>
+              ) : reactors.data && reactors.data.length > 0 ? (
+                reactors.data.map((r) => (
+                  <Pressable
+                    key={r.user.id}
+                    style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}
+                    onPress={() => {
+                      setShowReactors(false);
+                      router.push(`/profile/${r.user.id}`);
+                    }}
+                  >
+                    <View>
+                      <Avatar uri={r.user.avatarUrl} name={r.user.displayName} size={40} />
+                      <Text style={{ position: "absolute", bottom: -2, right: -2, fontSize: 15 }}>
+                        {reactionConfig[r.type]?.emoji}
+                      </Text>
+                    </View>
+                    <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}>
+                      {r.user.displayName}
+                    </Text>
+                  </Pressable>
+                ))
+              ) : (
+                <Text style={{ color: c.mutedForeground, textAlign: "center", paddingVertical: 24 }}>No reactions yet</Text>
+              )}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <Modal visible={shareOpen} transparent animationType="slide" onRequestClose={() => setShareOpen(false)}>
         <Pressable style={styles.sheetBackdrop} onPress={() => setShareOpen(false)}>

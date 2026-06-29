@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
-import { MessageCircle, Share2, Loader2, Bookmark, Link2, Send, Check } from "lucide-react";
-import { Post, useSetPostReaction, useRemovePostReaction, useSharePost, useSaveItem, useUnsaveItem, ReactionType } from "@workspace/api-client-react";
+import { MessageCircle, Share2, Loader2, Bookmark, Link2, Send, Check, X } from "lucide-react";
+import { Post, useSetPostReaction, useRemovePostReaction, useSharePost, useSaveItem, useUnsaveItem, useListPostReactions, ReactionType } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 import { getGetFeedQueryKey, getGetPostQueryKey, getGetUserPostsQueryKey, getListSavedItemsQueryKey } from "@workspace/api-client-react";
@@ -13,15 +13,6 @@ type SharedPost = NonNullable<Post["sharedPost"]>;
 function SharedPostEmbed({ shared }: { shared: SharedPost }) {
   return (
     <Link href={`/post/${shared.id}`} className="block mb-3 rounded-xl border border-border overflow-hidden hover:bg-muted/30 transition-colors">
-      {shared.media && shared.media.length > 0 && (
-        <div className="overflow-hidden border-b border-border">
-          {shared.media[0].type === "video" ? (
-            <video src={shared.media[0].url} className="w-full object-cover max-h-[360px]" />
-          ) : (
-            <img src={shared.media[0].url} className="w-full object-cover max-h-[360px]" alt="" />
-          )}
-        </div>
-      )}
       <div className="p-3">
         <div className="flex items-center gap-2 mb-1.5">
           <img src={shared.author.avatarUrl || ""} className="w-7 h-7 rounded-full object-cover" alt="" />
@@ -32,6 +23,15 @@ function SharedPostEmbed({ shared }: { shared: SharedPost }) {
         </div>
         {shared.content && <p className="text-sm text-foreground/90 line-clamp-4 whitespace-pre-wrap">{shared.content}</p>}
       </div>
+      {shared.media && shared.media.length > 0 && (
+        <div className="overflow-hidden border-t border-border">
+          {shared.media[0].type === "video" ? (
+            <video src={shared.media[0].url} className="w-full object-cover max-h-[360px]" />
+          ) : (
+            <img src={shared.media[0].url} className="w-full object-cover max-h-[360px]" alt="" />
+          )}
+        </div>
+      )}
     </Link>
   );
 }
@@ -46,6 +46,8 @@ export function PostCard({ post }: { post: Post }) {
   const [showShare, setShowShare] = useState(false);
   const [shareCaption, setShareCaption] = useState("");
   const [copied, setCopied] = useState(false);
+  const [showReactors, setShowReactors] = useState(false);
+  const reactors = useListPostReactions(post.id, { query: { enabled: showReactors } });
 
   // when sharing a repost, point friends/links at the original post
   const targetId = post.sharedPost?.id ?? post.id;
@@ -171,23 +173,23 @@ export function PostCard({ post }: { post: Post }) {
       )}
 
       <div className="flex justify-between items-center text-sm text-muted-foreground py-2 border-b border-border mb-1">
-        <div className="flex items-center gap-1">
-          {post.reactions.total > 0 && (
-            <>
-              <div className="flex -space-x-1">
-                {Object.keys(post.reactions.byType).slice(0, 3).map((type) => {
-                  const rType = type as ReactionType;
-                  return (
-                    <div key={type} className="w-5 h-5 rounded-full flex items-center justify-center bg-background border border-border text-[11px] leading-none">
-                      {reactionConfig[rType]?.emoji}
-                    </div>
-                  );
-                })}
-              </div>
-              <span className="ml-1">{post.reactions.total}</span>
-            </>
-          )}
-        </div>
+        {post.reactions.total > 0 ? (
+          <button type="button" onClick={() => setShowReactors(true)} className="flex items-center gap-1 hover:underline">
+            <div className="flex -space-x-1">
+              {Object.keys(post.reactions.byType).slice(0, 3).map((type) => {
+                const rType = type as ReactionType;
+                return (
+                  <div key={type} className="w-5 h-5 rounded-full flex items-center justify-center bg-background border border-border text-[11px] leading-none">
+                    {reactionConfig[rType]?.emoji}
+                  </div>
+                );
+              })}
+            </div>
+            <span className="ml-1">{post.reactions.total}</span>
+          </button>
+        ) : (
+          <div />
+        )}
         <div className="flex gap-3">
           {post.commentCount > 0 && <Link href={`/post/${post.id}`} className="hover:underline">{post.commentCount} comments</Link>}
           {post.shareCount > 0 && <span>{post.shareCount} shares</span>}
@@ -240,6 +242,34 @@ export function PostCard({ post }: { post: Post }) {
           </div>
           <div className="flex justify-end">
             <Button variant="ghost" size="sm" onClick={() => setShowShare(false)}>Cancel</Button>
+          </div>
+        </div>
+      )}
+
+      {showReactors && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowReactors(false)}>
+          <div className="bg-card border border-card-border rounded-2xl w-full max-w-sm max-h-[70vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <h3 className="font-semibold">Reactions</h3>
+              <button type="button" onClick={() => setShowReactors(false)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="overflow-y-auto p-2">
+              {reactors.isLoading ? (
+                <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+              ) : reactors.data && reactors.data.length > 0 ? (
+                reactors.data.map((r) => (
+                  <Link key={r.user.id} href={`/profile/${r.user.id}`} onClick={() => setShowReactors(false)} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-muted/60">
+                    <div className="relative">
+                      <img src={r.user.avatarUrl || ""} className="w-10 h-10 rounded-full object-cover" alt="" />
+                      <span className="absolute -bottom-1 -right-1 text-base leading-none">{reactionConfig[r.type]?.emoji}</span>
+                    </div>
+                    <span className="font-medium">{r.user.displayName}</span>
+                  </Link>
+                ))
+              ) : (
+                <div className="text-center text-muted-foreground py-8">No reactions yet</div>
+              )}
+            </div>
           </div>
         </div>
       )}
