@@ -30,26 +30,47 @@ import {
 
 const router: IRouter = Router();
 
+type GeocodeResult = { displayName: string; lat: number; lng: number };
+
+// Small in-memory TTL cache so repeated queries (autocomplete typing the same
+// place) don't hammer Nominatim, which is rate-limited (~1 req/sec).
+const GEOCODE_CACHE_TTL_MS = 10 * 60 * 1000;
+const geocodeCache = new Map<string, { at: number; results: GeocodeResult[] }>();
+
 // Free, keyless geocoding via OpenStreetMap Nominatim. Nominatim requires a
-// descriptive User-Agent and is rate-limited (~1 req/sec), which is fine for
-// our scale. No API key needed.
-async function geocode(
-  q: string,
-): Promise<{ displayName: string; lat: number; lng: number }[]> {
+// descriptive User-Agent and is rate-limited (~1 req/sec). No API key needed.
+async function geocode(q: string): Promise<GeocodeResult[]> {
+  const key = q.toLowerCase();
+  const cached = geocodeCache.get(key);
+  if (cached && Date.now() - cached.at < GEOCODE_CACHE_TTL_MS) {
+    return cached.results;
+  }
+
   const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&addressdetails=0&q=${encodeURIComponent(q)}`;
-  const resp = await fetch(url, {
-    headers: {
-      "User-Agent": "HiMewo/1.0 (marketplace location search; https://himewo.com)",
-      "Accept-Language": "en",
-    },
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
+  let resp: Response;
+  try {
+    resp = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent":
+          "HiMewo/1.0 (marketplace location search; https://himewo.com)",
+        "Accept-Language": "en",
+      },
+    });
+  } catch {
+    return [];
+  } finally {
+    clearTimeout(timer);
+  }
   if (!resp.ok) return [];
   const data = (await resp.json()) as Array<{
     display_name?: string;
     lat?: string;
     lon?: string;
   }>;
-  return data
+  const results = data
     .map((d) => ({
       displayName: d.display_name ?? "",
       lat: Number(d.lat),
@@ -58,6 +79,9 @@ async function geocode(
     .filter(
       (d) => d.displayName && Number.isFinite(d.lat) && Number.isFinite(d.lng),
     );
+
+  geocodeCache.set(key, { at: Date.now(), results });
+  return results;
 }
 
 router.get("/marketplace", requireAuth, async (req, res): Promise<void> => {
@@ -121,7 +145,7 @@ router.get(
   "/marketplace/geocode",
   requireAuth,
   async (req, res): Promise<void> => {
-    const q = String(req.query.q ?? "").trim();
+    const q = String(req.query.q ?? "").trim().slice(0, 120);
     if (q.length < 2) {
       res.json([]);
       return;

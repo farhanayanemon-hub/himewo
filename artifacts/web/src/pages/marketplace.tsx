@@ -248,7 +248,10 @@ export default function MarketplacePage() {
           <div className="flex-1">
             <LocationAutocomplete
               value={locText}
-              onChange={setLocText}
+              onChange={(v) => {
+                setLocText(v);
+                setCenter(null);
+              }}
               onPick={(r) => setCenter({ lat: r.lat, lng: r.lng })}
               placeholder="Filter by location (e.g. Dhaka)"
             />
