@@ -21,6 +21,7 @@ import {
 import { useColors } from "@/hooks/useColors";
 import { CATEGORIES, CONDITIONS } from "@/constants/marketplace";
 import { glow } from "@/constants/shadows";
+import { LocationAutocomplete } from "@/components/LocationAutocomplete";
 
 export default function MarketplaceCreateScreen() {
   const c = useColors();
@@ -33,6 +34,7 @@ export default function MarketplaceCreateScreen() {
   const [condition, setCondition] = useState("used_good");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [photos, setPhotos] = useState<string[]>([]);
   const [photoInput, setPhotoInput] = useState("");
 
@@ -56,6 +58,7 @@ export default function MarketplaceCreateScreen() {
           condition,
           description: description.trim(),
           location: location.trim() || undefined,
+          ...(coords ? { lat: coords.lat, lng: coords.lng } : {}),
           photos,
         },
       },
@@ -162,12 +165,14 @@ export default function MarketplaceCreateScreen() {
         </View>
 
         <Field label="Location" c={c}>
-          <TextInput
+          <LocationAutocomplete
             value={location}
-            onChangeText={setLocation}
+            onChangeText={(v) => {
+              setLocation(v);
+              setCoords(null);
+            }}
+            onPick={(r) => setCoords({ lat: r.lat, lng: r.lng })}
             placeholder="e.g. Dhaka"
-            placeholderTextColor={c.mutedForeground}
-            style={inputStyle}
           />
         </Field>
 

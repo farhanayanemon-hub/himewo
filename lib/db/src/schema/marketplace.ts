@@ -6,6 +6,7 @@ import {
   integer,
   timestamp,
   index,
+  doublePrecision,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -26,6 +27,8 @@ export const marketplaceListingsTable = pgTable(
     condition: text("condition").notNull().default("used_good"),
     description: text("description").notNull().default(""),
     location: text("location"),
+    lat: doublePrecision("lat"),
+    lng: doublePrecision("lng"),
     photos: text("photos")
       .array()
       .notNull()

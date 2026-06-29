@@ -18,4 +18,11 @@ cursor?: number;
  * @maximum 50
  */
 limit?: number;
+lat?: number;
+lng?: number;
+/**
+ * @minimum 1
+ * @maximum 500
+ */
+radiusKm?: number;
 };

@@ -833,6 +833,7 @@ export async function buildNotifications(rows: NotificationRow[]) {
 export async function buildListings(
   rows: MarketplaceListingRow[],
   viewerId?: string,
+  distances?: Map<number, number>,
 ) {
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);
@@ -866,6 +867,9 @@ export async function buildListings(
         condition: r.condition,
         description: r.description,
         location: r.location,
+        lat: r.lat ?? null,
+        lng: r.lng ?? null,
+        distanceKm: distances?.get(r.id) ?? null,
         photos: r.photos ?? [],
         status: r.status,
         viewerIsSeller: viewerId ? r.sellerId === viewerId : false,

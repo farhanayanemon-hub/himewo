@@ -821,6 +821,9 @@ paths:
         - { name: search, in: query, schema: { type: string } }
         - { name: cursor, in: query, schema: { type: integer, minimum: 1 } }
         - { name: limit, in: query, schema: { type: integer, default: 20, minimum: 1, maximum: 50 } }
+        - { name: lat, in: query, schema: { type: number } }
+        - { name: lng, in: query, schema: { type: number } }
+        - { name: radiusKm, in: query, schema: { type: number, minimum: 1, maximum: 500 } }
       responses:
         "200":
           description: Listings
@@ -847,6 +850,20 @@ paths:
               schema: { $ref: "#/components/schemas/MarketplaceListing" }
         "400":
           $ref: "#/components/responses/BadRequest"
+  /marketplace/geocode:
+    get:
+      operationId: geocodeLocation
+      tags: [marketplace]
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Geocode results
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/GeocodeResult" }
   /marketplace/selling:
     get:
       operationId: getSellingDashboard
@@ -1928,6 +1945,9 @@ components:
         condition: { type: string }
         description: { type: ["string", "null"] }
         location: { type: ["string", "null"] }
+        lat: { type: ["number", "null"] }
+        lng: { type: ["number", "null"] }
+        distanceKm: { type: ["number", "null"] }
         photos:
           type: array
           items: { type: string }
@@ -1935,6 +1955,13 @@ components:
         viewerIsSeller: { type: boolean }
         viewerHasSaved: { type: boolean }
         createdAt: { type: string, format: date-time }
+    GeocodeResult:
+      type: object
+      required: [displayName, lat, lng]
+      properties:
+        displayName: { type: string }
+        lat: { type: number }
+        lng: { type: number }
     MarketplaceListingInput:
       type: object
       required: [title, price]
@@ -1946,6 +1973,8 @@ components:
         condition: { type: string }
         description: { type: string }
         location: { type: string }
+        lat: { type: number }
+        lng: { type: number }
         photos:
           type: array
           items: { type: string }
@@ -1958,6 +1987,8 @@ components:
         condition: { type: string }
         description: { type: string }
         location: { type: string }
+        lat: { type: number }
+        lng: { type: number }
         photos:
           type: array
           items: { type: string }

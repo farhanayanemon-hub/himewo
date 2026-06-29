@@ -6,6 +6,8 @@ import {
   useGetSellingDashboard,
   useUpdateMarketplaceListing,
   useDeleteMarketplaceListing,
+  useGeocodeLocation,
+  getGeocodeLocationQueryKey,
   useCreateConversation,
   useSaveItem,
   useUnsaveItem,
@@ -41,10 +43,99 @@ import {
   CheckCircle2,
   PackageOpen,
   Bookmark,
+  LocateFixed,
+  Loader2 as Spinner,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
+
+function useDebounced<T>(value: T, delay = 400): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
+
+const RADIUS_OPTIONS = [5, 10, 25, 50, 100, 200];
+
+/** Text input with OpenStreetMap (free) location suggestions. */
+function LocationAutocomplete({
+  value,
+  onChange,
+  onPick,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onPick: (r: { displayName: string; lat: number; lng: number }) => void;
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const debounced = useDebounced(value.trim(), 400);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const { data: results, isFetching } = useGeocodeLocation(
+    { q: debounced },
+    {
+      query: {
+        enabled: debounced.length >= 2,
+        queryKey: getGeocodeLocationQueryKey({ q: debounced }),
+      },
+    },
+  );
+
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
+  return (
+    <div className="relative" ref={boxRef}>
+      <div className="relative">
+        <MapPin className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={value}
+          onChange={(e) => {
+            onChange(e.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          placeholder={placeholder ?? "Search a city or area"}
+          className="pl-9"
+        />
+        {isFetching && (
+          <Spinner className="w-4 h-4 animate-spin absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        )}
+      </div>
+      {open && debounced.length >= 2 && results && results.length > 0 && (
+        <div className="absolute z-20 mt-1 w-full bg-card border border-border rounded-xl shadow-lg overflow-hidden max-h-60 overflow-y-auto">
+          {results.map((r, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => {
+                onPick(r);
+                onChange(r.displayName);
+                setOpen(false);
+              }}
+              className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-start gap-2"
+            >
+              <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0 text-muted-foreground" />
+              <span className="line-clamp-2">{r.displayName}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export const CATEGORIES = [
   { value: "vehicles", label: "Vehicles" },
@@ -83,10 +174,37 @@ function conditionLabel(value: string) {
 export default function MarketplacePage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string | undefined>(undefined);
+  const [locText, setLocText] = useState("");
+  const [center, setCenter] = useState<{ lat: number; lng: number } | null>(null);
+  const [radiusKm, setRadiusKm] = useState(25);
+  const [locating, setLocating] = useState(false);
+
+  const clearLocation = () => {
+    setCenter(null);
+    setLocText("");
+  };
+
+  const useMyLocation = () => {
+    if (!navigator.geolocation) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLocText("My current location");
+        setLocating(false);
+      },
+      () => {
+        setLocating(false);
+        alert("Could not get your location. Please search for a place instead.");
+      },
+      { enableHighAccuracy: false, timeout: 10000 },
+    );
+  };
 
   const { data: listings, isLoading } = useListMarketplaceListings({
     ...(category ? { category } : {}),
     ...(search.trim() ? { search: search.trim() } : {}),
+    ...(center ? { lat: center.lat, lng: center.lng, radiusKm } : {}),
   });
 
   return (
@@ -116,7 +234,7 @@ export default function MarketplacePage() {
           </div>
         </div>
 
-        <div className="relative mb-4">
+        <div className="relative mb-3">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
@@ -125,6 +243,58 @@ export default function MarketplacePage() {
             className="pl-9 rounded-full"
           />
         </div>
+
+        <div className="flex flex-col sm:flex-row gap-2 mb-4">
+          <div className="flex-1">
+            <LocationAutocomplete
+              value={locText}
+              onChange={setLocText}
+              onPick={(r) => setCenter({ lat: r.lat, lng: r.lng })}
+              placeholder="Filter by location (e.g. Dhaka)"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            className="press shrink-0"
+            onClick={useMyLocation}
+            disabled={locating}
+          >
+            {locating ? (
+              <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+            ) : (
+              <LocateFixed className="w-4 h-4 mr-1.5" />
+            )}
+            Near me
+          </Button>
+        </div>
+
+        {center && (
+          <div className="flex items-center gap-2 mb-4 text-sm">
+            <span className="text-muted-foreground">Within</span>
+            <Select
+              value={String(radiusKm)}
+              onValueChange={(v) => setRadiusKm(Number(v))}
+            >
+              <SelectTrigger className="w-28 h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {RADIUS_OPTIONS.map((r) => (
+                  <SelectItem key={r} value={String(r)}>
+                    {r} km
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <button
+              onClick={clearLocation}
+              className="inline-flex items-center gap-1 text-primary hover:underline press"
+            >
+              <X className="w-3.5 h-3.5" /> Clear
+            </button>
+          </div>
+        )}
 
         <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
           <button
@@ -184,6 +354,13 @@ export default function MarketplacePage() {
                   {item.location && (
                     <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5 flex items-center gap-1">
                       <MapPin className="w-3 h-3" /> {item.location}
+                    </p>
+                  )}
+                  {item.distanceKm != null && (
+                    <p className="text-xs font-medium text-primary mt-0.5">
+                      {item.distanceKm < 1
+                        ? "Less than 1 km away"
+                        : `${Math.round(item.distanceKm)} km away`}
                     </p>
                   )}
                 </div>
@@ -460,6 +637,7 @@ export function MarketplaceCreatePage() {
   const [condition, setCondition] = useState("used_good");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [photos, setPhotos] = useState<string[]>([]);
   const [photoInput, setPhotoInput] = useState("");
 
@@ -483,6 +661,7 @@ export function MarketplaceCreatePage() {
           condition,
           description: description.trim(),
           location: location.trim() || undefined,
+          ...(coords ? { lat: coords.lat, lng: coords.lng } : {}),
           photos,
         },
       },
@@ -598,10 +777,13 @@ export function MarketplaceCreatePage() {
             </div>
             <div>
               <Label htmlFor="m-location" className="mb-1.5 block">Location</Label>
-              <Input
-                id="m-location"
+              <LocationAutocomplete
                 value={location}
-                onChange={(e) => setLocation(e.target.value)}
+                onChange={(v) => {
+                  setLocation(v);
+                  setCoords(null);
+                }}
+                onPick={(r) => setCoords({ lat: r.lat, lng: r.lng })}
                 placeholder="e.g. Dhaka"
               />
             </div>

@@ -20,6 +20,12 @@ export interface MarketplaceListing {
   description?: string | null;
   /** @nullable */
   location?: string | null;
+  /** @nullable */
+  lat?: number | null;
+  /** @nullable */
+  lng?: number | null;
+  /** @nullable */
+  distanceKm?: number | null;
   photos: string[];
   status: MarketplaceListingStatus;
   viewerIsSeller?: boolean;

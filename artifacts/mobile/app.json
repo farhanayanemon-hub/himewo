@@ -36,6 +36,12 @@
           "photosPermission": "HiMewo needs access to your photos so you can share images and videos.",
           "cameraPermission": "HiMewo needs access to your camera so you can capture photos and videos to share."
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "HiMewo uses your location to show Marketplace listings near you."
+        }
       ]
     ],
     "experiments": {
