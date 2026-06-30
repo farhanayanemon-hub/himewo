@@ -33,12 +33,17 @@ export function MobileNav({
   const [location] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const bottomItems: MobileNavItem[] = [
-    { href: "/", icon: Home, label: "Home" },
-    { href: "/friends", icon: Users, label: "Friends" },
-    { href: "/reels", icon: Video, label: "Reels" },
-    { href: "/marketplace", icon: Store, label: "Market" },
+  const bottomItems: (MobileNavItem & { grad: string })[] = [
+    { href: "/", icon: Home, label: "Home", grad: "from-blue-500 to-indigo-600" },
+    { href: "/friends", icon: Users, label: "Friends", grad: "from-sky-400 to-cyan-600" },
+    { href: "/reels", icon: Video, label: "Reels", grad: "from-fuchsia-500 to-purple-600" },
+    { href: "/marketplace", icon: Store, label: "Market", grad: "from-amber-400 to-orange-500" },
   ];
+
+  const onBottomRoute = bottomItems.some((i) =>
+    i.href === "/" ? location === "/" : location.startsWith(i.href),
+  );
+  const menuActive = !onBottomRoute;
 
   return (
     <>
@@ -47,7 +52,7 @@ export function MobileNav({
         className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <div className="flex items-stretch justify-around h-14">
+        <div className="flex items-stretch justify-around h-16">
           {bottomItems.map((item) => {
             const Icon = item.icon;
             const isActive =
@@ -58,11 +63,18 @@ export function MobileNav({
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex flex-1 flex-col items-center justify-center gap-0.5 press"
+                className="flex flex-1 flex-col items-center justify-center gap-1 press"
               >
-                <Icon
-                  className={`w-6 h-6 ${isActive ? "text-primary" : "text-muted-foreground"}`}
-                />
+                <span
+                  className={`relative flex items-center justify-center w-9 h-9 rounded-[12px] bg-gradient-to-br ${item.grad} ring-1 ring-black/5 transition-all duration-200 ${
+                    isActive
+                      ? "scale-110 -translate-y-0.5 shadow-lg"
+                      : "opacity-80 shadow-md"
+                  }`}
+                >
+                  <span className="pointer-events-none absolute inset-x-1 top-1 h-1/3 rounded-full bg-white/40 blur-[1px]" />
+                  <Icon className="relative w-[18px] h-[18px] text-white drop-shadow" />
+                </span>
                 <span
                   className={`text-[10px] font-medium ${isActive ? "text-primary" : "text-muted-foreground"}`}
                 >
@@ -73,10 +85,21 @@ export function MobileNav({
           })}
           <button
             onClick={() => setMenuOpen(true)}
-            className="flex flex-1 flex-col items-center justify-center gap-0.5 press"
+            className="flex flex-1 flex-col items-center justify-center gap-1 press"
           >
-            <MenuIcon className="w-6 h-6 text-muted-foreground" />
-            <span className="text-[10px] font-medium text-muted-foreground">
+            <span
+              className={`relative flex items-center justify-center w-9 h-9 rounded-[12px] bg-gradient-to-br from-slate-600 to-slate-800 ring-1 ring-black/5 transition-all duration-200 ${
+                menuActive
+                  ? "scale-110 -translate-y-0.5 shadow-lg"
+                  : "opacity-80 shadow-md"
+              }`}
+            >
+              <span className="pointer-events-none absolute inset-x-1 top-1 h-1/3 rounded-full bg-white/40 blur-[1px]" />
+              <MenuIcon className="relative w-[18px] h-[18px] text-white drop-shadow" />
+            </span>
+            <span
+              className={`text-[10px] font-medium ${menuActive ? "text-primary" : "text-muted-foreground"}`}
+            >
               Menu
             </span>
           </button>
