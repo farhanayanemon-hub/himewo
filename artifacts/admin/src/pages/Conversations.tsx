@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Search,
@@ -255,6 +255,12 @@ function ThreadModal({
 }) {
   const [offset, setOffset] = useState(0);
   const limit = 100;
+
+  // Reset paging whenever we switch to a different conversation so a stale
+  // offset from a previous thread never hides recent messages.
+  useEffect(() => {
+    setOffset(0);
+  }, [conv?.id]);
 
   const query = useQuery({
     queryKey: ["conv-thread", conv?.id, offset],
