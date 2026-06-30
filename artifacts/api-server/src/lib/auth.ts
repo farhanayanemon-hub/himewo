@@ -1,5 +1,7 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { jwtVerify, createRemoteJWKSet, type JWTVerifyGetKey } from "jose";
+import { db, profilesTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 import { env, isAdminUser } from "./env";
 
 declare global {
@@ -96,18 +98,32 @@ export function requireAuth(
  * Guards admin-only endpoints. Must run after authMiddleware. Returns 401 when
  * unauthenticated and 403 when authenticated but not an admin.
  */
-export function requireAdmin(
+export async function requireAdmin(
   req: Request,
   res: Response,
   next: NextFunction,
-): void {
+): Promise<void> {
   if (!req.userId) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
-  if (!isAdminUser(req.userId)) {
-    res.status(403).json({ error: "Forbidden" });
+  // Env allowlist (ADMIN_USER_IDS) OR a panel-granted admin role in the DB.
+  if (isAdminUser(req.userId)) {
+    next();
     return;
   }
-  next();
+  try {
+    const [row] = await db
+      .select({ role: profilesTable.role })
+      .from(profilesTable)
+      .where(eq(profilesTable.id, req.userId));
+    if (row?.role === "admin") {
+      next();
+      return;
+    }
+  } catch {
+    // fall through to Forbidden
+  }
+  res.status(403).json({ error: "Forbidden" });
+  return;
 }
