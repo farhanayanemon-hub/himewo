@@ -59,7 +59,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
   ];
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
+    <div className="min-h-screen bg-background flex flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
       {/* Top Navbar */}
       <header className="sticky top-0 z-50 w-full bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 shadow-card">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
