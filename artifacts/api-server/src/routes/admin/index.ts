@@ -4,6 +4,7 @@ import { requirePanel } from "../../lib/admin-auth";
 import dashboardRouter from "./dashboard";
 import usersRouter from "./users";
 import contentRouter from "./content";
+import conversationsRouter from "./conversations";
 import reportsRouter from "./reports";
 import communitiesRouter from "./communities";
 import announcementsRouter from "./announcements";
@@ -29,6 +30,7 @@ router.get("/admin/me", (req, res): void => {
 router.use("/admin", dashboardRouter);
 router.use("/admin", usersRouter);
 router.use("/admin", contentRouter);
+router.use("/admin", conversationsRouter);
 router.use("/admin", reportsRouter);
 router.use("/admin", communitiesRouter);
 router.use("/admin", announcementsRouter);

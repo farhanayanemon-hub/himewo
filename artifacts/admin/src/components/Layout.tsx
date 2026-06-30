@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard,
   Users,
+  MessagesSquare,
   FileText,
   Flag,
   Boxes,
@@ -28,6 +29,12 @@ interface NavItem {
 const NAV: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard, perm: "dashboard.view" },
   { href: "/users", label: "Users", icon: Users, perm: "users.view" },
+  {
+    href: "/messages",
+    label: "Messages",
+    icon: MessagesSquare,
+    perm: "messages.view",
+  },
   { href: "/content", label: "Content", icon: FileText, perm: "content.view" },
   { href: "/reports", label: "Reports", icon: Flag, perm: "reports.view" },
   {
