@@ -64,4 +64,50 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "mention",
   "share",
   "story_view",
+  "announcement",
+  "verification",
+]);
+
+// ---------------------------------------------------------------------------
+// Admin / platform-governance enums (Admin Panel suite).
+// ---------------------------------------------------------------------------
+
+// Platform-level role. Drives the admin panel access gate and RBAC.
+export const userRoleEnum = pgEnum("user_role", [
+  "user",
+  "support",
+  "moderator",
+  "admin",
+]);
+
+// Moderation report lifecycle.
+export const reportStatusEnum = pgEnum("report_status", [
+  "open",
+  "reviewing",
+  "resolved",
+  "dismissed",
+]);
+
+// What a report points at. targetId is stored as text to hold either a uuid
+// (user) or a numeric id (post/comment/reel/story).
+export const reportTargetTypeEnum = pgEnum("report_target_type", [
+  "post",
+  "comment",
+  "user",
+  "reel",
+  "story",
+]);
+
+// Severity/visual treatment of a broadcast announcement.
+export const announcementLevelEnum = pgEnum("announcement_level", [
+  "info",
+  "warning",
+  "critical",
+]);
+
+// Blue-tick verification request lifecycle.
+export const verificationStatusEnum = pgEnum("verification_status", [
+  "pending",
+  "approved",
+  "rejected",
 ]);
