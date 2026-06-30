@@ -10,7 +10,11 @@ The real app is the EXTERNAL GitHub repo **github.com/farhanayanemon-hub/himewo*
 (see `himewo-github-push.md`). The Replit project is mostly memory + skills +
 tooling.
 
-## Current live state (as of 2026-06-28)
+There is a top-level `MIGRATION.md` in the repo with the full paste-able handoff
+prompt + step-by-step for a new account — keep it in sync with this file.
+
+## Current live state (as of 2026-06-30)
+- **marketplace location** (latest feature, LIVE): listings carry lat/lng, "near me" radius search sorted by distance, keyless OpenStreetMap/Nominatim geocoding + autocomplete on create+browse (web & mobile). See `himewo-marketplace-location.md`.
 - **web**: himewo.com — Cloudflare Pages (project `himewo`), auto-deploys on push to main via GitHub Actions.
 - **mobile previews** (view-only web mirrors): social → https://himewo-mobile.pages.dev, Messenger/chat → https://himewo-chat.pages.dev (rebuild steps in `himewo-preview-web-links.md`). Messenger app was rebuilt to a Facebook-Messenger UI (4-tab shell incl. Notifications, Messenger settings menu, 2-tab message requests) — all wired to the live backend.
 - **admin**: admin.himewo.com — Cloudflare Pages (project `himewo-admin`), own Action. Login = Supabase email+password, gated by `/api/admin/me` (role admin/moderator/support). WORKING.
