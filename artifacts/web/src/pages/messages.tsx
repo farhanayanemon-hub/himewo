@@ -17,7 +17,7 @@ import { useAuth } from "@/lib/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Phone, Video, Info, Loader2, MessageCircle, SquarePen, X } from "lucide-react";
+import { Send, Phone, Video, Info, Loader2, MessageCircle, SquarePen, X, ArrowLeft } from "lucide-react";
 import { EmojiPickerButton } from "@/components/emoji-picker";
 
 export default function MessagesPage() {
@@ -154,9 +154,9 @@ export default function MessagesPage() {
 
   return (
     <MainLayout>
-      <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm flex h-[calc(100vh-100px)] animate-in fade-in">
+      <div className="bg-card md:border border-border md:rounded-xl overflow-hidden shadow-sm flex -mx-4 md:mx-0 h-[calc(100dvh-9rem-env(safe-area-inset-bottom))] md:h-[calc(100vh-100px)] animate-in fade-in">
         {/* Conversation List */}
-        <div className="w-[320px] border-r border-border flex flex-col bg-card/50">
+        <div className={`${conversationId ? "hidden md:flex" : "flex"} w-full md:w-[320px] border-r border-border flex-col bg-card/50`}>
           <div className="p-4 border-b border-border flex justify-between items-center">
             <h2 className="font-bold text-lg">Chats</h2>
             <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setShowNewChat(true)} title="New message">
@@ -211,12 +211,15 @@ export default function MessagesPage() {
         </div>
 
         {/* Active Thread */}
-        <div className="flex-1 flex flex-col bg-background relative">
+        <div className={`${conversationId ? "flex" : "hidden md:flex"} flex-1 flex-col bg-background relative`}>
           {conversationId ? (
             <>
               {/* Thread Header */}
               <div className="h-16 border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-4 sticky top-0 z-10">
                 <div className="flex items-center gap-3">
+                  <Link href="/messages" className="md:hidden -ml-2 p-1.5 rounded-full hover:bg-muted text-primary shrink-0">
+                    <ArrowLeft className="w-6 h-6" />
+                  </Link>
                   <img 
                     src={activeConv?.avatarUrl || activeConv?.members.find(m => m.user.id !== user?.id)?.user.avatarUrl || ""} 
                     className="w-10 h-10 rounded-full object-cover bg-muted" 
