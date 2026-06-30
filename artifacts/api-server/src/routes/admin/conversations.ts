@@ -68,7 +68,11 @@ router.get(
         })
         .from(messagesTable)
         .where(inArray(messagesTable.conversationId, pageIds))
-        .orderBy(messagesTable.conversationId, desc(messagesTable.createdAt)),
+        .orderBy(
+          messagesTable.conversationId,
+          desc(messagesTable.createdAt),
+          desc(messagesTable.id),
+        ),
     ]);
 
     const profileMap = await loadAdminProfileMap([
@@ -150,7 +154,7 @@ router.get(
         .select()
         .from(messagesTable)
         .where(eq(messagesTable.conversationId, convId))
-        .orderBy(desc(messagesTable.createdAt))
+        .orderBy(desc(messagesTable.createdAt), desc(messagesTable.id))
         .limit(limit)
         .offset(offset),
     ]);
