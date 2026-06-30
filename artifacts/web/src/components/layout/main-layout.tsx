@@ -24,6 +24,7 @@ import {
   Wallet
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MobileNav } from "./mobile-nav";
 
 export function MainLayout({ children, rightSidebar }: { children: ReactNode; rightSidebar?: ReactNode }) {
   const { user, signOut } = useAuth();
@@ -58,7 +59,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
   ];
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col pb-16 md:pb-0">
       {/* Top Navbar */}
       <header className="sticky top-0 z-50 w-full bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 shadow-card">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -175,6 +176,13 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
           )}
         </aside>
       </div>
+
+      <MobileNav
+        navItems={navItems}
+        shortcutItems={shortcutItems}
+        user={user}
+        onSignOut={signOut}
+      />
     </div>
   );
 }
