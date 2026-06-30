@@ -4,6 +4,7 @@ import { Layout } from "./components/Layout";
 import { Login } from "./pages/Login";
 import { Dashboard } from "./pages/Dashboard";
 import { Users } from "./pages/Users";
+import { Conversations } from "./pages/Conversations";
 import { Content } from "./pages/Content";
 import { Reports } from "./pages/Reports";
 import { Communities } from "./pages/Communities";
@@ -50,6 +51,11 @@ export default function App() {
         <Route path="/users">
           <Guard perm="users.view">
             <Users />
+          </Guard>
+        </Route>
+        <Route path="/messages">
+          <Guard perm="messages.view">
+            <Conversations />
           </Guard>
         </Route>
         <Route path="/content">

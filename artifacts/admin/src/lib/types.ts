@@ -7,6 +7,7 @@ export const PERMISSIONS = [
   "users.delete",
   "content.view",
   "content.moderate",
+  "messages.view",
   "reports.view",
   "reports.manage",
   "communities.view",
@@ -229,6 +230,62 @@ export interface AuditRow {
   metadata: unknown;
   createdAt: string;
   actor: AdminProfile | null;
+}
+
+export interface ConvLastMessage {
+  content: string;
+  type: string;
+  senderId: string;
+  createdAt: string;
+  deleted: boolean;
+}
+
+export interface ConversationRow {
+  id: number;
+  type: string;
+  title: string | null;
+  createdAt: string;
+  lastMessageAt: string;
+  messageCount: number;
+  participants: AdminProfile[];
+  otherParticipants: AdminProfile[];
+  lastMessage: ConvLastMessage | null;
+}
+
+export interface AdminMessageAttachment {
+  id: number;
+  url: string;
+  type: string;
+  name: string | null;
+  thumbnailUrl: string | null;
+}
+
+export interface AdminMessage {
+  id: number;
+  conversationId: number;
+  senderId: string;
+  content: string;
+  type: string;
+  replyToId: number | null;
+  createdAt: string;
+  editedAt: string | null;
+  deleted: boolean;
+  sender: AdminProfile | null;
+  attachments: AdminMessageAttachment[];
+}
+
+export interface ConversationThread {
+  conversation: {
+    id: number;
+    type: string;
+    title: string | null;
+    createdAt: string;
+    participants: AdminProfile[];
+  };
+  items: AdminMessage[];
+  total?: number;
+  limit: number;
+  offset: number;
 }
 
 export interface PointConfig {
