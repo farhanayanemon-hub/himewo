@@ -19,6 +19,8 @@ import settingsRouter from "./settings";
 import savedRouter from "./saved";
 import earningsRouter from "./earnings";
 import earningsAdminRouter from "./earnings-admin";
+import adminRouter from "./admin";
+import reportsRouter from "./reports";
 
 const router: IRouter = Router();
 
@@ -44,5 +46,7 @@ router.use(settingsRouter);
 router.use(savedRouter);
 router.use(earningsRouter);
 router.use(earningsAdminRouter);
+router.use(adminRouter);
+router.use(reportsRouter);
 
 export default router;

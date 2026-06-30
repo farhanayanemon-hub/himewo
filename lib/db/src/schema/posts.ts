@@ -25,6 +25,10 @@ export const postsTable = pgTable(
     privacy: privacyEnum("privacy").notNull().default("public"),
     commentsEnabled: boolean("comments_enabled").notNull().default(true),
     reactionsEnabled: boolean("reactions_enabled").notNull().default(true),
+    // Moderation / curation flags (managed from the admin panel).
+    hidden: boolean("hidden").notNull().default(false),
+    pinned: boolean("pinned").notNull().default(false),
+    featured: boolean("featured").notNull().default(false),
     groupId: integer("group_id"),
     pageId: integer("page_id"),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -83,6 +87,8 @@ export const commentsTable = pgTable(
     parentId: integer("parent_id"),
     content: text("content").notNull().default(""),
     mediaUrl: text("media_url"),
+    // Moderation flag (managed from the admin panel).
+    hidden: boolean("hidden").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
