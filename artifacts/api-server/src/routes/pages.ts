@@ -1,14 +1,17 @@
 import { Router, type IRouter } from "express";
-import { db, pagesTable, pageFollowersTable } from "@workspace/db";
-import { and, eq, desc } from "drizzle-orm";
+import { db, pagesTable, pageFollowersTable, postsTable } from "@workspace/db";
+import { and, eq, lt, desc } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
-import { buildPage } from "../lib/serialize";
+import { buildPage, buildPosts } from "../lib/serialize";
 import {
   ListPagesResponse,
   CreatePageBody,
   CreatePageResponse,
   GetPageParams,
   GetPageResponse,
+  GetPagePostsParams,
+  GetPagePostsQueryParams,
+  GetPagePostsResponse,
   FollowPageParams,
   UnfollowPageParams,
 } from "@workspace/api-zod";
@@ -66,6 +69,33 @@ router.get("/pages/:id", requireAuth, async (req, res): Promise<void> => {
   }
   res.json(GetPageResponse.parse(await buildPage(page, req.userId)));
 });
+
+router.get(
+  "/pages/:id/posts",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = GetPagePostsParams.safeParse(req.params);
+    const query = GetPagePostsQueryParams.safeParse(req.query);
+    if (!params.success || !query.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    const { cursor, limit } = query.data;
+    const rows = await db
+      .select()
+      .from(postsTable)
+      .where(
+        and(
+          eq(postsTable.pageId, params.data.id),
+          cursor ? lt(postsTable.id, cursor) : undefined,
+        ),
+      )
+      .orderBy(desc(postsTable.id))
+      .limit(limit ?? 20);
+    const built = await buildPosts(rows, req.userId);
+    res.json(GetPagePostsResponse.parse(built));
+  },
+);
 
 router.post("/pages/:id/follow", requireAuth, async (req, res): Promise<void> => {
   const params = FollowPageParams.safeParse(req.params);

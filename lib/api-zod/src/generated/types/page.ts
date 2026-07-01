@@ -19,5 +19,6 @@ export interface Page {
   coverUrl?: string | null;
   followerCount: number;
   viewerFollows?: boolean;
+  viewerCanPost?: boolean;
   createdAt: Date;
 }

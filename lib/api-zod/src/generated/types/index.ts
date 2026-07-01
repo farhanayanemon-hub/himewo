@@ -39,6 +39,7 @@ export * from './geocodeResult';
 export * from './getEarningsHistoryParams';
 export * from './getFeedParams';
 export * from './getGroupPostsParams';
+export * from './getPagePostsParams';
 export * from './getUserFriendsParams';
 export * from './getUserPostsParams';
 export * from './group';

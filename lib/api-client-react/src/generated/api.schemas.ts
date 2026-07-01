@@ -517,6 +517,7 @@ export interface Page {
   coverUrl?: string | null;
   followerCount: number;
   viewerFollows?: boolean;
+  viewerCanPost?: boolean;
   createdAt: string;
 }
 
@@ -1152,6 +1153,11 @@ radiusKm?: number;
 
 export type GeocodeLocationParams = {
 q: string;
+};
+
+export type GetPagePostsParams = {
+cursor?: number;
+limit?: number;
 };
 
 export type ListReelsParams = {

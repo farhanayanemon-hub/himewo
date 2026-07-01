@@ -40,6 +40,7 @@ import type {
   GetEarningsHistoryParams,
   GetFeedParams,
   GetGroupPostsParams,
+  GetPagePostsParams,
   GetUserFriendsParams,
   GetUserPostsParams,
   Group,
@@ -4723,6 +4724,89 @@ export function useGetPage<TData = Awaited<ReturnType<typeof getPage>>, TError =
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetPageQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPagePostsUrl = (id: number,
+    params?: GetPagePostsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/pages/${id}/posts?${stringifiedParams}` : `/api/pages/${id}/posts`
+}
+
+export const getPagePosts = async (id: number,
+    params?: GetPagePostsParams, options?: RequestInit): Promise<Post[]> => {
+
+  return customFetch<Post[]>(getGetPagePostsUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPagePostsQueryKey = (id: number,
+    params?: GetPagePostsParams,) => {
+    return [
+    `/api/pages/${id}/posts`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetPagePostsQueryOptions = <TData = Awaited<ReturnType<typeof getPagePosts>>, TError = ErrorType<unknown>>(id: number,
+    params?: GetPagePostsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPagePosts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPagePostsQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPagePosts>>> = ({ signal }) => getPagePosts(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPagePosts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPagePostsQueryResult = NonNullable<Awaited<ReturnType<typeof getPagePosts>>>
+export type GetPagePostsQueryError = ErrorType<unknown>
+
+
+
+export function useGetPagePosts<TData = Awaited<ReturnType<typeof getPagePosts>>, TError = ErrorType<unknown>>(
+ id: number,
+    params?: GetPagePostsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPagePosts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPagePostsQueryOptions(id,params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

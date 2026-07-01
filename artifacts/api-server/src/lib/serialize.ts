@@ -669,6 +669,8 @@ export async function buildPage(row: PageRow, viewerId?: string) {
     coverUrl: row.coverUrl,
     followerCount: followers?.value ?? 0,
     viewerFollows: Array.isArray(viewerRow) ? viewerRow.length > 0 : false,
+    // Only the page owner may publish posts as the page.
+    viewerCanPost: Boolean(viewerId && viewerId === row.createdBy),
     createdAt: row.createdAt,
   };
 }

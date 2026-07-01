@@ -3332,6 +3332,7 @@ export const ListPagesResponseItem = zod.object({
   "coverUrl": zod.string().nullish(),
   "followerCount": zod.number(),
   "viewerFollows": zod.boolean().optional(),
+  "viewerCanPost": zod.boolean().optional(),
   "createdAt": zod.coerce.date()
 })
 export const ListPagesResponse = zod.array(ListPagesResponseItem)
@@ -3357,6 +3358,7 @@ export const CreatePageResponse = zod.object({
   "coverUrl": zod.string().nullish(),
   "followerCount": zod.number(),
   "viewerFollows": zod.boolean().optional(),
+  "viewerCanPost": zod.boolean().optional(),
   "createdAt": zod.coerce.date()
 })
 
@@ -3374,8 +3376,85 @@ export const GetPageResponse = zod.object({
   "coverUrl": zod.string().nullish(),
   "followerCount": zod.number(),
   "viewerFollows": zod.boolean().optional(),
+  "viewerCanPost": zod.boolean().optional(),
   "createdAt": zod.coerce.date()
 })
+
+
+export const GetPagePostsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const getPagePostsQueryLimitDefault = 20;
+
+export const GetPagePostsQueryParams = zod.object({
+  "cursor": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().default(getPagePostsQueryLimitDefault)
+})
+
+export const GetPagePostsResponseItem = zod.object({
+  "id": zod.number(),
+  "author": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "content": zod.string(),
+  "privacy": zod.enum(['public', 'friends', 'private']),
+  "commentsEnabled": zod.boolean(),
+  "reactionsEnabled": zod.boolean(),
+  "groupId": zod.number().nullish(),
+  "pageId": zod.number().nullish(),
+  "media": zod.array(zod.object({
+  "id": zod.number(),
+  "url": zod.string(),
+  "type": zod.enum(['image', 'video']),
+  "thumbnailUrl": zod.string().nullish(),
+  "width": zod.number().nullish(),
+  "height": zod.number().nullish(),
+  "durationMs": zod.number().nullish(),
+  "position": zod.number().optional()
+})),
+  "reactions": zod.object({
+  "total": zod.number(),
+  "byType": zod.record(zod.string(), zod.number()),
+  "viewerReaction": zod.union([zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry']),zod.null()]).optional()
+}),
+  "commentCount": zod.number(),
+  "shareCount": zod.number(),
+  "viewerHasSaved": zod.boolean().optional(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+export const GetPagePostsResponse = zod.array(GetPagePostsResponseItem)
 
 
 export const FollowPageParams = zod.object({
