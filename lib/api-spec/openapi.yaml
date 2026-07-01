@@ -967,6 +967,22 @@ paths:
               schema: { $ref: "#/components/schemas/Page" }
         "404":
           $ref: "#/components/responses/NotFound"
+  /pages/{id}/posts:
+    get:
+      operationId: getPagePosts
+      tags: [pages]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: cursor, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer, default: 20 } }
+      responses:
+        "200":
+          description: Posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Post" }
   /pages/{id}/follow:
     post:
       operationId: followPage
@@ -1860,6 +1876,7 @@ components:
         coverUrl: { type: ["string", "null"] }
         followerCount: { type: integer }
         viewerFollows: { type: boolean }
+        viewerCanPost: { type: boolean }
         createdAt: { type: string, format: date-time }
     PageInput:
       type: object

@@ -9,6 +9,8 @@ import {
   profilesTable,
   friendshipsTable,
   userSettingsTable,
+  groupMembersTable,
+  pagesTable,
 } from "@workspace/db";
 import { and, or, eq, ne, lt, asc, desc, inArray, isNull } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
@@ -106,6 +108,42 @@ router.post("/posts", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   const { content, privacy, groupId, pageId, media } = parsed.data;
+  // Authorize group/page posting before writing. Group posts require the author
+  // to be a member; page posts require the author to own the page. Otherwise a
+  // client could post into any community by passing an arbitrary id.
+  if (groupId != null) {
+    const [membership] = await db
+      .select({ id: groupMembersTable.id })
+      .from(groupMembersTable)
+      .where(
+        and(
+          eq(groupMembersTable.groupId, groupId),
+          eq(groupMembersTable.userId, req.userId!),
+        ),
+      );
+    if (!membership) {
+      res
+        .status(403)
+        .json({ error: "You must be a member of this group to post." });
+      return;
+    }
+  }
+  if (pageId != null) {
+    const [page] = await db
+      .select({ createdBy: pagesTable.createdBy })
+      .from(pagesTable)
+      .where(eq(pagesTable.id, pageId));
+    if (!page) {
+      res.status(404).json({ error: "Page not found" });
+      return;
+    }
+    if (page.createdBy !== req.userId) {
+      res
+        .status(403)
+        .json({ error: "Only the page owner can post as this page." });
+      return;
+    }
+  }
   // Resolve the audience for a new timeline post. An explicit `privacy` wins;
   // otherwise apply the user's "Default audience for new posts" setting
   // (postVisibility). Group/page posts keep "public" since their reach is

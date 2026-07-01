@@ -5,6 +5,7 @@ export * from "./generated/types";
 // The server validates query params at runtime, so the zod schemas win.
 export {
   GetGroupPostsParams,
+  GetPagePostsParams,
   GetUserPostsParams,
   GetUserFriendsParams,
   ListCommentsParams,

@@ -11,6 +11,7 @@ import {
 } from "@workspace/api-client-react";
 import { useParams, Link, useLocation } from "wouter";
 import { PostCard } from "@/components/post-card";
+import { PostComposer } from "@/components/post-composer";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -202,6 +203,13 @@ function GroupDetail({ id }: { id: number }) {
 
       <div className="space-y-4">
         <h2 className="font-bold text-lg px-2">Discussion</h2>
+        {group.viewerIsMember ? (
+          <PostComposer groupId={id} />
+        ) : (
+          <div className="py-4 text-center bg-card border border-border rounded-xl text-muted-foreground text-sm">
+            Join this group to post.
+          </div>
+        )}
         {postsLoading ? (
           <div className="py-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
         ) : posts?.length === 0 ? (

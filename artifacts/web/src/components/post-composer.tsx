@@ -4,6 +4,8 @@ import {
   useCreatePost,
   useGetMySettings,
   getGetFeedQueryKey,
+  getGetGroupPostsQueryKey,
+  getGetPagePostsQueryKey,
   PostInputPrivacy,
   type MediaItemInput,
 } from "@workspace/api-client-react";
@@ -32,7 +34,18 @@ function settingToPrivacy(pv: string | undefined): PostInputPrivacy {
   return PostInputPrivacy.public;
 }
 
-export function PostComposer({ onPosted }: { onPosted?: () => void } = {}) {
+export function PostComposer({
+  onPosted,
+  groupId,
+  pageId,
+}: {
+  onPosted?: () => void;
+  groupId?: number;
+  pageId?: number;
+} = {}) {
+  // Group/page posts get their reach from membership / page ownership, not the
+  // author's default audience — so we hide the privacy picker in that context.
+  const inCommunity = groupId != null || pageId != null;
   const { data: user } = useGetCurrentUser();
   const { data: settings } = useGetMySettings();
   const createPost = useCreatePost();
@@ -99,7 +112,10 @@ export function PostComposer({ onPosted }: { onPosted?: () => void } = {}) {
       {
         data: {
           content,
-          privacy: privacyReady ? privacy : undefined,
+          // Community posts don't carry an author-chosen audience.
+          privacy: inCommunity ? undefined : privacyReady ? privacy : undefined,
+          groupId,
+          pageId,
           media: mediaInput.length ? mediaInput : undefined,
         },
       },
@@ -108,7 +124,17 @@ export function PostComposer({ onPosted }: { onPosted?: () => void } = {}) {
           setContent("");
           setMedia([]);
           setPrivacyTouched(false);
-          queryClient.invalidateQueries({ queryKey: getGetFeedQueryKey() });
+          if (groupId != null) {
+            queryClient.invalidateQueries({
+              queryKey: getGetGroupPostsQueryKey(groupId),
+            });
+          } else if (pageId != null) {
+            queryClient.invalidateQueries({
+              queryKey: getGetPagePostsQueryKey(pageId),
+            });
+          } else {
+            queryClient.invalidateQueries({ queryKey: getGetFeedQueryKey() });
+          }
           onPosted?.();
         },
       },
@@ -124,6 +150,7 @@ export function PostComposer({ onPosted }: { onPosted?: () => void } = {}) {
             <span className="text-sm font-semibold text-foreground">
               {user?.displayName}
             </span>
+            {!inCommunity && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -151,6 +178,7 @@ export function PostComposer({ onPosted }: { onPosted?: () => void } = {}) {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+            )}
           </div>
           <textarea
             value={content}

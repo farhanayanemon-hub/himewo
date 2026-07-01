@@ -2,6 +2,7 @@ import { MainLayout } from "@/components/layout/main-layout";
 import {
   useListPages,
   useGetPage,
+  useGetPagePosts,
   useCreatePage,
   useFollowPage,
   useUnfollowPage,
@@ -9,6 +10,8 @@ import {
   getGetPageQueryKey,
 } from "@workspace/api-client-react";
 import { useParams, Link, useLocation } from "wouter";
+import { PostCard } from "@/components/post-card";
+import { PostComposer } from "@/components/post-composer";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -157,6 +160,7 @@ function PageList() {
 
 function PageDetail({ id }: { id: number }) {
   const { data: page, isLoading } = useGetPage(id);
+  const { data: posts, isLoading: postsLoading } = useGetPagePosts(id);
   const queryClient = useQueryClient();
 
   const followPage = useFollowPage();
@@ -218,6 +222,18 @@ function PageDetail({ id }: { id: number }) {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="space-y-4">
+        <h2 className="font-bold text-lg px-2">Posts</h2>
+        {page.viewerCanPost && <PostComposer pageId={id} />}
+        {postsLoading ? (
+          <div className="py-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+        ) : posts?.length === 0 ? (
+          <div className="py-10 text-center bg-card border border-border rounded-xl text-muted-foreground">No posts yet.</div>
+        ) : (
+          posts?.map(post => <PostCard key={post.id} post={post} />)
+        )}
       </div>
     </MainLayout>
   );
