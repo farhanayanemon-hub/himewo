@@ -22,56 +22,90 @@ interface ReactionControlProps {
 export function ReactionControl({ viewerReaction, onReact, count, size = "default" }: ReactionControlProps) {
   const [showPicker, setShowPicker] = useState(false);
   const [burst, setBurst] = useState(false);
+  const [floatEmoji, setFloatEmoji] = useState<string | null>(null);
   const active = viewerReaction ? reactionConfig[viewerReaction] : null;
   const isSm = size === "sm";
 
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const burstTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const floatTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const fire = (type: ReactionType) => {
+    if (hideTimer.current) clearTimeout(hideTimer.current);
     setShowPicker(false);
     setBurst(true);
-    window.setTimeout(() => setBurst(false), 450);
+    setFloatEmoji(reactionConfig[type].emoji);
+    if (burstTimer.current) clearTimeout(burstTimer.current);
+    if (floatTimer.current) clearTimeout(floatTimer.current);
+    burstTimer.current = setTimeout(() => setBurst(false), 500);
+    floatTimer.current = setTimeout(() => setFloatEmoji(null), 700);
     onReact(type);
   };
 
-  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const open = () => {
     if (hideTimer.current) clearTimeout(hideTimer.current);
     setShowPicker(true);
   };
   const close = () => {
-    hideTimer.current = setTimeout(() => setShowPicker(false), 120);
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    hideTimer.current = setTimeout(() => setShowPicker(false), 220);
   };
 
   return (
     <div className="relative inline-flex" onMouseEnter={open} onMouseLeave={close}>
       {showPicker && (
-        <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-popover border border-popover-border rounded-full flex gap-0.5 p-1.5 z-30 animate-in fade-in zoom-in-90 slide-in-from-bottom-2 duration-150" style={{ boxShadow: "var(--shadow-pop)" }}>
-          {Object.entries(reactionConfig).map(([type, config], i) => (
-            <button
-              key={type}
-              type="button"
-              onClick={() => fire(type as ReactionType)}
-              className="reaction-emoji group/emoji relative w-10 h-10 rounded-full flex items-center justify-center text-2xl leading-none origin-bottom transition-transform duration-150 hover:scale-[1.45] hover:-translate-y-2"
-              style={{ animationDelay: `${i * 35}ms` }}
-              title={config.label}
-            >
-              <span className="absolute -top-7 px-2 py-0.5 rounded-full bg-foreground text-background text-[10px] font-semibold opacity-0 group-hover/emoji:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                {config.label}
-              </span>
-              {config.emoji}
-            </button>
-          ))}
+        // Wrapper spans down to the button (pb-3) so there is NO empty gap between
+        // the button and the pill — keeps hover continuous and clicks reliable.
+        <div
+          className="absolute bottom-full left-1/2 -translate-x-1/2 pb-3 z-40"
+          onMouseEnter={open}
+          onMouseLeave={close}
+        >
+          <div
+            className="reaction-bar flex items-end gap-1 rounded-full border border-popover-border bg-popover px-2 py-1.5"
+            style={{ boxShadow: "var(--shadow-pop)" }}
+          >
+            {Object.entries(reactionConfig).map(([type, config], i) => (
+              <button
+                key={type}
+                type="button"
+                // Fire on pointer-down so the reaction registers instantly, before any
+                // hover-close race can remove the picker. preventDefault avoids focus jump.
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  fire(type as ReactionType);
+                }}
+                className="reaction-emoji group/emoji relative flex h-9 w-9 items-center justify-center rounded-full text-[26px] leading-none origin-bottom transition-transform duration-200 hover:scale-[1.5] hover:-translate-y-3"
+                style={{ animationDelay: `${i * 40}ms` }}
+                title={config.label}
+                aria-label={config.label}
+              >
+                <span className="pointer-events-none absolute -top-8 whitespace-nowrap rounded-full bg-foreground px-2 py-0.5 text-[11px] font-semibold text-background opacity-0 scale-90 transition-all duration-150 group-hover/emoji:opacity-100 group-hover/emoji:scale-100">
+                  {config.label}
+                </span>
+                <span className="reaction-idle inline-block">{config.emoji}</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
       <button
         type="button"
         onClick={() => fire(viewerReaction || ReactionType.like)}
-        className={`flex items-center gap-1.5 font-semibold press transition-colors ${
+        className={`relative flex items-center gap-1.5 font-semibold press transition-colors ${
           isSm ? "text-xs" : ""
         } ${active ? active.color : "text-muted-foreground hover:text-foreground"}`}
       >
+        {floatEmoji && (
+          <span className="reaction-float pointer-events-none absolute left-0 -top-1 text-xl">
+            {floatEmoji}
+          </span>
+        )}
         {active ? (
-          <span className={`leading-none ${burst ? "reaction-burst" : ""} ${isSm ? "text-sm" : "text-lg"}`}>{active.emoji}</span>
+          <span className={`leading-none ${burst ? "reaction-burst" : ""} ${isSm ? "text-sm" : "text-lg"}`}>
+            {active.emoji}
+          </span>
         ) : (
           <ThumbsUp className={isSm ? "w-3.5 h-3.5" : "w-5 h-5"} />
         )}
