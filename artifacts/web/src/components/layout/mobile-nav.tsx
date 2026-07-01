@@ -17,7 +17,18 @@ import {
 } from "@/components/ui/sheet";
 
 type IconType = ComponentType<{ className?: string }>;
-export type MobileNavItem = { href: string; icon: IconType; label: string };
+export type MobileNavItem = { href: string; icon: IconType; label: string; grad?: string };
+
+function IconTile({ icon: Icon, grad }: { icon: IconType; grad: string }) {
+  return (
+    <span
+      className={`relative flex items-center justify-center w-8 h-8 rounded-[12px] bg-gradient-to-br ${grad} ring-1 ring-black/5 shadow-md`}
+    >
+      <span className="pointer-events-none absolute inset-x-1 top-1 h-1/3 rounded-full bg-white/40 blur-[1px]" />
+      <Icon className="relative w-4 h-4 text-white drop-shadow" />
+    </span>
+  );
+}
 
 export function MobileNav({
   navItems,
@@ -139,7 +150,7 @@ export function MobileNav({
                   onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
                 >
-                  <Icon className="w-6 h-6 text-primary" />
+                  <IconTile icon={Icon} grad={item.grad ?? "from-blue-500 to-indigo-600"} />
                   <span className="font-medium">{item.label}</span>
                 </Link>
               );
@@ -154,7 +165,7 @@ export function MobileNav({
                   onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
                 >
-                  <Icon className="w-6 h-6 text-primary" />
+                  <IconTile icon={Icon} grad={item.grad ?? "from-cyan-400 to-blue-600"} />
                   <span className="font-medium">{item.label}</span>
                 </Link>
               );
@@ -167,7 +178,7 @@ export function MobileNav({
               onClick={() => setMenuOpen(false)}
               className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
             >
-              <Settings className="w-6 h-6" />
+              <IconTile icon={Settings} grad="from-slate-500 to-slate-700" />
               <span className="font-medium">Settings</span>
             </Link>
             <button
@@ -177,7 +188,7 @@ export function MobileNav({
               }}
               className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
             >
-              <LogOut className="w-6 h-6" />
+              <IconTile icon={LogOut} grad="from-red-500 to-rose-600" />
               <span className="font-medium">Log Out</span>
             </button>
           </div>
