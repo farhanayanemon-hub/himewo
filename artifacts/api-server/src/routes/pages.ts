@@ -1,19 +1,34 @@
 import { Router, type IRouter } from "express";
-import { db, pagesTable, pageFollowersTable, postsTable } from "@workspace/db";
+import {
+  db,
+  pagesTable,
+  pageFollowersTable,
+  pageReviewsTable,
+  postsTable,
+} from "@workspace/db";
 import { and, eq, lt, desc } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
-import { buildPage, buildPosts } from "../lib/serialize";
+import { buildPage, buildPageReviews, buildPosts } from "../lib/serialize";
 import {
   ListPagesResponse,
   CreatePageBody,
   CreatePageResponse,
   GetPageParams,
   GetPageResponse,
+  UpdatePageParams,
+  UpdatePageBody,
+  UpdatePageResponse,
   GetPagePostsParams,
   GetPagePostsQueryParams,
   GetPagePostsResponse,
   FollowPageParams,
   UnfollowPageParams,
+  ListPageReviewsParams,
+  ListPageReviewsResponse,
+  ReviewPageParams,
+  ReviewPageBody,
+  ReviewPageResponse,
+  DeletePageReviewParams,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -42,6 +57,13 @@ router.post("/pages", requireAuth, async (req, res): Promise<void> => {
       description: parsed.data.description ?? null,
       avatarUrl: parsed.data.avatarUrl ?? null,
       coverUrl: parsed.data.coverUrl ?? null,
+      contactPhone: parsed.data.contactPhone ?? null,
+      contactEmail: parsed.data.contactEmail ?? null,
+      website: parsed.data.website ?? null,
+      address: parsed.data.address ?? null,
+      hours: parsed.data.hours ?? null,
+      ctaType: parsed.data.ctaType ?? "none",
+      ctaUrl: parsed.data.ctaUrl ?? null,
       createdBy: req.userId!,
     })
     .returning();
@@ -69,6 +91,109 @@ router.get("/pages/:id", requireAuth, async (req, res): Promise<void> => {
   }
   res.json(GetPageResponse.parse(await buildPage(page, req.userId)));
 });
+
+router.patch("/pages/:id", requireAuth, async (req, res): Promise<void> => {
+  const params = UpdatePageParams.safeParse(req.params);
+  const parsed = UpdatePageBody.safeParse(req.body);
+  if (!params.success || !parsed.success) {
+    res.status(400).json({ error: "Invalid request" });
+    return;
+  }
+  const [page] = await db
+    .select()
+    .from(pagesTable)
+    .where(eq(pagesTable.id, params.data.id));
+  if (!page) {
+    res.status(404).json({ error: "Page not found" });
+    return;
+  }
+  if (page.createdBy !== req.userId) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  const [updated] = await db
+    .update(pagesTable)
+    .set(parsed.data)
+    .where(eq(pagesTable.id, params.data.id))
+    .returning();
+  res.json(UpdatePageResponse.parse(await buildPage(updated, req.userId)));
+});
+
+router.get(
+  "/pages/:id/reviews",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = ListPageReviewsParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const rows = await db
+      .select()
+      .from(pageReviewsTable)
+      .where(eq(pageReviewsTable.pageId, params.data.id))
+      .orderBy(desc(pageReviewsTable.id))
+      .limit(100);
+    res.json(ListPageReviewsResponse.parse(await buildPageReviews(rows)));
+  },
+);
+
+router.post(
+  "/pages/:id/reviews",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = ReviewPageParams.safeParse(req.params);
+    const parsed = ReviewPageBody.safeParse(req.body);
+    if (!params.success || !parsed.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    const [page] = await db
+      .select()
+      .from(pagesTable)
+      .where(eq(pagesTable.id, params.data.id));
+    if (!page) {
+      res.status(404).json({ error: "Page not found" });
+      return;
+    }
+    const [row] = await db
+      .insert(pageReviewsTable)
+      .values({
+        pageId: params.data.id,
+        userId: req.userId!,
+        rating: parsed.data.rating,
+        body: parsed.data.body ?? null,
+      })
+      .onConflictDoUpdate({
+        target: [pageReviewsTable.pageId, pageReviewsTable.userId],
+        set: { rating: parsed.data.rating, body: parsed.data.body ?? null },
+      })
+      .returning();
+    const [built] = await buildPageReviews([row]);
+    res.json(ReviewPageResponse.parse(built));
+  },
+);
+
+router.delete(
+  "/pages/:id/reviews",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = DeletePageReviewParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    await db
+      .delete(pageReviewsTable)
+      .where(
+        and(
+          eq(pageReviewsTable.pageId, params.data.id),
+          eq(pageReviewsTable.userId, req.userId!),
+        ),
+      );
+    res.sendStatus(204);
+  },
+);
 
 router.get(
   "/pages/:id/posts",

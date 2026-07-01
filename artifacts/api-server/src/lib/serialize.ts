@@ -19,6 +19,7 @@ import {
   groupMembersTable,
   pagesTable,
   pageFollowersTable,
+  pageReviewsTable,
   storiesTable,
   storyViewsTable,
   reelsTable,
@@ -50,6 +51,7 @@ import {
   desc,
   asc,
   count,
+  avg,
   isNull,
 } from "drizzle-orm";
 import { canViewPost, canSendFriendRequest } from "./authz";
@@ -680,7 +682,7 @@ export async function buildGroupMembers(
 
 // ---------------- Pages ----------------
 export async function buildPage(row: PageRow, viewerId?: string) {
-  const [[followers], viewerRow] = await Promise.all([
+  const [[followers], viewerRow, [stats], viewerReviewRows] = await Promise.all([
     db
       .select({ value: count() })
       .from(pageFollowersTable)
@@ -696,7 +698,24 @@ export async function buildPage(row: PageRow, viewerId?: string) {
             ),
           )
       : Promise.resolve([]),
+    db
+      .select({ cnt: count(), average: avg(pageReviewsTable.rating) })
+      .from(pageReviewsTable)
+      .where(eq(pageReviewsTable.pageId, row.id)),
+    viewerId
+      ? db
+          .select()
+          .from(pageReviewsTable)
+          .where(
+            and(
+              eq(pageReviewsTable.pageId, row.id),
+              eq(pageReviewsTable.userId, viewerId),
+            ),
+          )
+      : Promise.resolve([]),
   ]);
+  const vr = Array.isArray(viewerReviewRows) ? viewerReviewRows[0] : undefined;
+  const viewerReview = vr ? ((await buildPageReviews([vr]))[0] ?? null) : null;
   return {
     id: row.id,
     name: row.name,
@@ -704,12 +723,43 @@ export async function buildPage(row: PageRow, viewerId?: string) {
     description: row.description,
     avatarUrl: row.avatarUrl,
     coverUrl: row.coverUrl,
+    contactPhone: row.contactPhone,
+    contactEmail: row.contactEmail,
+    website: row.website,
+    address: row.address,
+    hours: row.hours,
+    ctaType: row.ctaType,
+    ctaUrl: row.ctaUrl,
+    ownerId: row.createdBy,
     followerCount: followers?.value ?? 0,
+    reviewCount: stats?.cnt ?? 0,
+    averageRating: stats?.average != null ? Number(stats.average) : null,
     viewerFollows: Array.isArray(viewerRow) ? viewerRow.length > 0 : false,
     // Only the page owner may publish posts as the page.
     viewerCanPost: Boolean(viewerId && viewerId === row.createdBy),
+    viewerReview,
     createdAt: row.createdAt,
   };
+}
+
+export async function buildPageReviews(
+  rows: (typeof pageReviewsTable.$inferSelect)[],
+) {
+  if (rows.length === 0) return [];
+  const map = await loadProfileMap(rows.map((r) => r.userId));
+  return rows.flatMap((r) => {
+    const user = map.get(r.userId);
+    if (!user) return [];
+    return [
+      {
+        id: r.id,
+        user,
+        rating: r.rating,
+        body: r.body,
+        createdAt: r.createdAt,
+      },
+    ];
+  });
 }
 
 // ---------------- Stories ----------------

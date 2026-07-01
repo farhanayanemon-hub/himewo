@@ -5,6 +5,7 @@
  * HiMewo social platform + Messenger API
  * OpenAPI spec version: 0.1.0
  */
+import type { PageInputCtaType } from './pageInputCtaType';
 
 export interface PageInput {
   /** @minLength 1 */
@@ -13,4 +14,11 @@ export interface PageInput {
   description?: string;
   avatarUrl?: string;
   coverUrl?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  website?: string;
+  address?: string;
+  hours?: string;
+  ctaType?: PageInputCtaType;
+  ctaUrl?: string;
 }

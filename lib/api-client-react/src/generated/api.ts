@@ -67,6 +67,9 @@ import type {
   Notification,
   Page,
   PageInput,
+  PageReview,
+  PageReviewInput,
+  PageUpdateInput,
   PointConfig,
   PointConfigUpdate,
   PointTransaction,
@@ -5549,6 +5552,271 @@ export function useGetPage<TData = Awaited<ReturnType<typeof getPage>>, TError =
 
 
 
+
+export const getUpdatePageUrl = (id: number,) => {
+
+
+
+
+  return `/api/pages/${id}`
+}
+
+export const updatePage = async (id: number,
+    pageUpdateInput: PageUpdateInput, options?: RequestInit): Promise<Page> => {
+
+  return customFetch<Page>(getUpdatePageUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(pageUpdateInput)
+  }
+);}
+
+
+
+
+export const getUpdatePageMutationOptions = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePage>>, TError,{id: number;data: BodyType<PageUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updatePage>>, TError,{id: number;data: BodyType<PageUpdateInput>}, TContext> => {
+
+const mutationKey = ['updatePage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePage>>, {id: number;data: BodyType<PageUpdateInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updatePage(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdatePageMutationResult = NonNullable<Awaited<ReturnType<typeof updatePage>>>
+    export type UpdatePageMutationBody = BodyType<PageUpdateInput>
+    export type UpdatePageMutationError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+    export const useUpdatePage = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePage>>, TError,{id: number;data: BodyType<PageUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updatePage>>,
+        TError,
+        {id: number;data: BodyType<PageUpdateInput>},
+        TContext
+      > => {
+      return useMutation(getUpdatePageMutationOptions(options));
+    }
+
+export const getListPageReviewsUrl = (id: number,) => {
+
+
+
+
+  return `/api/pages/${id}/reviews`
+}
+
+export const listPageReviews = async (id: number, options?: RequestInit): Promise<PageReview[]> => {
+
+  return customFetch<PageReview[]>(getListPageReviewsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPageReviewsQueryKey = (id: number,) => {
+    return [
+    `/api/pages/${id}/reviews`
+    ] as const;
+    }
+
+
+export const getListPageReviewsQueryOptions = <TData = Awaited<ReturnType<typeof listPageReviews>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPageReviews>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPageReviewsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPageReviews>>> = ({ signal }) => listPageReviews(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPageReviews>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPageReviewsQueryResult = NonNullable<Awaited<ReturnType<typeof listPageReviews>>>
+export type ListPageReviewsQueryError = ErrorType<unknown>
+
+
+
+export function useListPageReviews<TData = Awaited<ReturnType<typeof listPageReviews>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPageReviews>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPageReviewsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getReviewPageUrl = (id: number,) => {
+
+
+
+
+  return `/api/pages/${id}/reviews`
+}
+
+export const reviewPage = async (id: number,
+    pageReviewInput: PageReviewInput, options?: RequestInit): Promise<PageReview> => {
+
+  return customFetch<PageReview>(getReviewPageUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(pageReviewInput)
+  }
+);}
+
+
+
+
+export const getReviewPageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewPage>>, TError,{id: number;data: BodyType<PageReviewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reviewPage>>, TError,{id: number;data: BodyType<PageReviewInput>}, TContext> => {
+
+const mutationKey = ['reviewPage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reviewPage>>, {id: number;data: BodyType<PageReviewInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  reviewPage(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReviewPageMutationResult = NonNullable<Awaited<ReturnType<typeof reviewPage>>>
+    export type ReviewPageMutationBody = BodyType<PageReviewInput>
+    export type ReviewPageMutationError = ErrorType<unknown>
+
+    export const useReviewPage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewPage>>, TError,{id: number;data: BodyType<PageReviewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reviewPage>>,
+        TError,
+        {id: number;data: BodyType<PageReviewInput>},
+        TContext
+      > => {
+      return useMutation(getReviewPageMutationOptions(options));
+    }
+
+export const getDeletePageReviewUrl = (id: number,) => {
+
+
+
+
+  return `/api/pages/${id}/reviews`
+}
+
+export const deletePageReview = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeletePageReviewUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeletePageReviewMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePageReview>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deletePageReview>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deletePageReview'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deletePageReview>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deletePageReview(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeletePageReviewMutationResult = NonNullable<Awaited<ReturnType<typeof deletePageReview>>>
+
+    export type DeletePageReviewMutationError = ErrorType<unknown>
+
+    export const useDeletePageReview = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePageReview>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deletePageReview>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeletePageReviewMutationOptions(options));
+    }
 
 export const getGetPagePostsUrl = (id: number,
     params?: GetPagePostsParams,) => {
