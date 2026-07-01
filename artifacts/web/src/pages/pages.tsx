@@ -48,6 +48,16 @@ import {
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
+function safeHttpUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    return u.protocol === "http:" || u.protocol === "https:" ? url : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function PagesView() {
   const { id } = useParams<{ id: string }>();
 
@@ -219,20 +229,21 @@ function PageCTA({ page }: { page: Page }) {
       </Button>
     );
   }
-  if (page.ctaType === "shop" && page.ctaUrl) {
+  const ctaLink = safeHttpUrl(page.ctaUrl);
+  if (page.ctaType === "shop" && ctaLink) {
     return (
       <Button asChild>
-        <a href={page.ctaUrl} target="_blank" rel="noopener noreferrer">
+        <a href={ctaLink} target="_blank" rel="noopener noreferrer">
           <ShoppingBag className="w-4 h-4 mr-2" />
           Shop Now
         </a>
       </Button>
     );
   }
-  if (page.ctaType === "signup" && page.ctaUrl) {
+  if (page.ctaType === "signup" && ctaLink) {
     return (
       <Button asChild>
-        <a href={page.ctaUrl} target="_blank" rel="noopener noreferrer">
+        <a href={ctaLink} target="_blank" rel="noopener noreferrer">
           <UserPlus className="w-4 h-4 mr-2" />
           Sign Up
         </a>
@@ -249,7 +260,11 @@ function AboutCard({ page }: { page: Page }) {
   if (page.contactEmail)
     rows.push({ icon: <Mail className="w-4 h-4" />, value: page.contactEmail, href: `mailto:${page.contactEmail}` });
   if (page.website)
-    rows.push({ icon: <Globe className="w-4 h-4" />, value: page.website, href: page.website });
+    rows.push({
+      icon: <Globe className="w-4 h-4" />,
+      value: page.website,
+      href: safeHttpUrl(page.website) ?? undefined,
+    });
   if (page.address) rows.push({ icon: <MapPin className="w-4 h-4" />, value: page.address });
   if (page.hours) rows.push({ icon: <Clock className="w-4 h-4" />, value: page.hours });
 

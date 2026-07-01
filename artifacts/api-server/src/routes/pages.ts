@@ -33,6 +33,16 @@ import {
 
 const router: IRouter = Router();
 
+function isSafeHttpUrl(url: string | null | undefined): boolean {
+  if (!url) return true;
+  try {
+    const u = new URL(url);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 router.get("/pages", requireAuth, async (req, res): Promise<void> => {
   const rows = await db
     .select()
@@ -47,6 +57,13 @@ router.post("/pages", requireAuth, async (req, res): Promise<void> => {
   const parsed = CreatePageBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  if (
+    !isSafeHttpUrl(parsed.data.website) ||
+    !isSafeHttpUrl(parsed.data.ctaUrl)
+  ) {
+    res.status(400).json({ error: "Website and button link must be http(s) URLs" });
     return;
   }
   const [page] = await db
@@ -97,6 +114,13 @@ router.patch("/pages/:id", requireAuth, async (req, res): Promise<void> => {
   const parsed = UpdatePageBody.safeParse(req.body);
   if (!params.success || !parsed.success) {
     res.status(400).json({ error: "Invalid request" });
+    return;
+  }
+  if (
+    !isSafeHttpUrl(parsed.data.website) ||
+    !isSafeHttpUrl(parsed.data.ctaUrl)
+  ) {
+    res.status(400).json({ error: "Website and button link must be http(s) URLs" });
     return;
   }
   const [page] = await db
