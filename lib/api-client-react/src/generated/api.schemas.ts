@@ -1020,6 +1020,76 @@ export interface SavedItemInput {
   entityId: number;
 }
 
+export interface Album {
+  id: number;
+  ownerId: string;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  coverUrl?: string | null;
+  photoCount: number;
+  createdAt: string;
+}
+
+export interface AlbumInput {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  name: string;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  description?: string | null;
+}
+
+export interface PhotoTag {
+  userId: string;
+  displayName: string;
+  /** @nullable */
+  avatarUrl?: string | null;
+}
+
+export interface AlbumPhoto {
+  id: number;
+  albumId: number;
+  url: string;
+  /** @nullable */
+  caption?: string | null;
+  tags: PhotoTag[];
+  createdAt: string;
+}
+
+export interface AlbumDetail {
+  album: Album;
+  owner: Profile;
+  photos: AlbumPhoto[];
+}
+
+export type AddAlbumPhotosInputPhotosItem = {
+  /** @maxLength 2000 */
+  url: string;
+  /**
+     * @maxLength 300
+     * @nullable
+     */
+  caption?: string | null;
+};
+
+export interface AddAlbumPhotosInput {
+  /**
+     * @minItems 1
+     * @maxItems 30
+     */
+  photos: AddAlbumPhotosInputPhotosItem[];
+}
+
+export interface PhotoTagInput {
+  userId: string;
+}
+
 export type StoryMediaType = typeof StoryMediaType[keyof typeof StoryMediaType];
 
 

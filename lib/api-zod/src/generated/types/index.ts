@@ -6,12 +6,18 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './addAlbumPhotosInput';
+export * from './addAlbumPhotosInputPhotosItem';
 export * from './adjustPointsInput';
 export * from './adjustPointsResult';
 export * from './adminEarningsSummary';
 export * from './adminWithdrawalRequest';
 export * from './adminWithdrawalRequestDetails';
 export * from './adminWithdrawalRequestStatus';
+export * from './album';
+export * from './albumDetail';
+export * from './albumInput';
+export * from './albumPhoto';
 export * from './attachment';
 export * from './attachmentInput';
 export * from './attachmentInputType';
@@ -90,6 +96,8 @@ export * from './pageReview';
 export * from './pageReviewInput';
 export * from './pageUpdateInput';
 export * from './pageUpdateInputCtaType';
+export * from './photoTag';
+export * from './photoTagInput';
 export * from './pointConfig';
 export * from './pointConfigUpdate';
 export * from './pointTransaction';

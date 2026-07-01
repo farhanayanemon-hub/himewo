@@ -48,6 +48,7 @@ function notificationText(n: Notification): string {
     case NotificationType.page_follow:
       return `${actor} followed your page.`;
     case NotificationType.mention:
+      if (n.entityType === "album") return `${actor} tagged you in a photo.`;
       return `${actor} mentioned you.`;
     case NotificationType.share:
       return `${actor} shared your post.`;
@@ -111,6 +112,8 @@ export default function NotificationsPage() {
     }
     if (n.entityType === "post" && n.entityId != null) {
       navigate(`/post/${n.entityId}`);
+    } else if (n.entityType === "album" && n.entityId != null) {
+      navigate(`/albums/${n.entityId}`);
     } else if (n.type === NotificationType.message) {
       navigate("/messages");
     } else if (

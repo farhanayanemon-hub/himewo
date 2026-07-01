@@ -3473,6 +3473,204 @@ export const UnsaveItemParams = zod.object({
 export const UnsaveItemResponse = zod.void()
 
 
+/**
+ * @summary List a user's photo albums
+ */
+export const GetUserAlbumsParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetUserAlbumsResponseItem = zod.object({
+  "id": zod.number(),
+  "ownerId": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "photoCount": zod.number(),
+  "createdAt": zod.coerce.date()
+})
+export const GetUserAlbumsResponse = zod.array(GetUserAlbumsResponseItem)
+
+
+/**
+ * @summary Create a photo album
+ */
+export const createAlbumBodyNameMax = 100;
+
+export const createAlbumBodyDescriptionMax = 500;
+
+
+
+export const CreateAlbumBody = zod.object({
+  "name": zod.string().min(1).max(createAlbumBodyNameMax),
+  "description": zod.string().max(createAlbumBodyDescriptionMax).nullish()
+})
+
+export const CreateAlbumResponse = zod.object({
+  "id": zod.number(),
+  "ownerId": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "photoCount": zod.number(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Album detail with photos and tags
+ */
+export const GetAlbumParams = zod.object({
+  "albumId": zod.coerce.number()
+})
+
+export const GetAlbumResponse = zod.object({
+  "album": zod.object({
+  "id": zod.number(),
+  "ownerId": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "photoCount": zod.number(),
+  "createdAt": zod.coerce.date()
+}),
+  "owner": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "photos": zod.array(zod.object({
+  "id": zod.number(),
+  "albumId": zod.number(),
+  "url": zod.string(),
+  "caption": zod.string().nullish(),
+  "tags": zod.array(zod.object({
+  "userId": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish()
+})),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Delete an album (owner only)
+ */
+export const DeleteAlbumParams = zod.object({
+  "albumId": zod.coerce.number()
+})
+
+export const DeleteAlbumResponse = zod.void()
+
+
+/**
+ * @summary Add photos to an album (owner only)
+ */
+export const AddAlbumPhotosParams = zod.object({
+  "albumId": zod.coerce.number()
+})
+
+export const addAlbumPhotosBodyPhotosItemUrlMax = 2000;
+
+export const addAlbumPhotosBodyPhotosItemCaptionMax = 300;
+
+export const addAlbumPhotosBodyPhotosMax = 30;
+
+
+
+export const AddAlbumPhotosBody = zod.object({
+  "photos": zod.array(zod.object({
+  "url": zod.string().max(addAlbumPhotosBodyPhotosItemUrlMax),
+  "caption": zod.string().max(addAlbumPhotosBodyPhotosItemCaptionMax).nullish()
+})).min(1).max(addAlbumPhotosBodyPhotosMax)
+})
+
+export const AddAlbumPhotosResponseItem = zod.object({
+  "id": zod.number(),
+  "albumId": zod.number(),
+  "url": zod.string(),
+  "caption": zod.string().nullish(),
+  "tags": zod.array(zod.object({
+  "userId": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish()
+})),
+  "createdAt": zod.coerce.date()
+})
+export const AddAlbumPhotosResponse = zod.array(AddAlbumPhotosResponseItem)
+
+
+/**
+ * @summary Remove a photo from an album (owner only)
+ */
+export const DeleteAlbumPhotoParams = zod.object({
+  "albumId": zod.coerce.number(),
+  "photoId": zod.coerce.number()
+})
+
+export const DeleteAlbumPhotoResponse = zod.void()
+
+
+/**
+ * @summary Tag a friend in a photo (owner only, friends only)
+ */
+export const TagPhotoParams = zod.object({
+  "albumId": zod.coerce.number(),
+  "photoId": zod.coerce.number()
+})
+
+export const TagPhotoBody = zod.object({
+  "userId": zod.string()
+})
+
+export const TagPhotoResponse = zod.object({
+  "userId": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish()
+})
+
+
+/**
+ * @summary Remove a photo tag (owner or the tagged user)
+ */
+export const UntagPhotoParams = zod.object({
+  "albumId": zod.coerce.number(),
+  "photoId": zod.coerce.number(),
+  "userId": zod.coerce.string()
+})
+
+export const UntagPhotoResponse = zod.void()
+
+
 
 export const listMarketplaceListingsQueryLimitDefault = 20;
 export const listMarketplaceListingsQueryLimitMax = 50;
