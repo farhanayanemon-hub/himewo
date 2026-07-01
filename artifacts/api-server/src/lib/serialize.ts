@@ -7,6 +7,9 @@ import {
   commentsTable,
   commentReactionsTable,
   sharesTable,
+  pollsTable,
+  pollOptionsTable,
+  pollVotesTable,
   friendshipsTable,
   friendRequestsTable,
   followsTable,
@@ -260,6 +263,7 @@ export async function buildPosts(rows: PostRow[], viewerId?: string) {
     commentCounts,
     shareCounts,
     viewerSaves,
+    pollRows,
   ] = await Promise.all([
       db
         .select()
@@ -308,7 +312,73 @@ export async function buildPosts(rows: PostRow[], viewerId?: string) {
               ),
             )
         : Promise.resolve([]),
+      db
+        .select()
+        .from(pollsTable)
+        .where(inArray(pollsTable.postId, ids)),
     ]);
+
+  // Load poll options + vote tallies + the viewer's own vote for any polls
+  // attached to these posts, then group everything by post id.
+  const pollIds = pollRows.map((p) => p.id);
+  const [optionRows, voteCountRows, viewerVoteRows] = await Promise.all([
+    pollIds.length
+      ? db
+          .select()
+          .from(pollOptionsTable)
+          .where(inArray(pollOptionsTable.pollId, pollIds))
+          .orderBy(asc(pollOptionsTable.position))
+      : Promise.resolve([]),
+    pollIds.length
+      ? db
+          .select({ optionId: pollVotesTable.optionId, value: count() })
+          .from(pollVotesTable)
+          .where(inArray(pollVotesTable.pollId, pollIds))
+          .groupBy(pollVotesTable.optionId)
+      : Promise.resolve([]),
+    viewerId && pollIds.length
+      ? db
+          .select({
+            pollId: pollVotesTable.pollId,
+            optionId: pollVotesTable.optionId,
+          })
+          .from(pollVotesTable)
+          .where(
+            and(
+              inArray(pollVotesTable.pollId, pollIds),
+              eq(pollVotesTable.userId, viewerId),
+            ),
+          )
+      : Promise.resolve([]),
+  ]);
+  const voteCountByOption = new Map(
+    voteCountRows.map((v) => [v.optionId, v.value]),
+  );
+  const viewerVoteByPoll = new Map(
+    viewerVoteRows.map((v) => [v.pollId, v.optionId]),
+  );
+  const optionsByPoll = new Map<number, typeof optionRows>();
+  for (const o of optionRows) {
+    const list = optionsByPoll.get(o.pollId) ?? [];
+    list.push(o);
+    optionsByPoll.set(o.pollId, list);
+  }
+  const pollByPost = new Map<number, ReturnType<typeof toPoll>>();
+  function toPoll(poll: (typeof pollRows)[number]) {
+    const options = (optionsByPoll.get(poll.id) ?? []).map((o) => ({
+      id: o.id,
+      text: o.text,
+      voteCount: voteCountByOption.get(o.id) ?? 0,
+    }));
+    return {
+      id: poll.id,
+      question: poll.question,
+      totalVotes: options.reduce((sum, o) => sum + o.voteCount, 0),
+      viewerVotedOptionId: viewerVoteByPoll.get(poll.id) ?? null,
+      options,
+    };
+  }
+  for (const poll of pollRows) pollByPost.set(poll.postId, toPoll(poll));
 
   const mediaByPost = new Map<number, typeof mediaRows>();
   for (const m of mediaRows) {
@@ -358,6 +428,7 @@ export async function buildPosts(rows: PostRow[], viewerId?: string) {
       commentCount: commentCountByPost.get(row.id) ?? 0,
       shareCount: shareCountByPost.get(row.id) ?? 0,
       viewerHasSaved: savedPostSet.has(row.id),
+      poll: pollByPost.get(row.id) ?? null,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };
@@ -369,6 +440,14 @@ export async function buildPostById(id: number, viewerId?: string) {
   if (!row) return null;
   const [post] = await buildPosts([row], viewerId);
   return post;
+}
+
+export async function buildPollByPostId(postId: number, viewerId?: string) {
+  const [post] = await buildPosts(
+    await db.select().from(postsTable).where(eq(postsTable.id, postId)),
+    viewerId,
+  );
+  return post?.poll ?? null;
 }
 
 export async function buildReactionSummary(postId: number, viewerId?: string) {

@@ -22,6 +22,8 @@ import {
   useUnsaveItem,
   useUpdatePost,
   useDeletePost,
+  useVotePoll,
+  useRemovePollVote,
   ReactionType,
   PostUpdatePrivacy,
 } from "@workspace/api-client-react";
@@ -71,6 +73,8 @@ export function PostCard({ post }: { post: Post }) {
   const unsaveItem = useUnsaveItem();
   const updatePost = useUpdatePost();
   const deletePost = useDeletePost();
+  const votePoll = useVotePoll();
+  const removePollVote = useRemovePollVote();
   const [showShare, setShowShare] = useState(false);
   const [shareCaption, setShareCaption] = useState("");
   const [editing, setEditing] = useState(false);
@@ -161,6 +165,18 @@ export function PostCard({ post }: { post: Post }) {
 
   const handleDelete = () => {
     deletePost.mutate({ id: post.id }, { onSuccess: invalidate });
+  };
+
+  const handleVote = (optionId: number) => {
+    if (votePoll.isPending || removePollVote.isPending) return;
+    if (post.poll?.viewerVotedOptionId === optionId) {
+      removePollVote.mutate({ id: post.id }, { onSuccess: invalidate });
+    } else {
+      votePoll.mutate(
+        { id: post.id, data: { optionId } },
+        { onSuccess: invalidate },
+      );
+    }
   };
 
   const viewerReaction = post.reactions.viewerReaction as ReactionType | null | undefined;
@@ -308,6 +324,60 @@ export function PostCard({ post }: { post: Post }) {
         </div>
       ) : (
         post.content && <p className="text-[15px] whitespace-pre-wrap mb-3">{post.content}</p>
+      )}
+
+      {post.poll && (
+        <div className="mb-3 rounded-xl border border-border bg-muted/20 p-3">
+          {post.poll.question && (
+            <p className="font-semibold text-[15px] mb-2">{post.poll.question}</p>
+          )}
+          <div className="space-y-2">
+            {post.poll.options.map((opt) => {
+              const total = post.poll!.totalVotes;
+              const pct = total > 0 ? Math.round((opt.voteCount / total) * 100) : 0;
+              const voted = post.poll!.viewerVotedOptionId === opt.id;
+              const hasVoted = post.poll!.viewerVotedOptionId != null;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => handleVote(opt.id)}
+                  disabled={votePoll.isPending || removePollVote.isPending}
+                  className={`relative w-full overflow-hidden rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
+                    voted
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:bg-muted/50"
+                  }`}
+                  title={voted ? "Click to remove your vote" : "Vote"}
+                >
+                  {hasVoted && (
+                    <span
+                      className={`absolute inset-y-0 left-0 ${voted ? "bg-primary/20" : "bg-muted"}`}
+                      style={{ width: `${pct}%` }}
+                      aria-hidden
+                    />
+                  )}
+                  <span className="relative flex items-center justify-between gap-2">
+                    <span className={`flex items-center gap-1.5 ${voted ? "font-semibold" : ""}`}>
+                      {voted && <span className="text-primary">✓</span>}
+                      {opt.text}
+                    </span>
+                    {hasVoted && (
+                      <span className="text-muted-foreground tabular-nums">
+                        {pct}%
+                      </span>
+                    )}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {post.poll.totalVotes}{" "}
+            {post.poll.totalVotes === 1 ? "vote" : "votes"}
+            {post.poll.viewerVotedOptionId != null && " · tap your choice to remove"}
+          </p>
+        </div>
       )}
 
       {post.media && post.media.length > 0 && (

@@ -6,6 +6,9 @@ import {
   postReactionsTable,
   commentsTable,
   sharesTable,
+  pollsTable,
+  pollOptionsTable,
+  pollVotesTable,
   profilesTable,
   friendshipsTable,
   userSettingsTable,
@@ -19,6 +22,7 @@ import {
   toProfile,
   buildPosts,
   buildPostById,
+  buildPollByPostId,
   buildReactionSummary,
   buildComments,
   buildCommentById,
@@ -47,6 +51,11 @@ import {
   SharePostParams,
   SharePostBody,
   SharePostResponse,
+  VotePollParams,
+  VotePollBody,
+  VotePollResponse,
+  RemovePollVoteParams,
+  RemovePollVoteResponse,
   ListCommentsParams,
   ListCommentsQueryParams,
   ListCommentsResponse,
@@ -108,7 +117,17 @@ router.post("/posts", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const { content, privacy, groupId, pageId, media } = parsed.data;
+  const { content, privacy, groupId, pageId, media, poll } = parsed.data;
+  // A poll needs a question and at least two non-empty options.
+  const pollOptions = poll?.options
+    ?.map((o) => o.trim())
+    .filter((o) => o.length > 0);
+  if (poll && (!poll.question.trim() || !pollOptions || pollOptions.length < 2)) {
+    res
+      .status(400)
+      .json({ error: "A poll needs a question and at least two options." });
+    return;
+  }
   // Authorize group/page posting before writing. Group posts require the author
   // to be a member; page posts require the author to own the page. Otherwise a
   // client could post into any community by passing an arbitrary id.
@@ -199,6 +218,19 @@ router.post("/posts", requireAuth, async (req, res): Promise<void> => {
         height: m.height ?? null,
         durationMs: m.durationMs ?? null,
         position: m.position ?? i,
+      })),
+    );
+  }
+  if (poll && pollOptions) {
+    const [createdPoll] = await db
+      .insert(pollsTable)
+      .values({ postId: post.id, question: poll.question.trim() })
+      .returning();
+    await db.insert(pollOptionsTable).values(
+      pollOptions.map((text, i) => ({
+        pollId: createdPoll.id,
+        text,
+        position: i,
       })),
     );
   }
@@ -366,6 +398,93 @@ router.delete(
       );
     const summary = await buildReactionSummary(params.data.id, req.userId);
     res.json(RemovePostReactionResponse.parse(summary));
+  },
+);
+
+router.put(
+  "/posts/:id/poll/vote",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = VotePollParams.safeParse(req.params);
+    const parsed = VotePollBody.safeParse(req.body);
+    if (!params.success || !parsed.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    const [post] = await db
+      .select()
+      .from(postsTable)
+      .where(eq(postsTable.id, params.data.id));
+    if (!post || !(await canViewPost(post, req.userId!))) {
+      res.status(404).json({ error: "Post not found" });
+      return;
+    }
+    const [poll] = await db
+      .select()
+      .from(pollsTable)
+      .where(eq(pollsTable.postId, params.data.id));
+    if (!poll) {
+      res.status(404).json({ error: "This post has no poll" });
+      return;
+    }
+    // The chosen option must belong to this poll — otherwise a client could
+    // vote for an option from an unrelated poll.
+    const [option] = await db
+      .select()
+      .from(pollOptionsTable)
+      .where(
+        and(
+          eq(pollOptionsTable.id, parsed.data.optionId),
+          eq(pollOptionsTable.pollId, poll.id),
+        ),
+      );
+    if (!option) {
+      res.status(400).json({ error: "Invalid poll option" });
+      return;
+    }
+    await db
+      .insert(pollVotesTable)
+      .values({
+        pollId: poll.id,
+        optionId: option.id,
+        userId: req.userId!,
+      })
+      .onConflictDoUpdate({
+        target: [pollVotesTable.pollId, pollVotesTable.userId],
+        set: { optionId: option.id },
+      });
+    const built = await buildPollByPostId(params.data.id, req.userId);
+    res.json(VotePollResponse.parse(built));
+  },
+);
+
+router.delete(
+  "/posts/:id/poll/vote",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = RemovePollVoteParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const [poll] = await db
+      .select()
+      .from(pollsTable)
+      .where(eq(pollsTable.postId, params.data.id));
+    if (!poll) {
+      res.status(404).json({ error: "This post has no poll" });
+      return;
+    }
+    await db
+      .delete(pollVotesTable)
+      .where(
+        and(
+          eq(pollVotesTable.pollId, poll.id),
+          eq(pollVotesTable.userId, req.userId!),
+        ),
+      );
+    const built = await buildPollByPostId(params.data.id, req.userId);
+    res.json(RemovePollVoteResponse.parse(built));
   },
 );
 

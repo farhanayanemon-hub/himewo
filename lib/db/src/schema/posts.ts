@@ -123,6 +123,54 @@ export const commentReactionsTable = pgTable(
   ],
 );
 
+export const pollsTable = pgTable(
+  "polls",
+  {
+    id: serial("id").primaryKey(),
+    postId: integer("post_id")
+      .notNull()
+      .references(() => postsTable.id, { onDelete: "cascade" }),
+    question: text("question").notNull().default(""),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [uniqueIndex("polls_post_uniq").on(t.postId)],
+);
+
+export const pollOptionsTable = pgTable(
+  "poll_options",
+  {
+    id: serial("id").primaryKey(),
+    pollId: integer("poll_id")
+      .notNull()
+      .references(() => pollsTable.id, { onDelete: "cascade" }),
+    text: text("text").notNull(),
+    position: integer("position").notNull().default(0),
+  },
+  (t) => [index("poll_options_poll_idx").on(t.pollId)],
+);
+
+export const pollVotesTable = pgTable(
+  "poll_votes",
+  {
+    id: serial("id").primaryKey(),
+    pollId: integer("poll_id")
+      .notNull()
+      .references(() => pollsTable.id, { onDelete: "cascade" }),
+    optionId: integer("option_id")
+      .notNull()
+      .references(() => pollOptionsTable.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => profilesTable.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [uniqueIndex("poll_votes_poll_user_uniq").on(t.pollId, t.userId)],
+);
+
 export const sharesTable = pgTable("shares", {
   id: serial("id").primaryKey(),
   postId: integer("post_id")
@@ -149,3 +197,6 @@ export type PostReaction = typeof postReactionsTable.$inferSelect;
 export type Comment = typeof commentsTable.$inferSelect;
 export type CommentReaction = typeof commentReactionsTable.$inferSelect;
 export type Share = typeof sharesTable.$inferSelect;
+export type Poll = typeof pollsTable.$inferSelect;
+export type PollOption = typeof pollOptionsTable.$inferSelect;
+export type PollVote = typeof pollVotesTable.$inferSelect;
