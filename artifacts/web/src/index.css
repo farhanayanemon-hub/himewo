@@ -225,3 +225,12 @@
 .reaction-emoji:hover .reaction-idle {
   animation: reaction-wobble 0.6s ease-in-out infinite;
 }
+
+/* Like button: allow quick taps while suppressing the mobile long-press
+   text-selection / callout so press-and-hold can open the reaction picker. */
+.reaction-like-btn {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
