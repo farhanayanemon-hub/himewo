@@ -20,6 +20,7 @@ import {
   Store,
   Clock,
   Bookmark,
+  CalendarDays,
   Clapperboard,
   Wallet,
   type LucideIcon,
@@ -77,6 +78,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
   ];
 
   const shortcutItems = [
+    { href: "/events", icon: CalendarDays, label: "Events", grad: "from-red-400 to-rose-600" },
     { href: "/stories", icon: Clapperboard, label: "Stories", grad: "from-rose-400 to-pink-600" },
     { href: "/memories", icon: Clock, label: "Memories", grad: "from-violet-400 to-purple-600" },
     { href: "/saved", icon: Bookmark, label: "Saved", grad: "from-cyan-400 to-blue-600" },
