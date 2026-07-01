@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ThumbsUp } from "lucide-react";
 import { ReactionType } from "@workspace/api-client-react";
 
@@ -26,9 +26,15 @@ export function ReactionControl({ viewerReaction, onReact, count, size = "defaul
   const active = viewerReaction ? reactionConfig[viewerReaction] : null;
   const isSm = size === "sm";
 
+  const containerRef = useRef<HTMLDivElement>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const burstTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const floatTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Long-press (press-and-hold) support for touch devices, which have no hover.
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressFired = useRef(false);
+  const pressStart = useRef<{ x: number; y: number } | null>(null);
 
   const fire = (type: ReactionType) => {
     if (hideTimer.current) clearTimeout(hideTimer.current);
@@ -51,8 +57,58 @@ export function ReactionControl({ viewerReaction, onReact, count, size = "defaul
     hideTimer.current = setTimeout(() => setShowPicker(false), 220);
   };
 
+  const cancelLongPress = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    pressStart.current = null;
+  };
+
+  const startLongPress = (e: React.PointerEvent) => {
+    longPressFired.current = false;
+    pressStart.current = { x: e.clientX, y: e.clientY };
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    longPressTimer.current = setTimeout(() => {
+      longPressFired.current = true;
+      open();
+    }, 450);
+  };
+
+  // If the finger/pointer moves too far (i.e. the user is scrolling), abort the
+  // long-press so scrolling never accidentally opens the picker.
+  const onPressMove = (e: React.PointerEvent) => {
+    if (!pressStart.current) return;
+    const dx = Math.abs(e.clientX - pressStart.current.x);
+    const dy = Math.abs(e.clientY - pressStart.current.y);
+    if (dx > 10 || dy > 10) cancelLongPress();
+  };
+
+  // Close the picker when tapping/clicking anywhere outside of it (needed on
+  // touch, where there is no mouseleave to dismiss it).
+  useEffect(() => {
+    if (!showPicker) return;
+    const onDocPointerDown = (e: PointerEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setShowPicker(false);
+      }
+    };
+    document.addEventListener("pointerdown", onDocPointerDown);
+    return () => document.removeEventListener("pointerdown", onDocPointerDown);
+  }, [showPicker]);
+
+  useEffect(
+    () => () => {
+      if (hideTimer.current) clearTimeout(hideTimer.current);
+      if (burstTimer.current) clearTimeout(burstTimer.current);
+      if (floatTimer.current) clearTimeout(floatTimer.current);
+      if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    },
+    [],
+  );
+
   return (
-    <div className="relative inline-flex" onMouseEnter={open} onMouseLeave={close}>
+    <div ref={containerRef} className="relative inline-flex" onMouseEnter={open} onMouseLeave={close}>
       {showPicker && (
         // Wrapper spans down to the button (pb-3) so there is NO empty gap between
         // the button and the pill — keeps hover continuous and clicks reliable.
@@ -92,8 +148,26 @@ export function ReactionControl({ viewerReaction, onReact, count, size = "defaul
 
       <button
         type="button"
-        onClick={() => fire(viewerReaction || ReactionType.like)}
-        className={`relative flex items-center gap-1.5 font-semibold press transition-colors ${
+        // Quick tap toggles Like as before; press-and-hold opens the picker on touch.
+        onPointerDown={startLongPress}
+        onPointerMove={onPressMove}
+        onPointerUp={cancelLongPress}
+        onPointerLeave={cancelLongPress}
+        onPointerCancel={cancelLongPress}
+        onContextMenu={(e) => {
+          // Suppress the native long-press context menu / text callout on mobile.
+          if (showPicker || longPressFired.current) e.preventDefault();
+        }}
+        onClick={() => {
+          // A long-press already opened the picker — swallow the trailing click so
+          // it doesn't also toggle Like.
+          if (longPressFired.current) {
+            longPressFired.current = false;
+            return;
+          }
+          fire(viewerReaction || ReactionType.like);
+        }}
+        className={`reaction-like-btn relative flex items-center gap-1.5 font-semibold press transition-colors ${
           isSm ? "text-xs" : ""
         } ${active ? active.color : "text-muted-foreground hover:text-foreground"}`}
       >
