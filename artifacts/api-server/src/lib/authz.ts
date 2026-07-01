@@ -131,15 +131,35 @@ export async function isGroupMember(
       and(
         eq(groupMembersTable.groupId, groupId),
         eq(groupMembersTable.userId, userId),
+        eq(groupMembersTable.status, "active"),
       ),
     );
   return Boolean(row);
 }
 
+/** True when the user is an active admin or moderator of the group. */
+export async function isGroupModerator(
+  groupId: number,
+  userId: string,
+): Promise<boolean> {
+  const [row] = await db
+    .select({ role: groupMembersTable.role })
+    .from(groupMembersTable)
+    .where(
+      and(
+        eq(groupMembersTable.groupId, groupId),
+        eq(groupMembersTable.userId, userId),
+        eq(groupMembersTable.status, "active"),
+      ),
+    );
+  return !!row && (row.role === "admin" || row.role === "moderator");
+}
+
 type PostVisibility = {
   authorId: string;
-  privacy: "public" | "friends" | "private";
+  privacy: "public" | "friends" | "private" | "hidden";
   groupId: number | null;
+  pendingApproval: boolean;
 };
 
 /**
@@ -153,6 +173,11 @@ export async function canViewPost(
   viewerId: string,
 ): Promise<boolean> {
   if (post.authorId === viewerId) return true;
+  // Pending group posts stay in the approval queue: only the author (handled
+  // above) and the group's active moderators/admins may see them.
+  if (post.pendingApproval && post.groupId != null) {
+    return isGroupModerator(post.groupId, viewerId);
+  }
   // Group posts are governed by group membership, not the author's profile lock.
   if (post.groupId != null) return isGroupMember(post.groupId, viewerId);
   const friend = await areFriends(post.authorId, viewerId);
@@ -251,6 +276,7 @@ export async function canViewComment(
       authorId: postsTable.authorId,
       privacy: postsTable.privacy,
       groupId: postsTable.groupId,
+      pendingApproval: postsTable.pendingApproval,
     })
     .from(commentsTable)
     .innerJoin(postsTable, eq(commentsTable.postId, postsTable.id))

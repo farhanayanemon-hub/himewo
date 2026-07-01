@@ -2426,9 +2426,16 @@ export const ListGroupsResponseItem = zod.object({
   "description": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "coverUrl": zod.string().nullish(),
-  "privacy": zod.enum(['public', 'friends', 'private']),
+  "privacy": zod.enum(['public', 'friends', 'private', 'hidden']),
+  "rules": zod.string().nullish(),
+  "requirePostApproval": zod.boolean(),
+  "joinQuestions": zod.array(zod.string()).nullish(),
+  "pinnedPostId": zod.number().nullish(),
   "memberCount": zod.number(),
-  "viewerIsMember": zod.boolean().optional(),
+  "viewerIsMember": zod.boolean(),
+  "viewerStatus": zod.enum(['none', 'active', 'pending', 'banned']),
+  "viewerRole": zod.union([zod.literal('admin'),zod.literal('moderator'),zod.literal('member'),zod.literal(null)]).nullish(),
+  "viewerIsMuted": zod.boolean(),
   "createdAt": zod.coerce.date()
 })
 export const ListGroupsResponse = zod.array(ListGroupsResponseItem)
@@ -2440,7 +2447,10 @@ export const ListGroupsResponse = zod.array(ListGroupsResponseItem)
 export const CreateGroupBody = zod.object({
   "name": zod.string().min(1),
   "description": zod.string().optional(),
-  "privacy": zod.enum(['public', 'friends', 'private']).optional(),
+  "privacy": zod.enum(['public', 'private', 'hidden']).optional(),
+  "rules": zod.string().optional(),
+  "requirePostApproval": zod.boolean().optional(),
+  "joinQuestions": zod.array(zod.string()).optional(),
   "avatarUrl": zod.string().optional(),
   "coverUrl": zod.string().optional()
 })
@@ -2451,9 +2461,16 @@ export const CreateGroupResponse = zod.object({
   "description": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "coverUrl": zod.string().nullish(),
-  "privacy": zod.enum(['public', 'friends', 'private']),
+  "privacy": zod.enum(['public', 'friends', 'private', 'hidden']),
+  "rules": zod.string().nullish(),
+  "requirePostApproval": zod.boolean(),
+  "joinQuestions": zod.array(zod.string()).nullish(),
+  "pinnedPostId": zod.number().nullish(),
   "memberCount": zod.number(),
-  "viewerIsMember": zod.boolean().optional(),
+  "viewerIsMember": zod.boolean(),
+  "viewerStatus": zod.enum(['none', 'active', 'pending', 'banned']),
+  "viewerRole": zod.union([zod.literal('admin'),zod.literal('moderator'),zod.literal('member'),zod.literal(null)]).nullish(),
+  "viewerIsMuted": zod.boolean(),
   "createdAt": zod.coerce.date()
 })
 
@@ -2468,15 +2485,65 @@ export const GetGroupResponse = zod.object({
   "description": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "coverUrl": zod.string().nullish(),
-  "privacy": zod.enum(['public', 'friends', 'private']),
+  "privacy": zod.enum(['public', 'friends', 'private', 'hidden']),
+  "rules": zod.string().nullish(),
+  "requirePostApproval": zod.boolean(),
+  "joinQuestions": zod.array(zod.string()).nullish(),
+  "pinnedPostId": zod.number().nullish(),
   "memberCount": zod.number(),
-  "viewerIsMember": zod.boolean().optional(),
+  "viewerIsMember": zod.boolean(),
+  "viewerStatus": zod.enum(['none', 'active', 'pending', 'banned']),
+  "viewerRole": zod.union([zod.literal('admin'),zod.literal('moderator'),zod.literal('member'),zod.literal(null)]).nullish(),
+  "viewerIsMuted": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const UpdateGroupParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const UpdateGroupBody = zod.object({
+  "name": zod.string().min(1).optional(),
+  "description": zod.string().nullish(),
+  "privacy": zod.enum(['public', 'private', 'hidden']).optional(),
+  "rules": zod.string().nullish(),
+  "requirePostApproval": zod.boolean().optional(),
+  "joinQuestions": zod.array(zod.string()).nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "pinnedPostId": zod.number().nullish()
+})
+
+export const UpdateGroupResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "privacy": zod.enum(['public', 'friends', 'private', 'hidden']),
+  "rules": zod.string().nullish(),
+  "requirePostApproval": zod.boolean(),
+  "joinQuestions": zod.array(zod.string()).nullish(),
+  "pinnedPostId": zod.number().nullish(),
+  "memberCount": zod.number(),
+  "viewerIsMember": zod.boolean(),
+  "viewerStatus": zod.enum(['none', 'active', 'pending', 'banned']),
+  "viewerRole": zod.union([zod.literal('admin'),zod.literal('moderator'),zod.literal('member'),zod.literal(null)]).nullish(),
+  "viewerIsMuted": zod.boolean(),
   "createdAt": zod.coerce.date()
 })
 
 
 export const JoinGroupParams = zod.object({
   "id": zod.coerce.number()
+})
+
+export const JoinGroupBody = zod.object({
+  "answers": zod.array(zod.string()).optional()
 })
 
 export const JoinGroupResponse = zod.void()
@@ -2487,6 +2554,241 @@ export const LeaveGroupParams = zod.object({
 })
 
 export const LeaveGroupResponse = zod.void()
+
+
+export const ListGroupMembersParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListGroupMembersResponseItem = zod.object({
+  "user": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "role": zod.enum(['admin', 'moderator', 'member']),
+  "status": zod.enum(['active', 'pending', 'banned']),
+  "isMuted": zod.boolean(),
+  "answers": zod.array(zod.string()).nullish(),
+  "joinedAt": zod.coerce.date()
+})
+export const ListGroupMembersResponse = zod.array(ListGroupMembersResponseItem)
+
+
+export const ListGroupRequestsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListGroupRequestsResponseItem = zod.object({
+  "user": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "role": zod.enum(['admin', 'moderator', 'member']),
+  "status": zod.enum(['active', 'pending', 'banned']),
+  "isMuted": zod.boolean(),
+  "answers": zod.array(zod.string()).nullish(),
+  "joinedAt": zod.coerce.date()
+})
+export const ListGroupRequestsResponse = zod.array(ListGroupRequestsResponseItem)
+
+
+export const ApproveGroupRequestParams = zod.object({
+  "id": zod.coerce.number(),
+  "userId": zod.coerce.string()
+})
+
+export const ApproveGroupRequestResponse = zod.void()
+
+
+export const DeclineGroupRequestParams = zod.object({
+  "id": zod.coerce.number(),
+  "userId": zod.coerce.string()
+})
+
+export const DeclineGroupRequestResponse = zod.void()
+
+
+export const SetGroupMemberRoleParams = zod.object({
+  "id": zod.coerce.number(),
+  "userId": zod.coerce.string()
+})
+
+export const SetGroupMemberRoleBody = zod.object({
+  "role": zod.enum(['moderator', 'member'])
+})
+
+export const SetGroupMemberRoleResponse = zod.void()
+
+
+export const BanGroupMemberParams = zod.object({
+  "id": zod.coerce.number(),
+  "userId": zod.coerce.string()
+})
+
+export const BanGroupMemberResponse = zod.void()
+
+
+export const MuteGroupMemberParams = zod.object({
+  "id": zod.coerce.number(),
+  "userId": zod.coerce.string()
+})
+
+export const MuteGroupMemberBody = zod.object({
+  "muted": zod.boolean()
+})
+
+export const MuteGroupMemberResponse = zod.void()
+
+
+export const RemoveGroupMemberParams = zod.object({
+  "id": zod.coerce.number(),
+  "userId": zod.coerce.string()
+})
+
+export const RemoveGroupMemberResponse = zod.void()
+
+
+export const ListPendingGroupPostsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListPendingGroupPostsResponseItem = zod.object({
+  "id": zod.number(),
+  "author": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "content": zod.string(),
+  "privacy": zod.enum(['public', 'friends', 'private']),
+  "commentsEnabled": zod.boolean(),
+  "reactionsEnabled": zod.boolean(),
+  "groupId": zod.number().nullish(),
+  "pageId": zod.number().nullish(),
+  "media": zod.array(zod.object({
+  "id": zod.number(),
+  "url": zod.string(),
+  "type": zod.enum(['image', 'video']),
+  "thumbnailUrl": zod.string().nullish(),
+  "width": zod.number().nullish(),
+  "height": zod.number().nullish(),
+  "durationMs": zod.number().nullish(),
+  "position": zod.number().optional()
+})),
+  "reactions": zod.object({
+  "total": zod.number(),
+  "byType": zod.record(zod.string(), zod.number()),
+  "viewerReaction": zod.union([zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry']),zod.null()]).optional()
+}),
+  "commentCount": zod.number(),
+  "shareCount": zod.number(),
+  "viewerHasSaved": zod.boolean().optional(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+export const ListPendingGroupPostsResponse = zod.array(ListPendingGroupPostsResponseItem)
+
+
+export const ApproveGroupPostParams = zod.object({
+  "id": zod.coerce.number(),
+  "postId": zod.coerce.number()
+})
+
+export const ApproveGroupPostResponse = zod.void()
+
+
+export const RejectGroupPostParams = zod.object({
+  "id": zod.coerce.number(),
+  "postId": zod.coerce.number()
+})
+
+export const RejectGroupPostResponse = zod.void()
 
 
 export const GetGroupPostsParams = zod.object({

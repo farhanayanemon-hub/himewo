@@ -34,7 +34,17 @@ export const messageTypeEnum = pgEnum("message_type", [
   "call",
 ]);
 
-export const memberRoleEnum = pgEnum("member_role", ["member", "admin"]);
+export const memberRoleEnum = pgEnum("member_role", [
+  "member",
+  "moderator",
+  "admin",
+]);
+
+export const groupMemberStatusEnum = pgEnum("group_member_status", [
+  "active",
+  "pending",
+  "banned",
+]);
 
 export const friendRequestStatusEnum = pgEnum("friend_request_status", [
   "pending",
@@ -42,7 +52,12 @@ export const friendRequestStatusEnum = pgEnum("friend_request_status", [
   "declined",
 ]);
 
-export const privacyEnum = pgEnum("privacy", ["public", "friends", "private"]);
+export const privacyEnum = pgEnum("privacy", [
+  "public",
+  "friends",
+  "private",
+  "hidden",
+]);
 
 export const presenceStatusEnum = pgEnum("presence_status", [
   "online",

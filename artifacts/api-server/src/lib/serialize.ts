@@ -611,11 +611,16 @@ export async function buildConversationById(id: number, viewerId: string) {
 
 // ---------------- Groups ----------------
 export async function buildGroup(row: GroupRow, viewerId?: string) {
-  const [[members], viewerRow] = await Promise.all([
+  const [[members], viewerRows] = await Promise.all([
     db
       .select({ value: count() })
       .from(groupMembersTable)
-      .where(eq(groupMembersTable.groupId, row.id)),
+      .where(
+        and(
+          eq(groupMembersTable.groupId, row.id),
+          eq(groupMembersTable.status, "active"),
+        ),
+      ),
     viewerId
       ? db
           .select()
@@ -628,6 +633,8 @@ export async function buildGroup(row: GroupRow, viewerId?: string) {
           )
       : Promise.resolve([]),
   ]);
+  const viewerRow = Array.isArray(viewerRows) ? viewerRows[0] : undefined;
+  const viewerStatus = viewerRow?.status ?? "none";
   return {
     id: row.id,
     name: row.name,
@@ -635,10 +642,40 @@ export async function buildGroup(row: GroupRow, viewerId?: string) {
     avatarUrl: row.avatarUrl,
     coverUrl: row.coverUrl,
     privacy: row.privacy,
+    rules: row.rules,
+    requirePostApproval: row.requirePostApproval,
+    joinQuestions: row.joinQuestions ?? null,
+    pinnedPostId: row.pinnedPostId,
     memberCount: members?.value ?? 0,
-    viewerIsMember: Array.isArray(viewerRow) ? viewerRow.length > 0 : false,
+    viewerIsMember: viewerStatus === "active",
+    viewerStatus,
+    viewerRole: viewerStatus === "active" ? (viewerRow?.role ?? null) : null,
+    viewerIsMuted: viewerRow?.isMuted ?? false,
     createdAt: row.createdAt,
   };
+}
+
+// Serialize group_members rows (members list / join-request queue) with the
+// member's profile attached.
+export async function buildGroupMembers(
+  rows: (typeof groupMembersTable.$inferSelect)[],
+) {
+  if (rows.length === 0) return [];
+  const map = await loadProfileMap(rows.map((r) => r.userId));
+  return rows.flatMap((r) => {
+    const user = map.get(r.userId);
+    if (!user) return [];
+    return [
+      {
+        user,
+        role: r.role,
+        status: r.status,
+        isMuted: r.isMuted,
+        answers: r.answers ?? null,
+        joinedAt: r.joinedAt,
+      },
+    ];
+  });
 }
 
 // ---------------- Pages ----------------

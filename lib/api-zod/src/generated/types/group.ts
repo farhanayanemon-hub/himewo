@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { GroupPrivacy } from './groupPrivacy';
+import type { GroupViewerRole } from './groupViewerRole';
+import type { GroupViewerStatus } from './groupViewerStatus';
 
 export interface Group {
   id: number;
@@ -17,7 +19,18 @@ export interface Group {
   /** @nullable */
   coverUrl?: string | null;
   privacy: GroupPrivacy;
+  /** @nullable */
+  rules?: string | null;
+  requirePostApproval: boolean;
+  /** @nullable */
+  joinQuestions?: string[] | null;
+  /** @nullable */
+  pinnedPostId?: number | null;
   memberCount: number;
-  viewerIsMember?: boolean;
+  viewerIsMember: boolean;
+  viewerStatus: GroupViewerStatus;
+  /** @nullable */
+  viewerRole?: GroupViewerRole;
+  viewerIsMuted: boolean;
   createdAt: Date;
 }

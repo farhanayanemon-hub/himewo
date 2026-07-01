@@ -694,14 +694,41 @@ paths:
               schema: { $ref: "#/components/schemas/Group" }
         "404":
           $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateGroup
+      tags: [groups]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GroupUpdateInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Group" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /groups/{id}/join:
     post:
       operationId: joinGroup
       tags: [groups]
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/JoinGroupInput" }
       responses:
-        "204": { description: Joined }
+        "204": { description: Joined or requested }
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /groups/{id}/leave:
     delete:
       operationId: leaveGroup
@@ -710,6 +737,150 @@ paths:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
         "204": { description: Left }
+  /groups/{id}/members:
+    get:
+      operationId: listGroupMembers
+      tags: [groups]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Members
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/GroupMember" }
+  /groups/{id}/requests:
+    get:
+      operationId: listGroupRequests
+      tags: [groups]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Pending join requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/GroupMember" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /groups/{id}/requests/{userId}/approve:
+    post:
+      operationId: approveGroupRequest
+      tags: [groups]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: userId, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Approved }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /groups/{id}/requests/{userId}/decline:
+    post:
+      operationId: declineGroupRequest
+      tags: [groups]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: userId, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Declined }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /groups/{id}/members/{userId}/role:
+    post:
+      operationId: setGroupMemberRole
+      tags: [groups]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: userId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SetMemberRoleInput" }
+      responses:
+        "204": { description: Role updated }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /groups/{id}/members/{userId}/ban:
+    post:
+      operationId: banGroupMember
+      tags: [groups]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: userId, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Banned }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /groups/{id}/members/{userId}/mute:
+    post:
+      operationId: muteGroupMember
+      tags: [groups]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: userId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MuteMemberInput" }
+      responses:
+        "204": { description: Mute updated }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /groups/{id}/members/{userId}:
+    delete:
+      operationId: removeGroupMember
+      tags: [groups]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: userId, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Removed }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /groups/{id}/pending-posts:
+    get:
+      operationId: listPendingGroupPosts
+      tags: [groups]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Posts awaiting approval
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Post" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /groups/{id}/pending-posts/{postId}/approve:
+    post:
+      operationId: approveGroupPost
+      tags: [groups]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: postId, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Approved }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /groups/{id}/pending-posts/{postId}/reject:
+    post:
+      operationId: rejectGroupPost
+      tags: [groups]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: postId, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Rejected }
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /groups/{id}/posts:
     get:
       operationId: getGroupPosts
@@ -1843,16 +2014,40 @@ components:
 
     Group:
       type: object
-      required: [id, name, privacy, memberCount, createdAt]
+      required:
+        [
+          id,
+          name,
+          privacy,
+          memberCount,
+          viewerIsMember,
+          viewerStatus,
+          viewerIsMuted,
+          requirePostApproval,
+          createdAt,
+        ]
       properties:
         id: { type: integer }
         name: { type: string }
         description: { type: ["string", "null"] }
         avatarUrl: { type: ["string", "null"] }
         coverUrl: { type: ["string", "null"] }
-        privacy: { type: string, enum: [public, friends, private] }
+        privacy: { type: string, enum: [public, friends, private, hidden] }
+        rules: { type: ["string", "null"] }
+        requirePostApproval: { type: boolean }
+        joinQuestions:
+          type: ["array", "null"]
+          items: { type: string }
+        pinnedPostId: { type: ["integer", "null"] }
         memberCount: { type: integer }
         viewerIsMember: { type: boolean }
+        viewerStatus:
+          type: string
+          enum: [none, active, pending, banned]
+        viewerRole:
+          type: ["string", "null"]
+          enum: [admin, moderator, member, null]
+        viewerIsMuted: { type: boolean }
         createdAt: { type: string, format: date-time }
     GroupInput:
       type: object
@@ -1860,9 +2055,56 @@ components:
       properties:
         name: { type: string, minLength: 1 }
         description: { type: string }
-        privacy: { type: string, enum: [public, friends, private] }
+        privacy: { type: string, enum: [public, private, hidden] }
+        rules: { type: string }
+        requirePostApproval: { type: boolean }
+        joinQuestions:
+          type: array
+          items: { type: string }
         avatarUrl: { type: string }
         coverUrl: { type: string }
+    GroupUpdateInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        description: { type: ["string", "null"] }
+        privacy: { type: string, enum: [public, private, hidden] }
+        rules: { type: ["string", "null"] }
+        requirePostApproval: { type: boolean }
+        joinQuestions:
+          type: ["array", "null"]
+          items: { type: string }
+        avatarUrl: { type: ["string", "null"] }
+        coverUrl: { type: ["string", "null"] }
+        pinnedPostId: { type: ["integer", "null"] }
+    JoinGroupInput:
+      type: object
+      properties:
+        answers:
+          type: array
+          items: { type: string }
+    GroupMember:
+      type: object
+      required: [user, role, status, isMuted, joinedAt]
+      properties:
+        user: { $ref: "#/components/schemas/Profile" }
+        role: { type: string, enum: [admin, moderator, member] }
+        status: { type: string, enum: [active, pending, banned] }
+        isMuted: { type: boolean }
+        answers:
+          type: ["array", "null"]
+          items: { type: string }
+        joinedAt: { type: string, format: date-time }
+    SetMemberRoleInput:
+      type: object
+      required: [role]
+      properties:
+        role: { type: string, enum: [moderator, member] }
+    MuteMemberInput:
+      type: object
+      required: [muted]
+      properties:
+        muted: { type: boolean }
 
     Page:
       type: object

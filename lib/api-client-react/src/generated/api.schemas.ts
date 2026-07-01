@@ -469,6 +469,29 @@ export const GroupPrivacy = {
   public: 'public',
   friends: 'friends',
   private: 'private',
+  hidden: 'hidden',
+} as const;
+
+export type GroupViewerStatus = typeof GroupViewerStatus[keyof typeof GroupViewerStatus];
+
+
+export const GroupViewerStatus = {
+  none: 'none',
+  active: 'active',
+  pending: 'pending',
+  banned: 'banned',
+} as const;
+
+/**
+ * @nullable
+ */
+export type GroupViewerRole = typeof GroupViewerRole[keyof typeof GroupViewerRole] | null;
+
+
+export const GroupViewerRole = {
+  admin: 'admin',
+  moderator: 'moderator',
+  member: 'member',
 } as const;
 
 export interface Group {
@@ -481,8 +504,19 @@ export interface Group {
   /** @nullable */
   coverUrl?: string | null;
   privacy: GroupPrivacy;
+  /** @nullable */
+  rules?: string | null;
+  requirePostApproval: boolean;
+  /** @nullable */
+  joinQuestions?: string[] | null;
+  /** @nullable */
+  pinnedPostId?: number | null;
   memberCount: number;
-  viewerIsMember?: boolean;
+  viewerIsMember: boolean;
+  viewerStatus: GroupViewerStatus;
+  /** @nullable */
+  viewerRole?: GroupViewerRole;
+  viewerIsMuted: boolean;
   createdAt: string;
 }
 
@@ -491,8 +525,8 @@ export type GroupInputPrivacy = typeof GroupInputPrivacy[keyof typeof GroupInput
 
 export const GroupInputPrivacy = {
   public: 'public',
-  friends: 'friends',
   private: 'private',
+  hidden: 'hidden',
 } as const;
 
 export interface GroupInput {
@@ -500,8 +534,87 @@ export interface GroupInput {
   name: string;
   description?: string;
   privacy?: GroupInputPrivacy;
+  rules?: string;
+  requirePostApproval?: boolean;
+  joinQuestions?: string[];
   avatarUrl?: string;
   coverUrl?: string;
+}
+
+export type GroupUpdateInputPrivacy = typeof GroupUpdateInputPrivacy[keyof typeof GroupUpdateInputPrivacy];
+
+
+export const GroupUpdateInputPrivacy = {
+  public: 'public',
+  private: 'private',
+  hidden: 'hidden',
+} as const;
+
+export interface GroupUpdateInput {
+  /** @minLength 1 */
+  name?: string;
+  /** @nullable */
+  description?: string | null;
+  privacy?: GroupUpdateInputPrivacy;
+  /** @nullable */
+  rules?: string | null;
+  requirePostApproval?: boolean;
+  /** @nullable */
+  joinQuestions?: string[] | null;
+  /** @nullable */
+  avatarUrl?: string | null;
+  /** @nullable */
+  coverUrl?: string | null;
+  /** @nullable */
+  pinnedPostId?: number | null;
+}
+
+export interface JoinGroupInput {
+  answers?: string[];
+}
+
+export type GroupMemberRole = typeof GroupMemberRole[keyof typeof GroupMemberRole];
+
+
+export const GroupMemberRole = {
+  admin: 'admin',
+  moderator: 'moderator',
+  member: 'member',
+} as const;
+
+export type GroupMemberStatus = typeof GroupMemberStatus[keyof typeof GroupMemberStatus];
+
+
+export const GroupMemberStatus = {
+  active: 'active',
+  pending: 'pending',
+  banned: 'banned',
+} as const;
+
+export interface GroupMember {
+  user: Profile;
+  role: GroupMemberRole;
+  status: GroupMemberStatus;
+  isMuted: boolean;
+  /** @nullable */
+  answers?: string[] | null;
+  joinedAt: string;
+}
+
+export type SetMemberRoleInputRole = typeof SetMemberRoleInputRole[keyof typeof SetMemberRoleInputRole];
+
+
+export const SetMemberRoleInputRole = {
+  moderator: 'moderator',
+  member: 'member',
+} as const;
+
+export interface SetMemberRoleInput {
+  role: SetMemberRoleInputRole;
+}
+
+export interface MuteMemberInput {
+  muted: boolean;
 }
 
 export interface Page {

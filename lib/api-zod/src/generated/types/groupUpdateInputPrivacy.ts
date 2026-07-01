@@ -6,12 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type GroupPrivacy = typeof GroupPrivacy[keyof typeof GroupPrivacy];
+export type GroupUpdateInputPrivacy = typeof GroupUpdateInputPrivacy[keyof typeof GroupUpdateInputPrivacy];
 
 
-export const GroupPrivacy = {
+export const GroupUpdateInputPrivacy = {
   public: 'public',
-  friends: 'friends',
   private: 'private',
   hidden: 'hidden',
 } as const;

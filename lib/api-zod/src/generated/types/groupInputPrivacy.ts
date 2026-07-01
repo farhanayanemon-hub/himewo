@@ -11,6 +11,6 @@ export type GroupInputPrivacy = typeof GroupInputPrivacy[keyof typeof GroupInput
 
 export const GroupInputPrivacy = {
   public: 'public',
-  friends: 'friends',
   private: 'private',
+  hidden: 'hidden',
 } as const;

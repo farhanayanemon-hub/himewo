@@ -31,6 +31,9 @@ export const postsTable = pgTable(
     featured: boolean("featured").notNull().default(false),
     groupId: integer("group_id"),
     pageId: integer("page_id"),
+    // Group post approval: when a group requires approval, member posts are
+    // created pending and hidden from the group feed until an admin/mod approves.
+    pendingApproval: boolean("pending_approval").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
