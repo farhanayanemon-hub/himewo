@@ -11,6 +11,10 @@ import type { PostInputPrivacy } from './postInputPrivacy';
 
 export interface PostInput {
   content: string;
+  feelingVerb?: string;
+  feeling?: string;
+  feelingEmoji?: string;
+  location?: string;
   privacy?: PostInputPrivacy;
   groupId?: number;
   pageId?: number;

@@ -118,6 +118,10 @@ router.post("/posts", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   const { content, privacy, groupId, pageId, media, poll } = parsed.data;
+  const feelingVerb = parsed.data.feelingVerb?.trim() || null;
+  const feeling = parsed.data.feeling?.trim() || null;
+  const feelingEmoji = parsed.data.feelingEmoji?.trim() || null;
+  const location = parsed.data.location?.trim() || null;
   // A poll needs a question and at least two non-empty options.
   const pollOptions = poll?.options
     ?.map((o) => o.trim())
@@ -201,6 +205,10 @@ router.post("/posts", requireAuth, async (req, res): Promise<void> => {
     .values({
       authorId: req.userId!,
       content,
+      feelingVerb,
+      feeling,
+      feelingEmoji,
+      location,
       privacy: effectivePrivacy,
       groupId: groupId ?? null,
       pageId: pageId ?? null,

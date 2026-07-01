@@ -15,6 +15,14 @@ export interface Post {
   id: number;
   author: Profile;
   content: string;
+  /** @nullable */
+  feelingVerb?: string | null;
+  /** @nullable */
+  feeling?: string | null;
+  /** @nullable */
+  feelingEmoji?: string | null;
+  /** @nullable */
+  location?: string | null;
   privacy: PostPrivacy;
   commentsEnabled: boolean;
   reactionsEnabled: boolean;

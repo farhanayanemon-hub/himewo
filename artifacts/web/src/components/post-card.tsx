@@ -12,6 +12,7 @@ import {
   Globe,
   Users,
   Lock,
+  MapPin,
 } from "lucide-react";
 import {
   Post,
@@ -189,7 +190,28 @@ export function PostCard({ post }: { post: Post }) {
         <Link href={`/profile/${post.author.id}`} className="flex items-center gap-3 group">
           <img src={post.author.avatarUrl || ""} className="w-10 h-10 rounded-full object-cover group-hover:ring-2 ring-primary transition-all" alt="" />
           <div>
-            <div className="font-semibold group-hover:underline">{post.author.displayName}</div>
+            <div className="font-semibold">
+              <span className="group-hover:underline">{post.author.displayName}</span>
+              {(post.feelingVerb || post.feeling || post.location) && (
+                <span className="font-normal text-muted-foreground">
+                  {(post.feelingVerb || post.feeling) && (
+                    <>
+                      {" is "}
+                      {post.feelingEmoji ? `${post.feelingEmoji} ` : ""}
+                      {[post.feelingVerb, post.feeling].filter(Boolean).join(" ")}
+                    </>
+                  )}
+                  {post.location && (
+                    <>
+                      {" "}
+                      <MapPin className="inline w-3.5 h-3.5 -mt-0.5 text-red-500" />
+                      {" at "}
+                      <span className="text-foreground/80">{post.location}</span>
+                    </>
+                  )}
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</span>
               <span>·</span>
