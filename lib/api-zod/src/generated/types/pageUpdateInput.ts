@@ -5,12 +5,11 @@
  * HiMewo social platform + Messenger API
  * OpenAPI spec version: 0.1.0
  */
-import type { PageCtaType } from './pageCtaType';
-import type { PageReview } from './pageReview';
+import type { PageUpdateInputCtaType } from './pageUpdateInputCtaType';
 
-export interface Page {
-  id: number;
-  name: string;
+export interface PageUpdateInput {
+  /** @minLength 1 */
+  name?: string;
   /** @nullable */
   category?: string | null;
   /** @nullable */
@@ -29,16 +28,7 @@ export interface Page {
   address?: string | null;
   /** @nullable */
   hours?: string | null;
-  ctaType: PageCtaType;
+  ctaType?: PageUpdateInputCtaType;
   /** @nullable */
   ctaUrl?: string | null;
-  ownerId: string;
-  followerCount: number;
-  reviewCount: number;
-  /** @nullable */
-  averageRating: number | null;
-  viewerFollows?: boolean;
-  viewerCanPost?: boolean;
-  viewerReview?: PageReview | null;
-  createdAt: Date;
 }

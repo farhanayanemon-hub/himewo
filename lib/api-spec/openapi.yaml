@@ -1138,6 +1138,63 @@ paths:
               schema: { $ref: "#/components/schemas/Page" }
         "404":
           $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updatePage
+      tags: [pages]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PageUpdateInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Page" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /pages/{id}/reviews:
+    get:
+      operationId: listPageReviews
+      tags: [pages]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Reviews
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PageReview" }
+    post:
+      operationId: reviewPage
+      tags: [pages]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PageReviewInput" }
+      responses:
+        "200":
+          description: Review saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PageReview" }
+    delete:
+      operationId: deletePageReview
+      tags: [pages]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
   /pages/{id}/posts:
     get:
       operationId: getPagePosts
@@ -2108,7 +2165,17 @@ components:
 
     Page:
       type: object
-      required: [id, name, followerCount, createdAt]
+      required:
+        [
+          id,
+          name,
+          ownerId,
+          ctaType,
+          followerCount,
+          reviewCount,
+          averageRating,
+          createdAt,
+        ]
       properties:
         id: { type: integer }
         name: { type: string }
@@ -2116,9 +2183,25 @@ components:
         description: { type: ["string", "null"] }
         avatarUrl: { type: ["string", "null"] }
         coverUrl: { type: ["string", "null"] }
+        contactPhone: { type: ["string", "null"] }
+        contactEmail: { type: ["string", "null"] }
+        website: { type: ["string", "null"] }
+        address: { type: ["string", "null"] }
+        hours: { type: ["string", "null"] }
+        ctaType:
+          type: string
+          enum: [none, message, call, shop, signup]
+        ctaUrl: { type: ["string", "null"] }
+        ownerId: { type: string }
         followerCount: { type: integer }
+        reviewCount: { type: integer }
+        averageRating: { type: ["number", "null"] }
         viewerFollows: { type: boolean }
         viewerCanPost: { type: boolean }
+        viewerReview:
+          oneOf:
+            - $ref: "#/components/schemas/PageReview"
+            - type: "null"
         createdAt: { type: string, format: date-time }
     PageInput:
       type: object
@@ -2129,6 +2212,43 @@ components:
         description: { type: string }
         avatarUrl: { type: string }
         coverUrl: { type: string }
+        contactPhone: { type: string }
+        contactEmail: { type: string }
+        website: { type: string }
+        address: { type: string }
+        hours: { type: string }
+        ctaType: { type: string, enum: [none, message, call, shop, signup] }
+        ctaUrl: { type: string }
+    PageUpdateInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        category: { type: ["string", "null"] }
+        description: { type: ["string", "null"] }
+        avatarUrl: { type: ["string", "null"] }
+        coverUrl: { type: ["string", "null"] }
+        contactPhone: { type: ["string", "null"] }
+        contactEmail: { type: ["string", "null"] }
+        website: { type: ["string", "null"] }
+        address: { type: ["string", "null"] }
+        hours: { type: ["string", "null"] }
+        ctaType: { type: string, enum: [none, message, call, shop, signup] }
+        ctaUrl: { type: ["string", "null"] }
+    PageReview:
+      type: object
+      required: [id, user, rating, createdAt]
+      properties:
+        id: { type: integer }
+        user: { $ref: "#/components/schemas/Profile" }
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        body: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+    PageReviewInput:
+      type: object
+      required: [rating]
+      properties:
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        body: { type: string }
 
     UserSettings:
       type: object

@@ -3625,6 +3625,10 @@ export const DeleteMarketplaceListingParams = zod.object({
 export const DeleteMarketplaceListingResponse = zod.void()
 
 
+export const listPagesResponseViewerReviewOneRatingMax = 5;
+
+
+
 export const ListPagesResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
@@ -3632,9 +3636,58 @@ export const ListPagesResponseItem = zod.object({
   "description": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "coverUrl": zod.string().nullish(),
+  "contactPhone": zod.string().nullish(),
+  "contactEmail": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "hours": zod.string().nullish(),
+  "ctaType": zod.enum(['none', 'message', 'call', 'shop', 'signup']),
+  "ctaUrl": zod.string().nullish(),
+  "ownerId": zod.string(),
   "followerCount": zod.number(),
+  "reviewCount": zod.number(),
+  "averageRating": zod.number().nullable(),
   "viewerFollows": zod.boolean().optional(),
   "viewerCanPost": zod.boolean().optional(),
+  "viewerReview": zod.union([zod.object({
+  "id": zod.number(),
+  "user": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "rating": zod.number().min(1).max(listPagesResponseViewerReviewOneRatingMax),
+  "body": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}),zod.null()]).optional(),
   "createdAt": zod.coerce.date()
 })
 export const ListPagesResponse = zod.array(ListPagesResponseItem)
@@ -3648,8 +3701,19 @@ export const CreatePageBody = zod.object({
   "category": zod.string().optional(),
   "description": zod.string().optional(),
   "avatarUrl": zod.string().optional(),
-  "coverUrl": zod.string().optional()
+  "coverUrl": zod.string().optional(),
+  "contactPhone": zod.string().optional(),
+  "contactEmail": zod.string().optional(),
+  "website": zod.string().optional(),
+  "address": zod.string().optional(),
+  "hours": zod.string().optional(),
+  "ctaType": zod.enum(['none', 'message', 'call', 'shop', 'signup']).optional(),
+  "ctaUrl": zod.string().optional()
 })
+
+export const createPageResponseViewerReviewOneRatingMax = 5;
+
+
 
 export const CreatePageResponse = zod.object({
   "id": zod.number(),
@@ -3658,9 +3722,58 @@ export const CreatePageResponse = zod.object({
   "description": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "coverUrl": zod.string().nullish(),
+  "contactPhone": zod.string().nullish(),
+  "contactEmail": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "hours": zod.string().nullish(),
+  "ctaType": zod.enum(['none', 'message', 'call', 'shop', 'signup']),
+  "ctaUrl": zod.string().nullish(),
+  "ownerId": zod.string(),
   "followerCount": zod.number(),
+  "reviewCount": zod.number(),
+  "averageRating": zod.number().nullable(),
   "viewerFollows": zod.boolean().optional(),
   "viewerCanPost": zod.boolean().optional(),
+  "viewerReview": zod.union([zod.object({
+  "id": zod.number(),
+  "user": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "rating": zod.number().min(1).max(createPageResponseViewerReviewOneRatingMax),
+  "body": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}),zod.null()]).optional(),
   "createdAt": zod.coerce.date()
 })
 
@@ -3669,6 +3782,10 @@ export const GetPageParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const getPageResponseViewerReviewOneRatingMax = 5;
+
+
+
 export const GetPageResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
@@ -3676,11 +3793,264 @@ export const GetPageResponse = zod.object({
   "description": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "coverUrl": zod.string().nullish(),
+  "contactPhone": zod.string().nullish(),
+  "contactEmail": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "hours": zod.string().nullish(),
+  "ctaType": zod.enum(['none', 'message', 'call', 'shop', 'signup']),
+  "ctaUrl": zod.string().nullish(),
+  "ownerId": zod.string(),
   "followerCount": zod.number(),
+  "reviewCount": zod.number(),
+  "averageRating": zod.number().nullable(),
   "viewerFollows": zod.boolean().optional(),
   "viewerCanPost": zod.boolean().optional(),
+  "viewerReview": zod.union([zod.object({
+  "id": zod.number(),
+  "user": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "rating": zod.number().min(1).max(getPageResponseViewerReviewOneRatingMax),
+  "body": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}),zod.null()]).optional(),
   "createdAt": zod.coerce.date()
 })
+
+
+export const UpdatePageParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const UpdatePageBody = zod.object({
+  "name": zod.string().min(1).optional(),
+  "category": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "contactPhone": zod.string().nullish(),
+  "contactEmail": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "hours": zod.string().nullish(),
+  "ctaType": zod.enum(['none', 'message', 'call', 'shop', 'signup']).optional(),
+  "ctaUrl": zod.string().nullish()
+})
+
+export const updatePageResponseViewerReviewOneRatingMax = 5;
+
+
+
+export const UpdatePageResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "category": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "contactPhone": zod.string().nullish(),
+  "contactEmail": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "hours": zod.string().nullish(),
+  "ctaType": zod.enum(['none', 'message', 'call', 'shop', 'signup']),
+  "ctaUrl": zod.string().nullish(),
+  "ownerId": zod.string(),
+  "followerCount": zod.number(),
+  "reviewCount": zod.number(),
+  "averageRating": zod.number().nullable(),
+  "viewerFollows": zod.boolean().optional(),
+  "viewerCanPost": zod.boolean().optional(),
+  "viewerReview": zod.union([zod.object({
+  "id": zod.number(),
+  "user": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "rating": zod.number().min(1).max(updatePageResponseViewerReviewOneRatingMax),
+  "body": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}),zod.null()]).optional(),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const ListPageReviewsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const listPageReviewsResponseRatingMax = 5;
+
+
+
+export const ListPageReviewsResponseItem = zod.object({
+  "id": zod.number(),
+  "user": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "rating": zod.number().min(1).max(listPageReviewsResponseRatingMax),
+  "body": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const ListPageReviewsResponse = zod.array(ListPageReviewsResponseItem)
+
+
+export const ReviewPageParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const reviewPageBodyRatingMax = 5;
+
+
+
+export const ReviewPageBody = zod.object({
+  "rating": zod.number().min(1).max(reviewPageBodyRatingMax),
+  "body": zod.string().optional()
+})
+
+export const reviewPageResponseRatingMax = 5;
+
+
+
+export const ReviewPageResponse = zod.object({
+  "id": zod.number(),
+  "user": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "rating": zod.number().min(1).max(reviewPageResponseRatingMax),
+  "body": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const DeletePageReviewParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeletePageReviewResponse = zod.void()
 
 
 export const GetPagePostsParams = zod.object({

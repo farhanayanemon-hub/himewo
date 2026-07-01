@@ -74,6 +74,17 @@ export const pagesTable = pgTable("pages", {
   description: text("description"),
   avatarUrl: text("avatar_url"),
   coverUrl: text("cover_url"),
+  // About / contact info shown on the page.
+  contactPhone: text("contact_phone"),
+  contactEmail: text("contact_email"),
+  website: text("website"),
+  address: text("address"),
+  hours: text("hours"),
+  // Configurable call-to-action button. ctaType: none|message|call|shop|signup.
+  // ctaUrl holds the external link for shop/signup (message/call derive their
+  // target from the owner / contactPhone).
+  ctaType: text("cta_type").notNull().default("none"),
+  ctaUrl: text("cta_url"),
   // Admin curation/governance flags.
   featured: boolean("featured").notNull().default(false),
   isApproved: boolean("is_approved").notNull().default(true),
@@ -102,7 +113,29 @@ export const pageFollowersTable = pgTable(
   (t) => [uniqueIndex("page_followers_uniq").on(t.pageId, t.userId)],
 );
 
+export const pageReviewsTable = pgTable(
+  "page_reviews",
+  {
+    id: serial("id").primaryKey(),
+    pageId: integer("page_id")
+      .notNull()
+      .references(() => pagesTable.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => profilesTable.id, { onDelete: "cascade" }),
+    // Star rating, 1-5.
+    rating: integer("rating").notNull(),
+    body: text("body"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  // One review per user per page (POST upserts the viewer's own review).
+  (t) => [uniqueIndex("page_reviews_uniq").on(t.pageId, t.userId)],
+);
+
 export type Group = typeof groupsTable.$inferSelect;
 export type GroupMember = typeof groupMembersTable.$inferSelect;
 export type Page = typeof pagesTable.$inferSelect;
 export type PageFollower = typeof pageFollowersTable.$inferSelect;
+export type PageReview = typeof pageReviewsTable.$inferSelect;

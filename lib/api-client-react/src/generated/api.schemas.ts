@@ -617,6 +617,30 @@ export interface MuteMemberInput {
   muted: boolean;
 }
 
+export type PageCtaType = typeof PageCtaType[keyof typeof PageCtaType];
+
+
+export const PageCtaType = {
+  none: 'none',
+  message: 'message',
+  call: 'call',
+  shop: 'shop',
+  signup: 'signup',
+} as const;
+
+export interface PageReview {
+  id: number;
+  user: Profile;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  rating: number;
+  /** @nullable */
+  body?: string | null;
+  createdAt: string;
+}
+
 export interface Page {
   id: number;
   name: string;
@@ -628,11 +652,40 @@ export interface Page {
   avatarUrl?: string | null;
   /** @nullable */
   coverUrl?: string | null;
+  /** @nullable */
+  contactPhone?: string | null;
+  /** @nullable */
+  contactEmail?: string | null;
+  /** @nullable */
+  website?: string | null;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  hours?: string | null;
+  ctaType: PageCtaType;
+  /** @nullable */
+  ctaUrl?: string | null;
+  ownerId: string;
   followerCount: number;
+  reviewCount: number;
+  /** @nullable */
+  averageRating: number | null;
   viewerFollows?: boolean;
   viewerCanPost?: boolean;
+  viewerReview?: PageReview | null;
   createdAt: string;
 }
+
+export type PageInputCtaType = typeof PageInputCtaType[keyof typeof PageInputCtaType];
+
+
+export const PageInputCtaType = {
+  none: 'none',
+  message: 'message',
+  call: 'call',
+  shop: 'shop',
+  signup: 'signup',
+} as const;
 
 export interface PageInput {
   /** @minLength 1 */
@@ -641,6 +694,59 @@ export interface PageInput {
   description?: string;
   avatarUrl?: string;
   coverUrl?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  website?: string;
+  address?: string;
+  hours?: string;
+  ctaType?: PageInputCtaType;
+  ctaUrl?: string;
+}
+
+export type PageUpdateInputCtaType = typeof PageUpdateInputCtaType[keyof typeof PageUpdateInputCtaType];
+
+
+export const PageUpdateInputCtaType = {
+  none: 'none',
+  message: 'message',
+  call: 'call',
+  shop: 'shop',
+  signup: 'signup',
+} as const;
+
+export interface PageUpdateInput {
+  /** @minLength 1 */
+  name?: string;
+  /** @nullable */
+  category?: string | null;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  avatarUrl?: string | null;
+  /** @nullable */
+  coverUrl?: string | null;
+  /** @nullable */
+  contactPhone?: string | null;
+  /** @nullable */
+  contactEmail?: string | null;
+  /** @nullable */
+  website?: string | null;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  hours?: string | null;
+  ctaType?: PageUpdateInputCtaType;
+  /** @nullable */
+  ctaUrl?: string | null;
+}
+
+export interface PageReviewInput {
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  rating: number;
+  body?: string;
 }
 
 export type UserSettingsProfileVisibility = typeof UserSettingsProfileVisibility[keyof typeof UserSettingsProfileVisibility];
