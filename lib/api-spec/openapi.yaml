@@ -1010,6 +1010,154 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  # ---------------- Photo albums ----------------
+  /users/{id}/albums:
+    get:
+      operationId: getUserAlbums
+      tags: [albums]
+      summary: List a user's photo albums
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Albums, most recent first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Album" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /albums:
+    post:
+      operationId: createAlbum
+      tags: [albums]
+      summary: Create a photo album
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AlbumInput" }
+      responses:
+        "201":
+          description: Created album
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Album" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /albums/{albumId}:
+    get:
+      operationId: getAlbum
+      tags: [albums]
+      summary: Album detail with photos and tags
+      parameters:
+        - { name: albumId, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Album detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlbumDetail" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteAlbum
+      tags: [albums]
+      summary: Delete an album (owner only)
+      parameters:
+        - { name: albumId, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /albums/{albumId}/photos:
+    post:
+      operationId: addAlbumPhotos
+      tags: [albums]
+      summary: Add photos to an album (owner only)
+      parameters:
+        - { name: albumId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AddAlbumPhotosInput" }
+      responses:
+        "201":
+          description: Added photos
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AlbumPhoto" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /albums/{albumId}/photos/{photoId}:
+    delete:
+      operationId: deleteAlbumPhoto
+      tags: [albums]
+      summary: Remove a photo from an album (owner only)
+      parameters:
+        - { name: albumId, in: path, required: true, schema: { type: integer } }
+        - { name: photoId, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /albums/{albumId}/photos/{photoId}/tags:
+    post:
+      operationId: tagPhoto
+      tags: [albums]
+      summary: Tag a friend in a photo (owner only, friends only)
+      parameters:
+        - { name: albumId, in: path, required: true, schema: { type: integer } }
+        - { name: photoId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PhotoTagInput" }
+      responses:
+        "201":
+          description: Tagged user
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PhotoTag" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /albums/{albumId}/photos/{photoId}/tags/{userId}:
+    delete:
+      operationId: untagPhoto
+      tags: [albums]
+      summary: Remove a photo tag (owner or the tagged user)
+      parameters:
+        - { name: albumId, in: path, required: true, schema: { type: integer } }
+        - { name: photoId, in: path, required: true, schema: { type: integer } }
+        - { name: userId, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Removed }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   # ---------------- Marketplace ----------------
   /marketplace:
     get:
@@ -2482,6 +2630,71 @@ components:
       properties:
         entityType: { type: string, enum: [post, listing, reel] }
         entityId: { type: integer }
+
+    Album:
+      type: object
+      required: [id, ownerId, name, photoCount, createdAt]
+      properties:
+        id: { type: integer }
+        ownerId: { type: string }
+        name: { type: string }
+        description: { type: ["string", "null"] }
+        coverUrl: { type: ["string", "null"] }
+        photoCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+    AlbumInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+        description: { type: ["string", "null"], maxLength: 500 }
+    PhotoTag:
+      type: object
+      required: [userId, displayName]
+      properties:
+        userId: { type: string }
+        displayName: { type: string }
+        avatarUrl: { type: ["string", "null"] }
+    AlbumPhoto:
+      type: object
+      required: [id, albumId, url, tags, createdAt]
+      properties:
+        id: { type: integer }
+        albumId: { type: integer }
+        url: { type: string }
+        caption: { type: ["string", "null"] }
+        tags:
+          type: array
+          items: { $ref: "#/components/schemas/PhotoTag" }
+        createdAt: { type: string, format: date-time }
+    AlbumDetail:
+      type: object
+      required: [album, owner, photos]
+      properties:
+        album: { $ref: "#/components/schemas/Album" }
+        owner: { $ref: "#/components/schemas/Profile" }
+        photos:
+          type: array
+          items: { $ref: "#/components/schemas/AlbumPhoto" }
+    AddAlbumPhotosInput:
+      type: object
+      required: [photos]
+      properties:
+        photos:
+          type: array
+          minItems: 1
+          maxItems: 30
+          items:
+            type: object
+            required: [url]
+            properties:
+              url: { type: string, maxLength: 2000 }
+              caption: { type: ["string", "null"], maxLength: 300 }
+    PhotoTagInput:
+      type: object
+      required: [userId]
+      properties:
+        userId: { type: string }
 
     Story:
       type: object

@@ -20,10 +20,15 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AddAlbumPhotosInput,
   AdjustPointsInput,
   AdjustPointsResult,
   AdminEarningsSummary,
   AdminWithdrawalRequest,
+  Album,
+  AlbumDetail,
+  AlbumInput,
+  AlbumPhoto,
   BadRequestResponse,
   Comment,
   CommentInput,
@@ -70,6 +75,8 @@ import type {
   PageReview,
   PageReviewInput,
   PageUpdateInput,
+  PhotoTag,
+  PhotoTagInput,
   PointConfig,
   PointConfigUpdate,
   PointTransaction,
@@ -4985,6 +4992,590 @@ export const useUnsaveItem = <TError = ErrorType<BadRequestResponse | Unauthoriz
         TContext
       > => {
       return useMutation(getUnsaveItemMutationOptions(options));
+    }
+
+export const getGetUserAlbumsUrl = (id: string,) => {
+
+
+
+
+  return `/api/users/${id}/albums`
+}
+
+/**
+ * @summary List a user's photo albums
+ */
+export const getUserAlbums = async (id: string, options?: RequestInit): Promise<Album[]> => {
+
+  return customFetch<Album[]>(getGetUserAlbumsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetUserAlbumsQueryKey = (id: string,) => {
+    return [
+    `/api/users/${id}/albums`
+    ] as const;
+    }
+
+
+export const getGetUserAlbumsQueryOptions = <TData = Awaited<ReturnType<typeof getUserAlbums>>, TError = ErrorType<UnauthorizedResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUserAlbums>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetUserAlbumsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getUserAlbums>>> = ({ signal }) => getUserAlbums(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getUserAlbums>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetUserAlbumsQueryResult = NonNullable<Awaited<ReturnType<typeof getUserAlbums>>>
+export type GetUserAlbumsQueryError = ErrorType<UnauthorizedResponse>
+
+
+/**
+ * @summary List a user's photo albums
+ */
+
+export function useGetUserAlbums<TData = Awaited<ReturnType<typeof getUserAlbums>>, TError = ErrorType<UnauthorizedResponse>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUserAlbums>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetUserAlbumsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateAlbumUrl = () => {
+
+
+
+
+  return `/api/albums`
+}
+
+/**
+ * @summary Create a photo album
+ */
+export const createAlbum = async (albumInput: AlbumInput, options?: RequestInit): Promise<Album> => {
+
+  return customFetch<Album>(getCreateAlbumUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(albumInput)
+  }
+);}
+
+
+
+
+export const getCreateAlbumMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAlbum>>, TError,{data: BodyType<AlbumInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAlbum>>, TError,{data: BodyType<AlbumInput>}, TContext> => {
+
+const mutationKey = ['createAlbum'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAlbum>>, {data: BodyType<AlbumInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createAlbum(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAlbumMutationResult = NonNullable<Awaited<ReturnType<typeof createAlbum>>>
+    export type CreateAlbumMutationBody = BodyType<AlbumInput>
+    export type CreateAlbumMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse>
+
+    /**
+ * @summary Create a photo album
+ */
+export const useCreateAlbum = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAlbum>>, TError,{data: BodyType<AlbumInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAlbum>>,
+        TError,
+        {data: BodyType<AlbumInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAlbumMutationOptions(options));
+    }
+
+export const getGetAlbumUrl = (albumId: number,) => {
+
+
+
+
+  return `/api/albums/${albumId}`
+}
+
+/**
+ * @summary Album detail with photos and tags
+ */
+export const getAlbum = async (albumId: number, options?: RequestInit): Promise<AlbumDetail> => {
+
+  return customFetch<AlbumDetail>(getGetAlbumUrl(albumId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAlbumQueryKey = (albumId: number,) => {
+    return [
+    `/api/albums/${albumId}`
+    ] as const;
+    }
+
+
+export const getGetAlbumQueryOptions = <TData = Awaited<ReturnType<typeof getAlbum>>, TError = ErrorType<UnauthorizedResponse | NotFoundResponse>>(albumId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAlbum>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAlbumQueryKey(albumId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAlbum>>> = ({ signal }) => getAlbum(albumId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: albumId !== null && albumId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAlbum>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAlbumQueryResult = NonNullable<Awaited<ReturnType<typeof getAlbum>>>
+export type GetAlbumQueryError = ErrorType<UnauthorizedResponse | NotFoundResponse>
+
+
+/**
+ * @summary Album detail with photos and tags
+ */
+
+export function useGetAlbum<TData = Awaited<ReturnType<typeof getAlbum>>, TError = ErrorType<UnauthorizedResponse | NotFoundResponse>>(
+ albumId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAlbum>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAlbumQueryOptions(albumId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDeleteAlbumUrl = (albumId: number,) => {
+
+
+
+
+  return `/api/albums/${albumId}`
+}
+
+/**
+ * @summary Delete an album (owner only)
+ */
+export const deleteAlbum = async (albumId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteAlbumUrl(albumId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteAlbumMutationOptions = <TError = ErrorType<UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAlbum>>, TError,{albumId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAlbum>>, TError,{albumId: number}, TContext> => {
+
+const mutationKey = ['deleteAlbum'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAlbum>>, {albumId: number}> = (props) => {
+          const {albumId} = props ?? {};
+
+          return  deleteAlbum(albumId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAlbumMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAlbum>>>
+
+    export type DeleteAlbumMutationError = ErrorType<UnauthorizedResponse | NotFoundResponse>
+
+    /**
+ * @summary Delete an album (owner only)
+ */
+export const useDeleteAlbum = <TError = ErrorType<UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAlbum>>, TError,{albumId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAlbum>>,
+        TError,
+        {albumId: number},
+        TContext
+      > => {
+      return useMutation(getDeleteAlbumMutationOptions(options));
+    }
+
+export const getAddAlbumPhotosUrl = (albumId: number,) => {
+
+
+
+
+  return `/api/albums/${albumId}/photos`
+}
+
+/**
+ * @summary Add photos to an album (owner only)
+ */
+export const addAlbumPhotos = async (albumId: number,
+    addAlbumPhotosInput: AddAlbumPhotosInput, options?: RequestInit): Promise<AlbumPhoto[]> => {
+
+  return customFetch<AlbumPhoto[]>(getAddAlbumPhotosUrl(albumId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(addAlbumPhotosInput)
+  }
+);}
+
+
+
+
+export const getAddAlbumPhotosMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addAlbumPhotos>>, TError,{albumId: number;data: BodyType<AddAlbumPhotosInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addAlbumPhotos>>, TError,{albumId: number;data: BodyType<AddAlbumPhotosInput>}, TContext> => {
+
+const mutationKey = ['addAlbumPhotos'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addAlbumPhotos>>, {albumId: number;data: BodyType<AddAlbumPhotosInput>}> = (props) => {
+          const {albumId,data} = props ?? {};
+
+          return  addAlbumPhotos(albumId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddAlbumPhotosMutationResult = NonNullable<Awaited<ReturnType<typeof addAlbumPhotos>>>
+    export type AddAlbumPhotosMutationBody = BodyType<AddAlbumPhotosInput>
+    export type AddAlbumPhotosMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse>
+
+    /**
+ * @summary Add photos to an album (owner only)
+ */
+export const useAddAlbumPhotos = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addAlbumPhotos>>, TError,{albumId: number;data: BodyType<AddAlbumPhotosInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addAlbumPhotos>>,
+        TError,
+        {albumId: number;data: BodyType<AddAlbumPhotosInput>},
+        TContext
+      > => {
+      return useMutation(getAddAlbumPhotosMutationOptions(options));
+    }
+
+export const getDeleteAlbumPhotoUrl = (albumId: number,
+    photoId: number,) => {
+
+
+
+
+  return `/api/albums/${albumId}/photos/${photoId}`
+}
+
+/**
+ * @summary Remove a photo from an album (owner only)
+ */
+export const deleteAlbumPhoto = async (albumId: number,
+    photoId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteAlbumPhotoUrl(albumId,photoId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteAlbumPhotoMutationOptions = <TError = ErrorType<UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAlbumPhoto>>, TError,{albumId: number;photoId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAlbumPhoto>>, TError,{albumId: number;photoId: number}, TContext> => {
+
+const mutationKey = ['deleteAlbumPhoto'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAlbumPhoto>>, {albumId: number;photoId: number}> = (props) => {
+          const {albumId,photoId} = props ?? {};
+
+          return  deleteAlbumPhoto(albumId,photoId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAlbumPhotoMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAlbumPhoto>>>
+
+    export type DeleteAlbumPhotoMutationError = ErrorType<UnauthorizedResponse | NotFoundResponse>
+
+    /**
+ * @summary Remove a photo from an album (owner only)
+ */
+export const useDeleteAlbumPhoto = <TError = ErrorType<UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAlbumPhoto>>, TError,{albumId: number;photoId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAlbumPhoto>>,
+        TError,
+        {albumId: number;photoId: number},
+        TContext
+      > => {
+      return useMutation(getDeleteAlbumPhotoMutationOptions(options));
+    }
+
+export const getTagPhotoUrl = (albumId: number,
+    photoId: number,) => {
+
+
+
+
+  return `/api/albums/${albumId}/photos/${photoId}/tags`
+}
+
+/**
+ * @summary Tag a friend in a photo (owner only, friends only)
+ */
+export const tagPhoto = async (albumId: number,
+    photoId: number,
+    photoTagInput: PhotoTagInput, options?: RequestInit): Promise<PhotoTag> => {
+
+  return customFetch<PhotoTag>(getTagPhotoUrl(albumId,photoId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(photoTagInput)
+  }
+);}
+
+
+
+
+export const getTagPhotoMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof tagPhoto>>, TError,{albumId: number;photoId: number;data: BodyType<PhotoTagInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof tagPhoto>>, TError,{albumId: number;photoId: number;data: BodyType<PhotoTagInput>}, TContext> => {
+
+const mutationKey = ['tagPhoto'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof tagPhoto>>, {albumId: number;photoId: number;data: BodyType<PhotoTagInput>}> = (props) => {
+          const {albumId,photoId,data} = props ?? {};
+
+          return  tagPhoto(albumId,photoId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TagPhotoMutationResult = NonNullable<Awaited<ReturnType<typeof tagPhoto>>>
+    export type TagPhotoMutationBody = BodyType<PhotoTagInput>
+    export type TagPhotoMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse>
+
+    /**
+ * @summary Tag a friend in a photo (owner only, friends only)
+ */
+export const useTagPhoto = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof tagPhoto>>, TError,{albumId: number;photoId: number;data: BodyType<PhotoTagInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof tagPhoto>>,
+        TError,
+        {albumId: number;photoId: number;data: BodyType<PhotoTagInput>},
+        TContext
+      > => {
+      return useMutation(getTagPhotoMutationOptions(options));
+    }
+
+export const getUntagPhotoUrl = (albumId: number,
+    photoId: number,
+    userId: string,) => {
+
+
+
+
+  return `/api/albums/${albumId}/photos/${photoId}/tags/${userId}`
+}
+
+/**
+ * @summary Remove a photo tag (owner or the tagged user)
+ */
+export const untagPhoto = async (albumId: number,
+    photoId: number,
+    userId: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getUntagPhotoUrl(albumId,photoId,userId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getUntagPhotoMutationOptions = <TError = ErrorType<UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof untagPhoto>>, TError,{albumId: number;photoId: number;userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof untagPhoto>>, TError,{albumId: number;photoId: number;userId: string}, TContext> => {
+
+const mutationKey = ['untagPhoto'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof untagPhoto>>, {albumId: number;photoId: number;userId: string}> = (props) => {
+          const {albumId,photoId,userId} = props ?? {};
+
+          return  untagPhoto(albumId,photoId,userId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UntagPhotoMutationResult = NonNullable<Awaited<ReturnType<typeof untagPhoto>>>
+
+    export type UntagPhotoMutationError = ErrorType<UnauthorizedResponse | NotFoundResponse>
+
+    /**
+ * @summary Remove a photo tag (owner or the tagged user)
+ */
+export const useUntagPhoto = <TError = ErrorType<UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof untagPhoto>>, TError,{albumId: number;photoId: number;userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof untagPhoto>>,
+        TError,
+        {albumId: number;photoId: number;userId: string},
+        TContext
+      > => {
+      return useMutation(getUntagPhotoMutationOptions(options));
     }
 
 export const getListMarketplaceListingsUrl = (params?: ListMarketplaceListingsParams,) => {

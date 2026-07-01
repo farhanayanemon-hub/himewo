@@ -1,14 +1,18 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import {
   useGetUserFriends,
   getGetUserFriendsQueryKey,
   getGetUserPostsQueryKey,
+  useGetUserAlbums,
+  getGetUserAlbumsQueryKey,
   type Profile,
   type Post,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PostCard } from "@/components/post-card";
 import { PostComposer } from "@/components/post-composer";
+import { CreateAlbumDialog } from "@/components/create-album-dialog";
 import {
   Loader2,
   Briefcase,
@@ -21,6 +25,7 @@ import {
   Mail,
   Phone,
   Lock,
+  Images,
 } from "lucide-react";
 
 function IntroRow({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
@@ -48,6 +53,7 @@ export function ProfileView({
   headerActions: React.ReactNode;
 }) {
   const queryClient = useQueryClient();
+  const [createAlbumOpen, setCreateAlbumOpen] = useState(false);
   const isLocked = Boolean(profile.isLocked);
   const showLocked = isLocked && !isOwnProfile && !profile.viewerIsFriend;
 
@@ -61,6 +67,13 @@ export function ProfileView({
       },
     },
   );
+
+  const { data: albums } = useGetUserAlbums(userId, {
+    query: {
+      enabled: !!userId && !showLocked,
+      queryKey: getGetUserAlbumsQueryKey(userId),
+    },
+  });
 
   const photoUrls = (posts ?? [])
     .flatMap((p) => p.media ?? [])
@@ -208,6 +221,61 @@ export function ProfileView({
               <p className="text-muted-foreground text-sm">No photos yet.</p>
             )}
           </div>
+
+          {/* Albums */}
+          <div className="bg-card border border-border rounded-xl shadow-sm p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-bold text-lg">Albums</h2>
+              {isOwnProfile && (
+                <button
+                  onClick={() => setCreateAlbumOpen(true)}
+                  className="text-primary text-sm hover:underline"
+                >
+                  Create album
+                </button>
+              )}
+            </div>
+            {albums && albums.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3">
+                {albums.map((a) => (
+                  <Link key={a.id} href={`/albums/${a.id}`}>
+                    <div className="cursor-pointer group">
+                      {a.coverUrl ? (
+                        <img
+                          src={a.coverUrl}
+                          className="w-full aspect-square rounded-lg object-cover bg-muted group-hover:opacity-90 transition-opacity"
+                          alt={a.name}
+                        />
+                      ) : (
+                        <div className="w-full aspect-square rounded-lg bg-muted flex items-center justify-center">
+                          <Images className="w-8 h-8 text-muted-foreground" />
+                        </div>
+                      )}
+                      <p className="text-sm font-medium mt-1 truncate group-hover:underline">
+                        {a.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {a.photoCount} photo{a.photoCount === 1 ? "" : "s"}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">
+                {isOwnProfile
+                  ? "Create your first album to organize photos."
+                  : "No albums yet."}
+              </p>
+            )}
+          </div>
+          {isOwnProfile && (
+            <CreateAlbumDialog
+              open={createAlbumOpen}
+              onOpenChange={setCreateAlbumOpen}
+              userId={userId}
+            />
+          )}
         </div>
 
         {/* Posts */}
