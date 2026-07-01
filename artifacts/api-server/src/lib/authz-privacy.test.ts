@@ -109,7 +109,7 @@ describe("canViewProfileDetails", () => {
 
 describe("canViewPost honors the author's profile audience", () => {
   const publicPost = (authorId: string) =>
-    ({ authorId, privacy: "public" as const, groupId: null });
+    ({ authorId, privacy: "public" as const, groupId: null, pendingApproval: false });
 
   it("public profile: public post visible to a stranger", async () => {
     await setVisibility({ profileVisibility: "public", isLocked: false });
@@ -133,7 +133,12 @@ describe("filterVisiblePosts (feed) honors audience + per-post privacy", () => {
   const post = (
     authorId: string,
     privacy: "public" | "friends" | "private",
-  ) => ({ authorId, privacy, groupId: null as number | null });
+  ) => ({
+    authorId,
+    privacy,
+    groupId: null as number | null,
+    pendingApproval: false,
+  });
 
   it("public profile: friend sees public+friends but NOT private posts", async () => {
     await setVisibility({ profileVisibility: "public", isLocked: false });

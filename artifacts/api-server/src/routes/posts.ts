@@ -10,6 +10,7 @@ import {
   friendshipsTable,
   userSettingsTable,
   groupMembersTable,
+  groupsTable,
   pagesTable,
 } from "@workspace/db";
 import { and, or, eq, ne, lt, asc, desc, inArray, isNull } from "drizzle-orm";
@@ -111,9 +112,14 @@ router.post("/posts", requireAuth, async (req, res): Promise<void> => {
   // Authorize group/page posting before writing. Group posts require the author
   // to be a member; page posts require the author to own the page. Otherwise a
   // client could post into any community by passing an arbitrary id.
+  let pendingApproval = false;
   if (groupId != null) {
     const [membership] = await db
-      .select({ id: groupMembersTable.id })
+      .select({
+        role: groupMembersTable.role,
+        status: groupMembersTable.status,
+        isMuted: groupMembersTable.isMuted,
+      })
       .from(groupMembersTable)
       .where(
         and(
@@ -121,11 +127,24 @@ router.post("/posts", requireAuth, async (req, res): Promise<void> => {
           eq(groupMembersTable.userId, req.userId!),
         ),
       );
-    if (!membership) {
+    if (!membership || membership.status !== "active") {
       res
         .status(403)
         .json({ error: "You must be a member of this group to post." });
       return;
+    }
+    if (membership.isMuted) {
+      res.status(403).json({ error: "You are muted in this group." });
+      return;
+    }
+    const [group] = await db
+      .select({ requirePostApproval: groupsTable.requirePostApproval })
+      .from(groupsTable)
+      .where(eq(groupsTable.id, groupId));
+    // Regular members' posts wait for approval when the group requires it;
+    // admins and moderators bypass the queue.
+    if (group?.requirePostApproval && membership.role === "member") {
+      pendingApproval = true;
     }
   }
   if (pageId != null) {
@@ -166,6 +185,7 @@ router.post("/posts", requireAuth, async (req, res): Promise<void> => {
       privacy: effectivePrivacy,
       groupId: groupId ?? null,
       pageId: pageId ?? null,
+      pendingApproval,
     })
     .returning();
   if (media && media.length > 0) {

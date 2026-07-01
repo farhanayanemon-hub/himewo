@@ -6,10 +6,12 @@ import {
   integer,
   boolean,
   timestamp,
+  jsonb,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { profilesTable } from "./profiles";
-import { memberRoleEnum, privacyEnum } from "./enums";
+import { postsTable } from "./posts";
+import { memberRoleEnum, groupMemberStatusEnum, privacyEnum } from "./enums";
 
 export const groupsTable = pgTable("groups", {
   id: serial("id").primaryKey(),
@@ -18,6 +20,18 @@ export const groupsTable = pgTable("groups", {
   avatarUrl: text("avatar_url"),
   coverUrl: text("cover_url"),
   privacy: privacyEnum("privacy").notNull().default("public"),
+  // Group rules shown to members.
+  rules: text("rules"),
+  // When true, member posts require admin/mod approval before appearing.
+  requirePostApproval: boolean("require_post_approval")
+    .notNull()
+    .default(false),
+  // Optional questions asked when a user requests to join.
+  joinQuestions: jsonb("join_questions").$type<string[]>(),
+  // Announcement post pinned to the top of the group feed.
+  pinnedPostId: integer("pinned_post_id").references(() => postsTable.id, {
+    onDelete: "set null",
+  }),
   // Admin curation/governance flags.
   featured: boolean("featured").notNull().default(false),
   isApproved: boolean("is_approved").notNull().default(true),
@@ -40,6 +54,12 @@ export const groupMembersTable = pgTable(
       .notNull()
       .references(() => profilesTable.id, { onDelete: "cascade" }),
     role: memberRoleEnum("role").notNull().default("member"),
+    // active = full member, pending = awaiting approval, banned = blocked.
+    status: groupMemberStatusEnum("status").notNull().default("active"),
+    // Muted members stay in the group but cannot post.
+    isMuted: boolean("is_muted").notNull().default(false),
+    // Answers to the group's join questions (given at request time).
+    answers: jsonb("answers").$type<string[]>(),
     joinedAt: timestamp("joined_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

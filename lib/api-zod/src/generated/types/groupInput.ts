@@ -12,6 +12,9 @@ export interface GroupInput {
   name: string;
   description?: string;
   privacy?: GroupInputPrivacy;
+  rules?: string;
+  requirePostApproval?: boolean;
+  joinQuestions?: string[];
   avatarUrl?: string;
   coverUrl?: string;
 }

@@ -38,6 +38,7 @@ router.post("/saved", requireAuth, async (req, res): Promise<void> => {
         authorId: postsTable.authorId,
         privacy: postsTable.privacy,
         groupId: postsTable.groupId,
+        pendingApproval: postsTable.pendingApproval,
       })
       .from(postsTable)
       .where(eq(postsTable.id, entityId));
