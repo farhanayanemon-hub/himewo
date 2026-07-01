@@ -21,10 +21,34 @@ import {
   Clock,
   Bookmark,
   Clapperboard,
-  Wallet
+  Wallet,
+  type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MobileNav } from "./mobile-nav";
+
+function IconTile({
+  icon: Icon,
+  grad,
+  size = "md",
+  active = false,
+}: {
+  icon: LucideIcon;
+  grad: string;
+  size?: "sm" | "md";
+  active?: boolean;
+}) {
+  const box = size === "sm" ? "w-8 h-8" : "w-9 h-9";
+  const ic = size === "sm" ? "w-4 h-4" : "w-[18px] h-[18px]";
+  return (
+    <span
+      className={`relative flex items-center justify-center ${box} rounded-[12px] bg-gradient-to-br ${grad} ring-1 ring-black/5 transition-all duration-200 ${active ? "scale-105 shadow-lg" : "shadow-md"}`}
+    >
+      <span className="pointer-events-none absolute inset-x-1 top-1 h-1/3 rounded-full bg-white/40 blur-[1px]" />
+      <Icon className={`relative ${ic} text-white drop-shadow`} />
+    </span>
+  );
+}
 
 export function MainLayout({ children, rightSidebar }: { children: ReactNode; rightSidebar?: ReactNode }) {
   const { user, signOut } = useAuth();
@@ -41,21 +65,21 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
   };
 
   const navItems = [
-    { href: "/", icon: Home, label: "Home" },
-    { href: "/friends", icon: Users, label: "Friends" },
-    { href: "/reels", icon: Video, label: "Reels" },
-    { href: "/groups", icon: UsersRound, label: "Groups" },
-    { href: "/pages", icon: FileText, label: "Pages" },
-    { href: "/marketplace", icon: Store, label: "Marketplace" },
+    { href: "/", icon: Home, label: "Home", grad: "from-blue-500 to-indigo-600" },
+    { href: "/friends", icon: Users, label: "Friends", grad: "from-sky-400 to-cyan-600" },
+    { href: "/reels", icon: Video, label: "Reels", grad: "from-fuchsia-500 to-purple-600" },
+    { href: "/groups", icon: UsersRound, label: "Groups", grad: "from-emerald-400 to-teal-600" },
+    { href: "/pages", icon: FileText, label: "Pages", grad: "from-orange-400 to-red-500" },
+    { href: "/marketplace", icon: Store, label: "Marketplace", grad: "from-amber-400 to-orange-500" },
     ...(earnings?.enabled
-      ? [{ href: "/earnings", icon: Wallet, label: "Earnings" }]
+      ? [{ href: "/earnings", icon: Wallet, label: "Earnings", grad: "from-lime-400 to-green-600" }]
       : []),
   ];
 
   const shortcutItems = [
-    { href: "/stories", icon: Clapperboard, label: "Stories" },
-    { href: "/memories", icon: Clock, label: "Memories" },
-    { href: "/saved", icon: Bookmark, label: "Saved" },
+    { href: "/stories", icon: Clapperboard, label: "Stories", grad: "from-rose-400 to-pink-600" },
+    { href: "/memories", icon: Clock, label: "Memories", grad: "from-violet-400 to-purple-600" },
+    { href: "/saved", icon: Bookmark, label: "Saved", grad: "from-cyan-400 to-blue-600" },
   ];
 
   return (
@@ -87,7 +111,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
                 return (
                   <Link key={item.href} href={item.href} className="relative">
                     <Button variant="ghost" size="icon" className={`rounded-xl w-14 h-12 press ${isActive ? "bg-accent" : "hover:bg-muted/60"}`}>
-                      <Icon className={`w-6 h-6 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+                      <IconTile icon={Icon} grad={item.grad} active={isActive} />
                     </Button>
                     {isActive && <span className="absolute -bottom-[14px] left-2 right-2 h-1 rounded-full bg-primary" />}
                   </Link>
@@ -131,7 +155,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
               const Icon = item.icon;
               return (
                 <Link key={item.href} href={item.href} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
-                  <Icon className="w-6 h-6 text-primary" />
+                  <IconTile icon={Icon} grad={item.grad} size="sm" />
                   <span className="font-medium">{item.label}</span>
                 </Link>
               );
@@ -140,18 +164,18 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
               const Icon = item.icon;
               return (
                 <Link key={item.href} href={item.href} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
-                  <Icon className="w-6 h-6 text-primary" />
+                  <IconTile icon={Icon} grad={item.grad} size="sm" />
                   <span className="font-medium">{item.label}</span>
                 </Link>
               );
             })}
             <div className="my-4 border-t border-border" />
             <Link href="/settings" className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
-              <Settings className="w-6 h-6" />
+              <IconTile icon={Settings} grad="from-slate-500 to-slate-700" size="sm" />
               <span className="font-medium">Settings</span>
             </Link>
             <button onClick={signOut} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
-              <LogOut className="w-6 h-6" />
+              <IconTile icon={LogOut} grad="from-red-500 to-rose-600" size="sm" />
               <span className="font-medium">Log Out</span>
             </button>
           </nav>
