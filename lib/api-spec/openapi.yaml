@@ -1895,6 +1895,10 @@ components:
         id: { type: integer }
         author: { $ref: "#/components/schemas/Profile" }
         content: { type: string }
+        feelingVerb: { type: ["string", "null"] }
+        feeling: { type: ["string", "null"] }
+        feelingEmoji: { type: ["string", "null"] }
+        location: { type: ["string", "null"] }
         privacy: { type: string, enum: [public, friends, private] }
         commentsEnabled: { type: boolean }
         reactionsEnabled: { type: boolean }
@@ -1950,6 +1954,10 @@ components:
       required: [content]
       properties:
         content: { type: string }
+        feelingVerb: { type: string }
+        feeling: { type: string }
+        feelingEmoji: { type: string }
+        location: { type: string }
         privacy: { type: string, enum: [public, friends, private] }
         groupId: { type: integer }
         pageId: { type: integer }

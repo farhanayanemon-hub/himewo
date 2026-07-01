@@ -16,7 +16,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { Image as ImageIcon, Video, Loader2, X, Globe, Users, Lock, ChevronDown, BarChart3, Plus } from "lucide-react";
+import { Image as ImageIcon, Video, Loader2, X, Globe, Users, Lock, ChevronDown, BarChart3, Plus, Smile, MapPin, Search } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { uploadMedia, UploadUnavailableError, type UploadedMedia } from "@/lib/upload";
 import { toast } from "@/hooks/use-toast";
@@ -27,6 +27,38 @@ const PRIVACY_OPTIONS = [
   { value: PostInputPrivacy.friends, label: "Friends", icon: Users },
   { value: PostInputPrivacy.private, label: "Only me", icon: Lock },
 ] as const;
+
+type FeelingItem = { verb: string; label: string; emoji: string };
+
+const FEELINGS: FeelingItem[] = [
+  { verb: "feeling", label: "happy", emoji: "😊" },
+  { verb: "feeling", label: "blessed", emoji: "😇" },
+  { verb: "feeling", label: "loved", emoji: "🥰" },
+  { verb: "feeling", label: "excited", emoji: "🤩" },
+  { verb: "feeling", label: "grateful", emoji: "🙏" },
+  { verb: "feeling", label: "relaxed", emoji: "😌" },
+  { verb: "feeling", label: "sad", emoji: "😢" },
+  { verb: "feeling", label: "tired", emoji: "😴" },
+  { verb: "feeling", label: "angry", emoji: "😠" },
+  { verb: "feeling", label: "sick", emoji: "🤒" },
+  { verb: "feeling", label: "proud", emoji: "🥲" },
+  { verb: "feeling", label: "motivated", emoji: "💪" },
+];
+
+const ACTIVITIES: FeelingItem[] = [
+  { verb: "celebrating", label: "a birthday", emoji: "🎉" },
+  { verb: "watching", label: "a movie", emoji: "🎬" },
+  { verb: "listening to", label: "music", emoji: "🎵" },
+  { verb: "eating", label: "delicious food", emoji: "🍔" },
+  { verb: "drinking", label: "coffee", emoji: "☕" },
+  { verb: "traveling to", label: "a new place", emoji: "✈️" },
+  { verb: "reading", label: "a book", emoji: "📖" },
+  { verb: "playing", label: "games", emoji: "🎮" },
+  { verb: "working out", label: "at the gym", emoji: "🏋️" },
+  { verb: "studying", label: "hard", emoji: "📚" },
+  { verb: "shopping", label: "for something nice", emoji: "🛍️" },
+  { verb: "praying", label: "", emoji: "🤲" },
+];
 
 function settingToPrivacy(pv: string | undefined): PostInputPrivacy {
   if (pv === "only_me") return PostInputPrivacy.private;
@@ -60,6 +92,14 @@ export function PostComposer({
   const [showPoll, setShowPoll] = useState(false);
   const [pollQuestion, setPollQuestion] = useState("");
   const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
+  const [feeling, setFeeling] = useState<FeelingItem | null>(null);
+  const [feelingOpen, setFeelingOpen] = useState(false);
+  const [feelingTab, setFeelingTab] = useState<"feelings" | "activities">(
+    "feelings",
+  );
+  const [feelingSearch, setFeelingSearch] = useState("");
+  const [location, setLocation] = useState("");
+  const [showLocation, setShowLocation] = useState(false);
 
   const filledOptions = pollOptions.map((o) => o.trim()).filter(Boolean);
   const pollValid =
@@ -135,6 +175,10 @@ export function PostComposer({
           poll: pollValid
             ? { question: pollQuestion.trim(), options: filledOptions }
             : undefined,
+          feelingVerb: feeling?.verb || undefined,
+          feeling: feeling?.label || undefined,
+          feelingEmoji: feeling?.emoji || undefined,
+          location: location.trim() || undefined,
         },
       },
       {
@@ -143,6 +187,9 @@ export function PostComposer({
           setMedia([]);
           setPrivacyTouched(false);
           resetPoll();
+          setFeeling(null);
+          setLocation("");
+          setShowLocation(false);
           if (groupId != null) {
             queryClient.invalidateQueries({
               queryKey: getGetGroupPostsQueryKey(groupId),
@@ -288,6 +335,118 @@ export function PostComposer({
         </div>
       )}
 
+      {(feeling || showLocation || location) && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {feeling && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-sm">
+              <span>{feeling.emoji}</span>
+              <span>
+                {feeling.verb}
+                {feeling.label ? ` ${feeling.label}` : ""}
+              </span>
+              <button
+                type="button"
+                onClick={() => setFeeling(null)}
+                className="text-muted-foreground hover:text-destructive"
+                aria-label="Remove feeling"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </span>
+          )}
+          {(showLocation || location) && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-sm">
+              <MapPin className="w-3.5 h-3.5 text-red-500" />
+              <input
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="Where are you?"
+                maxLength={100}
+                autoFocus={showLocation && !location}
+                className="bg-transparent outline-none placeholder:text-muted-foreground w-32"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setLocation("");
+                  setShowLocation(false);
+                }}
+                className="text-muted-foreground hover:text-destructive"
+                aria-label="Remove location"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </span>
+          )}
+        </div>
+      )}
+
+      {feelingOpen && (
+        <div className="mt-3 rounded-xl border border-border bg-muted/30 p-3 animate-in fade-in slide-in-from-top-1">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex gap-1">
+              <button
+                type="button"
+                onClick={() => setFeelingTab("feelings")}
+                className={`rounded-full px-3 py-1 text-sm font-medium ${feelingTab === "feelings" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
+              >
+                Feelings
+              </button>
+              <button
+                type="button"
+                onClick={() => setFeelingTab("activities")}
+                className={`rounded-full px-3 py-1 text-sm font-medium ${feelingTab === "activities" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
+              >
+                Activities
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFeelingOpen(false)}
+              className="text-muted-foreground hover:text-foreground"
+              aria-label="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="relative mb-2">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              value={feelingSearch}
+              onChange={(e) => setFeelingSearch(e.target.value)}
+              placeholder="Search..."
+              className="w-full bg-background border border-border rounded-lg pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-1 max-h-56 overflow-y-auto">
+            {(feelingTab === "feelings" ? FEELINGS : ACTIVITIES)
+              .filter((f) =>
+                `${f.verb} ${f.label}`
+                  .toLowerCase()
+                  .includes(feelingSearch.trim().toLowerCase()),
+              )
+              .map((f) => (
+                <button
+                  key={`${f.verb}-${f.label}`}
+                  type="button"
+                  onClick={() => {
+                    setFeeling(f);
+                    setFeelingOpen(false);
+                    setFeelingSearch("");
+                  }}
+                  className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-left hover:bg-muted transition-colors"
+                >
+                  <span className="text-lg">{f.emoji}</span>
+                  <span>
+                    {f.verb}
+                    {f.label ? ` ${f.label}` : ""}
+                  </span>
+                </button>
+              ))}
+          </div>
+        </div>
+      )}
+
       <input
         ref={fileInputRef}
         type="file"
@@ -321,6 +480,20 @@ export function PostComposer({
           onClick={() => (showPoll ? resetPoll() : setShowPoll(true))}
         >
           <BarChart3 className="w-5 h-5 mr-2 text-amber-500" /> Poll
+        </Button>
+        <Button
+          variant="ghost"
+          className={`flex-1 hover:text-foreground hover:bg-muted/50 rounded-lg ${feeling || feelingOpen ? "text-primary" : "text-muted-foreground"}`}
+          onClick={() => setFeelingOpen((v) => !v)}
+        >
+          <Smile className="w-5 h-5 mr-2 text-yellow-500" /> Feeling
+        </Button>
+        <Button
+          variant="ghost"
+          className={`flex-1 hover:text-foreground hover:bg-muted/50 rounded-lg ${showLocation || location ? "text-primary" : "text-muted-foreground"}`}
+          onClick={() => setShowLocation((v) => !v)}
+        >
+          <MapPin className="w-5 h-5 mr-2 text-red-500" /> Check in
         </Button>
         <div className="flex-1 flex justify-center">
           <EmojiPickerButton

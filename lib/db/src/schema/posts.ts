@@ -22,6 +22,14 @@ export const postsTable = pgTable(
       .notNull()
       .references(() => profilesTable.id, { onDelete: "cascade" }),
     content: text("content").notNull().default(""),
+    // Facebook-style expression: a feeling/activity tag ("feeling happy 😊",
+    // "watching a movie 🎬") and an optional check-in location. feelingVerb is
+    // the leading word ("feeling", "watching", ...); feeling is the label
+    // ("happy", "a movie"); feelingEmoji is the accompanying emoji.
+    feelingVerb: text("feeling_verb"),
+    feeling: text("feeling"),
+    feelingEmoji: text("feeling_emoji"),
+    location: text("location"),
     privacy: privacyEnum("privacy").notNull().default("public"),
     commentsEnabled: boolean("comments_enabled").notNull().default(true),
     reactionsEnabled: boolean("reactions_enabled").notNull().default(true),
