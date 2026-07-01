@@ -185,6 +185,21 @@ export const PostPrivacy = {
   private: 'private',
 } as const;
 
+export interface PollOption {
+  id: number;
+  text: string;
+  voteCount: number;
+}
+
+export interface Poll {
+  id: number;
+  question: string;
+  totalVotes: number;
+  /** @nullable */
+  viewerVotedOptionId: number | null;
+  options: PollOption[];
+}
+
 export interface Post {
   id: number;
   author: Profile;
@@ -201,8 +216,19 @@ export interface Post {
   commentCount: number;
   shareCount: number;
   viewerHasSaved?: boolean;
+  poll?: Poll | null;
   createdAt: string;
   updatedAt?: string;
+}
+
+export interface PollInput {
+  question: string;
+  /** @minItems 2 */
+  options: string[];
+}
+
+export interface PollVoteInput {
+  optionId: number;
 }
 
 export type PostInputPrivacy = typeof PostInputPrivacy[keyof typeof PostInputPrivacy];
@@ -220,6 +246,7 @@ export interface PostInput {
   groupId?: number;
   pageId?: number;
   media?: MediaItemInput[];
+  poll?: PollInput;
 }
 
 export type PostUpdatePrivacy = typeof PostUpdatePrivacy[keyof typeof PostUpdatePrivacy];

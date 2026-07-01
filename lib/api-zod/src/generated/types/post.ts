@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { MediaItem } from './mediaItem';
+import type { Poll } from './poll';
 import type { PostPrivacy } from './postPrivacy';
 import type { Profile } from './profile';
 import type { ReactionSummary } from './reactionSummary';
@@ -26,6 +27,7 @@ export interface Post {
   commentCount: number;
   shareCount: number;
   viewerHasSaved?: boolean;
+  poll?: Poll | null;
   createdAt: Date;
   updatedAt?: Date;
 }

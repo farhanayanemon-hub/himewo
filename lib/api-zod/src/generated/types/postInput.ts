@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { MediaItemInput } from './mediaItemInput';
+import type { PollInput } from './pollInput';
 import type { PostInputPrivacy } from './postInputPrivacy';
 
 export interface PostInput {
@@ -14,4 +15,5 @@ export interface PostInput {
   groupId?: number;
   pageId?: number;
   media?: MediaItemInput[];
+  poll?: PollInput;
 }

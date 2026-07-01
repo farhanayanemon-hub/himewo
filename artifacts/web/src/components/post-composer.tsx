@@ -16,7 +16,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { Image as ImageIcon, Video, Loader2, X, Globe, Users, Lock, ChevronDown } from "lucide-react";
+import { Image as ImageIcon, Video, Loader2, X, Globe, Users, Lock, ChevronDown, BarChart3, Plus } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { uploadMedia, UploadUnavailableError, type UploadedMedia } from "@/lib/upload";
 import { toast } from "@/hooks/use-toast";
@@ -57,6 +57,20 @@ export function PostComposer({
   const [uploading, setUploading] = useState(false);
   const [privacy, setPrivacy] = useState<PostInputPrivacy>(PostInputPrivacy.public);
   const [privacyTouched, setPrivacyTouched] = useState(false);
+  const [showPoll, setShowPoll] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
+
+  const filledOptions = pollOptions.map((o) => o.trim()).filter(Boolean);
+  const pollValid =
+    showPoll && pollQuestion.trim().length > 0 && filledOptions.length >= 2;
+  const pollInvalid = showPoll && !pollValid;
+
+  const resetPoll = () => {
+    setShowPoll(false);
+    setPollQuestion("");
+    setPollOptions(["", ""]);
+  };
 
   // Pre-fill the audience from the user's default post-visibility setting,
   // unless the user has already changed the picker for this post.
@@ -97,7 +111,8 @@ export function PostComposer({
   };
 
   const submit = () => {
-    if (!content.trim() && media.length === 0) return;
+    if (!content.trim() && media.length === 0 && !pollValid) return;
+    if (pollInvalid) return;
     const mediaInput: MediaItemInput[] = media.map((m, i) => ({
       url: m.url,
       type: m.type,
@@ -117,6 +132,9 @@ export function PostComposer({
           groupId,
           pageId,
           media: mediaInput.length ? mediaInput : undefined,
+          poll: pollValid
+            ? { question: pollQuestion.trim(), options: filledOptions }
+            : undefined,
         },
       },
       {
@@ -124,6 +142,7 @@ export function PostComposer({
           setContent("");
           setMedia([]);
           setPrivacyTouched(false);
+          resetPoll();
           if (groupId != null) {
             queryClient.invalidateQueries({
               queryKey: getGetGroupPostsQueryKey(groupId),
@@ -210,6 +229,65 @@ export function PostComposer({
         </div>
       )}
 
+      {showPoll && (
+        <div className="mt-3 rounded-xl border border-border bg-muted/30 p-3 space-y-2 animate-in fade-in slide-in-from-top-1">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold text-foreground">Poll</span>
+            <button
+              type="button"
+              onClick={resetPoll}
+              className="text-muted-foreground hover:text-foreground"
+              aria-label="Remove poll"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <input
+            value={pollQuestion}
+            onChange={(e) => setPollQuestion(e.target.value)}
+            placeholder="Ask a question..."
+            maxLength={200}
+            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          {pollOptions.map((opt, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <input
+                value={opt}
+                onChange={(e) =>
+                  setPollOptions((prev) =>
+                    prev.map((o, idx) => (idx === i ? e.target.value : o)),
+                  )
+                }
+                placeholder={`Option ${i + 1}`}
+                maxLength={100}
+                className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+              {pollOptions.length > 2 && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setPollOptions((prev) => prev.filter((_, idx) => idx !== i))
+                  }
+                  className="text-muted-foreground hover:text-destructive"
+                  aria-label={`Remove option ${i + 1}`}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          ))}
+          {pollOptions.length < 6 && (
+            <button
+              type="button"
+              onClick={() => setPollOptions((prev) => [...prev, ""])}
+              className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+            >
+              <Plus className="w-4 h-4" /> Add option
+            </button>
+          )}
+        </div>
+      )}
+
       <input
         ref={fileInputRef}
         type="file"
@@ -237,6 +315,13 @@ export function PostComposer({
         >
           <Video className="w-5 h-5 mr-2 text-red-500" /> Video
         </Button>
+        <Button
+          variant="ghost"
+          className={`flex-1 hover:text-foreground hover:bg-muted/50 rounded-lg ${showPoll ? "text-primary" : "text-muted-foreground"}`}
+          onClick={() => (showPoll ? resetPoll() : setShowPoll(true))}
+        >
+          <BarChart3 className="w-5 h-5 mr-2 text-amber-500" /> Poll
+        </Button>
         <div className="flex-1 flex justify-center">
           <EmojiPickerButton
             onSelect={(emoji) => setContent((prev) => prev + emoji)}
@@ -245,7 +330,11 @@ export function PostComposer({
         </div>
         <Button
           onClick={submit}
-          disabled={(!content.trim() && media.length === 0) || createPost.isPending}
+          disabled={
+            (!content.trim() && media.length === 0 && !pollValid) ||
+            pollInvalid ||
+            createPost.isPending
+          }
           className="rounded-lg px-6"
         >
           {createPost.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Post"}

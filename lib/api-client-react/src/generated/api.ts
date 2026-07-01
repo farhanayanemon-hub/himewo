@@ -73,6 +73,8 @@ import type {
   PointConfig,
   PointConfigUpdate,
   PointTransaction,
+  Poll,
+  PollVoteInput,
   Post,
   PostInput,
   PostUpdate,
@@ -1386,6 +1388,135 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getRemovePostReactionMutationOptions(options));
+    }
+
+export const getVotePollUrl = (id: number,) => {
+
+
+
+
+  return `/api/posts/${id}/poll/vote`
+}
+
+export const votePoll = async (id: number,
+    pollVoteInput: PollVoteInput, options?: RequestInit): Promise<Poll> => {
+
+  return customFetch<Poll>(getVotePollUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(pollVoteInput)
+  }
+);}
+
+
+
+
+export const getVotePollMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof votePoll>>, TError,{id: number;data: BodyType<PollVoteInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof votePoll>>, TError,{id: number;data: BodyType<PollVoteInput>}, TContext> => {
+
+const mutationKey = ['votePoll'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof votePoll>>, {id: number;data: BodyType<PollVoteInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  votePoll(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type VotePollMutationResult = NonNullable<Awaited<ReturnType<typeof votePoll>>>
+    export type VotePollMutationBody = BodyType<PollVoteInput>
+    export type VotePollMutationError = ErrorType<unknown>
+
+    export const useVotePoll = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof votePoll>>, TError,{id: number;data: BodyType<PollVoteInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof votePoll>>,
+        TError,
+        {id: number;data: BodyType<PollVoteInput>},
+        TContext
+      > => {
+      return useMutation(getVotePollMutationOptions(options));
+    }
+
+export const getRemovePollVoteUrl = (id: number,) => {
+
+
+
+
+  return `/api/posts/${id}/poll/vote`
+}
+
+export const removePollVote = async (id: number, options?: RequestInit): Promise<Poll> => {
+
+  return customFetch<Poll>(getRemovePollVoteUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getRemovePollVoteMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removePollVote>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removePollVote>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['removePollVote'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removePollVote>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  removePollVote(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemovePollVoteMutationResult = NonNullable<Awaited<ReturnType<typeof removePollVote>>>
+
+    export type RemovePollVoteMutationError = ErrorType<unknown>
+
+    export const useRemovePollVote = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removePollVote>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removePollVote>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getRemovePollVoteMutationOptions(options));
     }
 
 export const getListPostReactionsUrl = (id: number,) => {

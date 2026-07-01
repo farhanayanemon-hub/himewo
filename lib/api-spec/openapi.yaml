@@ -283,6 +283,34 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ReactionSummary" }
+  /posts/{id}/poll/vote:
+    put:
+      operationId: votePoll
+      tags: [posts]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PollVoteInput" }
+      responses:
+        "200":
+          description: Poll
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Poll" }
+    delete:
+      operationId: removePollVote
+      tags: [posts]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Poll
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Poll" }
   /posts/{id}/reactions:
     get:
       operationId: listPostReactions
@@ -1879,8 +1907,44 @@ components:
         commentCount: { type: integer }
         shareCount: { type: integer }
         viewerHasSaved: { type: boolean }
+        poll:
+          oneOf:
+            - { $ref: "#/components/schemas/Poll" }
+            - { type: "null" }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
+    Poll:
+      type: object
+      required: [id, question, totalVotes, options, viewerVotedOptionId]
+      properties:
+        id: { type: integer }
+        question: { type: string }
+        totalVotes: { type: integer }
+        viewerVotedOptionId: { type: ["integer", "null"] }
+        options:
+          type: array
+          items: { $ref: "#/components/schemas/PollOption" }
+    PollOption:
+      type: object
+      required: [id, text, voteCount]
+      properties:
+        id: { type: integer }
+        text: { type: string }
+        voteCount: { type: integer }
+    PollInput:
+      type: object
+      required: [question, options]
+      properties:
+        question: { type: string }
+        options:
+          type: array
+          minItems: 2
+          items: { type: string }
+    PollVoteInput:
+      type: object
+      required: [optionId]
+      properties:
+        optionId: { type: integer }
     PostInput:
       type: object
       required: [content]
@@ -1892,6 +1956,7 @@ components:
         media:
           type: array
           items: { $ref: "#/components/schemas/MediaItemInput" }
+        poll: { $ref: "#/components/schemas/PollInput" }
     PostUpdate:
       type: object
       properties:

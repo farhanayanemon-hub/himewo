@@ -396,6 +396,17 @@ export const GetUserPostsResponseItem = zod.object({
   "commentCount": zod.number(),
   "shareCount": zod.number(),
   "viewerHasSaved": zod.boolean().optional(),
+  "poll": zod.union([zod.object({
+  "id": zod.number(),
+  "question": zod.string(),
+  "totalVotes": zod.number(),
+  "viewerVotedOptionId": zod.number().nullable(),
+  "options": zod.array(zod.object({
+  "id": zod.number(),
+  "text": zod.string(),
+  "voteCount": zod.number()
+}))
+}),zod.null()]).optional(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 })
@@ -520,10 +531,25 @@ export const GetFeedResponseItem = zod.object({
   "commentCount": zod.number(),
   "shareCount": zod.number(),
   "viewerHasSaved": zod.boolean().optional(),
+  "poll": zod.union([zod.object({
+  "id": zod.number(),
+  "question": zod.string(),
+  "totalVotes": zod.number(),
+  "viewerVotedOptionId": zod.number().nullable(),
+  "options": zod.array(zod.object({
+  "id": zod.number(),
+  "text": zod.string(),
+  "voteCount": zod.number()
+}))
+}),zod.null()]).optional(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 })
 export const GetFeedResponse = zod.array(GetFeedResponseItem)
+
+
+export const createPostBodyPollOptionsMin = 2;
+
 
 
 export const CreatePostBody = zod.object({
@@ -539,7 +565,11 @@ export const CreatePostBody = zod.object({
   "height": zod.number().optional(),
   "durationMs": zod.number().optional(),
   "position": zod.number().optional()
-})).optional()
+})).optional(),
+  "poll": zod.object({
+  "question": zod.string(),
+  "options": zod.array(zod.string()).min(createPostBodyPollOptionsMin)
+}).optional()
 })
 
 export const CreatePostResponse = zod.object({
@@ -601,6 +631,17 @@ export const CreatePostResponse = zod.object({
   "commentCount": zod.number(),
   "shareCount": zod.number(),
   "viewerHasSaved": zod.boolean().optional(),
+  "poll": zod.union([zod.object({
+  "id": zod.number(),
+  "question": zod.string(),
+  "totalVotes": zod.number(),
+  "viewerVotedOptionId": zod.number().nullable(),
+  "options": zod.array(zod.object({
+  "id": zod.number(),
+  "text": zod.string(),
+  "voteCount": zod.number()
+}))
+}),zod.null()]).optional(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 })
@@ -669,6 +710,17 @@ export const GetPostResponse = zod.object({
   "commentCount": zod.number(),
   "shareCount": zod.number(),
   "viewerHasSaved": zod.boolean().optional(),
+  "poll": zod.union([zod.object({
+  "id": zod.number(),
+  "question": zod.string(),
+  "totalVotes": zod.number(),
+  "viewerVotedOptionId": zod.number().nullable(),
+  "options": zod.array(zod.object({
+  "id": zod.number(),
+  "text": zod.string(),
+  "voteCount": zod.number()
+}))
+}),zod.null()]).optional(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 })
@@ -744,6 +796,17 @@ export const UpdatePostResponse = zod.object({
   "commentCount": zod.number(),
   "shareCount": zod.number(),
   "viewerHasSaved": zod.boolean().optional(),
+  "poll": zod.union([zod.object({
+  "id": zod.number(),
+  "question": zod.string(),
+  "totalVotes": zod.number(),
+  "viewerVotedOptionId": zod.number().nullable(),
+  "options": zod.array(zod.object({
+  "id": zod.number(),
+  "text": zod.string(),
+  "voteCount": zod.number()
+}))
+}),zod.null()]).optional(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 })
@@ -779,6 +842,44 @@ export const RemovePostReactionResponse = zod.object({
   "total": zod.number(),
   "byType": zod.record(zod.string(), zod.number()),
   "viewerReaction": zod.union([zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry']),zod.null()]).optional()
+})
+
+
+export const VotePollParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const VotePollBody = zod.object({
+  "optionId": zod.number()
+})
+
+export const VotePollResponse = zod.object({
+  "id": zod.number(),
+  "question": zod.string(),
+  "totalVotes": zod.number(),
+  "viewerVotedOptionId": zod.number().nullable(),
+  "options": zod.array(zod.object({
+  "id": zod.number(),
+  "text": zod.string(),
+  "voteCount": zod.number()
+}))
+})
+
+
+export const RemovePollVoteParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RemovePollVoteResponse = zod.object({
+  "id": zod.number(),
+  "question": zod.string(),
+  "totalVotes": zod.number(),
+  "viewerVotedOptionId": zod.number().nullable(),
+  "options": zod.array(zod.object({
+  "id": zod.number(),
+  "text": zod.string(),
+  "voteCount": zod.number()
+}))
 })
 
 
@@ -892,6 +993,17 @@ export const SharePostResponse = zod.object({
   "commentCount": zod.number(),
   "shareCount": zod.number(),
   "viewerHasSaved": zod.boolean().optional(),
+  "poll": zod.union([zod.object({
+  "id": zod.number(),
+  "question": zod.string(),
+  "totalVotes": zod.number(),
+  "viewerVotedOptionId": zod.number().nullable(),
+  "options": zod.array(zod.object({
+  "id": zod.number(),
+  "text": zod.string(),
+  "voteCount": zod.number()
+}))
+}),zod.null()]).optional(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 })
@@ -2769,6 +2881,17 @@ export const ListPendingGroupPostsResponseItem = zod.object({
   "commentCount": zod.number(),
   "shareCount": zod.number(),
   "viewerHasSaved": zod.boolean().optional(),
+  "poll": zod.union([zod.object({
+  "id": zod.number(),
+  "question": zod.string(),
+  "totalVotes": zod.number(),
+  "viewerVotedOptionId": zod.number().nullable(),
+  "options": zod.array(zod.object({
+  "id": zod.number(),
+  "text": zod.string(),
+  "voteCount": zod.number()
+}))
+}),zod.null()]).optional(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 })
@@ -2861,6 +2984,17 @@ export const GetGroupPostsResponseItem = zod.object({
   "commentCount": zod.number(),
   "shareCount": zod.number(),
   "viewerHasSaved": zod.boolean().optional(),
+  "poll": zod.union([zod.object({
+  "id": zod.number(),
+  "question": zod.string(),
+  "totalVotes": zod.number(),
+  "viewerVotedOptionId": zod.number().nullable(),
+  "options": zod.array(zod.object({
+  "id": zod.number(),
+  "text": zod.string(),
+  "voteCount": zod.number()
+}))
+}),zod.null()]).optional(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 })
@@ -2986,6 +3120,17 @@ export const ListSavedItemsResponseItem = zod.object({
   "commentCount": zod.number(),
   "shareCount": zod.number(),
   "viewerHasSaved": zod.boolean().optional(),
+  "poll": zod.union([zod.object({
+  "id": zod.number(),
+  "question": zod.string(),
+  "totalVotes": zod.number(),
+  "viewerVotedOptionId": zod.number().nullable(),
+  "options": zod.array(zod.object({
+  "id": zod.number(),
+  "text": zod.string(),
+  "voteCount": zod.number()
+}))
+}),zod.null()]).optional(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 }),zod.null()]).optional(),
@@ -3160,6 +3305,17 @@ export const SaveItemResponse = zod.object({
   "commentCount": zod.number(),
   "shareCount": zod.number(),
   "viewerHasSaved": zod.boolean().optional(),
+  "poll": zod.union([zod.object({
+  "id": zod.number(),
+  "question": zod.string(),
+  "totalVotes": zod.number(),
+  "viewerVotedOptionId": zod.number().nullable(),
+  "options": zod.array(zod.object({
+  "id": zod.number(),
+  "text": zod.string(),
+  "voteCount": zod.number()
+}))
+}),zod.null()]).optional(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 }),zod.null()]).optional(),
@@ -4123,6 +4279,17 @@ export const GetPagePostsResponseItem = zod.object({
   "commentCount": zod.number(),
   "shareCount": zod.number(),
   "viewerHasSaved": zod.boolean().optional(),
+  "poll": zod.union([zod.object({
+  "id": zod.number(),
+  "question": zod.string(),
+  "totalVotes": zod.number(),
+  "viewerVotedOptionId": zod.number().nullable(),
+  "options": zod.array(zod.object({
+  "id": zod.number(),
+  "text": zod.string(),
+  "voteCount": zod.number()
+}))
+}),zod.null()]).optional(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 })
