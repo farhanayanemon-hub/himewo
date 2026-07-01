@@ -1158,6 +1158,107 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  # ---------------- Events ----------------
+  /events:
+    get:
+      operationId: listEvents
+      tags: [events]
+      summary: List events (upcoming first, then recent past)
+      responses:
+        "200":
+          description: Events
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Event" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createEvent
+      tags: [events]
+      summary: Create an event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EventInput" }
+      responses:
+        "201":
+          description: Created event
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Event" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /events/{eventId}:
+    get:
+      operationId: getEvent
+      tags: [events]
+      summary: Event detail with attendee lists
+      parameters:
+        - { name: eventId, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Event detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EventDetail" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteEvent
+      tags: [events]
+      summary: Delete an event (host only)
+      parameters:
+        - { name: eventId, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /events/{eventId}/rsvp:
+    post:
+      operationId: rsvpEvent
+      tags: [events]
+      summary: Set your RSVP for an event
+      parameters:
+        - { name: eventId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EventRsvpInput" }
+      responses:
+        "200":
+          description: Updated event
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Event" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: clearEventRsvp
+      tags: [events]
+      summary: Remove your RSVP for an event
+      parameters:
+        - { name: eventId, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Removed }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   # ---------------- Marketplace ----------------
   /marketplace:
     get:
@@ -2695,6 +2796,49 @@ components:
       required: [userId]
       properties:
         userId: { type: string }
+
+    Event:
+      type: object
+      required: [id, host, title, startsAt, goingCount, interestedCount, createdAt]
+      properties:
+        id: { type: integer }
+        host: { $ref: "#/components/schemas/Profile" }
+        title: { type: string }
+        description: { type: ["string", "null"] }
+        location: { type: ["string", "null"] }
+        coverUrl: { type: ["string", "null"] }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: ["string", "null"], format: date-time }
+        goingCount: { type: integer }
+        interestedCount: { type: integer }
+        viewerRsvp: { type: ["string", "null"], enum: [going, interested, declined, null] }
+        createdAt: { type: string, format: date-time }
+    EventInput:
+      type: object
+      required: [title, startsAt]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 120 }
+        description: { type: ["string", "null"], maxLength: 2000 }
+        location: { type: ["string", "null"], maxLength: 200 }
+        coverUrl: { type: ["string", "null"], maxLength: 2000 }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: ["string", "null"], format: date-time }
+    EventRsvpInput:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [going, interested, declined] }
+    EventDetail:
+      type: object
+      required: [event, going, interested]
+      properties:
+        event: { $ref: "#/components/schemas/Event" }
+        going:
+          type: array
+          items: { $ref: "#/components/schemas/Profile" }
+        interested:
+          type: array
+          items: { $ref: "#/components/schemas/Profile" }
 
     Story:
       type: object

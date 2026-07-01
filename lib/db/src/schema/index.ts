@@ -6,6 +6,7 @@ export * from "./messaging";
 export * from "./communities";
 export * from "./content";
 export * from "./albums";
+export * from "./events";
 export * from "./marketplace";
 export * from "./settings";
 export * from "./saved";

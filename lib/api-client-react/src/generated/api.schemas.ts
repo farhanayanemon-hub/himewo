@@ -1090,6 +1090,83 @@ export interface PhotoTagInput {
   userId: string;
 }
 
+/**
+ * @nullable
+ */
+export type EventViewerRsvp = typeof EventViewerRsvp[keyof typeof EventViewerRsvp] | null;
+
+
+export const EventViewerRsvp = {
+  going: 'going',
+  interested: 'interested',
+  declined: 'declined',
+} as const;
+
+export interface Event {
+  id: number;
+  host: Profile;
+  title: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  location?: string | null;
+  /** @nullable */
+  coverUrl?: string | null;
+  startsAt: string;
+  /** @nullable */
+  endsAt?: string | null;
+  goingCount: number;
+  interestedCount: number;
+  /** @nullable */
+  viewerRsvp?: EventViewerRsvp;
+  createdAt: string;
+}
+
+export interface EventInput {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  title: string;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  description?: string | null;
+  /**
+     * @maxLength 200
+     * @nullable
+     */
+  location?: string | null;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  coverUrl?: string | null;
+  startsAt: string;
+  /** @nullable */
+  endsAt?: string | null;
+}
+
+export type EventRsvpInputStatus = typeof EventRsvpInputStatus[keyof typeof EventRsvpInputStatus];
+
+
+export const EventRsvpInputStatus = {
+  going: 'going',
+  interested: 'interested',
+  declined: 'declined',
+} as const;
+
+export interface EventRsvpInput {
+  status: EventRsvpInputStatus;
+}
+
+export interface EventDetail {
+  event: Event;
+  going: Profile[];
+  interested: Profile[];
+}
+
 export type StoryMediaType = typeof StoryMediaType[keyof typeof StoryMediaType];
 
 
