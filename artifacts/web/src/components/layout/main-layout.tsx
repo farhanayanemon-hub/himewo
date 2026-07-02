@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useCallback } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import {
@@ -25,10 +25,37 @@ import {
   MonitorPlay,
   Clapperboard,
   Wallet,
+  Moon,
+  Sun,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MobileNav } from "./mobile-nav";
+
+function ThemeToggle() {
+  const [isDark, setIsDark] = useState(() =>
+    document.documentElement.classList.contains("dark"),
+  );
+
+  const toggle = useCallback(() => {
+    const next = !document.documentElement.classList.contains("dark");
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("himewo-theme", next ? "dark" : "light");
+    setIsDark(next);
+  }, []);
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={toggle}
+      className="rounded-full bg-muted/50 hover:bg-muted"
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+    >
+      {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+    </Button>
+  );
+}
 
 function IconTile({
   icon: Icon,
@@ -127,6 +154,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
           </div>
 
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Link href="/messages">
               <Button variant="ghost" size="icon" className="rounded-full bg-muted/50 hover:bg-muted">
                 <MessageCircle className="w-5 h-5" />

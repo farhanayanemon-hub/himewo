@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
+import { VerifiedBadge } from "@/components/verified-badge";
 import {
   MessageCircle,
   Share2,
@@ -192,6 +193,7 @@ export function PostCard({ post }: { post: Post }) {
           <div>
             <div className="font-semibold">
               <span className="group-hover:underline">{post.author.displayName}</span>
+              {post.author.isVerified && <VerifiedBadge className="w-4 h-4 ml-1 align-text-bottom" />}
               {(post.feelingVerb || post.feeling || post.location) && (
                 <span className="font-normal text-muted-foreground">
                   {(post.feelingVerb || post.feeling) && (
