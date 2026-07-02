@@ -106,7 +106,7 @@ paths:
             application/json:
               schema:
                 type: array
-                items: { $ref: "#/components/schemas/Profile" }
+                items: { $ref: "#/components/schemas/FriendSuggestion" }
   /users/me:
     patch:
       operationId: updateMyProfile
@@ -2149,6 +2149,13 @@ components:
           properties:
             status: { type: string }
             lastSeenAt: { type: ["string", "null"], format: date-time }
+    FriendSuggestion:
+      allOf:
+        - $ref: "#/components/schemas/Profile"
+        - type: object
+          required: [mutualFriendsCount]
+          properties:
+            mutualFriendsCount: { type: integer }
     ProfileInput:
       type: object
       required: [id, username, displayName]

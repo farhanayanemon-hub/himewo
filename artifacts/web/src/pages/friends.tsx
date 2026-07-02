@@ -81,6 +81,11 @@ export default function FriendsPage() {
                   <Link href={`/profile/${user.id}`} className="font-semibold hover:underline">
                     {user.displayName}
                   </Link>
+                  {user.mutualFriendsCount > 0 && (
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {user.mutualFriendsCount} mutual friend{user.mutualFriendsCount > 1 ? "s" : ""}
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() => sendRequest.mutate({ data: { addresseeId: user.id } }, { onSuccess: invalidate })}
