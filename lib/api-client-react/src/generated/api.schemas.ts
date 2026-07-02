@@ -1167,6 +1167,24 @@ export interface EventDetail {
   interested: Profile[];
 }
 
+export interface LiveStream {
+  id: number;
+  host: Profile;
+  title: string;
+  startedAt: string;
+  /** @nullable */
+  endedAt?: string | null;
+  isLive: boolean;
+}
+
+export interface LiveStreamInput {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  title: string;
+}
+
 export type StoryMediaType = typeof StoryMediaType[keyof typeof StoryMediaType];
 
 

@@ -1259,6 +1259,76 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  # ---------------- Live streams ----------------
+  /live:
+    get:
+      operationId: listLiveStreams
+      tags: [live]
+      summary: List currently active live streams
+      responses:
+        "200":
+          description: Active live streams
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/LiveStream" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: startLiveStream
+      tags: [live]
+      summary: Start a live stream
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LiveStreamInput" }
+      responses:
+        "201":
+          description: Started live stream
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LiveStream" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /live/{streamId}:
+    get:
+      operationId: getLiveStream
+      tags: [live]
+      summary: Live stream detail
+      parameters:
+        - { name: streamId, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Live stream
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LiveStream" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /live/{streamId}/end:
+    post:
+      operationId: endLiveStream
+      tags: [live]
+      summary: End a live stream (host only)
+      parameters:
+        - { name: streamId, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Ended live stream
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LiveStream" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   # ---------------- Marketplace ----------------
   /marketplace:
     get:
@@ -2839,6 +2909,22 @@ components:
         interested:
           type: array
           items: { $ref: "#/components/schemas/Profile" }
+
+    LiveStream:
+      type: object
+      required: [id, host, title, startedAt, isLive]
+      properties:
+        id: { type: integer }
+        host: { $ref: "#/components/schemas/Profile" }
+        title: { type: string }
+        startedAt: { type: string, format: date-time }
+        endedAt: { type: ["string", "null"], format: date-time }
+        isLive: { type: boolean }
+    LiveStreamInput:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 120 }
 
     Story:
       type: object

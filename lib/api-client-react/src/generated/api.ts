@@ -64,6 +64,8 @@ import type {
   ListMessagesParams,
   ListNotificationsParams,
   ListReelsParams,
+  LiveStream,
+  LiveStreamInput,
   MarketplaceListing,
   MarketplaceListingInput,
   MarketplaceListingUpdate,
@@ -6015,6 +6017,300 @@ export const useClearEventRsvp = <TError = ErrorType<UnauthorizedResponse | NotF
         TContext
       > => {
       return useMutation(getClearEventRsvpMutationOptions(options));
+    }
+
+export const getListLiveStreamsUrl = () => {
+
+
+
+
+  return `/api/live`
+}
+
+/**
+ * @summary List currently active live streams
+ */
+export const listLiveStreams = async ( options?: RequestInit): Promise<LiveStream[]> => {
+
+  return customFetch<LiveStream[]>(getListLiveStreamsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListLiveStreamsQueryKey = () => {
+    return [
+    `/api/live`
+    ] as const;
+    }
+
+
+export const getListLiveStreamsQueryOptions = <TData = Awaited<ReturnType<typeof listLiveStreams>>, TError = ErrorType<UnauthorizedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listLiveStreams>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListLiveStreamsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listLiveStreams>>> = ({ signal }) => listLiveStreams({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listLiveStreams>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListLiveStreamsQueryResult = NonNullable<Awaited<ReturnType<typeof listLiveStreams>>>
+export type ListLiveStreamsQueryError = ErrorType<UnauthorizedResponse>
+
+
+/**
+ * @summary List currently active live streams
+ */
+
+export function useListLiveStreams<TData = Awaited<ReturnType<typeof listLiveStreams>>, TError = ErrorType<UnauthorizedResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listLiveStreams>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListLiveStreamsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getStartLiveStreamUrl = () => {
+
+
+
+
+  return `/api/live`
+}
+
+/**
+ * @summary Start a live stream
+ */
+export const startLiveStream = async (liveStreamInput: LiveStreamInput, options?: RequestInit): Promise<LiveStream> => {
+
+  return customFetch<LiveStream>(getStartLiveStreamUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(liveStreamInput)
+  }
+);}
+
+
+
+
+export const getStartLiveStreamMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startLiveStream>>, TError,{data: BodyType<LiveStreamInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof startLiveStream>>, TError,{data: BodyType<LiveStreamInput>}, TContext> => {
+
+const mutationKey = ['startLiveStream'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startLiveStream>>, {data: BodyType<LiveStreamInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  startLiveStream(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartLiveStreamMutationResult = NonNullable<Awaited<ReturnType<typeof startLiveStream>>>
+    export type StartLiveStreamMutationBody = BodyType<LiveStreamInput>
+    export type StartLiveStreamMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse>
+
+    /**
+ * @summary Start a live stream
+ */
+export const useStartLiveStream = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startLiveStream>>, TError,{data: BodyType<LiveStreamInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof startLiveStream>>,
+        TError,
+        {data: BodyType<LiveStreamInput>},
+        TContext
+      > => {
+      return useMutation(getStartLiveStreamMutationOptions(options));
+    }
+
+export const getGetLiveStreamUrl = (streamId: number,) => {
+
+
+
+
+  return `/api/live/${streamId}`
+}
+
+/**
+ * @summary Live stream detail
+ */
+export const getLiveStream = async (streamId: number, options?: RequestInit): Promise<LiveStream> => {
+
+  return customFetch<LiveStream>(getGetLiveStreamUrl(streamId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLiveStreamQueryKey = (streamId: number,) => {
+    return [
+    `/api/live/${streamId}`
+    ] as const;
+    }
+
+
+export const getGetLiveStreamQueryOptions = <TData = Awaited<ReturnType<typeof getLiveStream>>, TError = ErrorType<UnauthorizedResponse | NotFoundResponse>>(streamId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLiveStream>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLiveStreamQueryKey(streamId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLiveStream>>> = ({ signal }) => getLiveStream(streamId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: streamId !== null && streamId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLiveStream>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLiveStreamQueryResult = NonNullable<Awaited<ReturnType<typeof getLiveStream>>>
+export type GetLiveStreamQueryError = ErrorType<UnauthorizedResponse | NotFoundResponse>
+
+
+/**
+ * @summary Live stream detail
+ */
+
+export function useGetLiveStream<TData = Awaited<ReturnType<typeof getLiveStream>>, TError = ErrorType<UnauthorizedResponse | NotFoundResponse>>(
+ streamId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLiveStream>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLiveStreamQueryOptions(streamId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getEndLiveStreamUrl = (streamId: number,) => {
+
+
+
+
+  return `/api/live/${streamId}/end`
+}
+
+/**
+ * @summary End a live stream (host only)
+ */
+export const endLiveStream = async (streamId: number, options?: RequestInit): Promise<LiveStream> => {
+
+  return customFetch<LiveStream>(getEndLiveStreamUrl(streamId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getEndLiveStreamMutationOptions = <TError = ErrorType<UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof endLiveStream>>, TError,{streamId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof endLiveStream>>, TError,{streamId: number}, TContext> => {
+
+const mutationKey = ['endLiveStream'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof endLiveStream>>, {streamId: number}> = (props) => {
+          const {streamId} = props ?? {};
+
+          return  endLiveStream(streamId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EndLiveStreamMutationResult = NonNullable<Awaited<ReturnType<typeof endLiveStream>>>
+
+    export type EndLiveStreamMutationError = ErrorType<UnauthorizedResponse | NotFoundResponse>
+
+    /**
+ * @summary End a live stream (host only)
+ */
+export const useEndLiveStream = <TError = ErrorType<UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof endLiveStream>>, TError,{streamId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof endLiveStream>>,
+        TError,
+        {streamId: number},
+        TContext
+      > => {
+      return useMutation(getEndLiveStreamMutationOptions(options));
     }
 
 export const getListMarketplaceListingsUrl = (params?: ListMarketplaceListingsParams,) => {
