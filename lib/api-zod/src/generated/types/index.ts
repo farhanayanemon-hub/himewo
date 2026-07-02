@@ -54,6 +54,7 @@ export * from './getGroupPostsParams';
 export * from './getPagePostsParams';
 export * from './getUserFriendsParams';
 export * from './getUserPostsParams';
+export * from './getWatchFeedParams';
 export * from './group';
 export * from './groupInput';
 export * from './groupInputPrivacy';

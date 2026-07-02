@@ -1538,6 +1538,11 @@ cursor?: number;
 limit?: number;
 };
 
+export type GetWatchFeedParams = {
+cursor?: number;
+limit?: number;
+};
+
 export type ListCommentsParams = {
 cursor?: number;
 limit?: number;
