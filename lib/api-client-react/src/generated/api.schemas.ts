@@ -998,6 +998,7 @@ export interface Reel {
   commentCount: number;
   viewerHasLiked: boolean;
   viewerHasSaved: boolean;
+  viewerReaction?: ReactionType | null;
 }
 
 export interface SavedItem {

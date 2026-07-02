@@ -959,6 +959,7 @@ export async function buildReels(rows: ReelRow[], viewerId?: string) {
   ]);
   const likeCountByReel = new Map(likeCounts.map((l) => [l.reelId, l.value]));
   const likedSet = new Set(viewerLikes.map((l) => l.reelId));
+  const viewerReactionByReel = new Map(viewerLikes.map((l) => [l.reelId, l.type]));
   const commentCountByReel = new Map(commentCounts.map((c) => [c.reelId, c.value]));
   const savedReelSet = new Set(viewerSaves.map((s) => s.entityId));
   return rows.map((row) => ({
@@ -972,6 +973,7 @@ export async function buildReels(rows: ReelRow[], viewerId?: string) {
     commentCount: commentCountByReel.get(row.id) ?? 0,
     viewerHasLiked: likedSet.has(row.id),
     viewerHasSaved: savedReelSet.has(row.id),
+    viewerReaction: viewerReactionByReel.get(row.id) ?? null,
   }));
 }
 
