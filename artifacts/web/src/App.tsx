@@ -33,6 +33,7 @@ import MemoriesPage from "@/pages/memories";
 import SavedPage from "@/pages/saved";
 import AlbumPage from "@/pages/album";
 import EventsPage, { EventDetailPage } from "@/pages/events";
+import LivePage, { LiveStreamPage } from "@/pages/live";
 import MarketplacePage, {
   MarketplaceListingPage,
   MarketplaceCreatePage,
@@ -95,6 +96,8 @@ function AppRoutes() {
       <Route path="/albums/:id" component={AlbumPage} />
       <Route path="/events" component={EventsPage} />
       <Route path="/events/:id" component={EventDetailPage} />
+      <Route path="/live" component={LivePage} />
+      <Route path="/live/:id" component={LiveStreamPage} />
       <Route component={NotFound} />
     </Switch>
   );

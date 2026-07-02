@@ -74,6 +74,8 @@ export * from './listMarketplaceListingsParams';
 export * from './listMessagesParams';
 export * from './listNotificationsParams';
 export * from './listReelsParams';
+export * from './liveStream';
+export * from './liveStreamInput';
 export * from './marketplaceListing';
 export * from './marketplaceListingInput';
 export * from './marketplaceListingStatus';
