@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -24,6 +24,7 @@ import {
   getGetFeedQueryKey,
   getListCommentsQueryKey,
   type Comment,
+  type Profile,
   type ReactionType,
 } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
@@ -31,6 +32,13 @@ import { PostCard } from "@/components/PostCard";
 import { ShareSheet } from "@/components/ShareSheet";
 import { EmojiPickerSheet } from "@/components/EmojiPickerSheet";
 import { ReactionBar } from "@/components/ReactionBar";
+import {
+  MentionText,
+  MentionSuggestions,
+  activeMentionQuery,
+  insertMention,
+  mentionToken,
+} from "@/components/Mention";
 import { reactionConfig } from "@/constants/reactions";
 import { useColors } from "@/hooks/useColors";
 import { timeAgo } from "@/lib/format";
@@ -45,6 +53,10 @@ export default function PostDetailScreen() {
   const [text, setText] = useState("");
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [replyTo, setReplyTo] = useState<{
+    parentId: number;
+    author: Profile;
+  } | null>(null);
 
   const {
     data: post,
@@ -67,6 +79,23 @@ export default function PostDetailScreen() {
     },
   );
   const comments = (commentsData ?? []) as Comment[];
+
+  const mentionQuery = activeMentionQuery(text);
+
+  const { topLevel, repliesByParent } = useMemo(() => {
+    const topLevel: Comment[] = [];
+    const repliesByParent = new Map<number, Comment[]>();
+    for (const item of comments) {
+      if (item.parentId == null) {
+        topLevel.push(item);
+      } else {
+        const list = repliesByParent.get(item.parentId) ?? [];
+        list.push(item);
+        repliesByParent.set(item.parentId, list);
+      }
+    }
+    return { topLevel, repliesByParent };
+  }, [comments]);
 
   const createComment = useCreateComment();
   const setCommentReaction = useSetCommentReaction();
@@ -91,12 +120,24 @@ export default function PostDetailScreen() {
     setShareOpen(true);
   };
 
+  const startReply = (item: Comment) => {
+    setReplyTo({ parentId: item.parentId ?? item.id, author: item.author });
+    setText((prev) =>
+      prev.trim().length === 0 ? `${mentionToken(item.author)} ` : prev,
+    );
+  };
+
   const send = () => {
     const content = text.trim();
     if (!content || !Number.isFinite(postId)) return;
+    const parentId = replyTo?.parentId;
     setText("");
+    setReplyTo(null);
     createComment.mutate(
-      { id: postId, data: { content } },
+      {
+        id: postId,
+        data: { content, ...(parentId != null ? { parentId } : {}) },
+      },
       {
         onSuccess: () => {
           qc.invalidateQueries({ queryKey: getListCommentsQueryKey(postId) });
@@ -151,7 +192,7 @@ export default function PostDetailScreen() {
           />
         ) : (
           <FlatList
-            data={comments}
+            data={topLevel}
             keyExtractor={(item) => String(item.id)}
             contentContainerStyle={{ paddingBottom: 16 }}
             ListHeaderComponent={
@@ -167,38 +208,111 @@ export default function PostDetailScreen() {
             }
             renderItem={({ item }) => (
               <View style={styles.commentRow}>
-                <Avatar uri={item.author.avatarUrl} name={item.author.displayName} size={34} />
-                <View style={{ flex: 1 }}>
-                  <View style={[styles.bubble, { backgroundColor: c.secondary }]}>
-                    <Text
-                      style={{
-                        color: c.foreground,
-                        fontFamily: "Inter_600SemiBold",
-                        fontSize: 13,
-                      }}
-                    >
-                      {item.author.displayName}
-                    </Text>
-                    <Text style={{ color: c.foreground, fontSize: 14, marginTop: 2 }}>
-                      {item.content}
-                    </Text>
-                  </View>
-                  <View style={styles.commentFooter}>
-                    <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
-                      {timeAgo(item.createdAt)}
-                    </Text>
-                    <ReactionBar
-                      size="sm"
-                      viewerReaction={item.viewerReaction ?? null}
-                      onReact={(t) => reactToComment(item, t)}
-                    />
-                    {item.reactionCount > 0 && (
-                      <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
-                        {item.viewerReaction
-                          ? reactionConfig[item.viewerReaction].emoji
-                          : "👍"}{" "}
-                        {item.reactionCount}
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                  <Avatar uri={item.author.avatarUrl} name={item.author.displayName} size={34} />
+                  <View style={{ flex: 1 }}>
+                    <View style={[styles.bubble, { backgroundColor: c.secondary }]}>
+                      <Text
+                        style={{
+                          color: c.foreground,
+                          fontFamily: "Inter_600SemiBold",
+                          fontSize: 13,
+                        }}
+                      >
+                        {item.author.displayName}
                       </Text>
+                      <MentionText
+                        content={item.content}
+                        style={{ color: c.foreground, fontSize: 14, marginTop: 2 }}
+                      />
+                    </View>
+                    <View style={styles.commentFooter}>
+                      <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
+                        {timeAgo(item.createdAt)}
+                      </Text>
+                      <ReactionBar
+                        size="sm"
+                        viewerReaction={item.viewerReaction ?? null}
+                        onReact={(t) => reactToComment(item, t)}
+                      />
+                      <Pressable onPress={() => startReply(item)} hitSlop={6}>
+                        <Text
+                          style={{
+                            color: c.mutedForeground,
+                            fontSize: 11,
+                            fontFamily: "Inter_600SemiBold",
+                          }}
+                        >
+                          Reply
+                        </Text>
+                      </Pressable>
+                      {item.reactionCount > 0 && (
+                        <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
+                          {item.viewerReaction
+                            ? reactionConfig[item.viewerReaction].emoji
+                            : "👍"}{" "}
+                          {item.reactionCount}
+                        </Text>
+                      )}
+                    </View>
+                    {(repliesByParent.get(item.id) ?? []).length > 0 && (
+                      <View style={[styles.replies, { borderLeftColor: c.border }]}>
+                        {(repliesByParent.get(item.id) ?? []).map((r) => (
+                          <View key={r.id} style={{ flexDirection: "row", gap: 8 }}>
+                            <Avatar
+                              uri={r.author.avatarUrl}
+                              name={r.author.displayName}
+                              size={28}
+                            />
+                            <View style={{ flex: 1 }}>
+                              <View style={[styles.bubble, { backgroundColor: c.secondary }]}>
+                                <Text
+                                  style={{
+                                    color: c.foreground,
+                                    fontFamily: "Inter_600SemiBold",
+                                    fontSize: 13,
+                                  }}
+                                >
+                                  {r.author.displayName}
+                                </Text>
+                                <MentionText
+                                  content={r.content}
+                                  style={{ color: c.foreground, fontSize: 14, marginTop: 2 }}
+                                />
+                              </View>
+                              <View style={styles.commentFooter}>
+                                <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
+                                  {timeAgo(r.createdAt)}
+                                </Text>
+                                <ReactionBar
+                                  size="sm"
+                                  viewerReaction={r.viewerReaction ?? null}
+                                  onReact={(t) => reactToComment(r, t)}
+                                />
+                                <Pressable onPress={() => startReply(r)} hitSlop={6}>
+                                  <Text
+                                    style={{
+                                      color: c.mutedForeground,
+                                      fontSize: 11,
+                                      fontFamily: "Inter_600SemiBold",
+                                    }}
+                                  >
+                                    Reply
+                                  </Text>
+                                </Pressable>
+                                {r.reactionCount > 0 && (
+                                  <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
+                                    {r.viewerReaction
+                                      ? reactionConfig[r.viewerReaction].emoji
+                                      : "👍"}{" "}
+                                    {r.reactionCount}
+                                  </Text>
+                                )}
+                              </View>
+                            </View>
+                          </View>
+                        ))}
+                      </View>
                     )}
                   </View>
                 </View>
@@ -228,30 +342,51 @@ export default function PostDetailScreen() {
             </Text>
           </View>
         ) : (
-          <View
-            style={[
-              styles.inputRow,
-              { borderTopColor: c.border, backgroundColor: c.card, paddingBottom: insets.bottom + 8 },
-            ]}
-          >
-            <Pressable onPress={() => setEmojiOpen(true)} hitSlop={8}>
-              <Ionicons name="happy-outline" size={24} color={c.mutedForeground} />
-            </Pressable>
-            <TextInput
-              value={text}
-              onChangeText={setText}
-              placeholder="Write a comment..."
-              placeholderTextColor={c.mutedForeground}
-              style={[styles.input, { backgroundColor: c.secondary, color: c.foreground }]}
-              multiline
-            />
-            <Pressable onPress={send} disabled={!text.trim()} hitSlop={8}>
-              <Ionicons
-                name="send"
-                size={22}
-                color={text.trim() ? c.primary : c.mutedForeground}
+          <View style={{ backgroundColor: c.card }}>
+            {mentionQuery && (
+              <MentionSuggestions
+                query={mentionQuery}
+                onSelect={(p) => setText((prev) => insertMention(prev, p))}
               />
-            </Pressable>
+            )}
+            {replyTo && (
+              <View style={styles.replyBanner}>
+                <Text style={{ color: c.mutedForeground, fontSize: 12 }}>
+                  Replying to{" "}
+                  <Text style={{ fontFamily: "Inter_600SemiBold", color: c.foreground }}>
+                    {replyTo.author.displayName}
+                  </Text>
+                </Text>
+                <Pressable onPress={() => setReplyTo(null)} hitSlop={8}>
+                  <Ionicons name="close" size={16} color={c.mutedForeground} />
+                </Pressable>
+              </View>
+            )}
+            <View
+              style={[
+                styles.inputRow,
+                { borderTopColor: c.border, backgroundColor: c.card, paddingBottom: insets.bottom + 8 },
+              ]}
+            >
+              <Pressable onPress={() => setEmojiOpen(true)} hitSlop={8}>
+                <Ionicons name="happy-outline" size={24} color={c.mutedForeground} />
+              </Pressable>
+              <TextInput
+                value={text}
+                onChangeText={setText}
+                placeholder={replyTo ? "Write a reply..." : "Write a comment..."}
+                placeholderTextColor={c.mutedForeground}
+                style={[styles.input, { backgroundColor: c.secondary, color: c.foreground }]}
+                multiline
+              />
+              <Pressable onPress={send} disabled={!text.trim()} hitSlop={8}>
+                <Ionicons
+                  name="send"
+                  size={22}
+                  color={text.trim() ? c.primary : c.mutedForeground}
+                />
+              </Pressable>
+            </View>
           </View>
         )}
       </KeyboardAvoidingView>
@@ -288,8 +423,21 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   commentsTitle: { fontFamily: "Inter_700Bold", fontSize: 16 },
-  commentRow: { flexDirection: "row", gap: 8, paddingHorizontal: 14, marginBottom: 14 },
+  commentRow: { paddingHorizontal: 14, marginBottom: 14 },
   bubble: { borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8 },
+  replies: {
+    marginTop: 10,
+    gap: 10,
+    borderLeftWidth: 2,
+    paddingLeft: 10,
+  },
+  replyBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
   commentFooter: {
     flexDirection: "row",
     alignItems: "center",

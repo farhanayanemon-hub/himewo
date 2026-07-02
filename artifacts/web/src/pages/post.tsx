@@ -9,20 +9,43 @@ import {
   getListCommentsQueryKey,
   ReactionType,
   type Comment,
+  type Profile,
 } from "@workspace/api-client-react";
 import { useParams } from "wouter";
 import { PostCard } from "@/components/post-card";
 import { VerifiedBadge } from "@/components/verified-badge";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { EmojiPickerButton } from "@/components/emoji-picker";
 import { GifPickerButton } from "@/components/gif-picker";
 import { ReactionControl } from "@/components/reaction-picker";
+import {
+  RenderWithMentions,
+  MentionSuggestions,
+  activeMentionQuery,
+  insertMention,
+  mentionToken,
+} from "@/components/mention";
 import { X } from "lucide-react";
 
-function CommentItem({ comment, postId }: { comment: Comment; postId: number }) {
+interface ReplyTarget {
+  parentId: number;
+  author: Profile;
+}
+
+function CommentItem({
+  comment,
+  postId,
+  replies,
+  onReply,
+}: {
+  comment: Comment;
+  postId: number;
+  replies?: Comment[];
+  onReply: (target: ReplyTarget) => void;
+}) {
   const queryClient = useQueryClient();
   const setReaction = useSetCommentReaction();
   const removeReaction = useRemoveCommentReaction();
@@ -45,16 +68,28 @@ function CommentItem({ comment, postId }: { comment: Comment; postId: number }) 
     }
   };
 
+  const isReply = comment.parentId != null;
+  // Replies always attach to the top-level comment on the server.
+  const replyParentId = comment.parentId ?? comment.id;
+
   return (
     <div className="flex gap-3">
-      <img src={comment.author.avatarUrl || ""} className="w-8 h-8 rounded-full object-cover shrink-0" alt="" />
-      <div>
-        <div className="bg-muted/50 rounded-2xl px-4 py-2">
+      <img
+        src={comment.author.avatarUrl || ""}
+        className={`${isReply ? "w-7 h-7" : "w-8 h-8"} rounded-full object-cover shrink-0`}
+        alt=""
+      />
+      <div className="min-w-0 flex-1">
+        <div className="bg-muted/50 rounded-2xl px-4 py-2 inline-block max-w-full">
           <div className="font-semibold text-sm">
             {comment.author.displayName}
             {comment.author.isVerified && <VerifiedBadge className="w-3.5 h-3.5 ml-1 align-text-bottom" />}
           </div>
-          {comment.content && <div className="text-[15px]">{comment.content}</div>}
+          {comment.content && (
+            <div className="text-[15px] break-words">
+              <RenderWithMentions content={comment.content} />
+            </div>
+          )}
           {comment.mediaUrl && (
             <img
               src={comment.mediaUrl}
@@ -71,9 +106,21 @@ function CommentItem({ comment, postId }: { comment: Comment; postId: number }) 
             count={comment.reactionCount}
             size="sm"
           />
-          <button className="hover:underline">Reply</button>
+          <button
+            className="hover:underline"
+            onClick={() => onReply({ parentId: replyParentId, author: comment.author })}
+          >
+            Reply
+          </button>
           <span>{new Date(comment.createdAt).toLocaleDateString()}</span>
         </div>
+        {replies && replies.length > 0 && (
+          <div className="mt-3 space-y-3 border-l-2 border-border/60 pl-3">
+            {replies.map((r) => (
+              <CommentItem key={r.id} comment={r} postId={postId} onReply={onReply} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -89,16 +136,54 @@ export default function PostPage() {
   const queryClient = useQueryClient();
   const [content, setContent] = useState("");
   const [gifUrl, setGifUrl] = useState<string | null>(null);
+  const [replyTo, setReplyTo] = useState<ReplyTarget | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const mentionQuery = activeMentionQuery(content);
+
+  const { topLevel, repliesByParent } = useMemo(() => {
+    const topLevel: Comment[] = [];
+    const repliesByParent = new Map<number, Comment[]>();
+    for (const c of comments ?? []) {
+      if (c.parentId == null) {
+        topLevel.push(c);
+      } else {
+        const list = repliesByParent.get(c.parentId) ?? [];
+        list.push(c);
+        repliesByParent.set(c.parentId, list);
+      }
+    }
+    return { topLevel, repliesByParent };
+  }, [comments]);
+
+  const startReply = (target: ReplyTarget) => {
+    setReplyTo(target);
+    setContent((prev) => {
+      const token = `${mentionToken(target.author)} `;
+      return prev.trim().length === 0 ? token : prev;
+    });
+    inputRef.current?.focus();
+  };
+
+  const cancelReply = () => setReplyTo(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim() && !gifUrl) return;
     createComment.mutate(
-      { id: postId, data: { content, ...(gifUrl ? { mediaUrl: gifUrl } : {}) } },
+      {
+        id: postId,
+        data: {
+          content,
+          ...(gifUrl ? { mediaUrl: gifUrl } : {}),
+          ...(replyTo ? { parentId: replyTo.parentId } : {}),
+        },
+      },
       {
         onSuccess: () => {
           setContent("");
           setGifUrl(null);
+          setReplyTo(null);
           queryClient.invalidateQueries({ queryKey: getListCommentsQueryKey(postId) });
           queryClient.invalidateQueries({ queryKey: getGetPostQueryKey(postId) });
         }
@@ -125,19 +210,46 @@ export default function PostPage() {
           {post.commentsEnabled ? (
             <>
               <form onSubmit={handleSubmit} className="mb-6">
+                {replyTo && (
+                  <div className="flex items-center gap-2 mb-2 ml-2 text-xs text-muted-foreground">
+                    <span>
+                      Replying to <span className="font-semibold text-foreground">{replyTo.author.displayName}</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={cancelReply}
+                      className="hover:text-foreground"
+                      aria-label="Cancel reply"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
                 <div className="flex gap-2 items-center">
-                  <div className="flex-1 flex items-center gap-1 bg-muted/50 rounded-full pr-2 focus-within:ring-1 focus-within:ring-primary">
+                  <div className="relative flex-1 flex items-center gap-1 bg-muted/50 rounded-full pr-2 focus-within:ring-1 focus-within:ring-primary">
+                    {mentionQuery && (
+                      <MentionSuggestions
+                        query={mentionQuery}
+                        onSelect={(p) => {
+                          setContent((prev) => insertMention(prev, p));
+                          inputRef.current?.focus();
+                        }}
+                      />
+                    )}
                     <input
+                      ref={inputRef}
                       type="text"
                       value={content}
                       onChange={e => setContent(e.target.value)}
-                      placeholder="Write a comment..."
+                      placeholder={replyTo ? "Write a reply..." : "Write a comment... (@ to mention)"}
                       className="flex-1 bg-transparent rounded-full px-4 py-2 text-sm focus:outline-none"
                     />
                     <GifPickerButton onSelect={(url) => setGifUrl(url)} />
                     <EmojiPickerButton onSelect={(emoji) => setContent((prev) => prev + emoji)} />
                   </div>
-                  <Button type="submit" disabled={(!content.trim() && !gifUrl) || createComment.isPending} className="rounded-full">Post</Button>
+                  <Button type="submit" disabled={(!content.trim() && !gifUrl) || createComment.isPending} className="rounded-full">
+                    {replyTo ? "Reply" : "Post"}
+                  </Button>
                 </div>
                 {gifUrl && (
                   <div className="relative inline-block mt-2 ml-2">
@@ -157,11 +269,17 @@ export default function PostPage() {
               <div className="space-y-4">
                 {commentsLoading ? (
                   <div className="py-4 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" /></div>
-                ) : comments?.length === 0 ? (
+                ) : topLevel.length === 0 ? (
                   <div className="text-center text-sm text-muted-foreground py-4">No comments yet.</div>
                 ) : (
-                  comments?.map(comment => (
-                    <CommentItem key={comment.id} comment={comment} postId={postId} />
+                  topLevel.map(comment => (
+                    <CommentItem
+                      key={comment.id}
+                      comment={comment}
+                      postId={postId}
+                      replies={repliesByParent.get(comment.id)}
+                      onReply={startReply}
+                    />
                   ))
                 )}
               </div>

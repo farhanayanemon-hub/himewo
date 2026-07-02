@@ -634,12 +634,28 @@ router.post(
       res.status(400).json({ error: "Comment cannot be empty" });
       return;
     }
+    // Replies: parent must exist and belong to the same post. Threads are one
+    // level deep (Facebook style) — replying to a reply attaches to its
+    // top-level parent.
+    let parent: typeof commentsTable.$inferSelect | undefined;
+    let parentId: number | null = null;
+    if (parsed.data.parentId != null) {
+      [parent] = await db
+        .select()
+        .from(commentsTable)
+        .where(eq(commentsTable.id, parsed.data.parentId));
+      if (!parent || parent.postId !== params.data.id) {
+        res.status(400).json({ error: "Invalid parent comment" });
+        return;
+      }
+      parentId = parent.parentId ?? parent.id;
+    }
     const [comment] = await db
       .insert(commentsTable)
       .values({
         postId: params.data.id,
         authorId: req.userId!,
-        parentId: parsed.data.parentId ?? null,
+        parentId,
         content: parsed.data.content,
         mediaUrl: parsed.data.mediaUrl ?? null,
       })
@@ -651,18 +667,46 @@ router.post(
       entityType: "post",
       entityId: post.id,
     });
-    if (parsed.data.parentId) {
-      const [parent] = await db
-        .select()
-        .from(commentsTable)
-        .where(eq(commentsTable.id, parsed.data.parentId));
-      if (parent) {
+    if (parent) {
+      await createNotification({
+        userId: parent.authorId,
+        actorId: req.userId!,
+        type: "comment",
+        entityType: "comment",
+        entityId: parent.id,
+      });
+    }
+    // Mentions: tokens of the form @[Display Name](user:<id>) inside the
+    // comment text. Only notify users that actually exist; never notify the
+    // commenter, the post author, or the parent author twice.
+    const mentionIds = [
+      ...new Set(
+        [...parsed.data.content.matchAll(/@\[[^\]]+\]\(user:([^)]+)\)/g)].map(
+          (m) => m[1],
+        ),
+      ),
+    ]
+      .filter(
+        (mid) =>
+          mid !== req.userId &&
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            mid,
+          ),
+      )
+      .slice(0, 10);
+    if (mentionIds.length > 0) {
+      const mentioned = await db
+        .select({ id: profilesTable.id })
+        .from(profilesTable)
+        .where(inArray(profilesTable.id, mentionIds));
+      for (const m of mentioned) {
+        if (m.id === post.authorId || m.id === parent?.authorId) continue;
         await createNotification({
-          userId: parent.authorId,
+          userId: m.id,
           actorId: req.userId!,
-          type: "comment",
-          entityType: "comment",
-          entityId: parent.id,
+          type: "mention",
+          entityType: "post",
+          entityId: post.id,
         });
       }
     }
