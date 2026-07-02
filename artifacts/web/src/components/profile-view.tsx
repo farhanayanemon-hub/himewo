@@ -11,6 +11,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PostCard } from "@/components/post-card";
+import { VerifiedBadge } from "@/components/verified-badge";
 import { PostComposer } from "@/components/post-composer";
 import { CreateAlbumDialog } from "@/components/create-album-dialog";
 import {
@@ -114,6 +115,7 @@ export function ProfileView({
             <div className="flex-1 sm:pb-2">
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 {profile.displayName}
+                {profile.isVerified && <VerifiedBadge className="w-6 h-6" />}
                 {isLocked && (
                   <Lock className="w-5 h-5 text-muted-foreground" aria-label="Locked profile" />
                 )}

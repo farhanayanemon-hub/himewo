@@ -12,6 +12,7 @@ import {
 } from "@workspace/api-client-react";
 import { useParams } from "wouter";
 import { PostCard } from "@/components/post-card";
+import { VerifiedBadge } from "@/components/verified-badge";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -49,7 +50,10 @@ function CommentItem({ comment, postId }: { comment: Comment; postId: number }) 
       <img src={comment.author.avatarUrl || ""} className="w-8 h-8 rounded-full object-cover shrink-0" alt="" />
       <div>
         <div className="bg-muted/50 rounded-2xl px-4 py-2">
-          <div className="font-semibold text-sm">{comment.author.displayName}</div>
+          <div className="font-semibold text-sm">
+            {comment.author.displayName}
+            {comment.author.isVerified && <VerifiedBadge className="w-3.5 h-3.5 ml-1 align-text-bottom" />}
+          </div>
           {comment.content && <div className="text-[15px]">{comment.content}</div>}
           {comment.mediaUrl && (
             <img
