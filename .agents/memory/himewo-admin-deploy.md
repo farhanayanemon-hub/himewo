@@ -78,6 +78,63 @@ Two stacked blockers had to be fixed before /api/admin/* went live:
 After both: deploy SUCCESS, `GET /api/admin/me` → 200 with role=admin + full
 permissions; users/reports/announcements/settings/roles endpoints 200.
 
+## RECURRED (2026-06-30): admin BACKEND lost in interleaving, only frontends were restored
+- **Symptom:** `/api/admin/me` → 404 (not 401) on live; admin.himewo.com login
+  can't establish a session after Supabase sign-in. `/api/auth/me` = 401 (so the
+  API is up; only admin routes are gone). 404 on `/api/admin/*` = routes not in the
+  running build (see also stale-lockfile case above).
+- **Root cause:** the interleaving merge that wholesale-replaced main's tree
+  deleted the api-server admin code (`routes/admin/*`, `lib/admin-auth|admin-serialize|audit|flags`,
+  `routes/reports.ts`) AND the governance DB schema (`lib/db/src/schema/admin.ts` +
+  the moderation columns/enums added to enums/profiles/content/posts/communities).
+  The later restore commit only brought back the `artifacts/web` + `artifacts/admin`
+  FRONTENDS — it never restored the api-server backend or lib/db schema. So the panel
+  shipped but its backend gate endpoint was missing for weeks.
+- **Where the originals live in history:** backend routes/libs = commit `4baa5af`
+  (`feat(admin): /api/admin/* suite`); DB schema = commit `f5af7c6`
+  (`Admin: add roles, moderation flags, governance tables`). Restore the purely-additive
+  files verbatim via `git show <sha>:<path> > <path>`, then MERGE (don't overwrite)
+  the additive bits into the current enums/profiles/content/posts/communities and
+  re-add the two router `import`/`router.use` lines to `routes/index.ts`.
+- **Live-DB drift trap (critical):** the 2026-06-27 admin migration applied the
+  governance TABLES + profiles role/is_banned/is_suspended/suspended_until to live,
+  but NOT the per-content moderation columns (posts.hidden/pinned/featured,
+  comments.hidden, reels.hidden/featured, stories.hidden, groups/pages.featured/is_approved)
+  nor notification_type 'announcement'/'verification'. Restoring those columns into the
+  Drizzle schema makes `select().from(...)` request them, so they MUST be backfilled on
+  live first (additive `ALTER TABLE ADD COLUMN IF NOT EXISTS` + `ALTER TYPE ADD VALUE
+  IF NOT EXISTS` via Management API) or feed/reels/posts 500. Always diff
+  information_schema.columns vs the restored schema before deploying.
+- **Deploy note:** these are api-server files so the push auto-deploys (watchPattern
+  matches) — no manual serviceInstanceDeploy needed. Verify with the temp-user e2e:
+  create auto-confirmed user → sign in → /admin/me=403 → `update profiles set role='admin'`
+  → /admin/me=200 with permissions → delete user.
+
+## TWO admin auth systems — they disagree (2026-06-30)
+- The codebase has **two separate admin guards** and they grant access differently:
+  1. `requirePermission(...)` / `requireAdmin*` in `lib/admin-auth.ts` — checks the
+     DB `profiles.role` + `role_permissions` (this is what the admin panel grants).
+  2. `requireAdmin` in `lib/auth.ts` — checks `isAdminUser()` = the `ADMIN_USER_IDS`
+     **env allowlist** (dev convenience: in non-prod with empty allowlist, ALL users
+     pass; in prod, only listed IDs pass). The **earnings** routes (`earnings-admin.ts`,
+     paths `/api/admin/earnings/*`) use THIS one.
+- **Symptom:** admin panel Earnings tab → 403 Forbidden even for a role=admin user,
+  because their UUID isn't in ADMIN_USER_IDS. **Fix applied:** `requireAdmin` in
+  `lib/auth.ts` now also passes when `profiles.role === 'admin'` (env allowlist OR DB
+  role). If you add new admin-panel features, prefer the `admin-auth` permission guard
+  so they honor panel-granted roles, not the env allowlist.
+
+## Live posts table drift: comments_enabled / reactions_enabled (2026-06-30)
+- Admin Content→Posts tab → 500. Cause: live `posts` was missing `comments_enabled`
+  and `reactions_enabled` (both `notNull` in the Drizzle schema), so the admin
+  `db.select()` (all columns) failed. Inserts/feed never broke because they pass
+  explicit column lists, but `select()` pulls every schema column → "column does not
+  exist". Live also has a `shared_post_id` column NOT in the schema (reverse drift).
+  Fix: additive `ALTER TABLE posts ADD COLUMN IF NOT EXISTS ... boolean NOT NULL
+  DEFAULT true` via Management API. **Lesson:** any admin route using `db.select()`
+  (no column projection) is a tripwire for schema↔live drift — diff
+  information_schema.columns against the table schema whenever one 500s.
+
 ## Railway deploy mechanics (via RAILWAY_TOKEN)
 - GraphQL `https://backboard.railway.app/graphql/v2`, headers `Authorization:
   Bearer $RAILWAY_TOKEN` + a `User-Agent`.
