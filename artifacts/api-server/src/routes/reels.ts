@@ -85,7 +85,10 @@ router.get("/reels/:id", requireAuth, async (req, res): Promise<void> => {
   res.json(GetReelResponse.parse(built));
 });
 
-router.post("/reels/:id/like", requireAuth, async (req, res): Promise<void> => {
+const likeReelHandler = async (
+  req: Parameters<Parameters<typeof router.put>[1]>[0],
+  res: Parameters<Parameters<typeof router.put>[1]>[1],
+): Promise<void> => {
   const params = LikeReelParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -112,7 +115,10 @@ router.post("/reels/:id/like", requireAuth, async (req, res): Promise<void> => {
   });
   const built = await buildReelById(params.data.id, req.userId);
   res.json(LikeReelResponse.parse(built));
-});
+};
+
+router.put("/reels/:id/like", requireAuth, likeReelHandler);
+router.post("/reels/:id/like", requireAuth, likeReelHandler);
 
 router.delete(
   "/reels/:id/like",
@@ -132,6 +138,10 @@ router.delete(
         ),
       );
     const built = await buildReelById(params.data.id, req.userId);
+    if (!built) {
+      res.status(404).json({ error: "Reel not found" });
+      return;
+    }
     res.json(UnlikeReelResponse.parse(built));
   },
 );
@@ -195,6 +205,10 @@ router.delete(
         ),
       );
     const built = await buildReelById(params.data.id, req.userId);
+    if (!built) {
+      res.status(404).json({ error: "Reel not found" });
+      return;
+    }
     res.json(RemoveReelReactionResponse.parse(built));
   },
 );
