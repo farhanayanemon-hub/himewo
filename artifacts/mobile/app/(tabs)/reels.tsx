@@ -76,15 +76,31 @@ function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
     }
   }, [active, player]);
 
+  const syncFromServer = (updated: Reel) => {
+    setReactionState(updated.viewerReaction ?? null);
+    setLikeCount(updated.likeCount);
+  };
+
   const toggleLike = () => {
+    const prev = { reaction, likeCount };
+    const rollback = () => {
+      setReactionState(prev.reaction);
+      setLikeCount(prev.likeCount);
+    };
     if (reaction) {
       setReactionState(null);
       setLikeCount((n) => Math.max(0, n - 1));
-      removeReelReaction.mutate({ id: reel.id });
+      removeReelReaction.mutate(
+        { id: reel.id },
+        { onSuccess: (d) => syncFromServer(d as Reel), onError: rollback },
+      );
     } else {
       setReactionState(ReactionType.like);
       setLikeCount((n) => n + 1);
-      setReelReaction.mutate({ id: reel.id, data: { type: ReactionType.like } });
+      setReelReaction.mutate(
+        { id: reel.id, data: { type: ReactionType.like } },
+        { onSuccess: (d) => syncFromServer(d as Reel), onError: rollback },
+      );
     }
   };
 
@@ -96,9 +112,17 @@ function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
   const pickReaction = (t: ReactionType) => {
     setPickerOpen(false);
     Haptics.selectionAsync();
+    const prev = { reaction, likeCount };
+    const rollback = () => {
+      setReactionState(prev.reaction);
+      setLikeCount(prev.likeCount);
+    };
     if (!reaction) setLikeCount((n) => n + 1);
     setReactionState(t);
-    setReelReaction.mutate({ id: reel.id, data: { type: t } });
+    setReelReaction.mutate(
+      { id: reel.id, data: { type: t } },
+      { onSuccess: (d) => syncFromServer(d as Reel), onError: rollback },
+    );
   };
 
   const toggleSave = () => {
