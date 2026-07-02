@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -22,11 +22,19 @@ import {
   getGetFeedQueryKey,
   getGetPostQueryKey,
   type Comment,
+  type Profile,
   type ReactionType,
 } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
 import { EmojiPickerSheet } from "@/components/EmojiPickerSheet";
 import { ReactionBar } from "@/components/ReactionBar";
+import {
+  MentionText,
+  MentionSuggestions,
+  activeMentionQuery,
+  insertMention,
+  mentionToken,
+} from "@/components/Mention";
 import { reactionConfig } from "@/constants/reactions";
 import { useColors } from "@/hooks/useColors";
 import { timeAgo } from "@/lib/format";
@@ -37,12 +45,18 @@ interface CommentsSheetProps {
   onClose: () => void;
 }
 
+interface ReplyTarget {
+  parentId: number;
+  author: Profile;
+}
+
 export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) {
   const c = useColors();
   const insets = useSafeAreaInsets();
   const qc = useQueryClient();
   const [text, setText] = useState("");
   const [emojiOpen, setEmojiOpen] = useState(false);
+  const [replyTo, setReplyTo] = useState<ReplyTarget | null>(null);
 
   const { data, isLoading } = useListComments(postId ?? 0, undefined, {
     query: {
@@ -54,6 +68,23 @@ export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) 
   const createComment = useCreateComment();
   const setReaction = useSetCommentReaction();
   const removeReaction = useRemoveCommentReaction();
+
+  const mentionQuery = activeMentionQuery(text);
+
+  const { topLevel, repliesByParent } = useMemo(() => {
+    const topLevel: Comment[] = [];
+    const repliesByParent = new Map<number, Comment[]>();
+    for (const item of comments) {
+      if (item.parentId == null) {
+        topLevel.push(item);
+      } else {
+        const list = repliesByParent.get(item.parentId) ?? [];
+        list.push(item);
+        repliesByParent.set(item.parentId, list);
+      }
+    }
+    return { topLevel, repliesByParent };
+  }, [comments]);
 
   const reactToComment = (item: Comment, type: ReactionType) => {
     const invalidate = () => {
@@ -68,12 +99,21 @@ export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) 
     }
   };
 
+  const startReply = (item: Comment) => {
+    setReplyTo({ parentId: item.parentId ?? item.id, author: item.author });
+    setText((prev) =>
+      prev.trim().length === 0 ? `${mentionToken(item.author)} ` : prev,
+    );
+  };
+
   const send = () => {
     const content = text.trim();
     if (!content || postId == null) return;
+    const parentId = replyTo?.parentId;
     setText("");
+    setReplyTo(null);
     createComment.mutate(
-      { id: postId, data: { content } },
+      { id: postId, data: { content, ...(parentId != null ? { parentId } : {}) } },
       {
         onSuccess: () => {
           if (postId != null) {
@@ -85,6 +125,52 @@ export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) 
       },
     );
   };
+
+  const renderComment = (item: Comment, isReply: boolean) => (
+    <View style={{ flexDirection: "row", gap: 8 }}>
+      <Avatar
+        uri={item.author.avatarUrl}
+        name={item.author.displayName}
+        size={isReply ? 28 : 34}
+      />
+      <View style={{ flex: 1 }}>
+        <View style={[styles.bubble, { backgroundColor: c.secondary }]}>
+          <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 13 }}>
+            {item.author.displayName}
+          </Text>
+          <MentionText
+            content={item.content}
+            style={{ color: c.foreground, fontSize: 14, marginTop: 2 }}
+          />
+        </View>
+        <View style={styles.commentFooter}>
+          <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
+            {timeAgo(item.createdAt)}
+          </Text>
+          <ReactionBar
+            size="sm"
+            viewerReaction={item.viewerReaction ?? null}
+            onReact={(t) => reactToComment(item, t)}
+          />
+          <Pressable onPress={() => startReply(item)} hitSlop={6}>
+            <Text
+              style={{ color: c.mutedForeground, fontSize: 11, fontFamily: "Inter_600SemiBold" }}
+            >
+              Reply
+            </Text>
+          </Pressable>
+          {item.reactionCount > 0 && (
+            <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
+              {item.viewerReaction
+                ? reactionConfig[item.viewerReaction].emoji
+                : "👍"}{" "}
+              {item.reactionCount}
+            </Text>
+          )}
+        </View>
+      </View>
+    </View>
+  );
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -98,7 +184,7 @@ export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) 
             <ActivityIndicator color={c.primary} style={{ marginTop: 40 }} />
           ) : (
             <FlatList
-              data={comments}
+              data={topLevel}
               keyExtractor={(item) => String(item.id)}
               contentContainerStyle={{ padding: 14, gap: 14 }}
               ListEmptyComponent={
@@ -107,36 +193,17 @@ export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) 
                 </Text>
               }
               renderItem={({ item }) => (
-                <View style={{ flexDirection: "row", gap: 8 }}>
-                  <Avatar uri={item.author.avatarUrl} name={item.author.displayName} size={34} />
-                  <View style={{ flex: 1 }}>
-                    <View style={[styles.bubble, { backgroundColor: c.secondary }]}>
-                      <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 13 }}>
-                        {item.author.displayName}
-                      </Text>
-                      <Text style={{ color: c.foreground, fontSize: 14, marginTop: 2 }}>
-                        {item.content}
-                      </Text>
+                <View>
+                  {renderComment(item, false)}
+                  {(repliesByParent.get(item.id) ?? []).length > 0 && (
+                    <View
+                      style={[styles.replies, { borderLeftColor: c.border }]}
+                    >
+                      {(repliesByParent.get(item.id) ?? []).map((r) => (
+                        <View key={r.id}>{renderComment(r, true)}</View>
+                      ))}
                     </View>
-                    <View style={styles.commentFooter}>
-                      <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
-                        {timeAgo(item.createdAt)}
-                      </Text>
-                      <ReactionBar
-                        size="sm"
-                        viewerReaction={item.viewerReaction ?? null}
-                        onReact={(t) => reactToComment(item, t)}
-                      />
-                      {item.reactionCount > 0 && (
-                        <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
-                          {item.viewerReaction
-                            ? reactionConfig[item.viewerReaction].emoji
-                            : "👍"}{" "}
-                          {item.reactionCount}
-                        </Text>
-                      )}
-                    </View>
-                  </View>
+                  )}
                 </View>
               )}
             />
@@ -146,6 +213,25 @@ export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) 
             behavior={Platform.OS === "ios" ? "padding" : undefined}
             keyboardVerticalOffset={10}
           >
+            {mentionQuery && (
+              <MentionSuggestions
+                query={mentionQuery}
+                onSelect={(p) => setText((prev) => insertMention(prev, p))}
+              />
+            )}
+            {replyTo && (
+              <View style={styles.replyBanner}>
+                <Text style={{ color: c.mutedForeground, fontSize: 12 }}>
+                  Replying to{" "}
+                  <Text style={{ fontFamily: "Inter_600SemiBold", color: c.foreground }}>
+                    {replyTo.author.displayName}
+                  </Text>
+                </Text>
+                <Pressable onPress={() => setReplyTo(null)} hitSlop={8}>
+                  <Ionicons name="close" size={16} color={c.mutedForeground} />
+                </Pressable>
+              </View>
+            )}
             <View
               style={[
                 styles.inputRow,
@@ -158,7 +244,7 @@ export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) 
               <TextInput
                 value={text}
                 onChangeText={setText}
-                placeholder="Write a comment..."
+                placeholder={replyTo ? "Write a reply..." : "Write a comment..."}
                 placeholderTextColor={c.mutedForeground}
                 style={[styles.input, { backgroundColor: c.secondary, color: c.foreground }]}
                 multiline
@@ -196,6 +282,20 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 4,
     marginLeft: 6,
+  },
+  replies: {
+    marginTop: 10,
+    marginLeft: 42,
+    gap: 10,
+    borderLeftWidth: 2,
+    paddingLeft: 10,
+  },
+  replyBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingBottom: 4,
   },
   inputRow: {
     flexDirection: "row",
