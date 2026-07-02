@@ -4,6 +4,7 @@ import {
   profilesTable,
   postsTable,
   friendshipsTable,
+  friendRequestsTable,
 } from "@workspace/db";
 import {
   and,
@@ -86,15 +87,80 @@ router.get(
     const friendIds = friends.map((f) =>
       f.userAId === viewer ? f.userBId : f.userAId,
     );
-    const exclude = [viewer, ...friendIds];
-    const rows = await db
+
+    // Exclude anyone with a pending friend request in either direction —
+    // suggesting them again is confusing (the button would just fail).
+    const pending = await db
       .select()
-      .from(profilesTable)
-      .where(notInArray(profilesTable.id, exclude))
-      .limit(10);
+      .from(friendRequestsTable)
+      .where(
+        and(
+          eq(friendRequestsTable.status, "pending"),
+          or(
+            eq(friendRequestsTable.requesterId, viewer),
+            eq(friendRequestsTable.addresseeId, viewer),
+          ),
+        ),
+      );
+    const pendingIds = pending.map((r) =>
+      r.requesterId === viewer ? r.addresseeId : r.requesterId,
+    );
+    const exclude = [viewer, ...friendIds, ...pendingIds];
+    const excludeSet = new Set(exclude);
+    const friendIdSet = new Set(friendIds);
+
+    // Friends-of-friends ranked by mutual friend count.
+    const mutualCounts = new Map<string, number>();
+    if (friendIds.length > 0) {
+      const fof = await db
+        .select()
+        .from(friendshipsTable)
+        .where(
+          or(
+            inArray(friendshipsTable.userAId, friendIds),
+            inArray(friendshipsTable.userBId, friendIds),
+          ),
+        );
+      for (const f of fof) {
+        const friendSide = friendIdSet.has(f.userAId) ? f.userAId : f.userBId;
+        const candidate = friendSide === f.userAId ? f.userBId : f.userAId;
+        if (excludeSet.has(candidate)) continue;
+        mutualCounts.set(candidate, (mutualCounts.get(candidate) ?? 0) + 1);
+      }
+    }
+    const ranked = [...mutualCounts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([id]) => id);
+
+    // Fill the rest with other users so new accounts still see people.
+    let fillRows: (typeof profilesTable.$inferSelect)[] = [];
+    if (ranked.length < 10) {
+      fillRows = await db
+        .select()
+        .from(profilesTable)
+        .where(notInArray(profilesTable.id, [...exclude, ...ranked]))
+        .limit(10 - ranked.length);
+    }
+    const rankedRows = ranked.length
+      ? await db
+          .select()
+          .from(profilesTable)
+          .where(inArray(profilesTable.id, ranked))
+      : [];
+    const rowById = new Map(rankedRows.map((r) => [r.id, r]));
+    const orderedRows = [
+      ...ranked.map((id) => rowById.get(id)).filter((r): r is NonNullable<typeof r> => !!r),
+      ...fillRows,
+    ];
+
+    const profiles = await buildListProfiles(orderedRows);
     res.json(
       GetFriendSuggestionsResponse.parse(
-        await buildListProfiles(rows),
+        profiles.map((p) => ({
+          ...p,
+          mutualFriendsCount: mutualCounts.get(p.id) ?? 0,
+        })),
       ),
     );
   },

@@ -10,8 +10,11 @@ import {
   useAcceptFriendRequest,
   useDeclineFriendRequest,
   useGetTodaysBirthdays,
+  useGetFriendSuggestions,
+  useSendFriendRequest,
   getGetFeedQueryKey,
   getListFriendRequestsQueryKey,
+  getGetFriendSuggestionsQueryKey,
   type Post,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -203,10 +206,61 @@ function ContactsRail() {
   );
 }
 
+function PeopleYouMayKnowRail() {
+  const { data: suggestions } = useGetFriendSuggestions();
+  const sendRequest = useSendFriendRequest();
+  const queryClient = useQueryClient();
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: getGetFriendSuggestionsQueryKey() });
+  };
+
+  if (!suggestions?.length) return null;
+
+  return (
+    <div className="mb-6">
+      <div className="flex items-center justify-between px-2 mb-2">
+        <h3 className="text-foreground font-bold">People You May Know</h3>
+        <Link href="/friends" className="text-primary text-sm font-medium hover:underline">
+          See all
+        </Link>
+      </div>
+      <div className="space-y-2">
+        {suggestions.slice(0, 3).map((user) => (
+          <div key={user.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/40 transition-colors">
+            <Link href={`/profile/${user.id}`}>
+              <img src={user.avatarUrl || ""} className="w-12 h-12 rounded-full object-cover bg-muted shrink-0" alt="" />
+            </Link>
+            <div className="flex-1 min-w-0">
+              <Link href={`/profile/${user.id}`} className="font-semibold text-sm hover:underline block truncate">
+                {user.displayName}
+              </Link>
+              {user.mutualFriendsCount > 0 && (
+                <div className="text-xs text-muted-foreground">
+                  {user.mutualFriendsCount} mutual friend{user.mutualFriendsCount > 1 ? "s" : ""}
+                </div>
+              )}
+              <button
+                onClick={() => sendRequest.mutate({ data: { addresseeId: user.id } }, { onSuccess: invalidate })}
+                disabled={sendRequest.isPending}
+                className="mt-1 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/20 px-2.5 py-1 rounded-md disabled:opacity-50 flex items-center gap-1"
+              >
+                {sendRequest.isPending && sendRequest.variables?.data.addresseeId === user.id && <Loader2 className="w-3 h-3 animate-spin" />}
+                Add Friend
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function HomeRightRail() {
   return (
     <>
       <FriendRequestsRail />
+      <PeopleYouMayKnowRail />
       <BirthdaysRail />
       <ContactsRail />
     </>

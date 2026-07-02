@@ -89,6 +89,10 @@ export interface Profile {
   presence?: ProfilePresence;
 }
 
+export type FriendSuggestion = Profile & {
+  mutualFriendsCount: number;
+};
+
 export interface ProfileInput {
   id: string;
   /** @minLength 1 */

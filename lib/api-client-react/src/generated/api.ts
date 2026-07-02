@@ -44,6 +44,7 @@ import type {
   ForbiddenResponse,
   FriendRequest,
   FriendRequestInput,
+  FriendSuggestion,
   GeocodeLocationParams,
   GeocodeResult,
   GetEarningsHistoryParams,
@@ -471,9 +472,9 @@ export const getGetFriendSuggestionsUrl = () => {
 /**
  * @summary Get people-you-may-know suggestions
  */
-export const getFriendSuggestions = async ( options?: RequestInit): Promise<Profile[]> => {
+export const getFriendSuggestions = async ( options?: RequestInit): Promise<FriendSuggestion[]> => {
 
-  return customFetch<Profile[]>(getGetFriendSuggestionsUrl(),
+  return customFetch<FriendSuggestion[]>(getGetFriendSuggestionsUrl(),
   {
     ...options,
     method: 'GET'

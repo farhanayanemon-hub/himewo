@@ -186,7 +186,9 @@ export const GetFriendSuggestionsResponseItem = zod.object({
   "status": zod.string().optional(),
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
-})
+}).and(zod.object({
+  "mutualFriendsCount": zod.number()
+}))
 export const GetFriendSuggestionsResponse = zod.array(GetFriendSuggestionsResponseItem)
 
 
