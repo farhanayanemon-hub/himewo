@@ -21,6 +21,11 @@ import {
   LikeReelResponse,
   UnlikeReelParams,
   UnlikeReelResponse,
+  SetReelReactionParams,
+  SetReelReactionBody,
+  SetReelReactionResponse,
+  RemoveReelReactionParams,
+  RemoveReelReactionResponse,
   ListReelCommentsParams,
   ListReelCommentsResponse,
   CreateReelCommentParams,
@@ -128,6 +133,69 @@ router.delete(
       );
     const built = await buildReelById(params.data.id, req.userId);
     res.json(UnlikeReelResponse.parse(built));
+  },
+);
+
+router.put(
+  "/reels/:id/reaction",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = SetReelReactionParams.safeParse(req.params);
+    const parsed = SetReelReactionBody.safeParse(req.body);
+    if (!params.success || !parsed.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    const [reel] = await db
+      .select()
+      .from(reelsTable)
+      .where(eq(reelsTable.id, params.data.id));
+    if (!reel) {
+      res.status(404).json({ error: "Reel not found" });
+      return;
+    }
+    await db
+      .insert(reelLikesTable)
+      .values({
+        reelId: params.data.id,
+        userId: req.userId!,
+        type: parsed.data.type,
+      })
+      .onConflictDoUpdate({
+        target: [reelLikesTable.reelId, reelLikesTable.userId],
+        set: { type: parsed.data.type },
+      });
+    await createNotification({
+      userId: reel.authorId,
+      actorId: req.userId!,
+      type: "reaction",
+      entityType: "reel",
+      entityId: reel.id,
+    });
+    const built = await buildReelById(params.data.id, req.userId);
+    res.json(SetReelReactionResponse.parse(built));
+  },
+);
+
+router.delete(
+  "/reels/:id/reaction",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = RemoveReelReactionParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    await db
+      .delete(reelLikesTable)
+      .where(
+        and(
+          eq(reelLikesTable.reelId, params.data.id),
+          eq(reelLikesTable.userId, req.userId!),
+        ),
+      );
+    const built = await buildReelById(params.data.id, req.userId);
+    res.json(RemoveReelReactionResponse.parse(built));
   },
 );
 

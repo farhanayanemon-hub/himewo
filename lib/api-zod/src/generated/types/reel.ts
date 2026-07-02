@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Profile } from './profile';
+import type { ReactionType } from './reactionType';
 
 export interface Reel {
   id: number;
@@ -20,4 +21,5 @@ export interface Reel {
   commentCount: number;
   viewerHasLiked: boolean;
   viewerHasSaved: boolean;
+  viewerReaction?: ReactionType | null;
 }

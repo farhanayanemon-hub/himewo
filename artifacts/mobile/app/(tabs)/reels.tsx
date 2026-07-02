@@ -20,19 +20,22 @@ import { useVideoPlayer, VideoView } from "expo-video";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListReels,
-  useLikeReel,
-  useUnlikeReel,
+  useSetReelReaction,
+  useRemoveReelReaction,
   useSaveItem,
   useUnsaveItem,
   useListReelComments,
   useCreateReelComment,
   getListReelCommentsQueryKey,
   getListSavedItemsQueryKey,
+  ReactionType,
   type Reel,
   type ReelComment,
 } from "@workspace/api-client-react";
+import * as Haptics from "expo-haptics";
 import { Avatar } from "@/components/Avatar";
 import { EmojiPickerSheet } from "@/components/EmojiPickerSheet";
+import { reactionConfig, reactionOrder } from "@/constants/reactions";
 import { useColors } from "@/hooks/useColors";
 import { formatCount, timeAgo } from "@/lib/format";
 
@@ -48,12 +51,15 @@ interface ReelItemProps {
 function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
   const c = useColors();
   const qc = useQueryClient();
-  const [liked, setLiked] = useState(reel.viewerHasLiked);
+  const [reaction, setReactionState] = useState<ReactionType | null>(
+    reel.viewerReaction ?? (reel.viewerHasLiked ? ReactionType.like : null),
+  );
   const [likeCount, setLikeCount] = useState(reel.likeCount);
   const [saved, setSaved] = useState(reel.viewerHasSaved);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
-  const likeReel = useLikeReel();
-  const unlikeReel = useUnlikeReel();
+  const setReelReaction = useSetReelReaction();
+  const removeReelReaction = useRemoveReelReaction();
   const saveItem = useSaveItem();
   const unsaveItem = useUnsaveItem();
 
@@ -71,15 +77,28 @@ function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
   }, [active, player]);
 
   const toggleLike = () => {
-    if (liked) {
-      setLiked(false);
+    if (reaction) {
+      setReactionState(null);
       setLikeCount((n) => Math.max(0, n - 1));
-      unlikeReel.mutate({ id: reel.id });
+      removeReelReaction.mutate({ id: reel.id });
     } else {
-      setLiked(true);
+      setReactionState(ReactionType.like);
       setLikeCount((n) => n + 1);
-      likeReel.mutate({ id: reel.id });
+      setReelReaction.mutate({ id: reel.id, data: { type: ReactionType.like } });
     }
+  };
+
+  const openPicker = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setPickerOpen(true);
+  };
+
+  const pickReaction = (t: ReactionType) => {
+    setPickerOpen(false);
+    Haptics.selectionAsync();
+    if (!reaction) setLikeCount((n) => n + 1);
+    setReactionState(t);
+    setReelReaction.mutate({ id: reel.id, data: { type: t } });
   };
 
   const toggleSave = () => {
@@ -131,12 +150,21 @@ function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
         </View>
 
         <View style={styles.actionBar} pointerEvents="box-none">
-          <Pressable style={styles.action} onPress={toggleLike}>
-            <Ionicons
-              name={liked ? "heart" : "heart-outline"}
-              size={34}
-              color={liked ? c.primary : "#fff"}
-            />
+          <Pressable
+            style={styles.action}
+            onPress={toggleLike}
+            onLongPress={openPicker}
+            delayLongPress={220}
+          >
+            {reaction && reaction !== ReactionType.like ? (
+              <Text style={{ fontSize: 30 }}>{reactionConfig[reaction].emoji}</Text>
+            ) : (
+              <Ionicons
+                name={reaction ? "heart" : "heart-outline"}
+                size={34}
+                color={reaction ? c.primary : "#fff"}
+              />
+            )}
             <Text style={styles.actionLabel}>{formatCount(likeCount)}</Text>
           </Pressable>
           <Pressable style={styles.action} onPress={() => onComment(reel)}>
@@ -159,6 +187,26 @@ function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
           </Pressable>
         </View>
       </View>
+
+      <Modal visible={pickerOpen} transparent animationType="fade">
+        <Pressable
+          style={styles.pickerBackdrop}
+          onPress={() => setPickerOpen(false)}
+        >
+          <View style={[styles.reactionPicker, { backgroundColor: c.card, borderColor: c.border }]}>
+            {reactionOrder.map((t) => (
+              <Pressable
+                key={t}
+                onPress={() => pickReaction(t)}
+                style={{ paddingHorizontal: 3 }}
+                hitSlop={4}
+              >
+                <Text style={{ fontSize: 32 }}>{reactionConfig[t].emoji}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -440,6 +488,25 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontFamily: "Inter_500Medium",
     fontSize: 15,
+  },
+  pickerBackdrop: {
+    flex: 1,
+    backgroundColor: "#0004",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  reactionPicker: {
+    flexDirection: "row",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
   },
   sheetBackdrop: { flex: 1, backgroundColor: "#0006" },
   sheet: { height: "82%", borderTopLeftRadius: 18, borderTopRightRadius: 18 },

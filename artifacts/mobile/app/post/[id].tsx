@@ -18,15 +18,20 @@ import {
   useGetPost,
   useListComments,
   useCreateComment,
+  useSetCommentReaction,
+  useRemoveCommentReaction,
   getGetPostQueryKey,
   getGetFeedQueryKey,
   getListCommentsQueryKey,
   type Comment,
+  type ReactionType,
 } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
 import { PostCard } from "@/components/PostCard";
 import { ShareSheet } from "@/components/ShareSheet";
 import { EmojiPickerSheet } from "@/components/EmojiPickerSheet";
+import { ReactionBar } from "@/components/ReactionBar";
+import { reactionConfig } from "@/constants/reactions";
 import { useColors } from "@/hooks/useColors";
 import { timeAgo } from "@/lib/format";
 
@@ -64,6 +69,22 @@ export default function PostDetailScreen() {
   const comments = (commentsData ?? []) as Comment[];
 
   const createComment = useCreateComment();
+  const setCommentReaction = useSetCommentReaction();
+  const removeCommentReaction = useRemoveCommentReaction();
+
+  const reactToComment = (item: Comment, type: ReactionType) => {
+    const invalidate = () => {
+      qc.invalidateQueries({ queryKey: getListCommentsQueryKey(postId) });
+    };
+    if (item.viewerReaction === type) {
+      removeCommentReaction.mutate({ id: item.id }, { onSuccess: invalidate });
+    } else {
+      setCommentReaction.mutate(
+        { id: item.id, data: { type } },
+        { onSuccess: invalidate },
+      );
+    }
+  };
 
   const onShare = () => {
     if (!Number.isFinite(postId)) return;
@@ -162,16 +183,24 @@ export default function PostDetailScreen() {
                       {item.content}
                     </Text>
                   </View>
-                  <Text
-                    style={{
-                      color: c.mutedForeground,
-                      fontSize: 11,
-                      marginTop: 4,
-                      marginLeft: 6,
-                    }}
-                  >
-                    {timeAgo(item.createdAt)}
-                  </Text>
+                  <View style={styles.commentFooter}>
+                    <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
+                      {timeAgo(item.createdAt)}
+                    </Text>
+                    <ReactionBar
+                      size="sm"
+                      viewerReaction={item.viewerReaction ?? null}
+                      onReact={(t) => reactToComment(item, t)}
+                    />
+                    {item.reactionCount > 0 && (
+                      <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
+                        {item.viewerReaction
+                          ? reactionConfig[item.viewerReaction].emoji
+                          : "👍"}{" "}
+                        {item.reactionCount}
+                      </Text>
+                    )}
+                  </View>
                 </View>
               </View>
             )}
@@ -261,6 +290,13 @@ const styles = StyleSheet.create({
   commentsTitle: { fontFamily: "Inter_700Bold", fontSize: 16 },
   commentRow: { flexDirection: "row", gap: 8, paddingHorizontal: 14, marginBottom: 14 },
   bubble: { borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8 },
+  commentFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 4,
+    marginLeft: 6,
+  },
   inputRow: {
     flexDirection: "row",
     alignItems: "center",

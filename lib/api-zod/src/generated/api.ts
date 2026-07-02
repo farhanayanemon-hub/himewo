@@ -3359,7 +3359,8 @@ export const ListSavedItemsResponseItem = zod.object({
   "likeCount": zod.number(),
   "commentCount": zod.number(),
   "viewerHasLiked": zod.boolean(),
-  "viewerHasSaved": zod.boolean()
+  "viewerHasSaved": zod.boolean(),
+  "viewerReaction": zod.union([zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry']),zod.null()]).optional()
 }),zod.null()]).optional(),
   "createdAt": zod.coerce.date()
 })
@@ -3548,7 +3549,8 @@ export const SaveItemResponse = zod.object({
   "likeCount": zod.number(),
   "commentCount": zod.number(),
   "viewerHasLiked": zod.boolean(),
-  "viewerHasSaved": zod.boolean()
+  "viewerHasSaved": zod.boolean(),
+  "viewerReaction": zod.union([zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry']),zod.null()]).optional()
 }),zod.null()]).optional(),
   "createdAt": zod.coerce.date()
 })
@@ -5402,7 +5404,8 @@ export const ListReelsResponseItem = zod.object({
   "likeCount": zod.number(),
   "commentCount": zod.number(),
   "viewerHasLiked": zod.boolean(),
-  "viewerHasSaved": zod.boolean()
+  "viewerHasSaved": zod.boolean(),
+  "viewerReaction": zod.union([zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry']),zod.null()]).optional()
 })
 export const ListReelsResponse = zod.array(ListReelsResponseItem)
 
@@ -5455,7 +5458,8 @@ export const CreateReelResponse = zod.object({
   "likeCount": zod.number(),
   "commentCount": zod.number(),
   "viewerHasLiked": zod.boolean(),
-  "viewerHasSaved": zod.boolean()
+  "viewerHasSaved": zod.boolean(),
+  "viewerReaction": zod.union([zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry']),zod.null()]).optional()
 })
 
 
@@ -5505,7 +5509,8 @@ export const GetReelResponse = zod.object({
   "likeCount": zod.number(),
   "commentCount": zod.number(),
   "viewerHasLiked": zod.boolean(),
-  "viewerHasSaved": zod.boolean()
+  "viewerHasSaved": zod.boolean(),
+  "viewerReaction": zod.union([zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry']),zod.null()]).optional()
 })
 
 
@@ -5555,7 +5560,8 @@ export const LikeReelResponse = zod.object({
   "likeCount": zod.number(),
   "commentCount": zod.number(),
   "viewerHasLiked": zod.boolean(),
-  "viewerHasSaved": zod.boolean()
+  "viewerHasSaved": zod.boolean(),
+  "viewerReaction": zod.union([zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry']),zod.null()]).optional()
 })
 
 
@@ -5605,7 +5611,114 @@ export const UnlikeReelResponse = zod.object({
   "likeCount": zod.number(),
   "commentCount": zod.number(),
   "viewerHasLiked": zod.boolean(),
-  "viewerHasSaved": zod.boolean()
+  "viewerHasSaved": zod.boolean(),
+  "viewerReaction": zod.union([zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry']),zod.null()]).optional()
+})
+
+
+export const SetReelReactionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const SetReelReactionBody = zod.object({
+  "type": zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry'])
+})
+
+export const SetReelReactionResponse = zod.object({
+  "id": zod.number(),
+  "author": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "videoUrl": zod.string(),
+  "thumbnailUrl": zod.string().nullish(),
+  "caption": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "likeCount": zod.number(),
+  "commentCount": zod.number(),
+  "viewerHasLiked": zod.boolean(),
+  "viewerHasSaved": zod.boolean(),
+  "viewerReaction": zod.union([zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry']),zod.null()]).optional()
+})
+
+
+export const RemoveReelReactionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RemoveReelReactionResponse = zod.object({
+  "id": zod.number(),
+  "author": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "videoUrl": zod.string(),
+  "thumbnailUrl": zod.string().nullish(),
+  "caption": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "likeCount": zod.number(),
+  "commentCount": zod.number(),
+  "viewerHasLiked": zod.boolean(),
+  "viewerHasSaved": zod.boolean(),
+  "viewerReaction": zod.union([zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry']),zod.null()]).optional()
 })
 
 

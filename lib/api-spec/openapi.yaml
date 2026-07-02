@@ -1710,6 +1710,34 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Reel" }
+  /reels/{id}/reaction:
+    put:
+      operationId: setReelReaction
+      tags: [reels]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReactionInput" }
+      responses:
+        "200":
+          description: Updated reel
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Reel" }
+    delete:
+      operationId: removeReelReaction
+      tags: [reels]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Updated reel
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Reel" }
   /reels/{id}/comments:
     get:
       operationId: listReelComments
@@ -2996,6 +3024,10 @@ components:
         commentCount: { type: integer }
         viewerHasLiked: { type: boolean }
         viewerHasSaved: { type: boolean }
+        viewerReaction:
+          oneOf:
+            - $ref: "#/components/schemas/ReactionType"
+            - type: "null"
     ReelInput:
       type: object
       required: [videoUrl]

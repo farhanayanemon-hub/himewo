@@ -8189,6 +8189,135 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getUnlikeReelMutationOptions(options));
     }
 
+export const getSetReelReactionUrl = (id: number,) => {
+
+
+
+
+  return `/api/reels/${id}/reaction`
+}
+
+export const setReelReaction = async (id: number,
+    reactionInput: ReactionInput, options?: RequestInit): Promise<Reel> => {
+
+  return customFetch<Reel>(getSetReelReactionUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(reactionInput)
+  }
+);}
+
+
+
+
+export const getSetReelReactionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setReelReaction>>, TError,{id: number;data: BodyType<ReactionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setReelReaction>>, TError,{id: number;data: BodyType<ReactionInput>}, TContext> => {
+
+const mutationKey = ['setReelReaction'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setReelReaction>>, {id: number;data: BodyType<ReactionInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  setReelReaction(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetReelReactionMutationResult = NonNullable<Awaited<ReturnType<typeof setReelReaction>>>
+    export type SetReelReactionMutationBody = BodyType<ReactionInput>
+    export type SetReelReactionMutationError = ErrorType<unknown>
+
+    export const useSetReelReaction = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setReelReaction>>, TError,{id: number;data: BodyType<ReactionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setReelReaction>>,
+        TError,
+        {id: number;data: BodyType<ReactionInput>},
+        TContext
+      > => {
+      return useMutation(getSetReelReactionMutationOptions(options));
+    }
+
+export const getRemoveReelReactionUrl = (id: number,) => {
+
+
+
+
+  return `/api/reels/${id}/reaction`
+}
+
+export const removeReelReaction = async (id: number, options?: RequestInit): Promise<Reel> => {
+
+  return customFetch<Reel>(getRemoveReelReactionUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getRemoveReelReactionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeReelReaction>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeReelReaction>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['removeReelReaction'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeReelReaction>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  removeReelReaction(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveReelReactionMutationResult = NonNullable<Awaited<ReturnType<typeof removeReelReaction>>>
+
+    export type RemoveReelReactionMutationError = ErrorType<unknown>
+
+    export const useRemoveReelReaction = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeReelReaction>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removeReelReaction>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getRemoveReelReactionMutationOptions(options));
+    }
+
 export const getListReelCommentsUrl = (id: number,) => {
 
 

@@ -10,7 +10,7 @@ import {
   index,
 } from "drizzle-orm/pg-core";
 import { profilesTable } from "./profiles";
-import { mediaTypeEnum, notificationTypeEnum } from "./enums";
+import { mediaTypeEnum, notificationTypeEnum, reactionTypeEnum } from "./enums";
 
 export const storiesTable = pgTable("stories", {
   id: serial("id").primaryKey(),
@@ -71,6 +71,7 @@ export const reelLikesTable = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => profilesTable.id, { onDelete: "cascade" }),
+    type: reactionTypeEnum("type").notNull().default("like"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
