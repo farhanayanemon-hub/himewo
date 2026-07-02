@@ -52,6 +52,7 @@ import type {
   GetPagePostsParams,
   GetUserFriendsParams,
   GetUserPostsParams,
+  GetWatchFeedParams,
   Group,
   GroupInput,
   GroupMember,
@@ -998,6 +999,90 @@ export function useGetFeed<TData = Awaited<ReturnType<typeof getFeed>>, TError =
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetFeedQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetWatchFeedUrl = (params?: GetWatchFeedParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/watch?${stringifiedParams}` : `/api/watch`
+}
+
+/**
+ * @summary Watch feed (video posts only)
+ */
+export const getWatchFeed = async (params?: GetWatchFeedParams, options?: RequestInit): Promise<Post[]> => {
+
+  return customFetch<Post[]>(getGetWatchFeedUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetWatchFeedQueryKey = (params?: GetWatchFeedParams,) => {
+    return [
+    `/api/watch`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetWatchFeedQueryOptions = <TData = Awaited<ReturnType<typeof getWatchFeed>>, TError = ErrorType<UnauthorizedResponse>>(params?: GetWatchFeedParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getWatchFeed>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetWatchFeedQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getWatchFeed>>> = ({ signal }) => getWatchFeed(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getWatchFeed>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetWatchFeedQueryResult = NonNullable<Awaited<ReturnType<typeof getWatchFeed>>>
+export type GetWatchFeedQueryError = ErrorType<UnauthorizedResponse>
+
+
+/**
+ * @summary Watch feed (video posts only)
+ */
+
+export function useGetWatchFeed<TData = Awaited<ReturnType<typeof getWatchFeed>>, TError = ErrorType<UnauthorizedResponse>>(
+ params?: GetWatchFeedParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getWatchFeed>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetWatchFeedQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
