@@ -622,6 +622,18 @@ router.post(
       res.status(403).json({ error: "Comments are turned off for this post" });
       return;
     }
+    // Stored-XSS guard: user-supplied media URLs must be plain http(s).
+    if (
+      parsed.data.mediaUrl &&
+      !/^https?:\/\//i.test(parsed.data.mediaUrl)
+    ) {
+      res.status(400).json({ error: "Invalid media URL" });
+      return;
+    }
+    if (!parsed.data.content.trim() && !parsed.data.mediaUrl) {
+      res.status(400).json({ error: "Comment cannot be empty" });
+      return;
+    }
     const [comment] = await db
       .insert(commentsTable)
       .values({

@@ -17,7 +17,9 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { EmojiPickerButton } from "@/components/emoji-picker";
+import { GifPickerButton } from "@/components/gif-picker";
 import { ReactionControl } from "@/components/reaction-picker";
+import { X } from "lucide-react";
 
 function CommentItem({ comment, postId }: { comment: Comment; postId: number }) {
   const queryClient = useQueryClient();
@@ -48,7 +50,15 @@ function CommentItem({ comment, postId }: { comment: Comment; postId: number }) 
       <div>
         <div className="bg-muted/50 rounded-2xl px-4 py-2">
           <div className="font-semibold text-sm">{comment.author.displayName}</div>
-          <div className="text-[15px]">{comment.content}</div>
+          {comment.content && <div className="text-[15px]">{comment.content}</div>}
+          {comment.mediaUrl && (
+            <img
+              src={comment.mediaUrl}
+              alt=""
+              className="mt-1 rounded-lg max-h-52 max-w-full object-contain"
+              loading="lazy"
+            />
+          )}
         </div>
         <div className="flex gap-3 mt-1 ml-2 text-xs text-muted-foreground font-medium items-center">
           <ReactionControl
@@ -74,15 +84,17 @@ export default function PostPage() {
   const createComment = useCreateComment();
   const queryClient = useQueryClient();
   const [content, setContent] = useState("");
+  const [gifUrl, setGifUrl] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim()) return;
+    if (!content.trim() && !gifUrl) return;
     createComment.mutate(
-      { id: postId, data: { content } },
+      { id: postId, data: { content, ...(gifUrl ? { mediaUrl: gifUrl } : {}) } },
       {
         onSuccess: () => {
           setContent("");
+          setGifUrl(null);
           queryClient.invalidateQueries({ queryKey: getListCommentsQueryKey(postId) });
           queryClient.invalidateQueries({ queryKey: getGetPostQueryKey(postId) });
         }
@@ -108,18 +120,34 @@ export default function PostPage() {
 
           {post.commentsEnabled ? (
             <>
-              <form onSubmit={handleSubmit} className="flex gap-2 mb-6 items-center">
-                <div className="flex-1 flex items-center bg-muted/50 rounded-full pr-1 focus-within:ring-1 focus-within:ring-primary">
-                  <input
-                    type="text"
-                    value={content}
-                    onChange={e => setContent(e.target.value)}
-                    placeholder="Write a comment..."
-                    className="flex-1 bg-transparent rounded-full px-4 py-2 text-sm focus:outline-none"
-                  />
-                  <EmojiPickerButton onSelect={(emoji) => setContent((prev) => prev + emoji)} />
+              <form onSubmit={handleSubmit} className="mb-6">
+                <div className="flex gap-2 items-center">
+                  <div className="flex-1 flex items-center gap-1 bg-muted/50 rounded-full pr-2 focus-within:ring-1 focus-within:ring-primary">
+                    <input
+                      type="text"
+                      value={content}
+                      onChange={e => setContent(e.target.value)}
+                      placeholder="Write a comment..."
+                      className="flex-1 bg-transparent rounded-full px-4 py-2 text-sm focus:outline-none"
+                    />
+                    <GifPickerButton onSelect={(url) => setGifUrl(url)} />
+                    <EmojiPickerButton onSelect={(emoji) => setContent((prev) => prev + emoji)} />
+                  </div>
+                  <Button type="submit" disabled={(!content.trim() && !gifUrl) || createComment.isPending} className="rounded-full">Post</Button>
                 </div>
-                <Button type="submit" disabled={!content.trim() || createComment.isPending} className="rounded-full">Post</Button>
+                {gifUrl && (
+                  <div className="relative inline-block mt-2 ml-2">
+                    <img src={gifUrl} alt="Selected GIF" className="rounded-lg max-h-32" />
+                    <button
+                      type="button"
+                      onClick={() => setGifUrl(null)}
+                      className="absolute -top-2 -right-2 bg-foreground text-background rounded-full p-0.5 shadow"
+                      aria-label="Remove GIF"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
               </form>
 
               <div className="space-y-4">
