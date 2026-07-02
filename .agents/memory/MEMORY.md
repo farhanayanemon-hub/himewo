@@ -1,3 +1,4 @@
+- [Page about/CTA/reviews](himewo-page-features.md) — pages contact/CTA(none|message|call|shop|signup)/one-per-user reviews; user-supplied URL fields (website/ctaUrl) MUST be http(s)-allowlisted both sides (stored XSS guard).
 - [Settings system](himewo-settings-system.md) — per-user settings live in a SEPARATE schema/contract/route; notification prefs enforced in createNotification, not per-route.
 - [Home placeholders](himewo-home-placeholders.md) — home Birthdays card + /saved + /memories are intentional empty states (no DOB/saved data yet), not bugs.
 - [Expo typed routes](himewo-expo-typed-routes.md) — new mobile route file → typecheck "not assignable to Href" until Metro regenerates `.expo/types/router.d.ts`; run expo briefly, don't hand-edit.
@@ -15,3 +16,16 @@
 - [Points & Earnings](himewo-earnings-points.md) — marketing points→USD (NOT video monetization); anti-farm + daily-cap + money-integrity invariants and the posts-only earning scope.
 - [API test harness](himewo-api-test-harness.md) — vitest hits REAL Postgres; route tests use in-process `createServer(app)` + `Bearer dev:<uuid>`; profile-lock enforced in 3 layers (feed route, users route, serialize).
 - [Contract drift guard](himewo-contract-drift-guard.md) — consumer typechecks MUST use `tsc -b` (not `tsc -p`) or they read stale gitignored client `dist/*.d.ts` and miss renamed/removed generated members.
+- [Reaction picker click](himewo-reaction-picker.md) — hover reaction pill missed desktop clicks: no-gap bridge + fire on pointerdown, not click; mutations were fine.
+- [Albums + photo tags](himewo-albums-tagging.md) — tag notif reuses type "mention"+entityType "album" (no enum migration); untag = single constrained join THEN authz, else 404/204 leaks existence.
+- [Events + RSVP](himewo-events.md) — events are a PUBLIC board (no friend-gating, deliberate); RSVP upsert w/ click-again-to-clear; UI must expose all 3 statuses incl. "Can't go".
+- [Live video](himewo-live-video.md) — WebRTC host-fan-out over app websocket (no SFU); live:* relay locked to room membership; never dep on whole useRealtime() object in WebRTC effects.
+- [Watch feed](himewo-watch-feed.md) — filtered feeds MUST batch-scan until page full: filterVisiblePosts after SQL limit → short page → client falsely ends feed.
+- [GIF comments](himewo-gif-comments.md) — Tenor v1 demo key `LIVDSRZULELA` works (GIPHY beta key banned); comment mediaUrl needs http(s) guard; GIF-only comments allowed.
+- [PYMK](himewo-pymk.md) — FriendSuggestion = allOf Profile+mutualFriendsCount (Orval-safe); MUST exclude pending requests both directions; friends-of-friends rank + random backfill.
+- [Dark mode + verified badge](himewo-darkmode-verified.md) — theme init MUST run in main.tsx pre-render (localStorage `himewo-theme`); isVerified already in Profile contract, only UI badge was missing; follow UI already existed.
+- [api-zod codegen ambiguity](himewo-api-zod-codegen.md) — new OpenAPI path+query endpoint needs a manual *Params re-export in lib/api-zod/src/index.ts or codegen typecheck fails (TS2308).
+- [Comment replies & mentions](himewo-comment-mentions.md) — one-level threads (server flattens reply-to-reply); mention token `@[Name](user:<uuid>)` shared contract; UUID-guard before profiles lookup.
+- [Reel reactions / method drift](himewo-reel-reactions.md) — reel_likes.type + reaction routes; Express verb MUST match OpenAPI verb (spec-PUT vs server-POST silently 404s all generated clients).
+- [Feeling/activity + check-in](himewo-feeling-checkin.md) — posts have feeling_verb/feeling/feeling_emoji/location text cols; feelings verb="feeling", activities own verb; location is free text (no geo); render each half independently.
+- [Poll posts](himewo-poll-posts.md) — one optional poll per post (question separate from content); one-vote-per-poll (unique idx+upsert), option-belongs-to-poll guard, canViewPost gate; vote routes path-only (no barrel re-export).
