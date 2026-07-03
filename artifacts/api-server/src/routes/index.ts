@@ -25,6 +25,7 @@ import earningsRouter from "./earnings";
 import earningsAdminRouter from "./earnings-admin";
 import adminRouter from "./admin";
 import reportsRouter from "./reports";
+import adsRouter from "./ads";
 
 const router: IRouter = Router();
 
@@ -56,5 +57,6 @@ router.use(earningsRouter);
 router.use(earningsAdminRouter);
 router.use(adminRouter);
 router.use(reportsRouter);
+router.use(adsRouter);
 
 export default router;

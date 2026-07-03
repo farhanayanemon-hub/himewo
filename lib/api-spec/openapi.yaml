@@ -1462,6 +1462,752 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  # ---------------- Ads: accounts ----------------
+  /ad-accounts:
+    get:
+      operationId: listAdAccounts
+      tags: [ads]
+      responses:
+        "200":
+          description: Ad accounts the user belongs to
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdAccount" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createAdAccount
+      tags: [ads]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdAccountInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdAccount" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /ad-accounts/{id}:
+    get:
+      operationId: getAdAccount
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Ad account
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdAccount" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateAdAccount
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdAccountUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdAccount" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ---------------- Ads: members ----------------
+  /ad-accounts/{id}/members:
+    get:
+      operationId: listAdAccountMembers
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Members
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdAccountMember" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: addAdAccountMember
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdAccountMemberInput" }
+      responses:
+        "201":
+          description: Added
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdAccountMember" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /ad-accounts/{id}/members/{memberId}:
+    patch:
+      operationId: updateAdAccountMember
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: memberId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdAccountMemberUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdAccountMember" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: removeAdAccountMember
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: memberId, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Removed }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ---------------- Ads: campaigns ----------------
+  /ad-accounts/{id}/campaigns:
+    get:
+      operationId: listAdCampaigns
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Campaigns
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdCampaign" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: createAdCampaign
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdCampaignInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdCampaign" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /campaigns/{id}:
+    get:
+      operationId: getAdCampaign
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Campaign
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdCampaign" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateAdCampaign
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdCampaignUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdCampaign" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteAdCampaign
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ---------------- Ads: ad sets ----------------
+  /campaigns/{id}/ad-sets:
+    get:
+      operationId: listAdSets
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Ad sets
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdSet" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: createAdSet
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdSetInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdSet" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /ad-sets/{id}:
+    get:
+      operationId: getAdSet
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Ad set
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdSet" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateAdSet
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdSetUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdSet" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteAdSet
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ---------------- Ads: targeting + schedules ----------------
+  /ad-sets/{id}/targeting:
+    get:
+      operationId: getAdSetTargeting
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Targeting
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdTargeting" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: setAdSetTargeting
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdTargetingSpec" }
+      responses:
+        "200":
+          description: Saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdTargeting" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /ad-sets/{id}/schedules:
+    get:
+      operationId: listAdSchedules
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Schedules
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdSchedule" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: setAdSchedules
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items: { $ref: "#/components/schemas/AdScheduleInput" }
+      responses:
+        "200":
+          description: Saved
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdSchedule" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ---------------- Ads: ads ----------------
+  /ad-sets/{id}/ads:
+    get:
+      operationId: listAds
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Ads
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Ad" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: createAd
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Ad" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /ads/{id}:
+    get:
+      operationId: getAd
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Ad
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Ad" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateAd
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Ad" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteAd
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /ads/{id}/submit:
+    post:
+      operationId: submitAdForReview
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Submitted for review
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Ad" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ---------------- Ads: creatives ----------------
+  /ad-accounts/{id}/creatives:
+    get:
+      operationId: listAdCreatives
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Creatives
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdCreative" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: createAdCreative
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdCreativeInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdCreative" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /creatives/{id}:
+    get:
+      operationId: getAdCreative
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Creative
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdCreative" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateAdCreative
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdCreativeUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdCreative" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteAdCreative
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ---------------- Ads: saved audiences ----------------
+  /ad-accounts/{id}/audiences:
+    get:
+      operationId: listSavedAudiences
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Saved audiences
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SavedAudience" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: createSavedAudience
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SavedAudienceInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SavedAudience" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /audiences/{id}:
+    patch:
+      operationId: updateSavedAudience
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SavedAudienceUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SavedAudience" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteSavedAudience
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ---------------- Ads: wallet + coupons ----------------
+  /ad-accounts/{id}/wallet:
+    get:
+      operationId: getAdWallet
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Wallet
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdWallet" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /ad-accounts/{id}/transactions:
+    get:
+      operationId: listAdWalletTransactions
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Wallet transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdWalletTransaction" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /ad-accounts/{id}/coupons:
+    get:
+      operationId: listAdCoupons
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Coupons
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdCoupon" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   # ---------------- Pages ----------------
   /pages:
     get:
@@ -2827,6 +3573,384 @@ components:
         listings:
           type: array
           items: { $ref: "#/components/schemas/MarketplaceListing" }
+
+    # ---------------- Ads schemas ----------------
+    AdAccount:
+      type: object
+      required:
+        [id, ownerId, name, currency, timezone, balanceCents, status, createdAt]
+      properties:
+        id: { type: integer }
+        ownerId: { type: string }
+        name: { type: string }
+        currency: { type: string }
+        timezone: { type: string }
+        balanceCents: { type: integer }
+        status: { type: string, enum: [active, suspended, closed] }
+        viewerRole:
+          type: ["string", "null"]
+          enum: [admin, advertiser, analyst, null]
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    AdAccountInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1 }
+        currency: { type: string }
+        timezone: { type: string }
+    AdAccountUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        currency: { type: string }
+        timezone: { type: string }
+        status: { type: string, enum: [active, suspended, closed] }
+    AdAccountMember:
+      type: object
+      required: [id, accountId, userId, role, createdAt]
+      properties:
+        id: { type: integer }
+        accountId: { type: integer }
+        userId: { type: string }
+        role: { type: string, enum: [admin, advertiser, analyst] }
+        profile:
+          oneOf:
+            - { $ref: "#/components/schemas/Profile" }
+            - { type: "null" }
+        createdAt: { type: string, format: date-time }
+    AdAccountMemberInput:
+      type: object
+      required: [userId, role]
+      properties:
+        userId: { type: string, minLength: 1 }
+        role: { type: string, enum: [admin, advertiser, analyst] }
+    AdAccountMemberUpdate:
+      type: object
+      required: [role]
+      properties:
+        role: { type: string, enum: [admin, advertiser, analyst] }
+    AdCampaign:
+      type: object
+      required: [id, accountId, name, objective, status, createdAt]
+      properties:
+        id: { type: integer }
+        accountId: { type: integer }
+        name: { type: string }
+        objective: { type: string }
+        status: { type: string }
+        dailyBudgetCents: { type: ["integer", "null"] }
+        lifetimeBudgetCents: { type: ["integer", "null"] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    AdCampaignInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1 }
+        objective:
+          type: string
+          enum:
+            [
+              awareness,
+              traffic,
+              engagement,
+              leads,
+              sales,
+              app_promotion,
+              page_boost,
+              post_boost,
+            ]
+        status:
+          type: string
+          enum: [draft, active, paused, completed, archived]
+        dailyBudgetCents: { type: integer, minimum: 0 }
+        lifetimeBudgetCents: { type: integer, minimum: 0 }
+    AdCampaignUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        objective:
+          type: string
+          enum:
+            [
+              awareness,
+              traffic,
+              engagement,
+              leads,
+              sales,
+              app_promotion,
+              page_boost,
+              post_boost,
+            ]
+        status:
+          type: string
+          enum: [draft, active, paused, completed, archived]
+        dailyBudgetCents: { type: integer, minimum: 0 }
+        lifetimeBudgetCents: { type: integer, minimum: 0 }
+    AdSet:
+      type: object
+      required:
+        [
+          id,
+          campaignId,
+          accountId,
+          name,
+          status,
+          billingEvent,
+          optimizationGoal,
+          createdAt,
+        ]
+      properties:
+        id: { type: integer }
+        campaignId: { type: integer }
+        accountId: { type: integer }
+        name: { type: string }
+        status: { type: string }
+        dailyBudgetCents: { type: ["integer", "null"] }
+        lifetimeBudgetCents: { type: ["integer", "null"] }
+        billingEvent: { type: string }
+        optimizationGoal: { type: string }
+        savedAudienceId: { type: ["integer", "null"] }
+        startAt: { type: ["string", "null"], format: date-time }
+        endAt: { type: ["string", "null"], format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    AdSetInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1 }
+        status:
+          type: string
+          enum: [draft, active, paused, completed, archived]
+        dailyBudgetCents: { type: integer, minimum: 0 }
+        lifetimeBudgetCents: { type: integer, minimum: 0 }
+        billingEvent: { type: string, enum: [impressions, clicks] }
+        optimizationGoal:
+          type: string
+          enum: [reach, link_clicks, engagement, conversions]
+        savedAudienceId: { type: integer }
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time }
+        targeting: { $ref: "#/components/schemas/AdTargetingSpec" }
+    AdSetUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        status:
+          type: string
+          enum: [draft, active, paused, completed, archived]
+        dailyBudgetCents: { type: integer, minimum: 0 }
+        lifetimeBudgetCents: { type: integer, minimum: 0 }
+        billingEvent: { type: string, enum: [impressions, clicks] }
+        optimizationGoal:
+          type: string
+          enum: [reach, link_clicks, engagement, conversions]
+        savedAudienceId: { type: ["integer", "null"] }
+        startAt: { type: ["string", "null"], format: date-time }
+        endAt: { type: ["string", "null"], format: date-time }
+    AdTargetingSpec:
+      type: object
+      properties:
+        locations:
+          type: array
+          items: { type: string }
+        ageMin: { type: integer, minimum: 13, maximum: 120 }
+        ageMax: { type: integer, minimum: 13, maximum: 120 }
+        genders:
+          type: array
+          items: { type: string }
+        interests:
+          type: array
+          items: { type: string }
+        languages:
+          type: array
+          items: { type: string }
+        custom:
+          type: object
+          additionalProperties: true
+    AdTargeting:
+      type: object
+      required: [id, adSetId, locations, genders, interests, languages]
+      properties:
+        id: { type: integer }
+        adSetId: { type: integer }
+        locations:
+          type: array
+          items: { type: string }
+        ageMin: { type: ["integer", "null"] }
+        ageMax: { type: ["integer", "null"] }
+        genders:
+          type: array
+          items: { type: string }
+        interests:
+          type: array
+          items: { type: string }
+        languages:
+          type: array
+          items: { type: string }
+        custom:
+          type: ["object", "null"]
+          additionalProperties: true
+    AdSchedule:
+      type: object
+      required: [id, adSetId, startMinute, endMinute, createdAt]
+      properties:
+        id: { type: integer }
+        adSetId: { type: integer }
+        dayOfWeek: { type: ["integer", "null"] }
+        startMinute: { type: integer }
+        endMinute: { type: integer }
+        createdAt: { type: string, format: date-time }
+    AdScheduleInput:
+      type: object
+      required: [startMinute, endMinute]
+      properties:
+        dayOfWeek: { type: integer, minimum: 0, maximum: 6 }
+        startMinute: { type: integer, minimum: 0, maximum: 1440 }
+        endMinute: { type: integer, minimum: 0, maximum: 1440 }
+    AdCreative:
+      type: object
+      required: [id, accountId, name, format, callToAction, mediaUrls, createdAt]
+      properties:
+        id: { type: integer }
+        accountId: { type: integer }
+        name: { type: string }
+        format: { type: string }
+        headline: { type: ["string", "null"] }
+        primaryText: { type: ["string", "null"] }
+        description: { type: ["string", "null"] }
+        callToAction: { type: string }
+        mediaUrls:
+          type: array
+          items: { type: string }
+        linkUrl: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    AdCreativeInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1 }
+        format: { type: string, enum: [single_image, video, carousel] }
+        headline: { type: string }
+        primaryText: { type: string }
+        description: { type: string }
+        callToAction:
+          type: string
+          enum:
+            [learn_more, shop_now, sign_up, book_now, contact_us, download, none]
+        mediaUrls:
+          type: array
+          items: { type: string }
+        linkUrl: { type: string }
+    AdCreativeUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        format: { type: string, enum: [single_image, video, carousel] }
+        headline: { type: string }
+        primaryText: { type: string }
+        description: { type: string }
+        callToAction:
+          type: string
+          enum:
+            [learn_more, shop_now, sign_up, book_now, contact_us, download, none]
+        mediaUrls:
+          type: array
+          items: { type: string }
+        linkUrl: { type: string }
+    Ad:
+      type: object
+      required: [id, adSetId, accountId, name, status, reviewStatus, createdAt]
+      properties:
+        id: { type: integer }
+        adSetId: { type: integer }
+        accountId: { type: integer }
+        creativeId: { type: ["integer", "null"] }
+        name: { type: string }
+        status: { type: string }
+        reviewStatus: { type: string, enum: [pending, approved, rejected] }
+        reviewNote: { type: ["string", "null"] }
+        destinationUrl: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    AdInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1 }
+        creativeId: { type: integer }
+        status: { type: string, enum: [draft, active, paused, archived] }
+        destinationUrl: { type: string }
+    AdUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        creativeId: { type: ["integer", "null"] }
+        status: { type: string, enum: [draft, active, paused, archived] }
+        destinationUrl: { type: string }
+    SavedAudience:
+      type: object
+      required: [id, accountId, name, spec, createdAt]
+      properties:
+        id: { type: integer }
+        accountId: { type: integer }
+        name: { type: string }
+        spec: { $ref: "#/components/schemas/AdTargetingSpec" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    SavedAudienceInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1 }
+        spec: { $ref: "#/components/schemas/AdTargetingSpec" }
+    SavedAudienceUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        spec: { $ref: "#/components/schemas/AdTargetingSpec" }
+    AdWallet:
+      type: object
+      required: [accountId, balanceCents, currency, transactions]
+      properties:
+        accountId: { type: integer }
+        balanceCents: { type: integer }
+        currency: { type: string }
+        transactions:
+          type: array
+          items: { $ref: "#/components/schemas/AdWalletTransaction" }
+    AdWalletTransaction:
+      type: object
+      required: [id, accountId, type, amountCents, currency, createdAt]
+      properties:
+        id: { type: integer }
+        accountId: { type: integer }
+        type: { type: string }
+        amountCents: { type: integer }
+        currency: { type: string }
+        balanceAfterCents: { type: ["integer", "null"] }
+        description: { type: ["string", "null"] }
+        referenceId: { type: ["string", "null"] }
+        couponId: { type: ["integer", "null"] }
+        createdAt: { type: string, format: date-time }
+    AdCoupon:
+      type: object
+      required: [id, code, amountCents, currency, status, createdAt]
+      properties:
+        id: { type: integer }
+        code: { type: string }
+        amountCents: { type: integer }
+        currency: { type: string }
+        status: { type: string }
+        accountId: { type: ["integer", "null"] }
+        redeemedBy: { type: ["string", "null"] }
+        redeemedAt: { type: ["string", "null"], format: date-time }
+        expiresAt: { type: ["string", "null"], format: date-time }
+        note: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
 
     SavedItem:
       type: object

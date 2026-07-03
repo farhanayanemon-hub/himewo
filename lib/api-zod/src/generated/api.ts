@@ -4638,6 +4638,1048 @@ export const DeleteMarketplaceListingParams = zod.object({
 export const DeleteMarketplaceListingResponse = zod.void()
 
 
+export const ListAdAccountsResponseItem = zod.object({
+  "id": zod.number(),
+  "ownerId": zod.string(),
+  "name": zod.string(),
+  "currency": zod.string(),
+  "timezone": zod.string(),
+  "balanceCents": zod.number(),
+  "status": zod.enum(['active', 'suspended', 'closed']),
+  "viewerRole": zod.union([zod.literal('admin'),zod.literal('advertiser'),zod.literal('analyst'),zod.literal(null)]).nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+export const ListAdAccountsResponse = zod.array(ListAdAccountsResponseItem)
+
+
+
+
+
+export const CreateAdAccountBody = zod.object({
+  "name": zod.string().min(1),
+  "currency": zod.string().optional(),
+  "timezone": zod.string().optional()
+})
+
+export const CreateAdAccountResponse = zod.object({
+  "id": zod.number(),
+  "ownerId": zod.string(),
+  "name": zod.string(),
+  "currency": zod.string(),
+  "timezone": zod.string(),
+  "balanceCents": zod.number(),
+  "status": zod.enum(['active', 'suspended', 'closed']),
+  "viewerRole": zod.union([zod.literal('admin'),zod.literal('advertiser'),zod.literal('analyst'),zod.literal(null)]).nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+export const GetAdAccountParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetAdAccountResponse = zod.object({
+  "id": zod.number(),
+  "ownerId": zod.string(),
+  "name": zod.string(),
+  "currency": zod.string(),
+  "timezone": zod.string(),
+  "balanceCents": zod.number(),
+  "status": zod.enum(['active', 'suspended', 'closed']),
+  "viewerRole": zod.union([zod.literal('admin'),zod.literal('advertiser'),zod.literal('analyst'),zod.literal(null)]).nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+export const UpdateAdAccountParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const UpdateAdAccountBody = zod.object({
+  "name": zod.string().min(1).optional(),
+  "currency": zod.string().optional(),
+  "timezone": zod.string().optional(),
+  "status": zod.enum(['active', 'suspended', 'closed']).optional()
+})
+
+export const UpdateAdAccountResponse = zod.object({
+  "id": zod.number(),
+  "ownerId": zod.string(),
+  "name": zod.string(),
+  "currency": zod.string(),
+  "timezone": zod.string(),
+  "balanceCents": zod.number(),
+  "status": zod.enum(['active', 'suspended', 'closed']),
+  "viewerRole": zod.union([zod.literal('admin'),zod.literal('advertiser'),zod.literal('analyst'),zod.literal(null)]).nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+export const ListAdAccountMembersParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListAdAccountMembersResponseItem = zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "userId": zod.string(),
+  "role": zod.enum(['admin', 'advertiser', 'analyst']),
+  "profile": zod.union([zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),zod.null()]).optional(),
+  "createdAt": zod.coerce.date()
+})
+export const ListAdAccountMembersResponse = zod.array(ListAdAccountMembersResponseItem)
+
+
+export const AddAdAccountMemberParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const AddAdAccountMemberBody = zod.object({
+  "userId": zod.string().min(1),
+  "role": zod.enum(['admin', 'advertiser', 'analyst'])
+})
+
+export const AddAdAccountMemberResponse = zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "userId": zod.string(),
+  "role": zod.enum(['admin', 'advertiser', 'analyst']),
+  "profile": zod.union([zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),zod.null()]).optional(),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const UpdateAdAccountMemberParams = zod.object({
+  "id": zod.coerce.number(),
+  "memberId": zod.coerce.number()
+})
+
+export const UpdateAdAccountMemberBody = zod.object({
+  "role": zod.enum(['admin', 'advertiser', 'analyst'])
+})
+
+export const UpdateAdAccountMemberResponse = zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "userId": zod.string(),
+  "role": zod.enum(['admin', 'advertiser', 'analyst']),
+  "profile": zod.union([zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),zod.null()]).optional(),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const RemoveAdAccountMemberParams = zod.object({
+  "id": zod.coerce.number(),
+  "memberId": zod.coerce.number()
+})
+
+export const RemoveAdAccountMemberResponse = zod.void()
+
+
+export const ListAdCampaignsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListAdCampaignsResponseItem = zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "name": zod.string(),
+  "objective": zod.string(),
+  "status": zod.string(),
+  "dailyBudgetCents": zod.number().nullish(),
+  "lifetimeBudgetCents": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+export const ListAdCampaignsResponse = zod.array(ListAdCampaignsResponseItem)
+
+
+export const CreateAdCampaignParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+export const createAdCampaignBodyDailyBudgetCentsMin = 0;
+
+export const createAdCampaignBodyLifetimeBudgetCentsMin = 0;
+
+
+
+export const CreateAdCampaignBody = zod.object({
+  "name": zod.string().min(1),
+  "objective": zod.enum(['awareness', 'traffic', 'engagement', 'leads', 'sales', 'app_promotion', 'page_boost', 'post_boost']).optional(),
+  "status": zod.enum(['draft', 'active', 'paused', 'completed', 'archived']).optional(),
+  "dailyBudgetCents": zod.number().min(createAdCampaignBodyDailyBudgetCentsMin).optional(),
+  "lifetimeBudgetCents": zod.number().min(createAdCampaignBodyLifetimeBudgetCentsMin).optional()
+})
+
+export const CreateAdCampaignResponse = zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "name": zod.string(),
+  "objective": zod.string(),
+  "status": zod.string(),
+  "dailyBudgetCents": zod.number().nullish(),
+  "lifetimeBudgetCents": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+export const GetAdCampaignParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetAdCampaignResponse = zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "name": zod.string(),
+  "objective": zod.string(),
+  "status": zod.string(),
+  "dailyBudgetCents": zod.number().nullish(),
+  "lifetimeBudgetCents": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+export const UpdateAdCampaignParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+export const updateAdCampaignBodyDailyBudgetCentsMin = 0;
+
+export const updateAdCampaignBodyLifetimeBudgetCentsMin = 0;
+
+
+
+export const UpdateAdCampaignBody = zod.object({
+  "name": zod.string().min(1).optional(),
+  "objective": zod.enum(['awareness', 'traffic', 'engagement', 'leads', 'sales', 'app_promotion', 'page_boost', 'post_boost']).optional(),
+  "status": zod.enum(['draft', 'active', 'paused', 'completed', 'archived']).optional(),
+  "dailyBudgetCents": zod.number().min(updateAdCampaignBodyDailyBudgetCentsMin).optional(),
+  "lifetimeBudgetCents": zod.number().min(updateAdCampaignBodyLifetimeBudgetCentsMin).optional()
+})
+
+export const UpdateAdCampaignResponse = zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "name": zod.string(),
+  "objective": zod.string(),
+  "status": zod.string(),
+  "dailyBudgetCents": zod.number().nullish(),
+  "lifetimeBudgetCents": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+export const DeleteAdCampaignParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteAdCampaignResponse = zod.void()
+
+
+export const ListAdSetsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListAdSetsResponseItem = zod.object({
+  "id": zod.number(),
+  "campaignId": zod.number(),
+  "accountId": zod.number(),
+  "name": zod.string(),
+  "status": zod.string(),
+  "dailyBudgetCents": zod.number().nullish(),
+  "lifetimeBudgetCents": zod.number().nullish(),
+  "billingEvent": zod.string(),
+  "optimizationGoal": zod.string(),
+  "savedAudienceId": zod.number().nullish(),
+  "startAt": zod.coerce.date().nullish(),
+  "endAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+export const ListAdSetsResponse = zod.array(ListAdSetsResponseItem)
+
+
+export const CreateAdSetParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+export const createAdSetBodyDailyBudgetCentsMin = 0;
+
+export const createAdSetBodyLifetimeBudgetCentsMin = 0;
+
+export const createAdSetBodyTargetingAgeMinMin = 13;
+export const createAdSetBodyTargetingAgeMinMax = 120;
+
+export const createAdSetBodyTargetingAgeMaxMin = 13;
+export const createAdSetBodyTargetingAgeMaxMax = 120;
+
+
+
+export const CreateAdSetBody = zod.object({
+  "name": zod.string().min(1),
+  "status": zod.enum(['draft', 'active', 'paused', 'completed', 'archived']).optional(),
+  "dailyBudgetCents": zod.number().min(createAdSetBodyDailyBudgetCentsMin).optional(),
+  "lifetimeBudgetCents": zod.number().min(createAdSetBodyLifetimeBudgetCentsMin).optional(),
+  "billingEvent": zod.enum(['impressions', 'clicks']).optional(),
+  "optimizationGoal": zod.enum(['reach', 'link_clicks', 'engagement', 'conversions']).optional(),
+  "savedAudienceId": zod.number().optional(),
+  "startAt": zod.coerce.date().optional(),
+  "endAt": zod.coerce.date().optional(),
+  "targeting": zod.object({
+  "locations": zod.array(zod.string()).optional(),
+  "ageMin": zod.number().min(createAdSetBodyTargetingAgeMinMin).max(createAdSetBodyTargetingAgeMinMax).optional(),
+  "ageMax": zod.number().min(createAdSetBodyTargetingAgeMaxMin).max(createAdSetBodyTargetingAgeMaxMax).optional(),
+  "genders": zod.array(zod.string()).optional(),
+  "interests": zod.array(zod.string()).optional(),
+  "languages": zod.array(zod.string()).optional(),
+  "custom": zod.record(zod.string(), zod.unknown()).optional()
+}).optional()
+})
+
+export const CreateAdSetResponse = zod.object({
+  "id": zod.number(),
+  "campaignId": zod.number(),
+  "accountId": zod.number(),
+  "name": zod.string(),
+  "status": zod.string(),
+  "dailyBudgetCents": zod.number().nullish(),
+  "lifetimeBudgetCents": zod.number().nullish(),
+  "billingEvent": zod.string(),
+  "optimizationGoal": zod.string(),
+  "savedAudienceId": zod.number().nullish(),
+  "startAt": zod.coerce.date().nullish(),
+  "endAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+export const GetAdSetParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetAdSetResponse = zod.object({
+  "id": zod.number(),
+  "campaignId": zod.number(),
+  "accountId": zod.number(),
+  "name": zod.string(),
+  "status": zod.string(),
+  "dailyBudgetCents": zod.number().nullish(),
+  "lifetimeBudgetCents": zod.number().nullish(),
+  "billingEvent": zod.string(),
+  "optimizationGoal": zod.string(),
+  "savedAudienceId": zod.number().nullish(),
+  "startAt": zod.coerce.date().nullish(),
+  "endAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+export const UpdateAdSetParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+export const updateAdSetBodyDailyBudgetCentsMin = 0;
+
+export const updateAdSetBodyLifetimeBudgetCentsMin = 0;
+
+
+
+export const UpdateAdSetBody = zod.object({
+  "name": zod.string().min(1).optional(),
+  "status": zod.enum(['draft', 'active', 'paused', 'completed', 'archived']).optional(),
+  "dailyBudgetCents": zod.number().min(updateAdSetBodyDailyBudgetCentsMin).optional(),
+  "lifetimeBudgetCents": zod.number().min(updateAdSetBodyLifetimeBudgetCentsMin).optional(),
+  "billingEvent": zod.enum(['impressions', 'clicks']).optional(),
+  "optimizationGoal": zod.enum(['reach', 'link_clicks', 'engagement', 'conversions']).optional(),
+  "savedAudienceId": zod.number().nullish(),
+  "startAt": zod.coerce.date().nullish(),
+  "endAt": zod.coerce.date().nullish()
+})
+
+export const UpdateAdSetResponse = zod.object({
+  "id": zod.number(),
+  "campaignId": zod.number(),
+  "accountId": zod.number(),
+  "name": zod.string(),
+  "status": zod.string(),
+  "dailyBudgetCents": zod.number().nullish(),
+  "lifetimeBudgetCents": zod.number().nullish(),
+  "billingEvent": zod.string(),
+  "optimizationGoal": zod.string(),
+  "savedAudienceId": zod.number().nullish(),
+  "startAt": zod.coerce.date().nullish(),
+  "endAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+export const DeleteAdSetParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteAdSetResponse = zod.void()
+
+
+export const GetAdSetTargetingParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetAdSetTargetingResponse = zod.object({
+  "id": zod.number(),
+  "adSetId": zod.number(),
+  "locations": zod.array(zod.string()),
+  "ageMin": zod.number().nullish(),
+  "ageMax": zod.number().nullish(),
+  "genders": zod.array(zod.string()),
+  "interests": zod.array(zod.string()),
+  "languages": zod.array(zod.string()),
+  "custom": zod.record(zod.string(), zod.unknown()).nullish()
+})
+
+
+export const SetAdSetTargetingParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const setAdSetTargetingBodyAgeMinMin = 13;
+export const setAdSetTargetingBodyAgeMinMax = 120;
+
+export const setAdSetTargetingBodyAgeMaxMin = 13;
+export const setAdSetTargetingBodyAgeMaxMax = 120;
+
+
+
+export const SetAdSetTargetingBody = zod.object({
+  "locations": zod.array(zod.string()).optional(),
+  "ageMin": zod.number().min(setAdSetTargetingBodyAgeMinMin).max(setAdSetTargetingBodyAgeMinMax).optional(),
+  "ageMax": zod.number().min(setAdSetTargetingBodyAgeMaxMin).max(setAdSetTargetingBodyAgeMaxMax).optional(),
+  "genders": zod.array(zod.string()).optional(),
+  "interests": zod.array(zod.string()).optional(),
+  "languages": zod.array(zod.string()).optional(),
+  "custom": zod.record(zod.string(), zod.unknown()).optional()
+})
+
+export const SetAdSetTargetingResponse = zod.object({
+  "id": zod.number(),
+  "adSetId": zod.number(),
+  "locations": zod.array(zod.string()),
+  "ageMin": zod.number().nullish(),
+  "ageMax": zod.number().nullish(),
+  "genders": zod.array(zod.string()),
+  "interests": zod.array(zod.string()),
+  "languages": zod.array(zod.string()),
+  "custom": zod.record(zod.string(), zod.unknown()).nullish()
+})
+
+
+export const ListAdSchedulesParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListAdSchedulesResponseItem = zod.object({
+  "id": zod.number(),
+  "adSetId": zod.number(),
+  "dayOfWeek": zod.number().nullish(),
+  "startMinute": zod.number(),
+  "endMinute": zod.number(),
+  "createdAt": zod.coerce.date()
+})
+export const ListAdSchedulesResponse = zod.array(ListAdSchedulesResponseItem)
+
+
+export const SetAdSchedulesParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const setAdSchedulesBodyDayOfWeekMin = 0;
+export const setAdSchedulesBodyDayOfWeekMax = 6;
+
+export const setAdSchedulesBodyStartMinuteMin = 0;
+export const setAdSchedulesBodyStartMinuteMax = 1440;
+
+export const setAdSchedulesBodyEndMinuteMin = 0;
+export const setAdSchedulesBodyEndMinuteMax = 1440;
+
+
+
+export const SetAdSchedulesBodyItem = zod.object({
+  "dayOfWeek": zod.number().min(setAdSchedulesBodyDayOfWeekMin).max(setAdSchedulesBodyDayOfWeekMax).optional(),
+  "startMinute": zod.number().min(setAdSchedulesBodyStartMinuteMin).max(setAdSchedulesBodyStartMinuteMax),
+  "endMinute": zod.number().min(setAdSchedulesBodyEndMinuteMin).max(setAdSchedulesBodyEndMinuteMax)
+})
+export const SetAdSchedulesBody = zod.array(SetAdSchedulesBodyItem)
+
+export const SetAdSchedulesResponseItem = zod.object({
+  "id": zod.number(),
+  "adSetId": zod.number(),
+  "dayOfWeek": zod.number().nullish(),
+  "startMinute": zod.number(),
+  "endMinute": zod.number(),
+  "createdAt": zod.coerce.date()
+})
+export const SetAdSchedulesResponse = zod.array(SetAdSchedulesResponseItem)
+
+
+export const ListAdsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListAdsResponseItem = zod.object({
+  "id": zod.number(),
+  "adSetId": zod.number(),
+  "accountId": zod.number(),
+  "creativeId": zod.number().nullish(),
+  "name": zod.string(),
+  "status": zod.string(),
+  "reviewStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "reviewNote": zod.string().nullish(),
+  "destinationUrl": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+export const ListAdsResponse = zod.array(ListAdsResponseItem)
+
+
+export const CreateAdParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const CreateAdBody = zod.object({
+  "name": zod.string().min(1),
+  "creativeId": zod.number().optional(),
+  "status": zod.enum(['draft', 'active', 'paused', 'archived']).optional(),
+  "destinationUrl": zod.string().optional()
+})
+
+export const CreateAdResponse = zod.object({
+  "id": zod.number(),
+  "adSetId": zod.number(),
+  "accountId": zod.number(),
+  "creativeId": zod.number().nullish(),
+  "name": zod.string(),
+  "status": zod.string(),
+  "reviewStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "reviewNote": zod.string().nullish(),
+  "destinationUrl": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+export const GetAdParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetAdResponse = zod.object({
+  "id": zod.number(),
+  "adSetId": zod.number(),
+  "accountId": zod.number(),
+  "creativeId": zod.number().nullish(),
+  "name": zod.string(),
+  "status": zod.string(),
+  "reviewStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "reviewNote": zod.string().nullish(),
+  "destinationUrl": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+export const UpdateAdParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const UpdateAdBody = zod.object({
+  "name": zod.string().min(1).optional(),
+  "creativeId": zod.number().nullish(),
+  "status": zod.enum(['draft', 'active', 'paused', 'archived']).optional(),
+  "destinationUrl": zod.string().optional()
+})
+
+export const UpdateAdResponse = zod.object({
+  "id": zod.number(),
+  "adSetId": zod.number(),
+  "accountId": zod.number(),
+  "creativeId": zod.number().nullish(),
+  "name": zod.string(),
+  "status": zod.string(),
+  "reviewStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "reviewNote": zod.string().nullish(),
+  "destinationUrl": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+export const DeleteAdParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteAdResponse = zod.void()
+
+
+export const SubmitAdForReviewParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const SubmitAdForReviewResponse = zod.object({
+  "id": zod.number(),
+  "adSetId": zod.number(),
+  "accountId": zod.number(),
+  "creativeId": zod.number().nullish(),
+  "name": zod.string(),
+  "status": zod.string(),
+  "reviewStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "reviewNote": zod.string().nullish(),
+  "destinationUrl": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+export const ListAdCreativesParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListAdCreativesResponseItem = zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "name": zod.string(),
+  "format": zod.string(),
+  "headline": zod.string().nullish(),
+  "primaryText": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "callToAction": zod.string(),
+  "mediaUrls": zod.array(zod.string()),
+  "linkUrl": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+export const ListAdCreativesResponse = zod.array(ListAdCreativesResponseItem)
+
+
+export const CreateAdCreativeParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const CreateAdCreativeBody = zod.object({
+  "name": zod.string().min(1),
+  "format": zod.enum(['single_image', 'video', 'carousel']).optional(),
+  "headline": zod.string().optional(),
+  "primaryText": zod.string().optional(),
+  "description": zod.string().optional(),
+  "callToAction": zod.enum(['learn_more', 'shop_now', 'sign_up', 'book_now', 'contact_us', 'download', 'none']).optional(),
+  "mediaUrls": zod.array(zod.string()).optional(),
+  "linkUrl": zod.string().optional()
+})
+
+export const CreateAdCreativeResponse = zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "name": zod.string(),
+  "format": zod.string(),
+  "headline": zod.string().nullish(),
+  "primaryText": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "callToAction": zod.string(),
+  "mediaUrls": zod.array(zod.string()),
+  "linkUrl": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+export const GetAdCreativeParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetAdCreativeResponse = zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "name": zod.string(),
+  "format": zod.string(),
+  "headline": zod.string().nullish(),
+  "primaryText": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "callToAction": zod.string(),
+  "mediaUrls": zod.array(zod.string()),
+  "linkUrl": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+export const UpdateAdCreativeParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const UpdateAdCreativeBody = zod.object({
+  "name": zod.string().min(1).optional(),
+  "format": zod.enum(['single_image', 'video', 'carousel']).optional(),
+  "headline": zod.string().optional(),
+  "primaryText": zod.string().optional(),
+  "description": zod.string().optional(),
+  "callToAction": zod.enum(['learn_more', 'shop_now', 'sign_up', 'book_now', 'contact_us', 'download', 'none']).optional(),
+  "mediaUrls": zod.array(zod.string()).optional(),
+  "linkUrl": zod.string().optional()
+})
+
+export const UpdateAdCreativeResponse = zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "name": zod.string(),
+  "format": zod.string(),
+  "headline": zod.string().nullish(),
+  "primaryText": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "callToAction": zod.string(),
+  "mediaUrls": zod.array(zod.string()),
+  "linkUrl": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+export const DeleteAdCreativeParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteAdCreativeResponse = zod.void()
+
+
+export const ListSavedAudiencesParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const listSavedAudiencesResponseSpecAgeMinMin = 13;
+export const listSavedAudiencesResponseSpecAgeMinMax = 120;
+
+export const listSavedAudiencesResponseSpecAgeMaxMin = 13;
+export const listSavedAudiencesResponseSpecAgeMaxMax = 120;
+
+
+
+export const ListSavedAudiencesResponseItem = zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "name": zod.string(),
+  "spec": zod.object({
+  "locations": zod.array(zod.string()).optional(),
+  "ageMin": zod.number().min(listSavedAudiencesResponseSpecAgeMinMin).max(listSavedAudiencesResponseSpecAgeMinMax).optional(),
+  "ageMax": zod.number().min(listSavedAudiencesResponseSpecAgeMaxMin).max(listSavedAudiencesResponseSpecAgeMaxMax).optional(),
+  "genders": zod.array(zod.string()).optional(),
+  "interests": zod.array(zod.string()).optional(),
+  "languages": zod.array(zod.string()).optional(),
+  "custom": zod.record(zod.string(), zod.unknown()).optional()
+}),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+export const ListSavedAudiencesResponse = zod.array(ListSavedAudiencesResponseItem)
+
+
+export const CreateSavedAudienceParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+export const createSavedAudienceBodySpecAgeMinMin = 13;
+export const createSavedAudienceBodySpecAgeMinMax = 120;
+
+export const createSavedAudienceBodySpecAgeMaxMin = 13;
+export const createSavedAudienceBodySpecAgeMaxMax = 120;
+
+
+
+export const CreateSavedAudienceBody = zod.object({
+  "name": zod.string().min(1),
+  "spec": zod.object({
+  "locations": zod.array(zod.string()).optional(),
+  "ageMin": zod.number().min(createSavedAudienceBodySpecAgeMinMin).max(createSavedAudienceBodySpecAgeMinMax).optional(),
+  "ageMax": zod.number().min(createSavedAudienceBodySpecAgeMaxMin).max(createSavedAudienceBodySpecAgeMaxMax).optional(),
+  "genders": zod.array(zod.string()).optional(),
+  "interests": zod.array(zod.string()).optional(),
+  "languages": zod.array(zod.string()).optional(),
+  "custom": zod.record(zod.string(), zod.unknown()).optional()
+}).optional()
+})
+
+export const createSavedAudienceResponseSpecAgeMinMin = 13;
+export const createSavedAudienceResponseSpecAgeMinMax = 120;
+
+export const createSavedAudienceResponseSpecAgeMaxMin = 13;
+export const createSavedAudienceResponseSpecAgeMaxMax = 120;
+
+
+
+export const CreateSavedAudienceResponse = zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "name": zod.string(),
+  "spec": zod.object({
+  "locations": zod.array(zod.string()).optional(),
+  "ageMin": zod.number().min(createSavedAudienceResponseSpecAgeMinMin).max(createSavedAudienceResponseSpecAgeMinMax).optional(),
+  "ageMax": zod.number().min(createSavedAudienceResponseSpecAgeMaxMin).max(createSavedAudienceResponseSpecAgeMaxMax).optional(),
+  "genders": zod.array(zod.string()).optional(),
+  "interests": zod.array(zod.string()).optional(),
+  "languages": zod.array(zod.string()).optional(),
+  "custom": zod.record(zod.string(), zod.unknown()).optional()
+}),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+export const UpdateSavedAudienceParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+export const updateSavedAudienceBodySpecAgeMinMin = 13;
+export const updateSavedAudienceBodySpecAgeMinMax = 120;
+
+export const updateSavedAudienceBodySpecAgeMaxMin = 13;
+export const updateSavedAudienceBodySpecAgeMaxMax = 120;
+
+
+
+export const UpdateSavedAudienceBody = zod.object({
+  "name": zod.string().min(1).optional(),
+  "spec": zod.object({
+  "locations": zod.array(zod.string()).optional(),
+  "ageMin": zod.number().min(updateSavedAudienceBodySpecAgeMinMin).max(updateSavedAudienceBodySpecAgeMinMax).optional(),
+  "ageMax": zod.number().min(updateSavedAudienceBodySpecAgeMaxMin).max(updateSavedAudienceBodySpecAgeMaxMax).optional(),
+  "genders": zod.array(zod.string()).optional(),
+  "interests": zod.array(zod.string()).optional(),
+  "languages": zod.array(zod.string()).optional(),
+  "custom": zod.record(zod.string(), zod.unknown()).optional()
+}).optional()
+})
+
+export const updateSavedAudienceResponseSpecAgeMinMin = 13;
+export const updateSavedAudienceResponseSpecAgeMinMax = 120;
+
+export const updateSavedAudienceResponseSpecAgeMaxMin = 13;
+export const updateSavedAudienceResponseSpecAgeMaxMax = 120;
+
+
+
+export const UpdateSavedAudienceResponse = zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "name": zod.string(),
+  "spec": zod.object({
+  "locations": zod.array(zod.string()).optional(),
+  "ageMin": zod.number().min(updateSavedAudienceResponseSpecAgeMinMin).max(updateSavedAudienceResponseSpecAgeMinMax).optional(),
+  "ageMax": zod.number().min(updateSavedAudienceResponseSpecAgeMaxMin).max(updateSavedAudienceResponseSpecAgeMaxMax).optional(),
+  "genders": zod.array(zod.string()).optional(),
+  "interests": zod.array(zod.string()).optional(),
+  "languages": zod.array(zod.string()).optional(),
+  "custom": zod.record(zod.string(), zod.unknown()).optional()
+}),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+export const DeleteSavedAudienceParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteSavedAudienceResponse = zod.void()
+
+
+export const GetAdWalletParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetAdWalletResponse = zod.object({
+  "accountId": zod.number(),
+  "balanceCents": zod.number(),
+  "currency": zod.string(),
+  "transactions": zod.array(zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "type": zod.string(),
+  "amountCents": zod.number(),
+  "currency": zod.string(),
+  "balanceAfterCents": zod.number().nullish(),
+  "description": zod.string().nullish(),
+  "referenceId": zod.string().nullish(),
+  "couponId": zod.number().nullish(),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+export const ListAdWalletTransactionsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListAdWalletTransactionsResponseItem = zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "type": zod.string(),
+  "amountCents": zod.number(),
+  "currency": zod.string(),
+  "balanceAfterCents": zod.number().nullish(),
+  "description": zod.string().nullish(),
+  "referenceId": zod.string().nullish(),
+  "couponId": zod.number().nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const ListAdWalletTransactionsResponse = zod.array(ListAdWalletTransactionsResponseItem)
+
+
+export const ListAdCouponsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListAdCouponsResponseItem = zod.object({
+  "id": zod.number(),
+  "code": zod.string(),
+  "amountCents": zod.number(),
+  "currency": zod.string(),
+  "status": zod.string(),
+  "accountId": zod.number().nullish(),
+  "redeemedBy": zod.string().nullish(),
+  "redeemedAt": zod.coerce.date().nullish(),
+  "expiresAt": zod.coerce.date().nullish(),
+  "note": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const ListAdCouponsResponse = zod.array(ListAdCouponsResponseItem)
+
+
 export const listPagesResponseViewerReviewOneRatingMax = 5;
 
 

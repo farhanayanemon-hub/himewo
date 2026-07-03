@@ -976,6 +976,593 @@ export interface SellingOverview {
   listings: MarketplaceListing[];
 }
 
+export type AdAccountStatus = typeof AdAccountStatus[keyof typeof AdAccountStatus];
+
+
+export const AdAccountStatus = {
+  active: 'active',
+  suspended: 'suspended',
+  closed: 'closed',
+} as const;
+
+/**
+ * @nullable
+ */
+export type AdAccountViewerRole = typeof AdAccountViewerRole[keyof typeof AdAccountViewerRole] | null;
+
+
+export const AdAccountViewerRole = {
+  admin: 'admin',
+  advertiser: 'advertiser',
+  analyst: 'analyst',
+} as const;
+
+export interface AdAccount {
+  id: number;
+  ownerId: string;
+  name: string;
+  currency: string;
+  timezone: string;
+  balanceCents: number;
+  status: AdAccountStatus;
+  /** @nullable */
+  viewerRole?: AdAccountViewerRole;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface AdAccountInput {
+  /** @minLength 1 */
+  name: string;
+  currency?: string;
+  timezone?: string;
+}
+
+export type AdAccountUpdateStatus = typeof AdAccountUpdateStatus[keyof typeof AdAccountUpdateStatus];
+
+
+export const AdAccountUpdateStatus = {
+  active: 'active',
+  suspended: 'suspended',
+  closed: 'closed',
+} as const;
+
+export interface AdAccountUpdate {
+  /** @minLength 1 */
+  name?: string;
+  currency?: string;
+  timezone?: string;
+  status?: AdAccountUpdateStatus;
+}
+
+export type AdAccountMemberRole = typeof AdAccountMemberRole[keyof typeof AdAccountMemberRole];
+
+
+export const AdAccountMemberRole = {
+  admin: 'admin',
+  advertiser: 'advertiser',
+  analyst: 'analyst',
+} as const;
+
+export interface AdAccountMember {
+  id: number;
+  accountId: number;
+  userId: string;
+  role: AdAccountMemberRole;
+  profile?: Profile | null;
+  createdAt: string;
+}
+
+export type AdAccountMemberInputRole = typeof AdAccountMemberInputRole[keyof typeof AdAccountMemberInputRole];
+
+
+export const AdAccountMemberInputRole = {
+  admin: 'admin',
+  advertiser: 'advertiser',
+  analyst: 'analyst',
+} as const;
+
+export interface AdAccountMemberInput {
+  /** @minLength 1 */
+  userId: string;
+  role: AdAccountMemberInputRole;
+}
+
+export type AdAccountMemberUpdateRole = typeof AdAccountMemberUpdateRole[keyof typeof AdAccountMemberUpdateRole];
+
+
+export const AdAccountMemberUpdateRole = {
+  admin: 'admin',
+  advertiser: 'advertiser',
+  analyst: 'analyst',
+} as const;
+
+export interface AdAccountMemberUpdate {
+  role: AdAccountMemberUpdateRole;
+}
+
+export interface AdCampaign {
+  id: number;
+  accountId: number;
+  name: string;
+  objective: string;
+  status: string;
+  /** @nullable */
+  dailyBudgetCents?: number | null;
+  /** @nullable */
+  lifetimeBudgetCents?: number | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export type AdCampaignInputObjective = typeof AdCampaignInputObjective[keyof typeof AdCampaignInputObjective];
+
+
+export const AdCampaignInputObjective = {
+  awareness: 'awareness',
+  traffic: 'traffic',
+  engagement: 'engagement',
+  leads: 'leads',
+  sales: 'sales',
+  app_promotion: 'app_promotion',
+  page_boost: 'page_boost',
+  post_boost: 'post_boost',
+} as const;
+
+export type AdCampaignInputStatus = typeof AdCampaignInputStatus[keyof typeof AdCampaignInputStatus];
+
+
+export const AdCampaignInputStatus = {
+  draft: 'draft',
+  active: 'active',
+  paused: 'paused',
+  completed: 'completed',
+  archived: 'archived',
+} as const;
+
+export interface AdCampaignInput {
+  /** @minLength 1 */
+  name: string;
+  objective?: AdCampaignInputObjective;
+  status?: AdCampaignInputStatus;
+  /** @minimum 0 */
+  dailyBudgetCents?: number;
+  /** @minimum 0 */
+  lifetimeBudgetCents?: number;
+}
+
+export type AdCampaignUpdateObjective = typeof AdCampaignUpdateObjective[keyof typeof AdCampaignUpdateObjective];
+
+
+export const AdCampaignUpdateObjective = {
+  awareness: 'awareness',
+  traffic: 'traffic',
+  engagement: 'engagement',
+  leads: 'leads',
+  sales: 'sales',
+  app_promotion: 'app_promotion',
+  page_boost: 'page_boost',
+  post_boost: 'post_boost',
+} as const;
+
+export type AdCampaignUpdateStatus = typeof AdCampaignUpdateStatus[keyof typeof AdCampaignUpdateStatus];
+
+
+export const AdCampaignUpdateStatus = {
+  draft: 'draft',
+  active: 'active',
+  paused: 'paused',
+  completed: 'completed',
+  archived: 'archived',
+} as const;
+
+export interface AdCampaignUpdate {
+  /** @minLength 1 */
+  name?: string;
+  objective?: AdCampaignUpdateObjective;
+  status?: AdCampaignUpdateStatus;
+  /** @minimum 0 */
+  dailyBudgetCents?: number;
+  /** @minimum 0 */
+  lifetimeBudgetCents?: number;
+}
+
+export interface AdSet {
+  id: number;
+  campaignId: number;
+  accountId: number;
+  name: string;
+  status: string;
+  /** @nullable */
+  dailyBudgetCents?: number | null;
+  /** @nullable */
+  lifetimeBudgetCents?: number | null;
+  billingEvent: string;
+  optimizationGoal: string;
+  /** @nullable */
+  savedAudienceId?: number | null;
+  /** @nullable */
+  startAt?: string | null;
+  /** @nullable */
+  endAt?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export type AdSetInputStatus = typeof AdSetInputStatus[keyof typeof AdSetInputStatus];
+
+
+export const AdSetInputStatus = {
+  draft: 'draft',
+  active: 'active',
+  paused: 'paused',
+  completed: 'completed',
+  archived: 'archived',
+} as const;
+
+export type AdSetInputBillingEvent = typeof AdSetInputBillingEvent[keyof typeof AdSetInputBillingEvent];
+
+
+export const AdSetInputBillingEvent = {
+  impressions: 'impressions',
+  clicks: 'clicks',
+} as const;
+
+export type AdSetInputOptimizationGoal = typeof AdSetInputOptimizationGoal[keyof typeof AdSetInputOptimizationGoal];
+
+
+export const AdSetInputOptimizationGoal = {
+  reach: 'reach',
+  link_clicks: 'link_clicks',
+  engagement: 'engagement',
+  conversions: 'conversions',
+} as const;
+
+export type AdTargetingSpecCustom = { [key: string]: unknown };
+
+export interface AdTargetingSpec {
+  locations?: string[];
+  /**
+     * @minimum 13
+     * @maximum 120
+     */
+  ageMin?: number;
+  /**
+     * @minimum 13
+     * @maximum 120
+     */
+  ageMax?: number;
+  genders?: string[];
+  interests?: string[];
+  languages?: string[];
+  custom?: AdTargetingSpecCustom;
+}
+
+export interface AdSetInput {
+  /** @minLength 1 */
+  name: string;
+  status?: AdSetInputStatus;
+  /** @minimum 0 */
+  dailyBudgetCents?: number;
+  /** @minimum 0 */
+  lifetimeBudgetCents?: number;
+  billingEvent?: AdSetInputBillingEvent;
+  optimizationGoal?: AdSetInputOptimizationGoal;
+  savedAudienceId?: number;
+  startAt?: string;
+  endAt?: string;
+  targeting?: AdTargetingSpec;
+}
+
+export type AdSetUpdateStatus = typeof AdSetUpdateStatus[keyof typeof AdSetUpdateStatus];
+
+
+export const AdSetUpdateStatus = {
+  draft: 'draft',
+  active: 'active',
+  paused: 'paused',
+  completed: 'completed',
+  archived: 'archived',
+} as const;
+
+export type AdSetUpdateBillingEvent = typeof AdSetUpdateBillingEvent[keyof typeof AdSetUpdateBillingEvent];
+
+
+export const AdSetUpdateBillingEvent = {
+  impressions: 'impressions',
+  clicks: 'clicks',
+} as const;
+
+export type AdSetUpdateOptimizationGoal = typeof AdSetUpdateOptimizationGoal[keyof typeof AdSetUpdateOptimizationGoal];
+
+
+export const AdSetUpdateOptimizationGoal = {
+  reach: 'reach',
+  link_clicks: 'link_clicks',
+  engagement: 'engagement',
+  conversions: 'conversions',
+} as const;
+
+export interface AdSetUpdate {
+  /** @minLength 1 */
+  name?: string;
+  status?: AdSetUpdateStatus;
+  /** @minimum 0 */
+  dailyBudgetCents?: number;
+  /** @minimum 0 */
+  lifetimeBudgetCents?: number;
+  billingEvent?: AdSetUpdateBillingEvent;
+  optimizationGoal?: AdSetUpdateOptimizationGoal;
+  /** @nullable */
+  savedAudienceId?: number | null;
+  /** @nullable */
+  startAt?: string | null;
+  /** @nullable */
+  endAt?: string | null;
+}
+
+/**
+ * @nullable
+ */
+export type AdTargetingCustom = { [key: string]: unknown } | null;
+
+export interface AdTargeting {
+  id: number;
+  adSetId: number;
+  locations: string[];
+  /** @nullable */
+  ageMin?: number | null;
+  /** @nullable */
+  ageMax?: number | null;
+  genders: string[];
+  interests: string[];
+  languages: string[];
+  /** @nullable */
+  custom?: AdTargetingCustom;
+}
+
+export interface AdSchedule {
+  id: number;
+  adSetId: number;
+  /** @nullable */
+  dayOfWeek?: number | null;
+  startMinute: number;
+  endMinute: number;
+  createdAt: string;
+}
+
+export interface AdScheduleInput {
+  /**
+     * @minimum 0
+     * @maximum 6
+     */
+  dayOfWeek?: number;
+  /**
+     * @minimum 0
+     * @maximum 1440
+     */
+  startMinute: number;
+  /**
+     * @minimum 0
+     * @maximum 1440
+     */
+  endMinute: number;
+}
+
+export interface AdCreative {
+  id: number;
+  accountId: number;
+  name: string;
+  format: string;
+  /** @nullable */
+  headline?: string | null;
+  /** @nullable */
+  primaryText?: string | null;
+  /** @nullable */
+  description?: string | null;
+  callToAction: string;
+  mediaUrls: string[];
+  /** @nullable */
+  linkUrl?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export type AdCreativeInputFormat = typeof AdCreativeInputFormat[keyof typeof AdCreativeInputFormat];
+
+
+export const AdCreativeInputFormat = {
+  single_image: 'single_image',
+  video: 'video',
+  carousel: 'carousel',
+} as const;
+
+export type AdCreativeInputCallToAction = typeof AdCreativeInputCallToAction[keyof typeof AdCreativeInputCallToAction];
+
+
+export const AdCreativeInputCallToAction = {
+  learn_more: 'learn_more',
+  shop_now: 'shop_now',
+  sign_up: 'sign_up',
+  book_now: 'book_now',
+  contact_us: 'contact_us',
+  download: 'download',
+  none: 'none',
+} as const;
+
+export interface AdCreativeInput {
+  /** @minLength 1 */
+  name: string;
+  format?: AdCreativeInputFormat;
+  headline?: string;
+  primaryText?: string;
+  description?: string;
+  callToAction?: AdCreativeInputCallToAction;
+  mediaUrls?: string[];
+  linkUrl?: string;
+}
+
+export type AdCreativeUpdateFormat = typeof AdCreativeUpdateFormat[keyof typeof AdCreativeUpdateFormat];
+
+
+export const AdCreativeUpdateFormat = {
+  single_image: 'single_image',
+  video: 'video',
+  carousel: 'carousel',
+} as const;
+
+export type AdCreativeUpdateCallToAction = typeof AdCreativeUpdateCallToAction[keyof typeof AdCreativeUpdateCallToAction];
+
+
+export const AdCreativeUpdateCallToAction = {
+  learn_more: 'learn_more',
+  shop_now: 'shop_now',
+  sign_up: 'sign_up',
+  book_now: 'book_now',
+  contact_us: 'contact_us',
+  download: 'download',
+  none: 'none',
+} as const;
+
+export interface AdCreativeUpdate {
+  /** @minLength 1 */
+  name?: string;
+  format?: AdCreativeUpdateFormat;
+  headline?: string;
+  primaryText?: string;
+  description?: string;
+  callToAction?: AdCreativeUpdateCallToAction;
+  mediaUrls?: string[];
+  linkUrl?: string;
+}
+
+export type AdReviewStatus = typeof AdReviewStatus[keyof typeof AdReviewStatus];
+
+
+export const AdReviewStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface Ad {
+  id: number;
+  adSetId: number;
+  accountId: number;
+  /** @nullable */
+  creativeId?: number | null;
+  name: string;
+  status: string;
+  reviewStatus: AdReviewStatus;
+  /** @nullable */
+  reviewNote?: string | null;
+  /** @nullable */
+  destinationUrl?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export type AdInputStatus = typeof AdInputStatus[keyof typeof AdInputStatus];
+
+
+export const AdInputStatus = {
+  draft: 'draft',
+  active: 'active',
+  paused: 'paused',
+  archived: 'archived',
+} as const;
+
+export interface AdInput {
+  /** @minLength 1 */
+  name: string;
+  creativeId?: number;
+  status?: AdInputStatus;
+  destinationUrl?: string;
+}
+
+export type AdUpdateStatus = typeof AdUpdateStatus[keyof typeof AdUpdateStatus];
+
+
+export const AdUpdateStatus = {
+  draft: 'draft',
+  active: 'active',
+  paused: 'paused',
+  archived: 'archived',
+} as const;
+
+export interface AdUpdate {
+  /** @minLength 1 */
+  name?: string;
+  /** @nullable */
+  creativeId?: number | null;
+  status?: AdUpdateStatus;
+  destinationUrl?: string;
+}
+
+export interface SavedAudience {
+  id: number;
+  accountId: number;
+  name: string;
+  spec: AdTargetingSpec;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface SavedAudienceInput {
+  /** @minLength 1 */
+  name: string;
+  spec?: AdTargetingSpec;
+}
+
+export interface SavedAudienceUpdate {
+  /** @minLength 1 */
+  name?: string;
+  spec?: AdTargetingSpec;
+}
+
+export interface AdWalletTransaction {
+  id: number;
+  accountId: number;
+  type: string;
+  amountCents: number;
+  currency: string;
+  /** @nullable */
+  balanceAfterCents?: number | null;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  referenceId?: string | null;
+  /** @nullable */
+  couponId?: number | null;
+  createdAt: string;
+}
+
+export interface AdWallet {
+  accountId: number;
+  balanceCents: number;
+  currency: string;
+  transactions: AdWalletTransaction[];
+}
+
+export interface AdCoupon {
+  id: number;
+  code: string;
+  amountCents: number;
+  currency: string;
+  status: string;
+  /** @nullable */
+  accountId?: number | null;
+  /** @nullable */
+  redeemedBy?: string | null;
+  /** @nullable */
+  redeemedAt?: string | null;
+  /** @nullable */
+  expiresAt?: string | null;
+  /** @nullable */
+  note?: string | null;
+  createdAt: string;
+}
+
 export type SavedItemEntityType = typeof SavedItemEntityType[keyof typeof SavedItemEntityType];
 
 
