@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Linking, Pressable, Text, View, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
-  useRecordAdImpression,
   useRecordAdClick,
   type ServedAd,
 } from "@workspace/api-client-react";
@@ -27,19 +26,7 @@ function safeUrl(url: string | null | undefined): string | null {
 
 export function SponsoredCard({ ad }: { ad: ServedAd }) {
   const c = useColors();
-  const recordImpression = useRecordAdImpression();
   const recordClick = useRecordAdClick();
-  const seen = useRef(false);
-
-  useEffect(() => {
-    if (seen.current) return;
-    seen.current = true;
-    recordImpression.mutate({
-      id: ad.adId,
-      data: { placement: ad.placement as never },
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ad.adId]);
 
   const [pressed] = useState(false);
   const destination =

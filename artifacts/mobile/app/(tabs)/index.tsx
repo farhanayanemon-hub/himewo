@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -16,9 +16,11 @@ import {
   getGetFeedQueryKey,
   useGetTodaysBirthdays,
   useServeAds,
+  useRecordAdImpression,
   type Post,
   type ServedAd,
 } from "@workspace/api-client-react";
+import type { ViewToken } from "react-native";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Avatar } from "@/components/Avatar";
 import { PostCard } from "@/components/PostCard";
@@ -68,6 +70,26 @@ export default function HomeScreen() {
     feedItems.push({ kind: "post", post });
   });
 
+  const recordImpression = useRecordAdImpression();
+  const impressionFnRef = useRef(recordImpression);
+  impressionFnRef.current = recordImpression;
+  const seenAds = useRef<Set<number>>(new Set());
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
+  const onViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      for (const vi of viewableItems) {
+        const item = vi.item as FeedItem;
+        if (item.kind === "ad" && !seenAds.current.has(item.ad.adId)) {
+          seenAds.current.add(item.ad.adId);
+          impressionFnRef.current.mutate({
+            id: item.ad.adId,
+            data: { placement: item.ad.placement as never },
+          });
+        }
+      }
+    },
+  ).current;
+
   const onRefresh = useCallback(() => {
     qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
     refetch();
@@ -114,6 +136,8 @@ export default function HomeScreen() {
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={onRefresh} tintColor={c.primary} />
           }
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
           onEndReached={onEndReached}
           onEndReachedThreshold={0.5}
           ListFooterComponent={
