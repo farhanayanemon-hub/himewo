@@ -56,8 +56,11 @@ import type {
   AlbumInput,
   AlbumPhoto,
   BadRequestResponse,
+  BillingSettings,
+  BillingSettingsUpdate,
   BoostPageInput,
   BoostPostInput,
+  CheckoutSession,
   Comment,
   CommentInput,
   CommentUpdate,
@@ -129,6 +132,8 @@ import type {
   ReactionSummary,
   ReactionUser,
   ReadInput,
+  RedeemCouponInput,
+  RedeemCouponResult,
   Reel,
   ReelComment,
   ReelCommentInput,
@@ -136,12 +141,14 @@ import type {
   SavedAudience,
   SavedAudienceInput,
   SavedAudienceUpdate,
+  SavedCard,
   SavedItem,
   SavedItemInput,
   SearchUsersParams,
   SellingOverview,
   ServeAdsParams,
   ServedAd,
+  SetDefaultCardInput,
   SetMemberRoleInput,
   ShareInput,
   Story,
@@ -153,6 +160,7 @@ import type {
   UploadUrlResponse,
   UserSettings,
   UserSettingsUpdate,
+  WalletTopupInput,
   WithdrawalAccount,
   WithdrawalAccountInput,
   WithdrawalRequest,
@@ -9976,6 +9984,538 @@ export function useListAdCoupons<TData = Awaited<ReturnType<typeof listAdCoupons
 
 
 
+
+export const getRedeemCouponUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-accounts/${id}/coupons/redeem`
+}
+
+export const redeemCoupon = async (id: number,
+    redeemCouponInput: RedeemCouponInput, options?: RequestInit): Promise<RedeemCouponResult> => {
+
+  return customFetch<RedeemCouponResult>(getRedeemCouponUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(redeemCouponInput)
+  }
+);}
+
+
+
+
+export const getRedeemCouponMutationOptions = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof redeemCoupon>>, TError,{id: number;data: BodyType<RedeemCouponInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof redeemCoupon>>, TError,{id: number;data: BodyType<RedeemCouponInput>}, TContext> => {
+
+const mutationKey = ['redeemCoupon'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof redeemCoupon>>, {id: number;data: BodyType<RedeemCouponInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  redeemCoupon(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RedeemCouponMutationResult = NonNullable<Awaited<ReturnType<typeof redeemCoupon>>>
+    export type RedeemCouponMutationBody = BodyType<RedeemCouponInput>
+    export type RedeemCouponMutationError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>
+
+    export const useRedeemCoupon = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof redeemCoupon>>, TError,{id: number;data: BodyType<RedeemCouponInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof redeemCoupon>>,
+        TError,
+        {id: number;data: BodyType<RedeemCouponInput>},
+        TContext
+      > => {
+      return useMutation(getRedeemCouponMutationOptions(options));
+    }
+
+export const getCreateWalletTopupUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-accounts/${id}/wallet/topup`
+}
+
+export const createWalletTopup = async (id: number,
+    walletTopupInput: WalletTopupInput, options?: RequestInit): Promise<CheckoutSession> => {
+
+  return customFetch<CheckoutSession>(getCreateWalletTopupUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(walletTopupInput)
+  }
+);}
+
+
+
+
+export const getCreateWalletTopupMutationOptions = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createWalletTopup>>, TError,{id: number;data: BodyType<WalletTopupInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createWalletTopup>>, TError,{id: number;data: BodyType<WalletTopupInput>}, TContext> => {
+
+const mutationKey = ['createWalletTopup'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createWalletTopup>>, {id: number;data: BodyType<WalletTopupInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createWalletTopup(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateWalletTopupMutationResult = NonNullable<Awaited<ReturnType<typeof createWalletTopup>>>
+    export type CreateWalletTopupMutationBody = BodyType<WalletTopupInput>
+    export type CreateWalletTopupMutationError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>
+
+    export const useCreateWalletTopup = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createWalletTopup>>, TError,{id: number;data: BodyType<WalletTopupInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createWalletTopup>>,
+        TError,
+        {id: number;data: BodyType<WalletTopupInput>},
+        TContext
+      > => {
+      return useMutation(getCreateWalletTopupMutationOptions(options));
+    }
+
+export const getListCardsUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-accounts/${id}/cards`
+}
+
+export const listCards = async (id: number, options?: RequestInit): Promise<SavedCard[]> => {
+
+  return customFetch<SavedCard[]>(getListCardsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCardsQueryKey = (id: number,) => {
+    return [
+    `/api/ad-accounts/${id}/cards`
+    ] as const;
+    }
+
+
+export const getListCardsQueryOptions = <TData = Awaited<ReturnType<typeof listCards>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCards>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCardsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCards>>> = ({ signal }) => listCards(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCards>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCardsQueryResult = NonNullable<Awaited<ReturnType<typeof listCards>>>
+export type ListCardsQueryError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+
+
+export function useListCards<TData = Awaited<ReturnType<typeof listCards>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCards>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCardsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateCardSetupUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-accounts/${id}/cards/setup`
+}
+
+export const createCardSetup = async (id: number, options?: RequestInit): Promise<CheckoutSession> => {
+
+  return customFetch<CheckoutSession>(getCreateCardSetupUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getCreateCardSetupMutationOptions = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCardSetup>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createCardSetup>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['createCardSetup'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCardSetup>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  createCardSetup(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCardSetupMutationResult = NonNullable<Awaited<ReturnType<typeof createCardSetup>>>
+
+    export type CreateCardSetupMutationError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+    export const useCreateCardSetup = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCardSetup>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createCardSetup>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getCreateCardSetupMutationOptions(options));
+    }
+
+export const getSetDefaultCardUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-accounts/${id}/cards/default`
+}
+
+export const setDefaultCard = async (id: number,
+    setDefaultCardInput: SetDefaultCardInput, options?: RequestInit): Promise<SavedCard[]> => {
+
+  return customFetch<SavedCard[]>(getSetDefaultCardUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(setDefaultCardInput)
+  }
+);}
+
+
+
+
+export const getSetDefaultCardMutationOptions = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setDefaultCard>>, TError,{id: number;data: BodyType<SetDefaultCardInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setDefaultCard>>, TError,{id: number;data: BodyType<SetDefaultCardInput>}, TContext> => {
+
+const mutationKey = ['setDefaultCard'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setDefaultCard>>, {id: number;data: BodyType<SetDefaultCardInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  setDefaultCard(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetDefaultCardMutationResult = NonNullable<Awaited<ReturnType<typeof setDefaultCard>>>
+    export type SetDefaultCardMutationBody = BodyType<SetDefaultCardInput>
+    export type SetDefaultCardMutationError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>
+
+    export const useSetDefaultCard = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setDefaultCard>>, TError,{id: number;data: BodyType<SetDefaultCardInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setDefaultCard>>,
+        TError,
+        {id: number;data: BodyType<SetDefaultCardInput>},
+        TContext
+      > => {
+      return useMutation(getSetDefaultCardMutationOptions(options));
+    }
+
+export const getRemoveCardUrl = (id: number,
+    paymentMethodId: string,) => {
+
+
+
+
+  return `/api/ad-accounts/${id}/cards/${paymentMethodId}`
+}
+
+export const removeCard = async (id: number,
+    paymentMethodId: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getRemoveCardUrl(id,paymentMethodId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getRemoveCardMutationOptions = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeCard>>, TError,{id: number;paymentMethodId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeCard>>, TError,{id: number;paymentMethodId: string}, TContext> => {
+
+const mutationKey = ['removeCard'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeCard>>, {id: number;paymentMethodId: string}> = (props) => {
+          const {id,paymentMethodId} = props ?? {};
+
+          return  removeCard(id,paymentMethodId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveCardMutationResult = NonNullable<Awaited<ReturnType<typeof removeCard>>>
+
+    export type RemoveCardMutationError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+    export const useRemoveCard = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeCard>>, TError,{id: number;paymentMethodId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removeCard>>,
+        TError,
+        {id: number;paymentMethodId: string},
+        TContext
+      > => {
+      return useMutation(getRemoveCardMutationOptions(options));
+    }
+
+export const getGetBillingSettingsUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-accounts/${id}/billing/settings`
+}
+
+export const getBillingSettings = async (id: number, options?: RequestInit): Promise<BillingSettings> => {
+
+  return customFetch<BillingSettings>(getGetBillingSettingsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetBillingSettingsQueryKey = (id: number,) => {
+    return [
+    `/api/ad-accounts/${id}/billing/settings`
+    ] as const;
+    }
+
+
+export const getGetBillingSettingsQueryOptions = <TData = Awaited<ReturnType<typeof getBillingSettings>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBillingSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBillingSettingsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBillingSettings>>> = ({ signal }) => getBillingSettings(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBillingSettings>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetBillingSettingsQueryResult = NonNullable<Awaited<ReturnType<typeof getBillingSettings>>>
+export type GetBillingSettingsQueryError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+
+
+export function useGetBillingSettings<TData = Awaited<ReturnType<typeof getBillingSettings>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBillingSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetBillingSettingsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateBillingSettingsUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-accounts/${id}/billing/settings`
+}
+
+export const updateBillingSettings = async (id: number,
+    billingSettingsUpdate: BillingSettingsUpdate, options?: RequestInit): Promise<BillingSettings> => {
+
+  return customFetch<BillingSettings>(getUpdateBillingSettingsUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(billingSettingsUpdate)
+  }
+);}
+
+
+
+
+export const getUpdateBillingSettingsMutationOptions = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateBillingSettings>>, TError,{id: number;data: BodyType<BillingSettingsUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateBillingSettings>>, TError,{id: number;data: BodyType<BillingSettingsUpdate>}, TContext> => {
+
+const mutationKey = ['updateBillingSettings'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateBillingSettings>>, {id: number;data: BodyType<BillingSettingsUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateBillingSettings(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateBillingSettingsMutationResult = NonNullable<Awaited<ReturnType<typeof updateBillingSettings>>>
+    export type UpdateBillingSettingsMutationBody = BodyType<BillingSettingsUpdate>
+    export type UpdateBillingSettingsMutationError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>
+
+    export const useUpdateBillingSettings = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateBillingSettings>>, TError,{id: number;data: BodyType<BillingSettingsUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateBillingSettings>>,
+        TError,
+        {id: number;data: BodyType<BillingSettingsUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateBillingSettingsMutationOptions(options));
+    }
 
 export const getListPagesUrl = () => {
 

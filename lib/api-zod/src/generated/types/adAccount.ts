@@ -15,6 +15,15 @@ export interface AdAccount {
   currency: string;
   timezone: string;
   balanceCents: number;
+  creditBalanceCents: number;
+  spentCents: number;
+  /** @nullable */
+  spendLimitCents?: number | null;
+  autoRechargeEnabled: boolean;
+  /** @nullable */
+  autoRechargeThresholdCents?: number | null;
+  /** @nullable */
+  autoRechargeAmountCents?: number | null;
   status: AdAccountStatus;
   /** @nullable */
   viewerRole?: AdAccountViewerRole;

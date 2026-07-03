@@ -12,6 +12,7 @@ import {
   adSavedAudiencesTable,
   adWalletTransactionsTable,
   adCouponsTable,
+  adSpendDailyTable,
   adImpressionsTable,
   adClicksTable,
   postsTable,
@@ -23,6 +24,16 @@ import {
 import { and, eq, desc, gt, inArray } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import { buildPosts, buildPage } from "../lib/serialize";
+import { chargeAdEvent, dayInTimezone } from "../lib/billing-engine";
+import {
+  maybeAutoRecharge,
+  stripeConfigured,
+  createTopupCheckout,
+  createSetupCheckout,
+  listCards as listStripeCards,
+  setDefaultCard as setStripeDefaultCard,
+  removeCard as removeStripeCard,
+} from "../lib/stripe-billing";
 import {
   resolveAdAccountAccess,
   canRead,
@@ -118,6 +129,25 @@ import {
   ListAdWalletTransactionsResponse,
   ListAdCouponsParams,
   ListAdCouponsResponse,
+  RedeemCouponParams,
+  RedeemCouponBody,
+  RedeemCouponResponse,
+  CreateWalletTopupParams,
+  CreateWalletTopupBody,
+  CreateWalletTopupResponse,
+  ListCardsParams,
+  ListCardsResponse,
+  CreateCardSetupParams,
+  CreateCardSetupResponse,
+  SetDefaultCardParams,
+  SetDefaultCardBody,
+  SetDefaultCardResponse,
+  RemoveCardParams,
+  GetBillingSettingsParams,
+  GetBillingSettingsResponse,
+  UpdateBillingSettingsParams,
+  UpdateBillingSettingsBody,
+  UpdateBillingSettingsResponse,
   ServeAdsQueryParams,
   RecordAdImpressionParams,
   RecordAdImpressionBody,
@@ -1080,8 +1110,101 @@ router.get("/ads/serve", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  const adIds = inFlight.map((r) => r.ad.id);
-  const adSetIds = [...new Set(inFlight.map((r) => r.adSet.id))];
+  // Budget / funds gate (dynamic + auto-recovering). Skip ads whose account has
+  // no spendable funds, or whose ad set / campaign has exhausted its daily or
+  // lifetime budget. Daily uses each account's own timezone day. Lifetime is
+  // also enforced terminally at charge time; this is defense + covers the small
+  // window before a pause is flushed.
+  const gateAccountIds = [...new Set(inFlight.map((r) => r.ad.accountId))];
+  const gateCampaignIds = [...new Set(inFlight.map((r) => r.adSet.campaignId))];
+  const gateAdSetIds = [...new Set(inFlight.map((r) => r.adSet.id))];
+  const [gateAccounts, gateCampaigns] = await Promise.all([
+    db
+      .select({
+        id: adAccountsTable.id,
+        balanceCents: adAccountsTable.balanceCents,
+        creditBalanceCents: adAccountsTable.creditBalanceCents,
+        timezone: adAccountsTable.timezone,
+      })
+      .from(adAccountsTable)
+      .where(inArray(adAccountsTable.id, gateAccountIds)),
+    db
+      .select({
+        id: adCampaignsTable.id,
+        dailyBudgetCents: adCampaignsTable.dailyBudgetCents,
+        lifetimeBudgetCents: adCampaignsTable.lifetimeBudgetCents,
+        spentCents: adCampaignsTable.spentCents,
+      })
+      .from(adCampaignsTable)
+      .where(inArray(adCampaignsTable.id, gateCampaignIds)),
+  ]);
+  const gateAccountById = new Map(gateAccounts.map((a) => [a.id, a]));
+  const gateCampaignById = new Map(gateCampaigns.map((c) => [c.id, c]));
+  const dayByAccount = new Map(
+    gateAccounts.map((a) => [a.id, dayInTimezone(a.timezone, now)]),
+  );
+  const gateDays = [...new Set([...dayByAccount.values()])];
+  const dailyRows =
+    gateDays.length > 0
+      ? await db
+          .select({
+            adSetId: adSpendDailyTable.adSetId,
+            campaignId: adSpendDailyTable.campaignId,
+            day: adSpendDailyTable.day,
+            spentCents: adSpendDailyTable.spentCents,
+          })
+          .from(adSpendDailyTable)
+          .where(
+            and(
+              inArray(adSpendDailyTable.adSetId, gateAdSetIds),
+              inArray(adSpendDailyTable.day, gateDays),
+            ),
+          )
+      : [];
+  const adSetDailyByKey = new Map<string, number>();
+  const campaignDailyByKey = new Map<string, number>();
+  for (const r of dailyRows) {
+    adSetDailyByKey.set(`${r.adSetId}:${r.day}`, r.spentCents);
+    const ck = `${r.campaignId}:${r.day}`;
+    campaignDailyByKey.set(ck, (campaignDailyByKey.get(ck) ?? 0) + r.spentCents);
+  }
+
+  const affordable = inFlight.filter(({ ad, adSet }) => {
+    const acct = gateAccountById.get(ad.accountId);
+    if (!acct) return false;
+    if (acct.balanceCents + acct.creditBalanceCents <= 0) return false;
+    const camp = gateCampaignById.get(adSet.campaignId);
+    if (!camp) return false;
+    if (
+      adSet.lifetimeBudgetCents != null &&
+      adSet.spentCents >= adSet.lifetimeBudgetCents
+    )
+      return false;
+    if (
+      camp.lifetimeBudgetCents != null &&
+      camp.spentCents >= camp.lifetimeBudgetCents
+    )
+      return false;
+    const day = dayByAccount.get(ad.accountId)!;
+    if (
+      adSet.dailyBudgetCents != null &&
+      (adSetDailyByKey.get(`${adSet.id}:${day}`) ?? 0) >= adSet.dailyBudgetCents
+    )
+      return false;
+    if (
+      camp.dailyBudgetCents != null &&
+      (campaignDailyByKey.get(`${camp.id}:${day}`) ?? 0) >= camp.dailyBudgetCents
+    )
+      return false;
+    return true;
+  });
+  if (affordable.length === 0) {
+    res.json([]);
+    return;
+  }
+
+  const adIds = affordable.map((r) => r.ad.id);
+  const adSetIds = [...new Set(affordable.map((r) => r.adSet.id))];
   const creativeIds = [
     ...new Set(
       inFlight.map((r) => r.ad.creativeId).filter((v): v is number => v != null),
@@ -1634,7 +1757,11 @@ router.get(
       GetAdWalletResponse.parse({
         accountId: account.id,
         balanceCents: account.balanceCents,
+        creditBalanceCents: account.creditBalanceCents,
+        spentCents: account.spentCents,
+        spendLimitCents: account.spendLimitCents,
         currency: account.currency,
+        autoRechargeEnabled: account.autoRechargeEnabled,
         transactions,
       }),
     );
@@ -1688,6 +1815,433 @@ router.get(
       .where(eq(adCouponsTable.accountId, params.data.id))
       .orderBy(desc(adCouponsTable.id));
     res.json(ListAdCouponsResponse.parse(rows));
+  },
+);
+
+// Redeem a coupon / ad-credit code into the account's PROMOTIONAL credit pool.
+// Atomic + double-redeem safe: the coupon row is locked FOR UPDATE and its
+// status flip happens in the same transaction as the credit.
+router.post(
+  "/ad-accounts/:id/coupons/redeem",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = RedeemCouponParams.safeParse(req.params);
+    const body = RedeemCouponBody.safeParse(req.body);
+    if (!params.success || !body.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    // Managing money requires account-level access.
+    const role = await requireAccountAccess(
+      res,
+      req.userId!,
+      params.data.id,
+      "account",
+    );
+    if (!role) return;
+    const code = body.data.code.trim();
+
+    try {
+      const result = await db.transaction(async (tx) => {
+        const [coupon] = await tx
+          .select()
+          .from(adCouponsTable)
+          .where(eq(adCouponsTable.code, code))
+          .for("update");
+        if (!coupon) return { error: "not_found" as const };
+        if (coupon.status !== "active") return { error: "used" as const };
+        if (coupon.expiresAt && coupon.expiresAt.getTime() < Date.now()) {
+          return { error: "expired" as const };
+        }
+        // A coupon may be pre-assigned to a specific account; if so it can only
+        // be redeemed there.
+        if (coupon.accountId != null && coupon.accountId !== params.data.id) {
+          return { error: "not_found" as const };
+        }
+
+        const [account] = await tx
+          .select()
+          .from(adAccountsTable)
+          .where(eq(adAccountsTable.id, params.data.id))
+          .for("update");
+        if (!account) return { error: "not_found" as const };
+
+        const newCredit = account.creditBalanceCents + coupon.amountCents;
+        const now = new Date();
+        await tx
+          .update(adCouponsTable)
+          .set({
+            status: "redeemed",
+            accountId: params.data.id,
+            redeemedBy: req.userId!,
+            redeemedAt: now,
+          })
+          .where(eq(adCouponsTable.id, coupon.id));
+        await tx.insert(adWalletTransactionsTable).values({
+          accountId: params.data.id,
+          type: "credit",
+          amountCents: coupon.amountCents,
+          currency: account.currency,
+          balanceAfterCents: account.balanceCents + newCredit,
+          description: `Coupon redeemed: ${coupon.code}`,
+          referenceId: `coupon:${coupon.id}`,
+          couponId: coupon.id,
+          createdBy: req.userId!,
+        });
+        await tx
+          .update(adAccountsTable)
+          .set({ creditBalanceCents: newCredit })
+          .where(eq(adAccountsTable.id, params.data.id));
+
+        const [refreshed] = await tx
+          .select()
+          .from(adCouponsTable)
+          .where(eq(adCouponsTable.id, coupon.id));
+        return {
+          ok: true as const,
+          balanceCents: account.balanceCents,
+          creditBalanceCents: newCredit,
+          coupon: refreshed,
+        };
+      });
+
+      if ("error" in result) {
+        const msg =
+          result.error === "not_found"
+            ? "Coupon not found"
+            : result.error === "expired"
+              ? "Coupon has expired"
+              : "Coupon has already been used";
+        res.status(400).json({ error: msg });
+        return;
+      }
+      res.json(
+        RedeemCouponResponse.parse({
+          balanceCents: result.balanceCents,
+          creditBalanceCents: result.creditBalanceCents,
+          coupon: result.coupon,
+        }),
+      );
+    } catch (err) {
+      req.log.error({ err }, "coupon redemption failed");
+      res.status(500).json({ error: "Coupon redemption failed" });
+    }
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Payments (Stripe): top-up, saved cards, billing settings
+// ---------------------------------------------------------------------------
+
+// Absolute base URL to send the user back to after a Stripe Checkout redirect.
+function dashboardBaseUrl(req: {
+  headers: Record<string, unknown>;
+}): string | null {
+  const origin = req.headers["origin"];
+  if (typeof origin === "string" && /^https?:\/\//.test(origin)) return origin;
+  const referer = req.headers["referer"];
+  if (typeof referer === "string") {
+    try {
+      return new URL(referer).origin;
+    } catch {
+      /* ignore */
+    }
+  }
+  const env = process.env.ADS_DASHBOARD_URL;
+  if (env && /^https?:\/\//.test(env)) return env;
+  return null;
+}
+
+router.post(
+  "/ad-accounts/:id/wallet/topup",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = CreateWalletTopupParams.safeParse(req.params);
+    const body = CreateWalletTopupBody.safeParse(req.body);
+    if (!params.success || !body.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    const role = await requireAccountAccess(
+      res,
+      req.userId!,
+      params.data.id,
+      "account",
+    );
+    if (!role) return;
+    if (!stripeConfigured()) {
+      res.status(503).json({ error: "Payments are not configured" });
+      return;
+    }
+    const base = dashboardBaseUrl(req);
+    if (!base) {
+      res.status(400).json({ error: "Could not determine return URL" });
+      return;
+    }
+    const [account] = await db
+      .select()
+      .from(adAccountsTable)
+      .where(eq(adAccountsTable.id, params.data.id));
+    try {
+      const session = await createTopupCheckout({
+        account,
+        amountCents: body.data.amountCents,
+        successUrl: `${base}/wallet?topup=success`,
+        cancelUrl: `${base}/wallet?topup=cancel`,
+      });
+      res.json(CreateWalletTopupResponse.parse({ url: session.url }));
+    } catch (err) {
+      req.log.error({ err }, "topup checkout failed");
+      res.status(502).json({ error: "Could not start checkout" });
+    }
+  },
+);
+
+router.get(
+  "/ad-accounts/:id/cards",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = ListCardsParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const role = await requireAccountAccess(
+      res,
+      req.userId!,
+      params.data.id,
+      "read",
+    );
+    if (!role) return;
+    if (!stripeConfigured()) {
+      res.json(ListCardsResponse.parse([]));
+      return;
+    }
+    const [account] = await db
+      .select()
+      .from(adAccountsTable)
+      .where(eq(adAccountsTable.id, params.data.id));
+    try {
+      const cards = await listStripeCards(account);
+      res.json(ListCardsResponse.parse(cards));
+    } catch (err) {
+      req.log.error({ err }, "list cards failed");
+      res.status(502).json({ error: "Could not load cards" });
+    }
+  },
+);
+
+router.post(
+  "/ad-accounts/:id/cards/setup",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = CreateCardSetupParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const role = await requireAccountAccess(
+      res,
+      req.userId!,
+      params.data.id,
+      "account",
+    );
+    if (!role) return;
+    if (!stripeConfigured()) {
+      res.status(503).json({ error: "Payments are not configured" });
+      return;
+    }
+    const base = dashboardBaseUrl(req);
+    if (!base) {
+      res.status(400).json({ error: "Could not determine return URL" });
+      return;
+    }
+    const [account] = await db
+      .select()
+      .from(adAccountsTable)
+      .where(eq(adAccountsTable.id, params.data.id));
+    try {
+      const session = await createSetupCheckout({
+        account,
+        successUrl: `${base}/wallet?card=added`,
+        cancelUrl: `${base}/wallet?card=cancel`,
+      });
+      res.json(CreateCardSetupResponse.parse({ url: session.url }));
+    } catch (err) {
+      req.log.error({ err }, "card setup checkout failed");
+      res.status(502).json({ error: "Could not start card setup" });
+    }
+  },
+);
+
+router.post(
+  "/ad-accounts/:id/cards/default",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = SetDefaultCardParams.safeParse(req.params);
+    const body = SetDefaultCardBody.safeParse(req.body);
+    if (!params.success || !body.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    const role = await requireAccountAccess(
+      res,
+      req.userId!,
+      params.data.id,
+      "account",
+    );
+    if (!role) return;
+    if (!stripeConfigured()) {
+      res.status(503).json({ error: "Payments are not configured" });
+      return;
+    }
+    const [account] = await db
+      .select()
+      .from(adAccountsTable)
+      .where(eq(adAccountsTable.id, params.data.id));
+    try {
+      await setStripeDefaultCard(account, body.data.paymentMethodId);
+      const [fresh] = await db
+        .select()
+        .from(adAccountsTable)
+        .where(eq(adAccountsTable.id, params.data.id));
+      const cards = await listStripeCards(fresh);
+      res.json(SetDefaultCardResponse.parse(cards));
+    } catch (err) {
+      req.log.error({ err }, "set default card failed");
+      res.status(502).json({ error: "Could not update card" });
+    }
+  },
+);
+
+router.delete(
+  "/ad-accounts/:id/cards/:paymentMethodId",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = RemoveCardParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const role = await requireAccountAccess(
+      res,
+      req.userId!,
+      params.data.id,
+      "account",
+    );
+    if (!role) return;
+    if (!stripeConfigured()) {
+      res.sendStatus(204);
+      return;
+    }
+    const [account] = await db
+      .select()
+      .from(adAccountsTable)
+      .where(eq(adAccountsTable.id, params.data.id));
+    try {
+      await removeStripeCard(account, params.data.paymentMethodId);
+      res.sendStatus(204);
+    } catch (err) {
+      req.log.error({ err }, "remove card failed");
+      res.status(502).json({ error: "Could not remove card" });
+    }
+  },
+);
+
+function serializeBillingSettings(
+  account: typeof adAccountsTable.$inferSelect,
+) {
+  return {
+    spendLimitCents: account.spendLimitCents,
+    autoRechargeEnabled: account.autoRechargeEnabled,
+    autoRechargeThresholdCents: account.autoRechargeThresholdCents,
+    autoRechargeAmountCents: account.autoRechargeAmountCents,
+    hasPaymentMethod: !!account.defaultPaymentMethodId,
+    defaultPaymentMethodId: account.defaultPaymentMethodId,
+    paymentsEnabled: stripeConfigured(),
+  };
+}
+
+router.get(
+  "/ad-accounts/:id/billing/settings",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = GetBillingSettingsParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const role = await requireAccountAccess(
+      res,
+      req.userId!,
+      params.data.id,
+      "read",
+    );
+    if (!role) return;
+    const [account] = await db
+      .select()
+      .from(adAccountsTable)
+      .where(eq(adAccountsTable.id, params.data.id));
+    res.json(GetBillingSettingsResponse.parse(serializeBillingSettings(account)));
+  },
+);
+
+router.patch(
+  "/ad-accounts/:id/billing/settings",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = UpdateBillingSettingsParams.safeParse(req.params);
+    const body = UpdateBillingSettingsBody.safeParse(req.body);
+    if (!params.success || !body.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    const role = await requireAccountAccess(
+      res,
+      req.userId!,
+      params.data.id,
+      "account",
+    );
+    if (!role) return;
+    const [account] = await db
+      .select()
+      .from(adAccountsTable)
+      .where(eq(adAccountsTable.id, params.data.id));
+
+    const wantsAutoRecharge =
+      body.data.autoRechargeEnabled ?? account.autoRechargeEnabled;
+    // Auto-recharge requires a saved default card.
+    if (wantsAutoRecharge && !account.defaultPaymentMethodId) {
+      res.status(400).json({
+        error: "Add a payment method before enabling automatic top-ups",
+      });
+      return;
+    }
+
+    await db
+      .update(adAccountsTable)
+      .set({
+        ...(body.data.spendLimitCents !== undefined
+          ? { spendLimitCents: body.data.spendLimitCents }
+          : {}),
+        ...(body.data.autoRechargeEnabled !== undefined
+          ? { autoRechargeEnabled: body.data.autoRechargeEnabled }
+          : {}),
+        ...(body.data.autoRechargeThresholdCents !== undefined
+          ? { autoRechargeThresholdCents: body.data.autoRechargeThresholdCents }
+          : {}),
+        ...(body.data.autoRechargeAmountCents !== undefined
+          ? { autoRechargeAmountCents: body.data.autoRechargeAmountCents }
+          : {}),
+      })
+      .where(eq(adAccountsTable.id, params.data.id));
+    const [fresh] = await db
+      .select()
+      .from(adAccountsTable)
+      .where(eq(adAccountsTable.id, params.data.id));
+    res.json(
+      UpdateBillingSettingsResponse.parse(serializeBillingSettings(fresh)),
+    );
   },
 );
 
@@ -1775,13 +2329,15 @@ router.post(
         ),
       );
     if (!dup) {
-      await db.insert(adImpressionsTable).values({
-        adId: ad.id,
-        accountId: ad.accountId,
+      const result = await chargeAdEvent({
+        ad,
+        event: "impression",
         viewerId,
         placement: body.data.placement ?? null,
-        costCents: 0,
       });
+      if (result.shouldAutoRecharge) {
+        void maybeAutoRecharge(ad.accountId).catch(() => {});
+      }
     }
     res.sendStatus(204);
   },
@@ -1809,13 +2365,15 @@ router.post("/ads/:id/click", requireAuth, async (req, res): Promise<void> => {
       ),
     );
   if (!dup) {
-    await db.insert(adClicksTable).values({
-      adId: ad.id,
-      accountId: ad.accountId,
+    const result = await chargeAdEvent({
+      ad,
+      event: "click",
       viewerId,
       placement: body.data.placement ?? null,
-      costCents: 0,
     });
+    if (result.shouldAutoRecharge) {
+      void maybeAutoRecharge(ad.accountId).catch(() => {});
+    }
   }
   res.sendStatus(204);
 });

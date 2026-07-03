@@ -2,8 +2,14 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { randomUUID } from "node:crypto";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
-import { db, pool, profilesTable, postsTable } from "@workspace/db";
-import { inArray } from "drizzle-orm";
+import {
+  db,
+  pool,
+  profilesTable,
+  postsTable,
+  adAccountsTable,
+} from "@workspace/db";
+import { eq, inArray } from "drizzle-orm";
 import app from "../app";
 
 // Locks in Admin Approval + Ad Serving (Task #3): boost-post/boost-page create
@@ -150,6 +156,12 @@ describe("Ad boost + approval + serving", () => {
   });
 
   it("serves the approved ad with the embedded public post", async () => {
+    // Task #4: serving now requires spendable wallet funds. Fund the owner's
+    // auto-created ad account so the approved ad clears the funds gate.
+    await db
+      .update(adAccountsTable)
+      .set({ balanceCents: 5000 })
+      .where(eq(adAccountsTable.ownerId, owner));
     const res = await api("/ads/serve?placement=feed", viewer);
     expect(res.status).toBe(200);
     const served = res.body.find((a: any) => a.adId === adId);
