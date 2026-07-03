@@ -1731,6 +1731,121 @@ export interface RedeemCouponResult {
   coupon: AdCoupon;
 }
 
+export interface InsightsMetrics {
+  impressions: number;
+  reach: number;
+  clicks: number;
+  ctr: number;
+  spentCents: number;
+  conversions: number;
+  conversionValueCents: number;
+  /** @nullable */
+  cpcCents: number | null;
+  /** @nullable */
+  cpmCents: number | null;
+  /** @nullable */
+  costPerResultCents: number | null;
+}
+
+export type InsightsRowLevel = typeof InsightsRowLevel[keyof typeof InsightsRowLevel];
+
+
+export const InsightsRowLevel = {
+  campaign: 'campaign',
+  adset: 'adset',
+  ad: 'ad',
+} as const;
+
+export interface InsightsRow {
+  id: number;
+  name: string;
+  level: InsightsRowLevel;
+  impressions: number;
+  reach: number;
+  clicks: number;
+  ctr: number;
+  spentCents: number;
+  conversions: number;
+  conversionValueCents: number;
+  /** @nullable */
+  cpcCents: number | null;
+  /** @nullable */
+  cpmCents: number | null;
+  /** @nullable */
+  costPerResultCents: number | null;
+}
+
+export interface InsightsSeriesPoint {
+  day: string;
+  impressions: number;
+  clicks: number;
+  spentCents: number;
+  conversions: number;
+}
+
+export type InsightsLevel = typeof InsightsLevel[keyof typeof InsightsLevel];
+
+
+export const InsightsLevel = {
+  campaign: 'campaign',
+  adset: 'adset',
+  ad: 'ad',
+} as const;
+
+export interface Insights {
+  from: string;
+  to: string;
+  level: InsightsLevel;
+  timezone: string;
+  summary: InsightsMetrics;
+  series: InsightsSeriesPoint[];
+  breakdown: InsightsRow[];
+}
+
+export interface PixelInfo {
+  token: string;
+  gifUrl: string;
+  snippet: string;
+}
+
+export type PixelEventInputMetadata = { [key: string]: unknown };
+
+export interface PixelEventInput {
+  /** @minLength 1 */
+  token: string;
+  /**
+     * @minLength 1
+     * @maxLength 64
+     */
+  eventName: string;
+  /** @minimum 0 */
+  valueCents?: number;
+  currency?: string;
+  /** @nullable */
+  viewerId?: string | null;
+  /** @nullable */
+  adId?: number | null;
+  metadata?: PixelEventInputMetadata;
+}
+
+export interface PixelEventResult {
+  attributed: boolean;
+  /** @nullable */
+  adId: number | null;
+}
+
+export interface AdConversion {
+  id: number;
+  /** @nullable */
+  adId: number | null;
+  /** @nullable */
+  adName: string | null;
+  eventName: string;
+  valueCents: number;
+  currency: string;
+  createdAt: string;
+}
+
 export type SavedItemEntityType = typeof SavedItemEntityType[keyof typeof SavedItemEntityType];
 
 
@@ -2362,6 +2477,36 @@ export const ServeAdsPlacement = {
   stories: 'stories',
   sidebar: 'sidebar',
 } as const;
+
+export type GetAdAccountInsightsParams = {
+/**
+ * Start of range (inclusive), ISO date or date-time. Defaults to 30 days ago.
+ */
+from?: string;
+/**
+ * End of range (inclusive day), ISO date or date-time. Defaults to now.
+ */
+to?: string;
+/**
+ * Breakdown dimension.
+ */
+level?: GetAdAccountInsightsLevel;
+campaignId?: number;
+adSetId?: number;
+};
+
+export type GetAdAccountInsightsLevel = typeof GetAdAccountInsightsLevel[keyof typeof GetAdAccountInsightsLevel];
+
+
+export const GetAdAccountInsightsLevel = {
+  campaign: 'campaign',
+  adset: 'adset',
+  ad: 'ad',
+} as const;
+
+export type ListAdAccountConversionsParams = {
+limit?: number;
+};
 
 export type GetPagePostsParams = {
 cursor?: number;

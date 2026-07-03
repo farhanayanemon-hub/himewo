@@ -23,6 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Megaphone,
   LayoutGrid,
+  BarChart3,
   Users2,
   Images,
   UserCog,
@@ -34,6 +35,7 @@ import {
 
 const NAV = [
   { href: "/campaigns", label: "Campaigns", icon: LayoutGrid },
+  { href: "/insights", label: "Insights", icon: BarChart3 },
   { href: "/audiences", label: "Audiences", icon: Users2 },
   { href: "/creatives", label: "Creatives", icon: Images },
   { href: "/team", label: "Team", icon: UserCog },

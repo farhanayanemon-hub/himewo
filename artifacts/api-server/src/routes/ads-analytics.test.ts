@@ -1,0 +1,268 @@
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { randomUUID } from "node:crypto";
+import { createServer, type Server } from "node:http";
+import type { AddressInfo } from "node:net";
+import {
+  db,
+  pool,
+  profilesTable,
+  adCampaignsTable,
+  adSetsTable,
+  adsTable,
+  adImpressionsTable,
+  adClicksTable,
+} from "@workspace/db";
+import { inArray } from "drizzle-orm";
+import app from "../app";
+import { signPixelToken, verifyPixelToken } from "../lib/analytics";
+
+// Task #5 (Ads Analytics + Insights): locks the aggregation engine
+// (impressions / reach / clicks / CTR / spend), spend↔billing reconciliation
+// (spend is summed from the same per-event cost_cents the billing engine
+// charged), the HMAC pixel token, and last-click conversion attribution.
+
+const owner = randomUUID();
+const stranger = randomUUID();
+const viewer1 = randomUUID();
+const viewer2 = randomUUID();
+const slug = owner.slice(0, 8);
+
+let server: Server;
+let baseUrl: string;
+let accountId: number;
+let adId: number;
+
+// Known seeded spend (cents) — asserted independently against insights.
+const IMPRESSION_COST = 10;
+const CLICK_COST = 25;
+const SEEDED_SPEND = IMPRESSION_COST * 3 + CLICK_COST * 1; // 55
+
+async function api(
+  path: string,
+  asUser: string | null,
+  init: RequestInit = {},
+): Promise<{ status: number; body: any; contentType: string | null }> {
+  const res = await fetch(`${baseUrl}${path}`, {
+    ...init,
+    headers: {
+      "content-type": "application/json",
+      ...(asUser ? { authorization: `Bearer dev:${asUser}` } : {}),
+      ...(init.headers ?? {}),
+    },
+  });
+  const contentType = res.headers.get("content-type");
+  const text = await res.text();
+  let body: any = null;
+  if (text && contentType?.includes("application/json")) body = JSON.parse(text);
+  else body = text;
+  return { status: res.status, body, contentType };
+}
+
+beforeAll(async () => {
+  await db.insert(profilesTable).values([
+    { id: owner, username: `ana-owner-${slug}`, displayName: "Ana Owner" },
+    { id: stranger, username: `ana-str-${slug}`, displayName: "Ana Str" },
+    { id: viewer1, username: `ana-v1-${slug}`, displayName: "Ana V1" },
+    { id: viewer2, username: `ana-v2-${slug}`, displayName: "Ana V2" },
+  ]);
+
+  server = createServer(app);
+  await new Promise<void>((resolve) => server.listen(0, resolve));
+  const { port } = server.address() as AddressInfo;
+  baseUrl = `http://127.0.0.1:${port}/api`;
+
+  const acct = await api("/ad-accounts", owner, {
+    method: "POST",
+    body: JSON.stringify({ name: `Ana Acct ${slug}` }),
+  });
+  accountId = acct.body.id;
+
+  const [campaign] = await db
+    .insert(adCampaignsTable)
+    .values({ accountId, name: "Ana Campaign", status: "active" })
+    .returning({ id: adCampaignsTable.id });
+  const [adSet] = await db
+    .insert(adSetsTable)
+    .values({
+      campaignId: campaign.id,
+      accountId,
+      name: "Ana Ad Set",
+      status: "active",
+    })
+    .returning({ id: adSetsTable.id });
+  const [ad] = await db
+    .insert(adsTable)
+    .values({
+      adSetId: adSet.id,
+      accountId,
+      name: "Ana Ad",
+      status: "active",
+      reviewStatus: "approved",
+    })
+    .returning({ id: adsTable.id });
+  adId = ad.id;
+
+  // 3 impressions from 2 distinct viewers (reach=2), each costing IMPRESSION_COST.
+  await db.insert(adImpressionsTable).values([
+    { adId, accountId, viewerId: viewer1, costCents: IMPRESSION_COST },
+    { adId, accountId, viewerId: viewer2, costCents: IMPRESSION_COST },
+    { adId, accountId, viewerId: viewer1, costCents: IMPRESSION_COST },
+  ]);
+  // 1 click by viewer1 (enables last-click attribution).
+  await db
+    .insert(adClicksTable)
+    .values({ adId, accountId, viewerId: viewer1, costCents: CLICK_COST });
+});
+
+afterAll(async () => {
+  await new Promise<void>((resolve) => server.close(() => resolve()));
+  await db
+    .delete(profilesTable)
+    .where(inArray(profilesTable.id, [owner, stranger, viewer1, viewer2]));
+  await pool.end();
+});
+
+describe("Task #5 — pixel token", () => {
+  it("round-trips sign/verify and resolves the account id", () => {
+    const token = signPixelToken(accountId);
+    expect(token).toMatch(/^px_\d+_/);
+    expect(verifyPixelToken(token)).toBe(accountId);
+  });
+
+  it("rejects a tampered or malformed token", () => {
+    const token = signPixelToken(accountId);
+    expect(verifyPixelToken(token + "x")).toBeNull();
+    expect(verifyPixelToken(`px_${accountId}_deadbeef`)).toBeNull();
+    expect(verifyPixelToken("garbage")).toBeNull();
+    expect(verifyPixelToken("")).toBeNull();
+  });
+});
+
+describe("Task #5 — insights aggregation", () => {
+  it("aggregates impressions, reach, clicks, CTR and spend", async () => {
+    const res = await api(`/ad-accounts/${accountId}/insights`, owner);
+    expect(res.status).toBe(200);
+    const s = res.body.summary;
+    expect(s.impressions).toBe(3);
+    expect(s.reach).toBe(2);
+    expect(s.clicks).toBe(1);
+    expect(s.spentCents).toBe(SEEDED_SPEND);
+    expect(s.ctr).toBeCloseTo(1 / 3, 5);
+    // CPC = spend / clicks
+    expect(s.cpcCents).toBe(SEEDED_SPEND);
+    // Breakdown has the campaign with a resolved name.
+    expect(res.body.breakdown.length).toBe(1);
+    expect(res.body.breakdown[0].name).toBe("Ana Campaign");
+    expect(res.body.breakdown[0].spentCents).toBe(SEEDED_SPEND);
+  });
+
+  it("reconciles reported spend with the seeded per-event cost_cents", async () => {
+    const res = await api(`/ad-accounts/${accountId}/insights`, owner);
+    // Spend reported by insights must equal the exact cents billed per event.
+    expect(res.body.summary.spentCents).toBe(SEEDED_SPEND);
+  });
+
+  it("supports the adset breakdown level", async () => {
+    const res = await api(
+      `/ad-accounts/${accountId}/insights?level=adset`,
+      owner,
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.level).toBe("adset");
+    expect(res.body.breakdown[0].name).toBe("Ana Ad Set");
+  });
+
+  it("denies a stranger without account access", async () => {
+    const res = await api(`/ad-accounts/${accountId}/insights`, stranger);
+    expect(res.status).toBe(403);
+  });
+});
+
+describe("Task #5 — pixel endpoint + conversion attribution", () => {
+  it("returns a pixel token and embeddable snippet for the owner", async () => {
+    const res = await api(`/ad-accounts/${accountId}/pixel`, owner);
+    expect(res.status).toBe(200);
+    expect(verifyPixelToken(res.body.token)).toBe(accountId);
+    expect(res.body.snippet).toContain(res.body.token);
+    expect(res.body.gifUrl).toContain("/api/ads/pixel.gif");
+  });
+
+  it("attributes an explicit adId when it belongs to the account", async () => {
+    const token = signPixelToken(accountId);
+    const res = await api(`/ads/pixel`, null, {
+      method: "POST",
+      body: JSON.stringify({
+        token,
+        eventName: "purchase",
+        valueCents: 500,
+        adId,
+      }),
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.attributed).toBe(true);
+    expect(res.body.adId).toBe(adId);
+  });
+
+  it("last-click attributes a viewer who clicked, with no explicit adId", async () => {
+    const token = signPixelToken(accountId);
+    const res = await api(`/ads/pixel`, null, {
+      method: "POST",
+      body: JSON.stringify({
+        token,
+        eventName: "lead",
+        valueCents: 0,
+        viewerId: viewer1,
+      }),
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.attributed).toBe(true);
+    expect(res.body.adId).toBe(adId);
+  });
+
+  it("records an unattributed conversion when the viewer never clicked", async () => {
+    const token = signPixelToken(accountId);
+    const res = await api(`/ads/pixel`, null, {
+      method: "POST",
+      body: JSON.stringify({
+        token,
+        eventName: "signup",
+        viewerId: viewer2,
+      }),
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.attributed).toBe(false);
+    expect(res.body.adId).toBeNull();
+  });
+
+  it("rejects an invalid pixel token", async () => {
+    const res = await api(`/ads/pixel`, null, {
+      method: "POST",
+      body: JSON.stringify({ token: "px_1_bad", eventName: "purchase" }),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("always serves the pixel.gif beacon", async () => {
+    const token = signPixelToken(accountId);
+    const good = await api(
+      `/ads/pixel.gif?token=${encodeURIComponent(token)}&event=purchase&value=100&viewer=${viewer1}`,
+      null,
+    );
+    expect(good.status).toBe(200);
+    expect(good.contentType).toContain("image/gif");
+    // Bad token still returns a gif (never leak validity to the browser).
+    const bad = await api(`/ads/pixel.gif?token=nope`, null);
+    expect(bad.status).toBe(200);
+    expect(bad.contentType).toContain("image/gif");
+  });
+
+  it("lists recorded conversions for the account", async () => {
+    const res = await api(`/ad-accounts/${accountId}/conversions`, owner);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+    const events = res.body.map((c: { eventName: string }) => c.eventName);
+    expect(events).toContain("purchase");
+    expect(events).toContain("lead");
+    expect(events).toContain("signup");
+  });
+});

@@ -10,4 +10,8 @@ export {
   GetUserFriendsParams,
   ListCommentsParams,
   ListMessagesParams,
+  GetAdAccountInsightsParams,
+  GetAdAccountInsightsQueryParams,
+  ListAdAccountConversionsParams,
+  ListAdAccountConversionsQueryParams,
 } from "./generated/api";

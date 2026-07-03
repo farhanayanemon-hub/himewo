@@ -2476,6 +2476,97 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  # ---------------- Ads: analytics + insights ----------------
+  /ad-accounts/{id}/insights:
+    get:
+      operationId: getAdAccountInsights
+      tags: [ads]
+      summary: Aggregated ad performance (impressions, reach, clicks, CTR, spend, conversions)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - name: from
+          in: query
+          description: Start of range (inclusive), ISO date or date-time. Defaults to 30 days ago.
+          schema: { type: string }
+        - name: to
+          in: query
+          description: End of range (inclusive day), ISO date or date-time. Defaults to now.
+          schema: { type: string }
+        - name: level
+          in: query
+          description: Breakdown dimension.
+          schema:
+            { type: string, enum: [campaign, adset, ad], default: campaign }
+        - { name: campaignId, in: query, schema: { type: integer } }
+        - { name: adSetId, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: Insights
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Insights" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /ad-accounts/{id}/pixel:
+    get:
+      operationId: getAdAccountPixel
+      tags: [ads]
+      summary: Conversion pixel token + embed snippet for the account
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Pixel info
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PixelInfo" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /ad-accounts/{id}/conversions:
+    get:
+      operationId: listAdAccountConversions
+      tags: [ads]
+      summary: Recent conversions recorded for the account
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+      responses:
+        "200":
+          description: Conversions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdConversion" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /ads/pixel:
+    post:
+      operationId: capturePixelEvent
+      tags: [ads]
+      summary: Public conversion/pixel capture endpoint (authenticated by pixel token)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PixelEventInput" }
+      responses:
+        "200":
+          description: Captured
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PixelEventResult" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
   # ---------------- Pages ----------------
   /pages:
     get:
@@ -4366,6 +4457,124 @@ components:
         redeemedAt: { type: ["string", "null"], format: date-time }
         expiresAt: { type: ["string", "null"], format: date-time }
         note: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+
+    InsightsMetrics:
+      type: object
+      required:
+        [
+          impressions,
+          reach,
+          clicks,
+          ctr,
+          spentCents,
+          conversions,
+          conversionValueCents,
+          cpcCents,
+          cpmCents,
+          costPerResultCents,
+        ]
+      properties:
+        impressions: { type: integer }
+        reach: { type: integer }
+        clicks: { type: integer }
+        ctr: { type: number }
+        spentCents: { type: integer }
+        conversions: { type: integer }
+        conversionValueCents: { type: integer }
+        cpcCents: { type: ["integer", "null"] }
+        cpmCents: { type: ["integer", "null"] }
+        costPerResultCents: { type: ["integer", "null"] }
+    InsightsRow:
+      type: object
+      required:
+        [
+          id,
+          name,
+          level,
+          impressions,
+          reach,
+          clicks,
+          ctr,
+          spentCents,
+          conversions,
+          conversionValueCents,
+          cpcCents,
+          cpmCents,
+          costPerResultCents,
+        ]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        level: { type: string, enum: [campaign, adset, ad] }
+        impressions: { type: integer }
+        reach: { type: integer }
+        clicks: { type: integer }
+        ctr: { type: number }
+        spentCents: { type: integer }
+        conversions: { type: integer }
+        conversionValueCents: { type: integer }
+        cpcCents: { type: ["integer", "null"] }
+        cpmCents: { type: ["integer", "null"] }
+        costPerResultCents: { type: ["integer", "null"] }
+    InsightsSeriesPoint:
+      type: object
+      required: [day, impressions, clicks, spentCents, conversions]
+      properties:
+        day: { type: string }
+        impressions: { type: integer }
+        clicks: { type: integer }
+        spentCents: { type: integer }
+        conversions: { type: integer }
+    Insights:
+      type: object
+      required: [from, to, level, timezone, summary, series, breakdown]
+      properties:
+        from: { type: string, format: date-time }
+        to: { type: string, format: date-time }
+        level: { type: string, enum: [campaign, adset, ad] }
+        timezone: { type: string }
+        summary: { $ref: "#/components/schemas/InsightsMetrics" }
+        series:
+          type: array
+          items: { $ref: "#/components/schemas/InsightsSeriesPoint" }
+        breakdown:
+          type: array
+          items: { $ref: "#/components/schemas/InsightsRow" }
+    PixelInfo:
+      type: object
+      required: [token, gifUrl, snippet]
+      properties:
+        token: { type: string }
+        gifUrl: { type: string }
+        snippet: { type: string }
+    PixelEventInput:
+      type: object
+      required: [token, eventName]
+      properties:
+        token: { type: string, minLength: 1 }
+        eventName: { type: string, minLength: 1, maxLength: 64 }
+        valueCents: { type: integer, minimum: 0 }
+        currency: { type: string }
+        viewerId: { type: ["string", "null"] }
+        adId: { type: ["integer", "null"] }
+        metadata: { type: object, additionalProperties: true }
+    PixelEventResult:
+      type: object
+      required: [attributed, adId]
+      properties:
+        attributed: { type: boolean }
+        adId: { type: ["integer", "null"] }
+    AdConversion:
+      type: object
+      required: [id, adId, adName, eventName, valueCents, currency, createdAt]
+      properties:
+        id: { type: integer }
+        adId: { type: ["integer", "null"] }
+        adName: { type: ["string", "null"] }
+        eventName: { type: string }
+        valueCents: { type: integer }
+        currency: { type: string }
         createdAt: { type: string, format: date-time }
 
     SavedItem:

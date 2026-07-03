@@ -30,6 +30,7 @@ import type {
   AdCampaign,
   AdCampaignInput,
   AdCampaignUpdate,
+  AdConversion,
   AdCoupon,
   AdCreative,
   AdCreativeInput,
@@ -78,6 +79,7 @@ import type {
   FriendSuggestion,
   GeocodeLocationParams,
   GeocodeResult,
+  GetAdAccountInsightsParams,
   GetEarningsHistoryParams,
   GetFeedParams,
   GetGroupPostsParams,
@@ -90,7 +92,9 @@ import type {
   GroupMember,
   GroupUpdateInput,
   HealthStatus,
+  Insights,
   JoinGroupInput,
+  ListAdAccountConversionsParams,
   ListAdminWithdrawalsParams,
   ListCommentsParams,
   ListMarketplaceListingsParams,
@@ -116,6 +120,9 @@ import type {
   PageUpdateInput,
   PhotoTag,
   PhotoTagInput,
+  PixelEventInput,
+  PixelEventResult,
+  PixelInfo,
   PointConfig,
   PointConfigUpdate,
   PointTransaction,
@@ -10515,6 +10522,331 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getUpdateBillingSettingsMutationOptions(options));
+    }
+
+export const getGetAdAccountInsightsUrl = (id: number,
+    params?: GetAdAccountInsightsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/ad-accounts/${id}/insights?${stringifiedParams}` : `/api/ad-accounts/${id}/insights`
+}
+
+/**
+ * @summary Aggregated ad performance (impressions, reach, clicks, CTR, spend, conversions)
+ */
+export const getAdAccountInsights = async (id: number,
+    params?: GetAdAccountInsightsParams, options?: RequestInit): Promise<Insights> => {
+
+  return customFetch<Insights>(getGetAdAccountInsightsUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdAccountInsightsQueryKey = (id: number,
+    params?: GetAdAccountInsightsParams,) => {
+    return [
+    `/api/ad-accounts/${id}/insights`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetAdAccountInsightsQueryOptions = <TData = Awaited<ReturnType<typeof getAdAccountInsights>>, TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>>(id: number,
+    params?: GetAdAccountInsightsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdAccountInsights>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdAccountInsightsQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdAccountInsights>>> = ({ signal }) => getAdAccountInsights(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdAccountInsights>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdAccountInsightsQueryResult = NonNullable<Awaited<ReturnType<typeof getAdAccountInsights>>>
+export type GetAdAccountInsightsQueryError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>
+
+
+/**
+ * @summary Aggregated ad performance (impressions, reach, clicks, CTR, spend, conversions)
+ */
+
+export function useGetAdAccountInsights<TData = Awaited<ReturnType<typeof getAdAccountInsights>>, TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>>(
+ id: number,
+    params?: GetAdAccountInsightsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdAccountInsights>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdAccountInsightsQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAdAccountPixelUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-accounts/${id}/pixel`
+}
+
+/**
+ * @summary Conversion pixel token + embed snippet for the account
+ */
+export const getAdAccountPixel = async (id: number, options?: RequestInit): Promise<PixelInfo> => {
+
+  return customFetch<PixelInfo>(getGetAdAccountPixelUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdAccountPixelQueryKey = (id: number,) => {
+    return [
+    `/api/ad-accounts/${id}/pixel`
+    ] as const;
+    }
+
+
+export const getGetAdAccountPixelQueryOptions = <TData = Awaited<ReturnType<typeof getAdAccountPixel>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdAccountPixel>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdAccountPixelQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdAccountPixel>>> = ({ signal }) => getAdAccountPixel(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdAccountPixel>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdAccountPixelQueryResult = NonNullable<Awaited<ReturnType<typeof getAdAccountPixel>>>
+export type GetAdAccountPixelQueryError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+
+/**
+ * @summary Conversion pixel token + embed snippet for the account
+ */
+
+export function useGetAdAccountPixel<TData = Awaited<ReturnType<typeof getAdAccountPixel>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdAccountPixel>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdAccountPixelQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListAdAccountConversionsUrl = (id: number,
+    params?: ListAdAccountConversionsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/ad-accounts/${id}/conversions?${stringifiedParams}` : `/api/ad-accounts/${id}/conversions`
+}
+
+/**
+ * @summary Recent conversions recorded for the account
+ */
+export const listAdAccountConversions = async (id: number,
+    params?: ListAdAccountConversionsParams, options?: RequestInit): Promise<AdConversion[]> => {
+
+  return customFetch<AdConversion[]>(getListAdAccountConversionsUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdAccountConversionsQueryKey = (id: number,
+    params?: ListAdAccountConversionsParams,) => {
+    return [
+    `/api/ad-accounts/${id}/conversions`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListAdAccountConversionsQueryOptions = <TData = Awaited<ReturnType<typeof listAdAccountConversions>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(id: number,
+    params?: ListAdAccountConversionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdAccountConversions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdAccountConversionsQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdAccountConversions>>> = ({ signal }) => listAdAccountConversions(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdAccountConversions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdAccountConversionsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdAccountConversions>>>
+export type ListAdAccountConversionsQueryError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+
+/**
+ * @summary Recent conversions recorded for the account
+ */
+
+export function useListAdAccountConversions<TData = Awaited<ReturnType<typeof listAdAccountConversions>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(
+ id: number,
+    params?: ListAdAccountConversionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdAccountConversions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdAccountConversionsQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCapturePixelEventUrl = () => {
+
+
+
+
+  return `/api/ads/pixel`
+}
+
+/**
+ * @summary Public conversion/pixel capture endpoint (authenticated by pixel token)
+ */
+export const capturePixelEvent = async (pixelEventInput: PixelEventInput, options?: RequestInit): Promise<PixelEventResult> => {
+
+  return customFetch<PixelEventResult>(getCapturePixelEventUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(pixelEventInput)
+  }
+);}
+
+
+
+
+export const getCapturePixelEventMutationOptions = <TError = ErrorType<BadRequestResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof capturePixelEvent>>, TError,{data: BodyType<PixelEventInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof capturePixelEvent>>, TError,{data: BodyType<PixelEventInput>}, TContext> => {
+
+const mutationKey = ['capturePixelEvent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof capturePixelEvent>>, {data: BodyType<PixelEventInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  capturePixelEvent(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CapturePixelEventMutationResult = NonNullable<Awaited<ReturnType<typeof capturePixelEvent>>>
+    export type CapturePixelEventMutationBody = BodyType<PixelEventInput>
+    export type CapturePixelEventMutationError = ErrorType<BadRequestResponse>
+
+    /**
+ * @summary Public conversion/pixel capture endpoint (authenticated by pixel token)
+ */
+export const useCapturePixelEvent = <TError = ErrorType<BadRequestResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof capturePixelEvent>>, TError,{data: BodyType<PixelEventInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof capturePixelEvent>>,
+        TError,
+        {data: BodyType<PixelEventInput>},
+        TContext
+      > => {
+      return useMutation(getCapturePixelEventMutationOptions(options));
     }
 
 export const getListPagesUrl = () => {
