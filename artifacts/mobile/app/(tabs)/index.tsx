@@ -15,11 +15,14 @@ import {
   getFeed,
   getGetFeedQueryKey,
   useGetTodaysBirthdays,
+  useServeAds,
   type Post,
+  type ServedAd,
 } from "@workspace/api-client-react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Avatar } from "@/components/Avatar";
 import { PostCard } from "@/components/PostCard";
+import { SponsoredCard } from "@/components/SponsoredCard";
 import { StoryBar } from "@/components/StoryBar";
 import { CommentsSheet } from "@/components/CommentsSheet";
 import { ShareSheet } from "@/components/ShareSheet";
@@ -27,6 +30,8 @@ import { useAuth } from "@/lib/auth";
 import { useColors } from "@/hooks/useColors";
 
 const FEED_LIMIT = 10;
+
+type FeedItem = { kind: "post"; post: Post } | { kind: "ad"; ad: ServedAd };
 
 export default function HomeScreen() {
   const c = useColors();
@@ -52,6 +57,16 @@ export default function HomeScreen() {
       lastPage.length === FEED_LIMIT ? lastPage[lastPage.length - 1].id : undefined,
   });
   const posts = (data?.pages.flat() ?? []) as Post[];
+
+  const { data: ads } = useServeAds({ placement: "feed", limit: 3 });
+  const AD_EVERY = 5;
+  const feedItems: FeedItem[] = [];
+  posts.forEach((post, i) => {
+    if (i > 0 && i % AD_EVERY === 0 && ads && ads[i / AD_EVERY - 1]) {
+      feedItems.push({ kind: "ad", ad: ads[i / AD_EVERY - 1] });
+    }
+    feedItems.push({ kind: "post", post });
+  });
 
   const onRefresh = useCallback(() => {
     qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
@@ -92,8 +107,10 @@ export default function HomeScreen() {
         <ActivityIndicator color={c.primary} style={{ marginTop: 40 }} />
       ) : (
         <FlatList
-          data={posts}
-          keyExtractor={(item) => String(item.id)}
+          data={feedItems}
+          keyExtractor={(item) =>
+            item.kind === "ad" ? `ad-${item.ad.adId}` : `post-${item.post.id}`
+          }
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={onRefresh} tintColor={c.primary} />
           }
@@ -120,13 +137,17 @@ export default function HomeScreen() {
               </Pressable>
             </>
           }
-          renderItem={({ item }) => (
-            <PostCard
-              post={item}
-              onComment={() => setActivePost(item.id)}
-              onShare={() => onShare(item.id)}
-            />
-          )}
+          renderItem={({ item }) =>
+            item.kind === "ad" ? (
+              <SponsoredCard ad={item.ad} />
+            ) : (
+              <PostCard
+                post={item.post}
+                onComment={() => setActivePost(item.post.id)}
+                onShare={() => onShare(item.post.id)}
+              />
+            )
+          }
           ListEmptyComponent={
             <View style={{ alignItems: "center", marginTop: 60, paddingHorizontal: 20 }}>
               <Ionicons name="newspaper-outline" size={48} color={c.mutedForeground} />

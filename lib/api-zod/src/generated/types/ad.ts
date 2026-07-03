@@ -20,6 +20,10 @@ export interface Ad {
   reviewNote?: string | null;
   /** @nullable */
   destinationUrl?: string | null;
+  /** @nullable */
+  boostedPostId?: number | null;
+  /** @nullable */
+  boostedPageId?: number | null;
   createdAt: Date;
   updatedAt?: Date;
 }

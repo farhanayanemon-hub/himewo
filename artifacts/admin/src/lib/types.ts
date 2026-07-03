@@ -23,6 +23,8 @@ export const PERMISSIONS = [
   "verification.manage",
   "earnings.view",
   "earnings.manage",
+  "ads.view",
+  "ads.manage",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -330,4 +332,36 @@ export interface AdminEarningsSummary {
   pendingPayoutCount: number;
   outstandingPoints: number;
   outstandingDollars: number;
+}
+
+export type AdReviewStatus = "pending" | "approved" | "rejected";
+
+export interface AdCreativeRow {
+  id: number;
+  name: string;
+  format: string;
+  headline: string | null;
+  primaryText: string | null;
+  description: string | null;
+  callToAction: string | null;
+  mediaUrls: string[];
+  linkUrl: string | null;
+}
+
+export interface AdRow {
+  id: number;
+  accountId: number;
+  name: string;
+  status: string;
+  reviewStatus: AdReviewStatus;
+  reviewNote: string | null;
+  destinationUrl: string | null;
+  boostedPostId: number | null;
+  boostedPageId: number | null;
+  createdAt: string;
+  accountName: string | null;
+  owner: AdminProfile | null;
+  campaignName: string | null;
+  objective: string | null;
+  creative: AdCreativeRow | null;
 }

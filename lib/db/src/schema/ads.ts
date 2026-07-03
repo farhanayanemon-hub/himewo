@@ -344,6 +344,11 @@ export const adsTable = pgTable(
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     // http(s) destination (validated at the API edge).
     destinationUrl: text("destination_url"),
+    // When this ad was created by "Boost Post" / "Boost Page" it points at the
+    // boosted post/page so serving can embed the real content. Plain integer
+    // (no FK) — a deleted post/page just makes the ad unservable (skipped).
+    boostedPostId: integer("boosted_post_id"),
+    boostedPageId: integer("boosted_page_id"),
     createdBy: uuid("created_by"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

@@ -5251,6 +5251,8 @@ export const ListAdsResponseItem = zod.object({
   "reviewStatus": zod.enum(['pending', 'approved', 'rejected']),
   "reviewNote": zod.string().nullish(),
   "destinationUrl": zod.string().nullish(),
+  "boostedPostId": zod.number().nullish(),
+  "boostedPageId": zod.number().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 })
@@ -5281,6 +5283,8 @@ export const CreateAdResponse = zod.object({
   "reviewStatus": zod.enum(['pending', 'approved', 'rejected']),
   "reviewNote": zod.string().nullish(),
   "destinationUrl": zod.string().nullish(),
+  "boostedPostId": zod.number().nullish(),
+  "boostedPageId": zod.number().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 })
@@ -5300,6 +5304,8 @@ export const GetAdResponse = zod.object({
   "reviewStatus": zod.enum(['pending', 'approved', 'rejected']),
   "reviewNote": zod.string().nullish(),
   "destinationUrl": zod.string().nullish(),
+  "boostedPostId": zod.number().nullish(),
+  "boostedPageId": zod.number().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 })
@@ -5329,6 +5335,8 @@ export const UpdateAdResponse = zod.object({
   "reviewStatus": zod.enum(['pending', 'approved', 'rejected']),
   "reviewNote": zod.string().nullish(),
   "destinationUrl": zod.string().nullish(),
+  "boostedPostId": zod.number().nullish(),
+  "boostedPageId": zod.number().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 })
@@ -5355,6 +5363,284 @@ export const SubmitAdForReviewResponse = zod.object({
   "reviewStatus": zod.enum(['pending', 'approved', 'rejected']),
   "reviewNote": zod.string().nullish(),
   "destinationUrl": zod.string().nullish(),
+  "boostedPostId": zod.number().nullish(),
+  "boostedPageId": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Approved ads eligible for the current viewer at a placement.
+ */
+export const serveAdsQueryLimitMax = 10;
+
+
+
+export const ServeAdsQueryParams = zod.object({
+  "placement": zod.enum(['feed', 'reels', 'marketplace', 'stories', 'sidebar']).optional(),
+  "limit": zod.coerce.number().min(1).max(serveAdsQueryLimitMax).optional()
+})
+
+export const serveAdsResponseBoostedPageOneViewerReviewOneRatingMax = 5;
+
+
+
+export const ServeAdsResponseItem = zod.object({
+  "adId": zod.number(),
+  "accountId": zod.number(),
+  "placement": zod.string(),
+  "name": zod.string(),
+  "destinationUrl": zod.string().nullish(),
+  "creative": zod.union([zod.object({
+  "id": zod.number(),
+  "accountId": zod.number(),
+  "name": zod.string(),
+  "format": zod.string(),
+  "headline": zod.string().nullish(),
+  "primaryText": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "callToAction": zod.string(),
+  "mediaUrls": zod.array(zod.string()),
+  "linkUrl": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+}),zod.null()]).optional(),
+  "boostedPost": zod.union([zod.object({
+  "id": zod.number(),
+  "author": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "content": zod.string(),
+  "feelingVerb": zod.string().nullish(),
+  "feeling": zod.string().nullish(),
+  "feelingEmoji": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "privacy": zod.enum(['public', 'friends', 'private']),
+  "commentsEnabled": zod.boolean(),
+  "reactionsEnabled": zod.boolean(),
+  "groupId": zod.number().nullish(),
+  "pageId": zod.number().nullish(),
+  "media": zod.array(zod.object({
+  "id": zod.number(),
+  "url": zod.string(),
+  "type": zod.enum(['image', 'video']),
+  "thumbnailUrl": zod.string().nullish(),
+  "width": zod.number().nullish(),
+  "height": zod.number().nullish(),
+  "durationMs": zod.number().nullish(),
+  "position": zod.number().optional()
+})),
+  "reactions": zod.object({
+  "total": zod.number(),
+  "byType": zod.record(zod.string(), zod.number()),
+  "viewerReaction": zod.union([zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry']),zod.null()]).optional()
+}),
+  "commentCount": zod.number(),
+  "shareCount": zod.number(),
+  "viewerHasSaved": zod.boolean().optional(),
+  "poll": zod.union([zod.object({
+  "id": zod.number(),
+  "question": zod.string(),
+  "totalVotes": zod.number(),
+  "viewerVotedOptionId": zod.number().nullable(),
+  "options": zod.array(zod.object({
+  "id": zod.number(),
+  "text": zod.string(),
+  "voteCount": zod.number()
+}))
+}),zod.null()]).optional(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+}),zod.null()]).optional(),
+  "boostedPage": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "category": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "contactPhone": zod.string().nullish(),
+  "contactEmail": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "hours": zod.string().nullish(),
+  "ctaType": zod.enum(['none', 'message', 'call', 'shop', 'signup']),
+  "ctaUrl": zod.string().nullish(),
+  "ownerId": zod.string(),
+  "followerCount": zod.number(),
+  "reviewCount": zod.number(),
+  "averageRating": zod.number().nullable(),
+  "viewerFollows": zod.boolean().optional(),
+  "viewerCanPost": zod.boolean().optional(),
+  "viewerReview": zod.union([zod.object({
+  "id": zod.number(),
+  "user": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "rating": zod.number().min(1).max(serveAdsResponseBoostedPageOneViewerReviewOneRatingMax),
+  "body": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}),zod.null()]).optional(),
+  "createdAt": zod.coerce.date()
+}),zod.null()]).optional()
+})
+export const ServeAdsResponse = zod.array(ServeAdsResponseItem)
+
+
+export const RecordAdImpressionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RecordAdImpressionBody = zod.object({
+  "placement": zod.enum(['feed', 'reels', 'marketplace', 'stories', 'sidebar']).optional()
+})
+
+export const RecordAdImpressionResponse = zod.void()
+
+
+export const RecordAdClickParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RecordAdClickBody = zod.object({
+  "placement": zod.enum(['feed', 'reels', 'marketplace', 'stories', 'sidebar']).optional()
+})
+
+export const RecordAdClickResponse = zod.void()
+
+
+/**
+ * @summary Create a sponsored ad from a post and submit it for review.
+ */
+export const BoostPostParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const boostPostBodyBudgetCentsMin = 100;
+
+export const boostPostBodyDaysMax = 30;
+
+
+
+export const BoostPostBody = zod.object({
+  "budgetCents": zod.number().min(boostPostBodyBudgetCentsMin),
+  "days": zod.number().min(1).max(boostPostBodyDaysMax),
+  "headline": zod.string().optional(),
+  "callToAction": zod.enum(['learn_more', 'shop_now', 'sign_up', 'book_now', 'contact_us', 'download', 'none']).optional(),
+  "destinationUrl": zod.string().optional()
+})
+
+export const BoostPostResponse = zod.object({
+  "id": zod.number(),
+  "adSetId": zod.number(),
+  "accountId": zod.number(),
+  "creativeId": zod.number().nullish(),
+  "name": zod.string(),
+  "status": zod.string(),
+  "reviewStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "reviewNote": zod.string().nullish(),
+  "destinationUrl": zod.string().nullish(),
+  "boostedPostId": zod.number().nullish(),
+  "boostedPageId": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Create a sponsored ad from a page and submit it for review.
+ */
+export const BoostPageParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const boostPageBodyBudgetCentsMin = 100;
+
+export const boostPageBodyDaysMax = 30;
+
+
+
+export const BoostPageBody = zod.object({
+  "budgetCents": zod.number().min(boostPageBodyBudgetCentsMin),
+  "days": zod.number().min(1).max(boostPageBodyDaysMax),
+  "headline": zod.string().optional(),
+  "callToAction": zod.enum(['learn_more', 'shop_now', 'sign_up', 'book_now', 'contact_us', 'download', 'none']).optional(),
+  "destinationUrl": zod.string().optional()
+})
+
+export const BoostPageResponse = zod.object({
+  "id": zod.number(),
+  "adSetId": zod.number(),
+  "accountId": zod.number(),
+  "creativeId": zod.number().nullish(),
+  "name": zod.string(),
+  "status": zod.string(),
+  "reviewStatus": zod.enum(['pending', 'approved', 'rejected']),
+  "reviewNote": zod.string().nullish(),
+  "destinationUrl": zod.string().nullish(),
+  "boostedPostId": zod.number().nullish(),
+  "boostedPageId": zod.number().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 })
