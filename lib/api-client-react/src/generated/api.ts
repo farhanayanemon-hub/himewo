@@ -20,6 +20,31 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  Ad,
+  AdAccount,
+  AdAccountInput,
+  AdAccountMember,
+  AdAccountMemberInput,
+  AdAccountMemberUpdate,
+  AdAccountUpdate,
+  AdCampaign,
+  AdCampaignInput,
+  AdCampaignUpdate,
+  AdCoupon,
+  AdCreative,
+  AdCreativeInput,
+  AdCreativeUpdate,
+  AdInput,
+  AdSchedule,
+  AdScheduleInput,
+  AdSet,
+  AdSetInput,
+  AdSetUpdate,
+  AdTargeting,
+  AdTargetingSpec,
+  AdUpdate,
+  AdWallet,
+  AdWalletTransaction,
   AddAlbumPhotosInput,
   AdjustPointsInput,
   AdjustPointsResult,
@@ -105,6 +130,9 @@ import type {
   ReelComment,
   ReelCommentInput,
   ReelInput,
+  SavedAudience,
+  SavedAudienceInput,
+  SavedAudienceUpdate,
   SavedItem,
   SavedItemInput,
   SearchUsersParams,
@@ -6889,6 +6917,2704 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getDeleteMarketplaceListingMutationOptions(options));
     }
+
+export const getListAdAccountsUrl = () => {
+
+
+
+
+  return `/api/ad-accounts`
+}
+
+export const listAdAccounts = async ( options?: RequestInit): Promise<AdAccount[]> => {
+
+  return customFetch<AdAccount[]>(getListAdAccountsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdAccountsQueryKey = () => {
+    return [
+    `/api/ad-accounts`
+    ] as const;
+    }
+
+
+export const getListAdAccountsQueryOptions = <TData = Awaited<ReturnType<typeof listAdAccounts>>, TError = ErrorType<UnauthorizedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdAccounts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdAccountsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdAccounts>>> = ({ signal }) => listAdAccounts({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdAccounts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdAccountsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdAccounts>>>
+export type ListAdAccountsQueryError = ErrorType<UnauthorizedResponse>
+
+
+
+export function useListAdAccounts<TData = Awaited<ReturnType<typeof listAdAccounts>>, TError = ErrorType<UnauthorizedResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdAccounts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdAccountsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateAdAccountUrl = () => {
+
+
+
+
+  return `/api/ad-accounts`
+}
+
+export const createAdAccount = async (adAccountInput: AdAccountInput, options?: RequestInit): Promise<AdAccount> => {
+
+  return customFetch<AdAccount>(getCreateAdAccountUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adAccountInput)
+  }
+);}
+
+
+
+
+export const getCreateAdAccountMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdAccount>>, TError,{data: BodyType<AdAccountInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAdAccount>>, TError,{data: BodyType<AdAccountInput>}, TContext> => {
+
+const mutationKey = ['createAdAccount'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAdAccount>>, {data: BodyType<AdAccountInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createAdAccount(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAdAccountMutationResult = NonNullable<Awaited<ReturnType<typeof createAdAccount>>>
+    export type CreateAdAccountMutationBody = BodyType<AdAccountInput>
+    export type CreateAdAccountMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse>
+
+    export const useCreateAdAccount = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdAccount>>, TError,{data: BodyType<AdAccountInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAdAccount>>,
+        TError,
+        {data: BodyType<AdAccountInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAdAccountMutationOptions(options));
+    }
+
+export const getGetAdAccountUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-accounts/${id}`
+}
+
+export const getAdAccount = async (id: number, options?: RequestInit): Promise<AdAccount> => {
+
+  return customFetch<AdAccount>(getGetAdAccountUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdAccountQueryKey = (id: number,) => {
+    return [
+    `/api/ad-accounts/${id}`
+    ] as const;
+    }
+
+
+export const getGetAdAccountQueryOptions = <TData = Awaited<ReturnType<typeof getAdAccount>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdAccount>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdAccountQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdAccount>>> = ({ signal }) => getAdAccount(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdAccount>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdAccountQueryResult = NonNullable<Awaited<ReturnType<typeof getAdAccount>>>
+export type GetAdAccountQueryError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+
+
+export function useGetAdAccount<TData = Awaited<ReturnType<typeof getAdAccount>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdAccount>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdAccountQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateAdAccountUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-accounts/${id}`
+}
+
+export const updateAdAccount = async (id: number,
+    adAccountUpdate: AdAccountUpdate, options?: RequestInit): Promise<AdAccount> => {
+
+  return customFetch<AdAccount>(getUpdateAdAccountUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adAccountUpdate)
+  }
+);}
+
+
+
+
+export const getUpdateAdAccountMutationOptions = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdAccount>>, TError,{id: number;data: BodyType<AdAccountUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAdAccount>>, TError,{id: number;data: BodyType<AdAccountUpdate>}, TContext> => {
+
+const mutationKey = ['updateAdAccount'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAdAccount>>, {id: number;data: BodyType<AdAccountUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateAdAccount(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAdAccountMutationResult = NonNullable<Awaited<ReturnType<typeof updateAdAccount>>>
+    export type UpdateAdAccountMutationBody = BodyType<AdAccountUpdate>
+    export type UpdateAdAccountMutationError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>
+
+    export const useUpdateAdAccount = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdAccount>>, TError,{id: number;data: BodyType<AdAccountUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAdAccount>>,
+        TError,
+        {id: number;data: BodyType<AdAccountUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateAdAccountMutationOptions(options));
+    }
+
+export const getListAdAccountMembersUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-accounts/${id}/members`
+}
+
+export const listAdAccountMembers = async (id: number, options?: RequestInit): Promise<AdAccountMember[]> => {
+
+  return customFetch<AdAccountMember[]>(getListAdAccountMembersUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdAccountMembersQueryKey = (id: number,) => {
+    return [
+    `/api/ad-accounts/${id}/members`
+    ] as const;
+    }
+
+
+export const getListAdAccountMembersQueryOptions = <TData = Awaited<ReturnType<typeof listAdAccountMembers>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdAccountMembers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdAccountMembersQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdAccountMembers>>> = ({ signal }) => listAdAccountMembers(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdAccountMembers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdAccountMembersQueryResult = NonNullable<Awaited<ReturnType<typeof listAdAccountMembers>>>
+export type ListAdAccountMembersQueryError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+
+
+export function useListAdAccountMembers<TData = Awaited<ReturnType<typeof listAdAccountMembers>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdAccountMembers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdAccountMembersQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAddAdAccountMemberUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-accounts/${id}/members`
+}
+
+export const addAdAccountMember = async (id: number,
+    adAccountMemberInput: AdAccountMemberInput, options?: RequestInit): Promise<AdAccountMember> => {
+
+  return customFetch<AdAccountMember>(getAddAdAccountMemberUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adAccountMemberInput)
+  }
+);}
+
+
+
+
+export const getAddAdAccountMemberMutationOptions = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addAdAccountMember>>, TError,{id: number;data: BodyType<AdAccountMemberInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addAdAccountMember>>, TError,{id: number;data: BodyType<AdAccountMemberInput>}, TContext> => {
+
+const mutationKey = ['addAdAccountMember'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addAdAccountMember>>, {id: number;data: BodyType<AdAccountMemberInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  addAdAccountMember(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddAdAccountMemberMutationResult = NonNullable<Awaited<ReturnType<typeof addAdAccountMember>>>
+    export type AddAdAccountMemberMutationBody = BodyType<AdAccountMemberInput>
+    export type AddAdAccountMemberMutationError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>
+
+    export const useAddAdAccountMember = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addAdAccountMember>>, TError,{id: number;data: BodyType<AdAccountMemberInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addAdAccountMember>>,
+        TError,
+        {id: number;data: BodyType<AdAccountMemberInput>},
+        TContext
+      > => {
+      return useMutation(getAddAdAccountMemberMutationOptions(options));
+    }
+
+export const getUpdateAdAccountMemberUrl = (id: number,
+    memberId: number,) => {
+
+
+
+
+  return `/api/ad-accounts/${id}/members/${memberId}`
+}
+
+export const updateAdAccountMember = async (id: number,
+    memberId: number,
+    adAccountMemberUpdate: AdAccountMemberUpdate, options?: RequestInit): Promise<AdAccountMember> => {
+
+  return customFetch<AdAccountMember>(getUpdateAdAccountMemberUrl(id,memberId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adAccountMemberUpdate)
+  }
+);}
+
+
+
+
+export const getUpdateAdAccountMemberMutationOptions = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdAccountMember>>, TError,{id: number;memberId: number;data: BodyType<AdAccountMemberUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAdAccountMember>>, TError,{id: number;memberId: number;data: BodyType<AdAccountMemberUpdate>}, TContext> => {
+
+const mutationKey = ['updateAdAccountMember'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAdAccountMember>>, {id: number;memberId: number;data: BodyType<AdAccountMemberUpdate>}> = (props) => {
+          const {id,memberId,data} = props ?? {};
+
+          return  updateAdAccountMember(id,memberId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAdAccountMemberMutationResult = NonNullable<Awaited<ReturnType<typeof updateAdAccountMember>>>
+    export type UpdateAdAccountMemberMutationBody = BodyType<AdAccountMemberUpdate>
+    export type UpdateAdAccountMemberMutationError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>
+
+    export const useUpdateAdAccountMember = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdAccountMember>>, TError,{id: number;memberId: number;data: BodyType<AdAccountMemberUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAdAccountMember>>,
+        TError,
+        {id: number;memberId: number;data: BodyType<AdAccountMemberUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateAdAccountMemberMutationOptions(options));
+    }
+
+export const getRemoveAdAccountMemberUrl = (id: number,
+    memberId: number,) => {
+
+
+
+
+  return `/api/ad-accounts/${id}/members/${memberId}`
+}
+
+export const removeAdAccountMember = async (id: number,
+    memberId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getRemoveAdAccountMemberUrl(id,memberId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getRemoveAdAccountMemberMutationOptions = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeAdAccountMember>>, TError,{id: number;memberId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeAdAccountMember>>, TError,{id: number;memberId: number}, TContext> => {
+
+const mutationKey = ['removeAdAccountMember'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeAdAccountMember>>, {id: number;memberId: number}> = (props) => {
+          const {id,memberId} = props ?? {};
+
+          return  removeAdAccountMember(id,memberId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveAdAccountMemberMutationResult = NonNullable<Awaited<ReturnType<typeof removeAdAccountMember>>>
+
+    export type RemoveAdAccountMemberMutationError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+    export const useRemoveAdAccountMember = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeAdAccountMember>>, TError,{id: number;memberId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removeAdAccountMember>>,
+        TError,
+        {id: number;memberId: number},
+        TContext
+      > => {
+      return useMutation(getRemoveAdAccountMemberMutationOptions(options));
+    }
+
+export const getListAdCampaignsUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-accounts/${id}/campaigns`
+}
+
+export const listAdCampaigns = async (id: number, options?: RequestInit): Promise<AdCampaign[]> => {
+
+  return customFetch<AdCampaign[]>(getListAdCampaignsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdCampaignsQueryKey = (id: number,) => {
+    return [
+    `/api/ad-accounts/${id}/campaigns`
+    ] as const;
+    }
+
+
+export const getListAdCampaignsQueryOptions = <TData = Awaited<ReturnType<typeof listAdCampaigns>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdCampaigns>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdCampaignsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdCampaigns>>> = ({ signal }) => listAdCampaigns(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdCampaigns>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdCampaignsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdCampaigns>>>
+export type ListAdCampaignsQueryError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+
+
+export function useListAdCampaigns<TData = Awaited<ReturnType<typeof listAdCampaigns>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdCampaigns>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdCampaignsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateAdCampaignUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-accounts/${id}/campaigns`
+}
+
+export const createAdCampaign = async (id: number,
+    adCampaignInput: AdCampaignInput, options?: RequestInit): Promise<AdCampaign> => {
+
+  return customFetch<AdCampaign>(getCreateAdCampaignUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adCampaignInput)
+  }
+);}
+
+
+
+
+export const getCreateAdCampaignMutationOptions = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdCampaign>>, TError,{id: number;data: BodyType<AdCampaignInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAdCampaign>>, TError,{id: number;data: BodyType<AdCampaignInput>}, TContext> => {
+
+const mutationKey = ['createAdCampaign'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAdCampaign>>, {id: number;data: BodyType<AdCampaignInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createAdCampaign(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAdCampaignMutationResult = NonNullable<Awaited<ReturnType<typeof createAdCampaign>>>
+    export type CreateAdCampaignMutationBody = BodyType<AdCampaignInput>
+    export type CreateAdCampaignMutationError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>
+
+    export const useCreateAdCampaign = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdCampaign>>, TError,{id: number;data: BodyType<AdCampaignInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAdCampaign>>,
+        TError,
+        {id: number;data: BodyType<AdCampaignInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAdCampaignMutationOptions(options));
+    }
+
+export const getGetAdCampaignUrl = (id: number,) => {
+
+
+
+
+  return `/api/campaigns/${id}`
+}
+
+export const getAdCampaign = async (id: number, options?: RequestInit): Promise<AdCampaign> => {
+
+  return customFetch<AdCampaign>(getGetAdCampaignUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdCampaignQueryKey = (id: number,) => {
+    return [
+    `/api/campaigns/${id}`
+    ] as const;
+    }
+
+
+export const getGetAdCampaignQueryOptions = <TData = Awaited<ReturnType<typeof getAdCampaign>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdCampaign>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdCampaignQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdCampaign>>> = ({ signal }) => getAdCampaign(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdCampaign>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdCampaignQueryResult = NonNullable<Awaited<ReturnType<typeof getAdCampaign>>>
+export type GetAdCampaignQueryError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+
+
+export function useGetAdCampaign<TData = Awaited<ReturnType<typeof getAdCampaign>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdCampaign>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdCampaignQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateAdCampaignUrl = (id: number,) => {
+
+
+
+
+  return `/api/campaigns/${id}`
+}
+
+export const updateAdCampaign = async (id: number,
+    adCampaignUpdate: AdCampaignUpdate, options?: RequestInit): Promise<AdCampaign> => {
+
+  return customFetch<AdCampaign>(getUpdateAdCampaignUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adCampaignUpdate)
+  }
+);}
+
+
+
+
+export const getUpdateAdCampaignMutationOptions = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdCampaign>>, TError,{id: number;data: BodyType<AdCampaignUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAdCampaign>>, TError,{id: number;data: BodyType<AdCampaignUpdate>}, TContext> => {
+
+const mutationKey = ['updateAdCampaign'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAdCampaign>>, {id: number;data: BodyType<AdCampaignUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateAdCampaign(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAdCampaignMutationResult = NonNullable<Awaited<ReturnType<typeof updateAdCampaign>>>
+    export type UpdateAdCampaignMutationBody = BodyType<AdCampaignUpdate>
+    export type UpdateAdCampaignMutationError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>
+
+    export const useUpdateAdCampaign = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdCampaign>>, TError,{id: number;data: BodyType<AdCampaignUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAdCampaign>>,
+        TError,
+        {id: number;data: BodyType<AdCampaignUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateAdCampaignMutationOptions(options));
+    }
+
+export const getDeleteAdCampaignUrl = (id: number,) => {
+
+
+
+
+  return `/api/campaigns/${id}`
+}
+
+export const deleteAdCampaign = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteAdCampaignUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteAdCampaignMutationOptions = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdCampaign>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAdCampaign>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteAdCampaign'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAdCampaign>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteAdCampaign(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAdCampaignMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAdCampaign>>>
+
+    export type DeleteAdCampaignMutationError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+    export const useDeleteAdCampaign = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdCampaign>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAdCampaign>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteAdCampaignMutationOptions(options));
+    }
+
+export const getListAdSetsUrl = (id: number,) => {
+
+
+
+
+  return `/api/campaigns/${id}/ad-sets`
+}
+
+export const listAdSets = async (id: number, options?: RequestInit): Promise<AdSet[]> => {
+
+  return customFetch<AdSet[]>(getListAdSetsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdSetsQueryKey = (id: number,) => {
+    return [
+    `/api/campaigns/${id}/ad-sets`
+    ] as const;
+    }
+
+
+export const getListAdSetsQueryOptions = <TData = Awaited<ReturnType<typeof listAdSets>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdSets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdSetsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdSets>>> = ({ signal }) => listAdSets(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdSets>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdSetsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdSets>>>
+export type ListAdSetsQueryError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+
+
+export function useListAdSets<TData = Awaited<ReturnType<typeof listAdSets>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdSets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdSetsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateAdSetUrl = (id: number,) => {
+
+
+
+
+  return `/api/campaigns/${id}/ad-sets`
+}
+
+export const createAdSet = async (id: number,
+    adSetInput: AdSetInput, options?: RequestInit): Promise<AdSet> => {
+
+  return customFetch<AdSet>(getCreateAdSetUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adSetInput)
+  }
+);}
+
+
+
+
+export const getCreateAdSetMutationOptions = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdSet>>, TError,{id: number;data: BodyType<AdSetInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAdSet>>, TError,{id: number;data: BodyType<AdSetInput>}, TContext> => {
+
+const mutationKey = ['createAdSet'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAdSet>>, {id: number;data: BodyType<AdSetInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createAdSet(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAdSetMutationResult = NonNullable<Awaited<ReturnType<typeof createAdSet>>>
+    export type CreateAdSetMutationBody = BodyType<AdSetInput>
+    export type CreateAdSetMutationError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>
+
+    export const useCreateAdSet = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdSet>>, TError,{id: number;data: BodyType<AdSetInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAdSet>>,
+        TError,
+        {id: number;data: BodyType<AdSetInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAdSetMutationOptions(options));
+    }
+
+export const getGetAdSetUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-sets/${id}`
+}
+
+export const getAdSet = async (id: number, options?: RequestInit): Promise<AdSet> => {
+
+  return customFetch<AdSet>(getGetAdSetUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdSetQueryKey = (id: number,) => {
+    return [
+    `/api/ad-sets/${id}`
+    ] as const;
+    }
+
+
+export const getGetAdSetQueryOptions = <TData = Awaited<ReturnType<typeof getAdSet>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdSet>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdSetQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdSet>>> = ({ signal }) => getAdSet(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdSet>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdSetQueryResult = NonNullable<Awaited<ReturnType<typeof getAdSet>>>
+export type GetAdSetQueryError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+
+
+export function useGetAdSet<TData = Awaited<ReturnType<typeof getAdSet>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdSet>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdSetQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateAdSetUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-sets/${id}`
+}
+
+export const updateAdSet = async (id: number,
+    adSetUpdate: AdSetUpdate, options?: RequestInit): Promise<AdSet> => {
+
+  return customFetch<AdSet>(getUpdateAdSetUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adSetUpdate)
+  }
+);}
+
+
+
+
+export const getUpdateAdSetMutationOptions = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdSet>>, TError,{id: number;data: BodyType<AdSetUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAdSet>>, TError,{id: number;data: BodyType<AdSetUpdate>}, TContext> => {
+
+const mutationKey = ['updateAdSet'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAdSet>>, {id: number;data: BodyType<AdSetUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateAdSet(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAdSetMutationResult = NonNullable<Awaited<ReturnType<typeof updateAdSet>>>
+    export type UpdateAdSetMutationBody = BodyType<AdSetUpdate>
+    export type UpdateAdSetMutationError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>
+
+    export const useUpdateAdSet = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdSet>>, TError,{id: number;data: BodyType<AdSetUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAdSet>>,
+        TError,
+        {id: number;data: BodyType<AdSetUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateAdSetMutationOptions(options));
+    }
+
+export const getDeleteAdSetUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-sets/${id}`
+}
+
+export const deleteAdSet = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteAdSetUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteAdSetMutationOptions = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdSet>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAdSet>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteAdSet'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAdSet>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteAdSet(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAdSetMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAdSet>>>
+
+    export type DeleteAdSetMutationError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+    export const useDeleteAdSet = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdSet>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAdSet>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteAdSetMutationOptions(options));
+    }
+
+export const getGetAdSetTargetingUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-sets/${id}/targeting`
+}
+
+export const getAdSetTargeting = async (id: number, options?: RequestInit): Promise<AdTargeting> => {
+
+  return customFetch<AdTargeting>(getGetAdSetTargetingUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdSetTargetingQueryKey = (id: number,) => {
+    return [
+    `/api/ad-sets/${id}/targeting`
+    ] as const;
+    }
+
+
+export const getGetAdSetTargetingQueryOptions = <TData = Awaited<ReturnType<typeof getAdSetTargeting>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdSetTargeting>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdSetTargetingQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdSetTargeting>>> = ({ signal }) => getAdSetTargeting(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdSetTargeting>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdSetTargetingQueryResult = NonNullable<Awaited<ReturnType<typeof getAdSetTargeting>>>
+export type GetAdSetTargetingQueryError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+
+
+export function useGetAdSetTargeting<TData = Awaited<ReturnType<typeof getAdSetTargeting>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdSetTargeting>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdSetTargetingQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSetAdSetTargetingUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-sets/${id}/targeting`
+}
+
+export const setAdSetTargeting = async (id: number,
+    adTargetingSpec: AdTargetingSpec, options?: RequestInit): Promise<AdTargeting> => {
+
+  return customFetch<AdTargeting>(getSetAdSetTargetingUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adTargetingSpec)
+  }
+);}
+
+
+
+
+export const getSetAdSetTargetingMutationOptions = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setAdSetTargeting>>, TError,{id: number;data: BodyType<AdTargetingSpec>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setAdSetTargeting>>, TError,{id: number;data: BodyType<AdTargetingSpec>}, TContext> => {
+
+const mutationKey = ['setAdSetTargeting'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setAdSetTargeting>>, {id: number;data: BodyType<AdTargetingSpec>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  setAdSetTargeting(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetAdSetTargetingMutationResult = NonNullable<Awaited<ReturnType<typeof setAdSetTargeting>>>
+    export type SetAdSetTargetingMutationBody = BodyType<AdTargetingSpec>
+    export type SetAdSetTargetingMutationError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>
+
+    export const useSetAdSetTargeting = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setAdSetTargeting>>, TError,{id: number;data: BodyType<AdTargetingSpec>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setAdSetTargeting>>,
+        TError,
+        {id: number;data: BodyType<AdTargetingSpec>},
+        TContext
+      > => {
+      return useMutation(getSetAdSetTargetingMutationOptions(options));
+    }
+
+export const getListAdSchedulesUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-sets/${id}/schedules`
+}
+
+export const listAdSchedules = async (id: number, options?: RequestInit): Promise<AdSchedule[]> => {
+
+  return customFetch<AdSchedule[]>(getListAdSchedulesUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdSchedulesQueryKey = (id: number,) => {
+    return [
+    `/api/ad-sets/${id}/schedules`
+    ] as const;
+    }
+
+
+export const getListAdSchedulesQueryOptions = <TData = Awaited<ReturnType<typeof listAdSchedules>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdSchedules>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdSchedulesQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdSchedules>>> = ({ signal }) => listAdSchedules(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdSchedules>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdSchedulesQueryResult = NonNullable<Awaited<ReturnType<typeof listAdSchedules>>>
+export type ListAdSchedulesQueryError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+
+
+export function useListAdSchedules<TData = Awaited<ReturnType<typeof listAdSchedules>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdSchedules>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdSchedulesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSetAdSchedulesUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-sets/${id}/schedules`
+}
+
+export const setAdSchedules = async (id: number,
+    adScheduleInput: AdScheduleInput[], options?: RequestInit): Promise<AdSchedule[]> => {
+
+  return customFetch<AdSchedule[]>(getSetAdSchedulesUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adScheduleInput)
+  }
+);}
+
+
+
+
+export const getSetAdSchedulesMutationOptions = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setAdSchedules>>, TError,{id: number;data: BodyType<AdScheduleInput[]>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setAdSchedules>>, TError,{id: number;data: BodyType<AdScheduleInput[]>}, TContext> => {
+
+const mutationKey = ['setAdSchedules'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setAdSchedules>>, {id: number;data: BodyType<AdScheduleInput[]>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  setAdSchedules(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetAdSchedulesMutationResult = NonNullable<Awaited<ReturnType<typeof setAdSchedules>>>
+    export type SetAdSchedulesMutationBody = BodyType<AdScheduleInput[]>
+    export type SetAdSchedulesMutationError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>
+
+    export const useSetAdSchedules = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setAdSchedules>>, TError,{id: number;data: BodyType<AdScheduleInput[]>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setAdSchedules>>,
+        TError,
+        {id: number;data: BodyType<AdScheduleInput[]>},
+        TContext
+      > => {
+      return useMutation(getSetAdSchedulesMutationOptions(options));
+    }
+
+export const getListAdsUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-sets/${id}/ads`
+}
+
+export const listAds = async (id: number, options?: RequestInit): Promise<Ad[]> => {
+
+  return customFetch<Ad[]>(getListAdsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdsQueryKey = (id: number,) => {
+    return [
+    `/api/ad-sets/${id}/ads`
+    ] as const;
+    }
+
+
+export const getListAdsQueryOptions = <TData = Awaited<ReturnType<typeof listAds>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAds>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAds>>> = ({ signal }) => listAds(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAds>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdsQueryResult = NonNullable<Awaited<ReturnType<typeof listAds>>>
+export type ListAdsQueryError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+
+
+export function useListAds<TData = Awaited<ReturnType<typeof listAds>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAds>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateAdUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-sets/${id}/ads`
+}
+
+export const createAd = async (id: number,
+    adInput: AdInput, options?: RequestInit): Promise<Ad> => {
+
+  return customFetch<Ad>(getCreateAdUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adInput)
+  }
+);}
+
+
+
+
+export const getCreateAdMutationOptions = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAd>>, TError,{id: number;data: BodyType<AdInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAd>>, TError,{id: number;data: BodyType<AdInput>}, TContext> => {
+
+const mutationKey = ['createAd'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAd>>, {id: number;data: BodyType<AdInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createAd(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAdMutationResult = NonNullable<Awaited<ReturnType<typeof createAd>>>
+    export type CreateAdMutationBody = BodyType<AdInput>
+    export type CreateAdMutationError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>
+
+    export const useCreateAd = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAd>>, TError,{id: number;data: BodyType<AdInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAd>>,
+        TError,
+        {id: number;data: BodyType<AdInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAdMutationOptions(options));
+    }
+
+export const getGetAdUrl = (id: number,) => {
+
+
+
+
+  return `/api/ads/${id}`
+}
+
+export const getAd = async (id: number, options?: RequestInit): Promise<Ad> => {
+
+  return customFetch<Ad>(getGetAdUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdQueryKey = (id: number,) => {
+    return [
+    `/api/ads/${id}`
+    ] as const;
+    }
+
+
+export const getGetAdQueryOptions = <TData = Awaited<ReturnType<typeof getAd>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAd>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAd>>> = ({ signal }) => getAd(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAd>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdQueryResult = NonNullable<Awaited<ReturnType<typeof getAd>>>
+export type GetAdQueryError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+
+
+export function useGetAd<TData = Awaited<ReturnType<typeof getAd>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAd>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateAdUrl = (id: number,) => {
+
+
+
+
+  return `/api/ads/${id}`
+}
+
+export const updateAd = async (id: number,
+    adUpdate: AdUpdate, options?: RequestInit): Promise<Ad> => {
+
+  return customFetch<Ad>(getUpdateAdUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adUpdate)
+  }
+);}
+
+
+
+
+export const getUpdateAdMutationOptions = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAd>>, TError,{id: number;data: BodyType<AdUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAd>>, TError,{id: number;data: BodyType<AdUpdate>}, TContext> => {
+
+const mutationKey = ['updateAd'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAd>>, {id: number;data: BodyType<AdUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateAd(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAdMutationResult = NonNullable<Awaited<ReturnType<typeof updateAd>>>
+    export type UpdateAdMutationBody = BodyType<AdUpdate>
+    export type UpdateAdMutationError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>
+
+    export const useUpdateAd = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAd>>, TError,{id: number;data: BodyType<AdUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAd>>,
+        TError,
+        {id: number;data: BodyType<AdUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateAdMutationOptions(options));
+    }
+
+export const getDeleteAdUrl = (id: number,) => {
+
+
+
+
+  return `/api/ads/${id}`
+}
+
+export const deleteAd = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteAdUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteAdMutationOptions = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAd>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAd>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteAd'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAd>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteAd(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAd>>>
+
+    export type DeleteAdMutationError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+    export const useDeleteAd = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAd>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAd>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteAdMutationOptions(options));
+    }
+
+export const getSubmitAdForReviewUrl = (id: number,) => {
+
+
+
+
+  return `/api/ads/${id}/submit`
+}
+
+export const submitAdForReview = async (id: number, options?: RequestInit): Promise<Ad> => {
+
+  return customFetch<Ad>(getSubmitAdForReviewUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getSubmitAdForReviewMutationOptions = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitAdForReview>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitAdForReview>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['submitAdForReview'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitAdForReview>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  submitAdForReview(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitAdForReviewMutationResult = NonNullable<Awaited<ReturnType<typeof submitAdForReview>>>
+
+    export type SubmitAdForReviewMutationError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>
+
+    export const useSubmitAdForReview = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitAdForReview>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof submitAdForReview>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getSubmitAdForReviewMutationOptions(options));
+    }
+
+export const getListAdCreativesUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-accounts/${id}/creatives`
+}
+
+export const listAdCreatives = async (id: number, options?: RequestInit): Promise<AdCreative[]> => {
+
+  return customFetch<AdCreative[]>(getListAdCreativesUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdCreativesQueryKey = (id: number,) => {
+    return [
+    `/api/ad-accounts/${id}/creatives`
+    ] as const;
+    }
+
+
+export const getListAdCreativesQueryOptions = <TData = Awaited<ReturnType<typeof listAdCreatives>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdCreatives>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdCreativesQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdCreatives>>> = ({ signal }) => listAdCreatives(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdCreatives>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdCreativesQueryResult = NonNullable<Awaited<ReturnType<typeof listAdCreatives>>>
+export type ListAdCreativesQueryError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+
+
+export function useListAdCreatives<TData = Awaited<ReturnType<typeof listAdCreatives>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdCreatives>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdCreativesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateAdCreativeUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-accounts/${id}/creatives`
+}
+
+export const createAdCreative = async (id: number,
+    adCreativeInput: AdCreativeInput, options?: RequestInit): Promise<AdCreative> => {
+
+  return customFetch<AdCreative>(getCreateAdCreativeUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adCreativeInput)
+  }
+);}
+
+
+
+
+export const getCreateAdCreativeMutationOptions = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdCreative>>, TError,{id: number;data: BodyType<AdCreativeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAdCreative>>, TError,{id: number;data: BodyType<AdCreativeInput>}, TContext> => {
+
+const mutationKey = ['createAdCreative'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAdCreative>>, {id: number;data: BodyType<AdCreativeInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createAdCreative(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAdCreativeMutationResult = NonNullable<Awaited<ReturnType<typeof createAdCreative>>>
+    export type CreateAdCreativeMutationBody = BodyType<AdCreativeInput>
+    export type CreateAdCreativeMutationError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>
+
+    export const useCreateAdCreative = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdCreative>>, TError,{id: number;data: BodyType<AdCreativeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAdCreative>>,
+        TError,
+        {id: number;data: BodyType<AdCreativeInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAdCreativeMutationOptions(options));
+    }
+
+export const getGetAdCreativeUrl = (id: number,) => {
+
+
+
+
+  return `/api/creatives/${id}`
+}
+
+export const getAdCreative = async (id: number, options?: RequestInit): Promise<AdCreative> => {
+
+  return customFetch<AdCreative>(getGetAdCreativeUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdCreativeQueryKey = (id: number,) => {
+    return [
+    `/api/creatives/${id}`
+    ] as const;
+    }
+
+
+export const getGetAdCreativeQueryOptions = <TData = Awaited<ReturnType<typeof getAdCreative>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdCreative>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdCreativeQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdCreative>>> = ({ signal }) => getAdCreative(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdCreative>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdCreativeQueryResult = NonNullable<Awaited<ReturnType<typeof getAdCreative>>>
+export type GetAdCreativeQueryError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+
+
+export function useGetAdCreative<TData = Awaited<ReturnType<typeof getAdCreative>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdCreative>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdCreativeQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateAdCreativeUrl = (id: number,) => {
+
+
+
+
+  return `/api/creatives/${id}`
+}
+
+export const updateAdCreative = async (id: number,
+    adCreativeUpdate: AdCreativeUpdate, options?: RequestInit): Promise<AdCreative> => {
+
+  return customFetch<AdCreative>(getUpdateAdCreativeUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adCreativeUpdate)
+  }
+);}
+
+
+
+
+export const getUpdateAdCreativeMutationOptions = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdCreative>>, TError,{id: number;data: BodyType<AdCreativeUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAdCreative>>, TError,{id: number;data: BodyType<AdCreativeUpdate>}, TContext> => {
+
+const mutationKey = ['updateAdCreative'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAdCreative>>, {id: number;data: BodyType<AdCreativeUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateAdCreative(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAdCreativeMutationResult = NonNullable<Awaited<ReturnType<typeof updateAdCreative>>>
+    export type UpdateAdCreativeMutationBody = BodyType<AdCreativeUpdate>
+    export type UpdateAdCreativeMutationError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>
+
+    export const useUpdateAdCreative = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdCreative>>, TError,{id: number;data: BodyType<AdCreativeUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAdCreative>>,
+        TError,
+        {id: number;data: BodyType<AdCreativeUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateAdCreativeMutationOptions(options));
+    }
+
+export const getDeleteAdCreativeUrl = (id: number,) => {
+
+
+
+
+  return `/api/creatives/${id}`
+}
+
+export const deleteAdCreative = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteAdCreativeUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteAdCreativeMutationOptions = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdCreative>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAdCreative>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteAdCreative'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAdCreative>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteAdCreative(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAdCreativeMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAdCreative>>>
+
+    export type DeleteAdCreativeMutationError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+    export const useDeleteAdCreative = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdCreative>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAdCreative>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteAdCreativeMutationOptions(options));
+    }
+
+export const getListSavedAudiencesUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-accounts/${id}/audiences`
+}
+
+export const listSavedAudiences = async (id: number, options?: RequestInit): Promise<SavedAudience[]> => {
+
+  return customFetch<SavedAudience[]>(getListSavedAudiencesUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSavedAudiencesQueryKey = (id: number,) => {
+    return [
+    `/api/ad-accounts/${id}/audiences`
+    ] as const;
+    }
+
+
+export const getListSavedAudiencesQueryOptions = <TData = Awaited<ReturnType<typeof listSavedAudiences>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSavedAudiences>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSavedAudiencesQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSavedAudiences>>> = ({ signal }) => listSavedAudiences(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSavedAudiences>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSavedAudiencesQueryResult = NonNullable<Awaited<ReturnType<typeof listSavedAudiences>>>
+export type ListSavedAudiencesQueryError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+
+
+export function useListSavedAudiences<TData = Awaited<ReturnType<typeof listSavedAudiences>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSavedAudiences>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSavedAudiencesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateSavedAudienceUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-accounts/${id}/audiences`
+}
+
+export const createSavedAudience = async (id: number,
+    savedAudienceInput: SavedAudienceInput, options?: RequestInit): Promise<SavedAudience> => {
+
+  return customFetch<SavedAudience>(getCreateSavedAudienceUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(savedAudienceInput)
+  }
+);}
+
+
+
+
+export const getCreateSavedAudienceMutationOptions = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSavedAudience>>, TError,{id: number;data: BodyType<SavedAudienceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSavedAudience>>, TError,{id: number;data: BodyType<SavedAudienceInput>}, TContext> => {
+
+const mutationKey = ['createSavedAudience'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSavedAudience>>, {id: number;data: BodyType<SavedAudienceInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createSavedAudience(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSavedAudienceMutationResult = NonNullable<Awaited<ReturnType<typeof createSavedAudience>>>
+    export type CreateSavedAudienceMutationBody = BodyType<SavedAudienceInput>
+    export type CreateSavedAudienceMutationError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>
+
+    export const useCreateSavedAudience = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSavedAudience>>, TError,{id: number;data: BodyType<SavedAudienceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createSavedAudience>>,
+        TError,
+        {id: number;data: BodyType<SavedAudienceInput>},
+        TContext
+      > => {
+      return useMutation(getCreateSavedAudienceMutationOptions(options));
+    }
+
+export const getUpdateSavedAudienceUrl = (id: number,) => {
+
+
+
+
+  return `/api/audiences/${id}`
+}
+
+export const updateSavedAudience = async (id: number,
+    savedAudienceUpdate: SavedAudienceUpdate, options?: RequestInit): Promise<SavedAudience> => {
+
+  return customFetch<SavedAudience>(getUpdateSavedAudienceUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(savedAudienceUpdate)
+  }
+);}
+
+
+
+
+export const getUpdateSavedAudienceMutationOptions = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSavedAudience>>, TError,{id: number;data: BodyType<SavedAudienceUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSavedAudience>>, TError,{id: number;data: BodyType<SavedAudienceUpdate>}, TContext> => {
+
+const mutationKey = ['updateSavedAudience'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSavedAudience>>, {id: number;data: BodyType<SavedAudienceUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateSavedAudience(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSavedAudienceMutationResult = NonNullable<Awaited<ReturnType<typeof updateSavedAudience>>>
+    export type UpdateSavedAudienceMutationBody = BodyType<SavedAudienceUpdate>
+    export type UpdateSavedAudienceMutationError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>
+
+    export const useUpdateSavedAudience = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSavedAudience>>, TError,{id: number;data: BodyType<SavedAudienceUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateSavedAudience>>,
+        TError,
+        {id: number;data: BodyType<SavedAudienceUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateSavedAudienceMutationOptions(options));
+    }
+
+export const getDeleteSavedAudienceUrl = (id: number,) => {
+
+
+
+
+  return `/api/audiences/${id}`
+}
+
+export const deleteSavedAudience = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteSavedAudienceUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteSavedAudienceMutationOptions = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSavedAudience>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteSavedAudience>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteSavedAudience'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSavedAudience>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteSavedAudience(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteSavedAudienceMutationResult = NonNullable<Awaited<ReturnType<typeof deleteSavedAudience>>>
+
+    export type DeleteSavedAudienceMutationError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+    export const useDeleteSavedAudience = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSavedAudience>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteSavedAudience>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteSavedAudienceMutationOptions(options));
+    }
+
+export const getGetAdWalletUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-accounts/${id}/wallet`
+}
+
+export const getAdWallet = async (id: number, options?: RequestInit): Promise<AdWallet> => {
+
+  return customFetch<AdWallet>(getGetAdWalletUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdWalletQueryKey = (id: number,) => {
+    return [
+    `/api/ad-accounts/${id}/wallet`
+    ] as const;
+    }
+
+
+export const getGetAdWalletQueryOptions = <TData = Awaited<ReturnType<typeof getAdWallet>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdWallet>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdWalletQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdWallet>>> = ({ signal }) => getAdWallet(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdWallet>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdWalletQueryResult = NonNullable<Awaited<ReturnType<typeof getAdWallet>>>
+export type GetAdWalletQueryError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+
+
+export function useGetAdWallet<TData = Awaited<ReturnType<typeof getAdWallet>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdWallet>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdWalletQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListAdWalletTransactionsUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-accounts/${id}/transactions`
+}
+
+export const listAdWalletTransactions = async (id: number, options?: RequestInit): Promise<AdWalletTransaction[]> => {
+
+  return customFetch<AdWalletTransaction[]>(getListAdWalletTransactionsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdWalletTransactionsQueryKey = (id: number,) => {
+    return [
+    `/api/ad-accounts/${id}/transactions`
+    ] as const;
+    }
+
+
+export const getListAdWalletTransactionsQueryOptions = <TData = Awaited<ReturnType<typeof listAdWalletTransactions>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdWalletTransactions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdWalletTransactionsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdWalletTransactions>>> = ({ signal }) => listAdWalletTransactions(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdWalletTransactions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdWalletTransactionsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdWalletTransactions>>>
+export type ListAdWalletTransactionsQueryError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+
+
+export function useListAdWalletTransactions<TData = Awaited<ReturnType<typeof listAdWalletTransactions>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdWalletTransactions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdWalletTransactionsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListAdCouponsUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-accounts/${id}/coupons`
+}
+
+export const listAdCoupons = async (id: number, options?: RequestInit): Promise<AdCoupon[]> => {
+
+  return customFetch<AdCoupon[]>(getListAdCouponsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdCouponsQueryKey = (id: number,) => {
+    return [
+    `/api/ad-accounts/${id}/coupons`
+    ] as const;
+    }
+
+
+export const getListAdCouponsQueryOptions = <TData = Awaited<ReturnType<typeof listAdCoupons>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdCoupons>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdCouponsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdCoupons>>> = ({ signal }) => listAdCoupons(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdCoupons>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdCouponsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdCoupons>>>
+export type ListAdCouponsQueryError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+
+
+export function useListAdCoupons<TData = Awaited<ReturnType<typeof listAdCoupons>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdCoupons>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdCouponsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getListPagesUrl = () => {
 
