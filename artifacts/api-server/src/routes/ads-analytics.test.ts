@@ -11,8 +11,9 @@ import {
   adsTable,
   adImpressionsTable,
   adClicksTable,
+  adConversionsTable,
 } from "@workspace/db";
-import { inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import app from "../app";
 import { signPixelToken, verifyPixelToken } from "../lib/analytics";
 
@@ -284,5 +285,211 @@ describe("Task #5 — pixel endpoint + conversion attribution", () => {
     expect(s.costPerResultCents).toBe(
       Math.round(s.spentCents / s.conversions),
     );
+  });
+});
+
+// Task #14 — the pixel endpoints are public and unauthenticated, so they get
+// hit with junk, replays and bursts. These lock the hardening: bad input never
+// 500s the beacon, and conversion rows stay clean (clamped values, capped
+// string lengths, size-limited metadata, rapid-duplicate suppression).
+describe("Task #14 — conversion pixel hardening", () => {
+  it("rejects a conversion with a missing eventName (400, not 500)", async () => {
+    const token = signPixelToken(accountId);
+    const res = await api(`/ads/pixel`, null, {
+      method: "POST",
+      body: JSON.stringify({ token, valueCents: 100 }),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects malformed (non-object) metadata", async () => {
+    const token = signPixelToken(accountId);
+    const res = await api(`/ads/pixel`, null, {
+      method: "POST",
+      body: JSON.stringify({
+        token,
+        eventName: "bad_meta",
+        metadata: "not-an-object",
+      }),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("clamps an absurdly large valueCents instead of 500ing", async () => {
+    const token = signPixelToken(accountId);
+    const res = await api(`/ads/pixel`, null, {
+      method: "POST",
+      body: JSON.stringify({
+        token,
+        eventName: "big_value",
+        valueCents: 5_000_000_000, // > int4 range
+        viewerId: viewer2,
+      }),
+    });
+    expect(res.status).toBe(200);
+
+    const [row] = await db
+      .select({ valueCents: adConversionsTable.valueCents })
+      .from(adConversionsTable)
+      .where(
+        and(
+          eq(adConversionsTable.accountId, accountId),
+          eq(adConversionsTable.eventName, "big_value"),
+        ),
+      )
+      .limit(1);
+    // Clamped to the ceiling, well under the int4 column max (2147483647).
+    expect(row.valueCents).toBe(1_000_000_000);
+  });
+
+  it("drops oversized metadata rather than storing megabytes (no 500)", async () => {
+    const token = signPixelToken(accountId);
+    const res = await api(`/ads/pixel`, null, {
+      method: "POST",
+      body: JSON.stringify({
+        token,
+        eventName: "big_meta_ok",
+        viewerId: viewer2,
+        metadata: { blob: "x".repeat(20000) },
+      }),
+    });
+    expect(res.status).toBe(200);
+
+    const [row] = await db
+      .select({ metadata: adConversionsTable.metadata })
+      .from(adConversionsTable)
+      .where(
+        and(
+          eq(adConversionsTable.accountId, accountId),
+          eq(adConversionsTable.eventName, "big_meta_ok"),
+        ),
+      )
+      .limit(1);
+    expect(row.metadata).toEqual({ _truncated: true });
+  });
+
+  it("records without a viewer when viewerId is malformed (no 500)", async () => {
+    const token = signPixelToken(accountId);
+    const res = await api(`/ads/pixel`, null, {
+      method: "POST",
+      body: JSON.stringify({
+        token,
+        eventName: "malformed_viewer",
+        viewerId: "not-a-uuid",
+      }),
+    });
+    expect(res.status).toBe(200);
+
+    const [row] = await db
+      .select({ viewerId: adConversionsTable.viewerId })
+      .from(adConversionsTable)
+      .where(
+        and(
+          eq(adConversionsTable.accountId, accountId),
+          eq(adConversionsTable.eventName, "malformed_viewer"),
+        ),
+      )
+      .limit(1);
+    expect(row.viewerId).toBeNull();
+  });
+
+  it("records anonymously when the viewer UUID is unknown (FK fallback, no 500)", async () => {
+    const token = signPixelToken(accountId);
+    const unknownViewer = randomUUID();
+    const res = await api(`/ads/pixel`, null, {
+      method: "POST",
+      body: JSON.stringify({
+        token,
+        eventName: "unknown_viewer",
+        viewerId: unknownViewer,
+      }),
+    });
+    expect(res.status).toBe(200);
+
+    const [row] = await db
+      .select({ viewerId: adConversionsTable.viewerId })
+      .from(adConversionsTable)
+      .where(
+        and(
+          eq(adConversionsTable.accountId, accountId),
+          eq(adConversionsTable.eventName, "unknown_viewer"),
+        ),
+      )
+      .limit(1);
+    expect(row.viewerId).toBeNull();
+  });
+
+  it("suppresses rapid duplicate fires from the same viewer", async () => {
+    const token = signPixelToken(accountId);
+    const payload = JSON.stringify({
+      token,
+      eventName: "dedup_evt",
+      valueCents: 777,
+      viewerId: viewer1,
+    });
+    const first = await api(`/ads/pixel`, null, {
+      method: "POST",
+      body: payload,
+    });
+    const second = await api(`/ads/pixel`, null, {
+      method: "POST",
+      body: payload,
+    });
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+
+    // Only one row is recorded despite two identical rapid fires.
+    const found = await db
+      .select({ id: adConversionsTable.id })
+      .from(adConversionsTable)
+      .where(
+        and(
+          eq(adConversionsTable.accountId, accountId),
+          eq(adConversionsTable.eventName, "dedup_evt"),
+        ),
+      );
+    expect(found.length).toBe(1);
+  });
+
+  it("caps an oversized eventName to keep rows clean", async () => {
+    const token = signPixelToken(accountId);
+    const longName = "n".repeat(500);
+    const res = await api(`/ads/pixel`, null, {
+      method: "POST",
+      body: JSON.stringify({ token, eventName: longName, viewerId: viewer2 }),
+    });
+    // Zod caps eventName at 64 chars, so an oversized name is rejected cleanly.
+    expect(res.status).toBe(400);
+  });
+
+  it("gif beacon returns a gif on junk / oversized query input", async () => {
+    const token = signPixelToken(accountId);
+    const res = await api(
+      `/ads/pixel.gif?token=${encodeURIComponent(token)}` +
+        `&event=${"e".repeat(500)}&value=not-a-number&viewer=not-a-uuid&ad=abc`,
+      null,
+    );
+    expect(res.status).toBe(200);
+    expect(res.contentType).toContain("image/gif");
+
+    // The junk event is recorded (truncated) but never errors the beacon.
+    const [row] = await db
+      .select({
+        eventName: adConversionsTable.eventName,
+        valueCents: adConversionsTable.valueCents,
+        viewerId: adConversionsTable.viewerId,
+      })
+      .from(adConversionsTable)
+      .where(
+        and(
+          eq(adConversionsTable.accountId, accountId),
+          eq(adConversionsTable.eventName, "e".repeat(64)),
+        ),
+      )
+      .limit(1);
+    expect(row).toBeDefined();
+    expect(row.eventName.length).toBe(64);
+    expect(row.valueCents).toBe(0);
+    expect(row.viewerId).toBeNull();
   });
 });
