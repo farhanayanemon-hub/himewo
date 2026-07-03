@@ -70,7 +70,7 @@ function reviewVariant(s: string) {
 }
 
 function minToTime(m: number): string {
-  const clamped = Math.max(0, Math.min(1440, m));
+  const clamped = Math.max(0, Math.min(1439, m));
   const h = Math.floor(clamped / 60);
   const mm = clamped % 60;
   return `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
@@ -106,6 +106,12 @@ export default function AdSetDetailPage() {
   const schedulesQ = useListAdSchedules(adSetId, {
     query: { enabled, queryKey: getListAdSchedulesQueryKey(adSetId) },
   });
+
+  if (!enabled) {
+    return (
+      <div className="p-8 text-muted-foreground">Ad set khuje pawa jayni.</div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -115,6 +115,12 @@ export default function CampaignDetailPage() {
   const [endAt, setEndAt] = useState("");
   const [targeting, setTargeting] = useState<AdTargetingSpec>({});
 
+  if (!Number.isFinite(campaignId)) {
+    return (
+      <div className="p-8 text-muted-foreground">Campaign khuje pawa jayni.</div>
+    );
+  }
+
   const invalidate = () =>
     qc.invalidateQueries({ queryKey: getListAdSetsQueryKey(campaignId) });
 
