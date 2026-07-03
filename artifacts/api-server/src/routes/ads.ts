@@ -1384,22 +1384,31 @@ router.post("/ads/pixel", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Invalid pixel token" });
     return;
   }
-  const result = await capturePixelConversion({
-    accountId,
-    eventName: body.data.eventName,
-    valueCents: body.data.valueCents,
-    currency: body.data.currency,
-    viewerId: body.data.viewerId ?? req.userId ?? null,
-    adId: body.data.adId ?? undefined,
-    pixelId: body.data.token,
-    metadata: body.data.metadata ?? null,
-  });
-  res.json(
-    CapturePixelEventResponse.parse({
-      attributed: result.attributed,
-      adId: result.adId,
-    }),
-  );
+  try {
+    const result = await capturePixelConversion({
+      accountId,
+      eventName: body.data.eventName,
+      valueCents: body.data.valueCents,
+      currency: body.data.currency,
+      viewerId: body.data.viewerId ?? req.userId ?? null,
+      adId: body.data.adId ?? undefined,
+      pixelId: body.data.token,
+      metadata: body.data.metadata ?? null,
+    });
+    res.json(
+      CapturePixelEventResponse.parse({
+        attributed: result.attributed,
+        adId: result.adId,
+      }),
+    );
+  } catch (err) {
+    // Public, unauthenticated endpoint: never surface a 500 to pixel traffic.
+    // Log and report the event as unattributed so bad input can't error the API.
+    req.log.error({ err }, "pixel conversion capture failed");
+    res.json(
+      CapturePixelEventResponse.parse({ attributed: false, adId: null }),
+    );
+  }
 });
 
 router.get("/ads/:id", requireAuth, async (req, res): Promise<void> => {

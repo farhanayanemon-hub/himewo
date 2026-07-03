@@ -18,7 +18,54 @@ export type InsightsLevel = "campaign" | "adset" | "ad";
 /** Attribution window for last-click pixel conversions. */
 const ATTRIBUTION_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
+// ---------------------------------------------------------------------------
+// Hardening limits. The pixel endpoints are public and unauthenticated, so they
+// receive junk, replays and bursts. These ceilings keep conversion rows clean
+// (clamped values, capped string lengths) and stop hostile input from erroring
+// the beacon or polluting advertiser reports.
+// ---------------------------------------------------------------------------
+
+/** Rapid-duplicate suppression window for identical fires from one viewer. */
+const DEDUP_WINDOW_MS = 10 * 1000;
+/** Max stored conversion value ($10,000,000) — well under the int4 column range. */
+const MAX_VALUE_CENTS = 1_000_000_000;
+const MAX_EVENT_NAME_LEN = 64;
+const MAX_CURRENCY_LEN = 8;
+const MAX_PIXEL_ID_LEN = 128;
+/** Max serialized metadata size; larger blobs are dropped, not stored. */
+const MAX_METADATA_BYTES = 4096;
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const PIXEL_SECRET = process.env.SESSION_SECRET || "himewo-dev-pixel-secret";
+
+/** True for a Postgres foreign-key violation (SQLSTATE 23503), wrapped or not. */
+function isForeignKeyViolation(err: unknown): boolean {
+  const e = err as { code?: string; cause?: { code?: string } } | null;
+  return e?.code === "23503" || e?.cause?.code === "23503";
+}
+
+/**
+ * Serialize metadata for storage. Returns null for missing / non-object /
+ * non-serializable input, and drops oversized blobs (replacing them with a
+ * small `_truncated` marker) so a single beacon hit can't store megabytes.
+ */
+function sanitizeMetadata(
+  meta: Record<string, unknown> | null | undefined,
+): string | null {
+  if (!meta || typeof meta !== "object") return null;
+  let s: string;
+  try {
+    s = JSON.stringify(meta);
+  } catch {
+    return null; // circular / non-serializable
+  }
+  if (s == null) return null;
+  if (Buffer.byteLength(s, "utf8") > MAX_METADATA_BYTES) {
+    return JSON.stringify({ _truncated: true });
+  }
+  return s;
+}
 
 async function rows<T = Record<string, unknown>>(q: SQL): Promise<T[]> {
   const r = await db.execute(q);
@@ -472,6 +519,8 @@ export interface CaptureConversionResult {
   id: number;
   adId: number | null;
   attributed: boolean;
+  /** True when this was a rapid duplicate and no new row was inserted. */
+  deduped?: boolean;
 }
 
 /**
@@ -491,10 +540,46 @@ export async function capturePixelConversion(opts: {
   pixelId?: string | null;
   metadata?: Record<string, unknown> | null;
 }): Promise<CaptureConversionResult> {
-  const eventName = (opts.eventName || "conversion").slice(0, 64);
-  const valueCents = Math.max(0, Math.trunc(opts.valueCents ?? 0));
-  const currency = (opts.currency || "USD").slice(0, 8);
-  const viewerId = opts.viewerId || null;
+  const eventName = (opts.eventName || "conversion").slice(0, MAX_EVENT_NAME_LEN);
+  const rawValue = opts.valueCents;
+  const valueCents = Number.isFinite(rawValue as number)
+    ? Math.min(MAX_VALUE_CENTS, Math.max(0, Math.trunc(rawValue as number)))
+    : 0;
+  const currency = (opts.currency || "USD").slice(0, MAX_CURRENCY_LEN);
+  // Only accept a well-formed UUID; anything else (junk, oversized) becomes an
+  // anonymous conversion instead of throwing on the uuid column cast.
+  const viewerId =
+    opts.viewerId && UUID_RE.test(opts.viewerId) ? opts.viewerId : null;
+  const pixelId = opts.pixelId ? opts.pixelId.slice(0, MAX_PIXEL_ID_LEN) : null;
+  const metadataJson = sanitizeMetadata(opts.metadata);
+
+  // Rapid-duplicate suppression: an identical conversion from the same viewer
+  // within a short window is treated as a replay (double-fired pixel, retry,
+  // browser prefetch) — return the existing row instead of inserting again so
+  // bursts don't inflate advertiser reports.
+  if (viewerId) {
+    const since = new Date(Date.now() - DEDUP_WINDOW_MS);
+    const dup = await rows<{ id: number; ad_id: number | null }>(sql`
+      select id, ad_id
+      from ad_conversions
+      where account_id = ${opts.accountId}
+        and viewer_id = ${viewerId}
+        and event_name = ${eventName}
+        and value_cents = ${valueCents}
+        and created_at >= ${since}
+      order by created_at desc
+      limit 1
+    `);
+    if (dup.length > 0) {
+      const existingAdId = dup[0].ad_id == null ? null : toInt(dup[0].ad_id);
+      return {
+        id: toInt(dup[0].id),
+        adId: existingAdId,
+        attributed: existingAdId != null,
+        deduped: true,
+      };
+    }
+  }
 
   let resolvedAdId: number | null = null;
 
@@ -524,22 +609,36 @@ export async function capturePixelConversion(opts: {
     if (recent.length > 0) resolvedAdId = toInt(recent[0].ad_id);
   }
 
-  const inserted = await rows<{ id: number }>(sql`
-    insert into ad_conversions
-      (ad_id, account_id, pixel_id, event_name, value_cents, currency, viewer_id, metadata, created_at)
-    values (
-      ${resolvedAdId},
-      ${opts.accountId},
-      ${opts.pixelId ?? null},
-      ${eventName},
-      ${valueCents},
-      ${currency},
-      ${viewerId},
-      ${opts.metadata ? JSON.stringify(opts.metadata) : null}::jsonb,
-      now()
-    )
-    returning id
-  `);
+  const insert = (viewer: string | null) =>
+    rows<{ id: number }>(sql`
+      insert into ad_conversions
+        (ad_id, account_id, pixel_id, event_name, value_cents, currency, viewer_id, metadata, created_at)
+      values (
+        ${resolvedAdId},
+        ${opts.accountId},
+        ${pixelId},
+        ${eventName},
+        ${valueCents},
+        ${currency},
+        ${viewer},
+        ${metadataJson}::jsonb,
+        now()
+      )
+      returning id
+    `);
+
+  let inserted: { id: number }[];
+  try {
+    inserted = await insert(viewerId);
+  } catch (err) {
+    // Unknown viewer UUID (FK violation) → record anonymously rather than fail
+    // the beacon. Any other error is a real problem and propagates.
+    if (viewerId && isForeignKeyViolation(err)) {
+      inserted = await insert(null);
+    } else {
+      throw err;
+    }
+  }
 
   return {
     id: toInt(inserted[0]?.id),
