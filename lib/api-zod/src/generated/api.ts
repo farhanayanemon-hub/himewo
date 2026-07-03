@@ -6142,6 +6142,130 @@ export const UpdateBillingSettingsResponse = zod.object({
 })
 
 
+/**
+ * @summary Aggregated ad performance (impressions, reach, clicks, CTR, spend, conversions)
+ */
+export const GetAdAccountInsightsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const getAdAccountInsightsQueryLevelDefault = `campaign`;
+
+export const GetAdAccountInsightsQueryParams = zod.object({
+  "from": zod.coerce.string().optional().describe('Start of range (inclusive), ISO date or date-time. Defaults to 30 days ago.'),
+  "to": zod.coerce.string().optional().describe('End of range (inclusive day), ISO date or date-time. Defaults to now.'),
+  "level": zod.enum(['campaign', 'adset', 'ad']).default(getAdAccountInsightsQueryLevelDefault).describe('Breakdown dimension.'),
+  "campaignId": zod.coerce.number().optional(),
+  "adSetId": zod.coerce.number().optional()
+})
+
+export const GetAdAccountInsightsResponse = zod.object({
+  "from": zod.coerce.date(),
+  "to": zod.coerce.date(),
+  "level": zod.enum(['campaign', 'adset', 'ad']),
+  "timezone": zod.string(),
+  "summary": zod.object({
+  "impressions": zod.number(),
+  "reach": zod.number(),
+  "clicks": zod.number(),
+  "ctr": zod.number(),
+  "spentCents": zod.number(),
+  "conversions": zod.number(),
+  "conversionValueCents": zod.number(),
+  "cpcCents": zod.number().nullable(),
+  "cpmCents": zod.number().nullable(),
+  "costPerResultCents": zod.number().nullable()
+}),
+  "series": zod.array(zod.object({
+  "day": zod.string(),
+  "impressions": zod.number(),
+  "clicks": zod.number(),
+  "spentCents": zod.number(),
+  "conversions": zod.number()
+})),
+  "breakdown": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "level": zod.enum(['campaign', 'adset', 'ad']),
+  "impressions": zod.number(),
+  "reach": zod.number(),
+  "clicks": zod.number(),
+  "ctr": zod.number(),
+  "spentCents": zod.number(),
+  "conversions": zod.number(),
+  "conversionValueCents": zod.number(),
+  "cpcCents": zod.number().nullable(),
+  "cpmCents": zod.number().nullable(),
+  "costPerResultCents": zod.number().nullable()
+}))
+})
+
+
+/**
+ * @summary Conversion pixel token + embed snippet for the account
+ */
+export const GetAdAccountPixelParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetAdAccountPixelResponse = zod.object({
+  "token": zod.string(),
+  "gifUrl": zod.string(),
+  "snippet": zod.string()
+})
+
+
+/**
+ * @summary Recent conversions recorded for the account
+ */
+export const ListAdAccountConversionsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const listAdAccountConversionsQueryLimitDefault = 50;
+
+export const ListAdAccountConversionsQueryParams = zod.object({
+  "limit": zod.coerce.number().default(listAdAccountConversionsQueryLimitDefault)
+})
+
+export const ListAdAccountConversionsResponseItem = zod.object({
+  "id": zod.number(),
+  "adId": zod.number().nullable(),
+  "adName": zod.string().nullable(),
+  "eventName": zod.string(),
+  "valueCents": zod.number(),
+  "currency": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+export const ListAdAccountConversionsResponse = zod.array(ListAdAccountConversionsResponseItem)
+
+
+/**
+ * @summary Public conversion/pixel capture endpoint (authenticated by pixel token)
+ */
+
+export const capturePixelEventBodyEventNameMax = 64;
+
+export const capturePixelEventBodyValueCentsMin = 0;
+
+
+
+export const CapturePixelEventBody = zod.object({
+  "token": zod.string().min(1),
+  "eventName": zod.string().min(1).max(capturePixelEventBodyEventNameMax),
+  "valueCents": zod.number().min(capturePixelEventBodyValueCentsMin).optional(),
+  "currency": zod.string().optional(),
+  "viewerId": zod.string().nullish(),
+  "adId": zod.number().nullish(),
+  "metadata": zod.record(zod.string(), zod.unknown()).optional()
+})
+
+export const CapturePixelEventResponse = zod.object({
+  "attributed": zod.boolean(),
+  "adId": zod.number().nullable()
+})
+
+
 export const listPagesResponseViewerReviewOneRatingMax = 5;
 
 

@@ -41,6 +41,14 @@ import {
   canManageAccount,
 } from "../lib/ads-auth";
 import {
+  getInsights,
+  capturePixelConversion,
+  listConversions,
+  signPixelToken,
+  verifyPixelToken,
+  type InsightsLevel,
+} from "../lib/analytics";
+import {
   ListAdAccountsResponse,
   CreateAdAccountBody,
   CreateAdAccountResponse,
@@ -157,6 +165,13 @@ import {
   BoostPostBody,
   BoostPageParams,
   BoostPageBody,
+  GetAdAccountInsightsQueryParams,
+  GetAdAccountInsightsResponse,
+  GetAdAccountPixelResponse,
+  ListAdAccountConversionsQueryParams,
+  ListAdAccountConversionsResponse,
+  CapturePixelEventBody,
+  CapturePixelEventResponse,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -1318,6 +1333,73 @@ router.get("/ads/serve", requireAuth, async (req, res): Promise<void> => {
   }
 
   res.json(items);
+});
+
+// ---------------------------------------------------------------------------
+// Public conversion pixel (no auth — authenticated by the signed pixel token).
+// Registered BEFORE "/ads/:id" so the ".gif" path is not captured by that route.
+// ---------------------------------------------------------------------------
+
+// 1x1 transparent GIF beacon body.
+const PIXEL_GIF = Buffer.from(
+  "R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==",
+  "base64",
+);
+
+router.get("/ads/pixel.gif", async (req, res): Promise<void> => {
+  const token = String(req.query.token ?? "");
+  const accountId = verifyPixelToken(token);
+  if (accountId) {
+    const valueCents = Number(req.query.value);
+    const adRaw = req.query.ad != null ? Number(req.query.ad) : NaN;
+    const viewer =
+      req.query.viewer != null ? String(req.query.viewer) : req.userId ?? null;
+    try {
+      await capturePixelConversion({
+        accountId,
+        eventName: String(req.query.event ?? "conversion"),
+        valueCents: Number.isFinite(valueCents) ? valueCents : 0,
+        viewerId: viewer,
+        adId: Number.isInteger(adRaw) ? adRaw : undefined,
+        pixelId: token,
+      });
+    } catch (err) {
+      req.log.error({ err }, "pixel gif conversion capture failed");
+    }
+  }
+  res.set("Content-Type", "image/gif");
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
+  res.set("Pragma", "no-cache");
+  res.send(PIXEL_GIF);
+});
+
+router.post("/ads/pixel", async (req, res): Promise<void> => {
+  const body = CapturePixelEventBody.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: body.error.message });
+    return;
+  }
+  const accountId = verifyPixelToken(body.data.token);
+  if (!accountId) {
+    res.status(400).json({ error: "Invalid pixel token" });
+    return;
+  }
+  const result = await capturePixelConversion({
+    accountId,
+    eventName: body.data.eventName,
+    valueCents: body.data.valueCents,
+    currency: body.data.currency,
+    viewerId: body.data.viewerId ?? req.userId ?? null,
+    adId: body.data.adId ?? undefined,
+    pixelId: body.data.token,
+    metadata: body.data.metadata ?? null,
+  });
+  res.json(
+    CapturePixelEventResponse.parse({
+      attributed: result.attributed,
+      adId: result.adId,
+    }),
+  );
 });
 
 router.get("/ads/:id", requireAuth, async (req, res): Promise<void> => {
@@ -2558,5 +2640,113 @@ router.post("/pages/:id/boost", requireAuth, async (req, res): Promise<void> => 
   });
   res.status(201).json(GetAdResponse.parse(ad));
 });
+
+// ---------------------------------------------------------------------------
+// Analytics + insights
+// ---------------------------------------------------------------------------
+
+/** Parse a from/to bound. Date-only "to" is treated as inclusive (end of day). */
+function parseRangeBound(
+  value: string | undefined,
+  fallback: Date,
+  inclusiveEndDay: boolean,
+): Date {
+  if (!value) return fallback;
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
+  const d = new Date(dateOnly ? `${value}T00:00:00.000Z` : value);
+  if (Number.isNaN(d.getTime())) return fallback;
+  if (dateOnly && inclusiveEndDay) {
+    return new Date(d.getTime() + 24 * 60 * 60 * 1000);
+  }
+  return d;
+}
+
+router.get(
+  "/ad-accounts/:id/insights",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const accountId = Number(req.params.id);
+    if (!Number.isInteger(accountId)) {
+      res.status(404).json({ error: "Ad account not found" });
+      return;
+    }
+    const role = await requireAccountAccess(res, req.userId!, accountId, "read");
+    if (!role) return;
+    const q = GetAdAccountInsightsQueryParams.safeParse(req.query);
+    if (!q.success) {
+      res.status(400).json({ error: q.error.message });
+      return;
+    }
+    const now = new Date();
+    const to = parseRangeBound(q.data.to, now, true);
+    const from = parseRangeBound(
+      q.data.from,
+      new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
+      false,
+    );
+    if (from.getTime() >= to.getTime()) {
+      res.status(400).json({ error: "Invalid date range" });
+      return;
+    }
+    const [acct] = await db
+      .select({ timezone: adAccountsTable.timezone })
+      .from(adAccountsTable)
+      .where(eq(adAccountsTable.id, accountId))
+      .limit(1);
+    const result = await getInsights({
+      accountId,
+      from,
+      to,
+      level: (q.data.level ?? "campaign") as InsightsLevel,
+      timezone: acct?.timezone ?? "UTC",
+      campaignId: q.data.campaignId,
+      adSetId: q.data.adSetId,
+    });
+    res.json(GetAdAccountInsightsResponse.parse(result));
+  },
+);
+
+router.get(
+  "/ad-accounts/:id/pixel",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const accountId = Number(req.params.id);
+    if (!Number.isInteger(accountId)) {
+      res.status(404).json({ error: "Ad account not found" });
+      return;
+    }
+    const role = await requireAccountAccess(res, req.userId!, accountId, "read");
+    if (!role) return;
+    const token = signPixelToken(accountId);
+    const proto = String(req.headers["x-forwarded-proto"] ?? req.protocol);
+    const host = req.get("host") ?? "";
+    const gifUrl = `${proto}://${host}/api/ads/pixel.gif?token=${encodeURIComponent(
+      token,
+    )}&event=purchase&value=0`;
+    const snippet = `<img src="${gifUrl}" width="1" height="1" alt="" style="display:none" referrerpolicy="no-referrer-when-downgrade" />`;
+    res.json(GetAdAccountPixelResponse.parse({ token, gifUrl, snippet }));
+  },
+);
+
+router.get(
+  "/ad-accounts/:id/conversions",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const accountId = Number(req.params.id);
+    if (!Number.isInteger(accountId)) {
+      res.status(404).json({ error: "Ad account not found" });
+      return;
+    }
+    const role = await requireAccountAccess(res, req.userId!, accountId, "read");
+    if (!role) return;
+    const q = ListAdAccountConversionsQueryParams.safeParse(req.query);
+    if (!q.success) {
+      res.status(400).json({ error: q.error.message });
+      return;
+    }
+    const list = await listConversions({ accountId, limit: q.data.limit ?? 50 });
+    res.json(ListAdAccountConversionsResponse.parse(list));
+  },
+);
 
 export default router;
