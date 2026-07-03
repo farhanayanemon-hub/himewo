@@ -638,6 +638,18 @@ router.post(
       "ads",
     );
     if (!role) return;
+    if (
+      body.data.savedAudienceId != null &&
+      !(await savedAudienceInAccount(
+        body.data.savedAudienceId,
+        campaign.accountId,
+      ))
+    ) {
+      res
+        .status(400)
+        .json({ error: "savedAudienceId does not belong to this ad account" });
+      return;
+    }
     const { targeting } = body.data;
     const adSet = await db.transaction(async (tx) => {
       const [created] = await tx
@@ -674,6 +686,42 @@ router.post(
     res.status(201).json(CreateAdSetResponse.parse(adSet));
   },
 );
+
+// Cross-account reference guards: a creative or saved audience may only be
+// attached to an ad/ad set that lives in the SAME ad account. IDs are serial
+// and predictable, so without this a member of account A could point at
+// account B's resources (multi-tenant boundary break).
+async function creativeInAccount(
+  creativeId: number,
+  accountId: number,
+): Promise<boolean> {
+  const [row] = await db
+    .select({ id: adCreativesTable.id })
+    .from(adCreativesTable)
+    .where(
+      and(
+        eq(adCreativesTable.id, creativeId),
+        eq(adCreativesTable.accountId, accountId),
+      ),
+    );
+  return !!row;
+}
+
+async function savedAudienceInAccount(
+  audienceId: number,
+  accountId: number,
+): Promise<boolean> {
+  const [row] = await db
+    .select({ id: adSavedAudiencesTable.id })
+    .from(adSavedAudiencesTable)
+    .where(
+      and(
+        eq(adSavedAudiencesTable.id, audienceId),
+        eq(adSavedAudiencesTable.accountId, accountId),
+      ),
+    );
+  return !!row;
+}
 
 // Load an ad set and enforce access at the given level. Returns the ad set or
 // null (after sending the response).
@@ -716,6 +764,15 @@ router.patch("/ad-sets/:id", requireAuth, async (req, res): Promise<void> => {
   }
   const adSet = await loadAdSet(res, req.userId!, params.data.id, "ads");
   if (!adSet) return;
+  if (
+    body.data.savedAudienceId != null &&
+    !(await savedAudienceInAccount(body.data.savedAudienceId, adSet.accountId))
+  ) {
+    res
+      .status(400)
+      .json({ error: "savedAudienceId does not belong to this ad account" });
+    return;
+  }
   await db
     .update(adSetsTable)
     .set({
@@ -924,6 +981,15 @@ router.post("/ad-sets/:id/ads", requireAuth, async (req, res): Promise<void> => 
     res.status(400).json({ error: "destinationUrl must be an http(s) URL" });
     return;
   }
+  if (
+    body.data.creativeId != null &&
+    !(await creativeInAccount(body.data.creativeId, adSet.accountId))
+  ) {
+    res
+      .status(400)
+      .json({ error: "creativeId does not belong to this ad account" });
+    return;
+  }
   const [ad] = await db
     .insert(adsTable)
     .values({
@@ -977,6 +1043,15 @@ router.patch("/ads/:id", requireAuth, async (req, res): Promise<void> => {
   if (!ad) return;
   if (body.data.destinationUrl && !isSafeUrl(body.data.destinationUrl)) {
     res.status(400).json({ error: "destinationUrl must be an http(s) URL" });
+    return;
+  }
+  if (
+    body.data.creativeId != null &&
+    !(await creativeInAccount(body.data.creativeId, ad.accountId))
+  ) {
+    res
+      .status(400)
+      .json({ error: "creativeId does not belong to this ad account" });
     return;
   }
   await db

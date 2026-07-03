@@ -255,4 +255,67 @@ describe("Ads backend foundation", () => {
     );
     expect(analystWrite.status).toBe(403);
   });
+
+  it("rejects cross-account creative and audience references", async () => {
+    // Stranger owns a SEPARATE ad account with its own creative + audience.
+    const otherAccount = await api("/ad-accounts", stranger, {
+      method: "POST",
+      body: JSON.stringify({ name: "Rival Ads" }),
+    });
+    expect(otherAccount.status).toBe(201);
+    const otherId = otherAccount.body.id;
+
+    const foreignCreative = await api(
+      `/ad-accounts/${otherId}/creatives`,
+      stranger,
+      {
+        method: "POST",
+        body: JSON.stringify({ name: "Rival creative" }),
+      },
+    );
+    expect(foreignCreative.status).toBe(201);
+
+    const foreignAudience = await api(
+      `/ad-accounts/${otherId}/audiences`,
+      stranger,
+      {
+        method: "POST",
+        body: JSON.stringify({ name: "Rival aud", spec: { ageMin: 20 } }),
+      },
+    );
+    expect(foreignAudience.status).toBe(201);
+
+    // The owner cannot attach the rival account's creative to their own ad.
+    const badAd = await api(`/ad-sets/${adSetId}/ads`, owner, {
+      method: "POST",
+      body: JSON.stringify({
+        name: "Cross ad",
+        creativeId: foreignCreative.body.id,
+      }),
+    });
+    expect(badAd.status).toBe(400);
+
+    // ...nor patch an existing ad to point at it.
+    const patchAd = await api(`/ads/${adId}`, owner, {
+      method: "PATCH",
+      body: JSON.stringify({ creativeId: foreignCreative.body.id }),
+    });
+    expect(patchAd.status).toBe(400);
+
+    // ...nor attach the rival account's saved audience to an ad set.
+    const badSet = await api(`/campaigns/${campaignId}/ad-sets`, owner, {
+      method: "POST",
+      body: JSON.stringify({
+        name: "Cross set",
+        savedAudienceId: foreignAudience.body.id,
+      }),
+    });
+    expect(badSet.status).toBe(400);
+
+    const patchSet = await api(`/ad-sets/${adSetId}`, owner, {
+      method: "PATCH",
+      body: JSON.stringify({ savedAudienceId: foreignAudience.body.id }),
+    });
+    expect(patchSet.status).toBe(400);
+  });
 });
