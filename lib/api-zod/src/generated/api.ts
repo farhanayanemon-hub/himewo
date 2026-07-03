@@ -4645,6 +4645,12 @@ export const ListAdAccountsResponseItem = zod.object({
   "currency": zod.string(),
   "timezone": zod.string(),
   "balanceCents": zod.number(),
+  "creditBalanceCents": zod.number(),
+  "spentCents": zod.number(),
+  "spendLimitCents": zod.number().nullish(),
+  "autoRechargeEnabled": zod.boolean(),
+  "autoRechargeThresholdCents": zod.number().nullish(),
+  "autoRechargeAmountCents": zod.number().nullish(),
   "status": zod.enum(['active', 'suspended', 'closed']),
   "viewerRole": zod.union([zod.literal('admin'),zod.literal('advertiser'),zod.literal('analyst'),zod.literal(null)]).nullish(),
   "createdAt": zod.coerce.date(),
@@ -4669,6 +4675,12 @@ export const CreateAdAccountResponse = zod.object({
   "currency": zod.string(),
   "timezone": zod.string(),
   "balanceCents": zod.number(),
+  "creditBalanceCents": zod.number(),
+  "spentCents": zod.number(),
+  "spendLimitCents": zod.number().nullish(),
+  "autoRechargeEnabled": zod.boolean(),
+  "autoRechargeThresholdCents": zod.number().nullish(),
+  "autoRechargeAmountCents": zod.number().nullish(),
   "status": zod.enum(['active', 'suspended', 'closed']),
   "viewerRole": zod.union([zod.literal('admin'),zod.literal('advertiser'),zod.literal('analyst'),zod.literal(null)]).nullish(),
   "createdAt": zod.coerce.date(),
@@ -4687,6 +4699,12 @@ export const GetAdAccountResponse = zod.object({
   "currency": zod.string(),
   "timezone": zod.string(),
   "balanceCents": zod.number(),
+  "creditBalanceCents": zod.number(),
+  "spentCents": zod.number(),
+  "spendLimitCents": zod.number().nullish(),
+  "autoRechargeEnabled": zod.boolean(),
+  "autoRechargeThresholdCents": zod.number().nullish(),
+  "autoRechargeAmountCents": zod.number().nullish(),
   "status": zod.enum(['active', 'suspended', 'closed']),
   "viewerRole": zod.union([zod.literal('admin'),zod.literal('advertiser'),zod.literal('analyst'),zod.literal(null)]).nullish(),
   "createdAt": zod.coerce.date(),
@@ -4715,6 +4733,12 @@ export const UpdateAdAccountResponse = zod.object({
   "currency": zod.string(),
   "timezone": zod.string(),
   "balanceCents": zod.number(),
+  "creditBalanceCents": zod.number(),
+  "spentCents": zod.number(),
+  "spendLimitCents": zod.number().nullish(),
+  "autoRechargeEnabled": zod.boolean(),
+  "autoRechargeThresholdCents": zod.number().nullish(),
+  "autoRechargeAmountCents": zod.number().nullish(),
   "status": zod.enum(['active', 'suspended', 'closed']),
   "viewerRole": zod.union([zod.literal('admin'),zod.literal('advertiser'),zod.literal('analyst'),zod.literal(null)]).nullish(),
   "createdAt": zod.coerce.date(),
@@ -5911,7 +5935,11 @@ export const GetAdWalletParams = zod.object({
 export const GetAdWalletResponse = zod.object({
   "accountId": zod.number(),
   "balanceCents": zod.number(),
+  "creditBalanceCents": zod.number(),
+  "spentCents": zod.number(),
+  "spendLimitCents": zod.number().nullish(),
   "currency": zod.string(),
+  "autoRechargeEnabled": zod.boolean(),
   "transactions": zod.array(zod.object({
   "id": zod.number(),
   "accountId": zod.number(),
@@ -5964,6 +5992,154 @@ export const ListAdCouponsResponseItem = zod.object({
   "createdAt": zod.coerce.date()
 })
 export const ListAdCouponsResponse = zod.array(ListAdCouponsResponseItem)
+
+
+export const RedeemCouponParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const RedeemCouponBody = zod.object({
+  "code": zod.string().min(1)
+})
+
+export const RedeemCouponResponse = zod.object({
+  "creditBalanceCents": zod.number(),
+  "balanceCents": zod.number(),
+  "coupon": zod.object({
+  "id": zod.number(),
+  "code": zod.string(),
+  "amountCents": zod.number(),
+  "currency": zod.string(),
+  "status": zod.string(),
+  "accountId": zod.number().nullish(),
+  "redeemedBy": zod.string().nullish(),
+  "redeemedAt": zod.coerce.date().nullish(),
+  "expiresAt": zod.coerce.date().nullish(),
+  "note": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+})
+
+
+export const CreateWalletTopupParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const createWalletTopupBodyAmountCentsMin = 500;
+export const createWalletTopupBodyAmountCentsMax = 500000;
+
+
+
+export const CreateWalletTopupBody = zod.object({
+  "amountCents": zod.number().min(createWalletTopupBodyAmountCentsMin).max(createWalletTopupBodyAmountCentsMax)
+})
+
+export const CreateWalletTopupResponse = zod.object({
+  "url": zod.string()
+})
+
+
+export const ListCardsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListCardsResponseItem = zod.object({
+  "id": zod.string(),
+  "brand": zod.string(),
+  "last4": zod.string(),
+  "expMonth": zod.number(),
+  "expYear": zod.number(),
+  "isDefault": zod.boolean()
+})
+export const ListCardsResponse = zod.array(ListCardsResponseItem)
+
+
+export const CreateCardSetupParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const CreateCardSetupResponse = zod.object({
+  "url": zod.string()
+})
+
+
+export const SetDefaultCardParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const SetDefaultCardBody = zod.object({
+  "paymentMethodId": zod.string().min(1)
+})
+
+export const SetDefaultCardResponseItem = zod.object({
+  "id": zod.string(),
+  "brand": zod.string(),
+  "last4": zod.string(),
+  "expMonth": zod.number(),
+  "expYear": zod.number(),
+  "isDefault": zod.boolean()
+})
+export const SetDefaultCardResponse = zod.array(SetDefaultCardResponseItem)
+
+
+export const RemoveCardParams = zod.object({
+  "id": zod.coerce.number(),
+  "paymentMethodId": zod.coerce.string()
+})
+
+export const RemoveCardResponse = zod.void()
+
+
+export const GetBillingSettingsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetBillingSettingsResponse = zod.object({
+  "spendLimitCents": zod.number().nullable(),
+  "autoRechargeEnabled": zod.boolean(),
+  "autoRechargeThresholdCents": zod.number().nullable(),
+  "autoRechargeAmountCents": zod.number().nullable(),
+  "hasPaymentMethod": zod.boolean(),
+  "defaultPaymentMethodId": zod.string().nullish(),
+  "paymentsEnabled": zod.boolean()
+})
+
+
+export const UpdateBillingSettingsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const updateBillingSettingsBodySpendLimitCentsMin = 0;
+
+export const updateBillingSettingsBodyAutoRechargeThresholdCentsMin = 0;
+
+export const updateBillingSettingsBodyAutoRechargeAmountCentsMin = 500;
+export const updateBillingSettingsBodyAutoRechargeAmountCentsMax = 500000;
+
+
+
+export const UpdateBillingSettingsBody = zod.object({
+  "spendLimitCents": zod.number().min(updateBillingSettingsBodySpendLimitCentsMin).nullish(),
+  "autoRechargeEnabled": zod.boolean().optional(),
+  "autoRechargeThresholdCents": zod.number().min(updateBillingSettingsBodyAutoRechargeThresholdCentsMin).nullish(),
+  "autoRechargeAmountCents": zod.number().min(updateBillingSettingsBodyAutoRechargeAmountCentsMin).max(updateBillingSettingsBodyAutoRechargeAmountCentsMax).nullish()
+})
+
+export const UpdateBillingSettingsResponse = zod.object({
+  "spendLimitCents": zod.number().nullable(),
+  "autoRechargeEnabled": zod.boolean(),
+  "autoRechargeThresholdCents": zod.number().nullable(),
+  "autoRechargeAmountCents": zod.number().nullable(),
+  "hasPaymentMethod": zod.boolean(),
+  "defaultPaymentMethodId": zod.string().nullish(),
+  "paymentsEnabled": zod.boolean()
+})
 
 
 export const listPagesResponseViewerReviewOneRatingMax = 5;

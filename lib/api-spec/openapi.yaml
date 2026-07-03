@@ -2313,6 +2313,168 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+  /ad-accounts/{id}/coupons/redeem:
+    post:
+      operationId: redeemCoupon
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RedeemCouponInput" }
+      responses:
+        "200":
+          description: Coupon redeemed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RedeemCouponResult" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /ad-accounts/{id}/wallet/topup:
+    post:
+      operationId: createWalletTopup
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WalletTopupInput" }
+      responses:
+        "200":
+          description: Stripe checkout session
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CheckoutSession" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /ad-accounts/{id}/cards:
+    get:
+      operationId: listCards
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Saved cards
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SavedCard" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /ad-accounts/{id}/cards/setup:
+    post:
+      operationId: createCardSetup
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Stripe checkout session to add a card
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CheckoutSession" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /ad-accounts/{id}/cards/default:
+    post:
+      operationId: setDefaultCard
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SetDefaultCardInput" }
+      responses:
+        "200":
+          description: Updated card list
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SavedCard" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /ad-accounts/{id}/cards/{paymentMethodId}:
+    delete:
+      operationId: removeCard
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - {
+            name: paymentMethodId,
+            in: path,
+            required: true,
+            schema: { type: string },
+          }
+      responses:
+        "204":
+          description: Card removed
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /ad-accounts/{id}/billing/settings:
+    get:
+      operationId: getBillingSettings
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Billing settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BillingSettings" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateBillingSettings
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BillingSettingsUpdate" }
+      responses:
+        "200":
+          description: Updated billing settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BillingSettings" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   # ---------------- Pages ----------------
   /pages:
@@ -3684,7 +3846,19 @@ components:
     AdAccount:
       type: object
       required:
-        [id, ownerId, name, currency, timezone, balanceCents, status, createdAt]
+        [
+          id,
+          ownerId,
+          name,
+          currency,
+          timezone,
+          balanceCents,
+          creditBalanceCents,
+          spentCents,
+          autoRechargeEnabled,
+          status,
+          createdAt,
+        ]
       properties:
         id: { type: integer }
         ownerId: { type: string }
@@ -3692,6 +3866,12 @@ components:
         currency: { type: string }
         timezone: { type: string }
         balanceCents: { type: integer }
+        creditBalanceCents: { type: integer }
+        spentCents: { type: integer }
+        spendLimitCents: { type: ["integer", "null"] }
+        autoRechargeEnabled: { type: boolean }
+        autoRechargeThresholdCents: { type: ["integer", "null"] }
+        autoRechargeAmountCents: { type: ["integer", "null"] }
         status: { type: string, enum: [active, suspended, closed] }
         viewerRole:
           type: ["string", "null"]
@@ -4073,14 +4253,91 @@ components:
         spec: { $ref: "#/components/schemas/AdTargetingSpec" }
     AdWallet:
       type: object
-      required: [accountId, balanceCents, currency, transactions]
+      required:
+        [
+          accountId,
+          balanceCents,
+          creditBalanceCents,
+          spentCents,
+          currency,
+          autoRechargeEnabled,
+          transactions,
+        ]
       properties:
         accountId: { type: integer }
         balanceCents: { type: integer }
+        creditBalanceCents: { type: integer }
+        spentCents: { type: integer }
+        spendLimitCents: { type: ["integer", "null"] }
         currency: { type: string }
+        autoRechargeEnabled: { type: boolean }
         transactions:
           type: array
           items: { $ref: "#/components/schemas/AdWalletTransaction" }
+    CheckoutSession:
+      type: object
+      required: [url]
+      properties:
+        url: { type: string }
+    WalletTopupInput:
+      type: object
+      required: [amountCents]
+      properties:
+        amountCents: { type: integer, minimum: 500, maximum: 500000 }
+    SavedCard:
+      type: object
+      required: [id, brand, last4, expMonth, expYear, isDefault]
+      properties:
+        id: { type: string }
+        brand: { type: string }
+        last4: { type: string }
+        expMonth: { type: integer }
+        expYear: { type: integer }
+        isDefault: { type: boolean }
+    SetDefaultCardInput:
+      type: object
+      required: [paymentMethodId]
+      properties:
+        paymentMethodId: { type: string, minLength: 1 }
+    BillingSettings:
+      type: object
+      required:
+        [
+          spendLimitCents,
+          autoRechargeEnabled,
+          autoRechargeThresholdCents,
+          autoRechargeAmountCents,
+          hasPaymentMethod,
+          paymentsEnabled,
+        ]
+      properties:
+        spendLimitCents: { type: ["integer", "null"] }
+        autoRechargeEnabled: { type: boolean }
+        autoRechargeThresholdCents: { type: ["integer", "null"] }
+        autoRechargeAmountCents: { type: ["integer", "null"] }
+        hasPaymentMethod: { type: boolean }
+        defaultPaymentMethodId: { type: ["string", "null"] }
+        paymentsEnabled: { type: boolean }
+    BillingSettingsUpdate:
+      type: object
+      properties:
+        spendLimitCents: { type: ["integer", "null"], minimum: 0 }
+        autoRechargeEnabled: { type: boolean }
+        autoRechargeThresholdCents: { type: ["integer", "null"], minimum: 0 }
+        autoRechargeAmountCents:
+          { type: ["integer", "null"], minimum: 500, maximum: 500000 }
+    RedeemCouponInput:
+      type: object
+      required: [code]
+      properties:
+        code: { type: string, minLength: 1 }
+    RedeemCouponResult:
+      type: object
+      required: [creditBalanceCents, balanceCents, coupon]
+      properties:
+        creditBalanceCents: { type: integer }
+        balanceCents: { type: integer }
+        coupon: { $ref: "#/components/schemas/AdCoupon" }
     AdWalletTransaction:
       type: object
       required: [id, accountId, type, amountCents, currency, createdAt]

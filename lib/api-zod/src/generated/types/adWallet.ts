@@ -10,6 +10,11 @@ import type { AdWalletTransaction } from './adWalletTransaction';
 export interface AdWallet {
   accountId: number;
   balanceCents: number;
+  creditBalanceCents: number;
+  spentCents: number;
+  /** @nullable */
+  spendLimitCents?: number | null;
   currency: string;
+  autoRechargeEnabled: boolean;
   transactions: AdWalletTransaction[];
 }

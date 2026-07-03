@@ -1004,6 +1004,15 @@ export interface AdAccount {
   currency: string;
   timezone: string;
   balanceCents: number;
+  creditBalanceCents: number;
+  spentCents: number;
+  /** @nullable */
+  spendLimitCents?: number | null;
+  autoRechargeEnabled: boolean;
+  /** @nullable */
+  autoRechargeThresholdCents?: number | null;
+  /** @nullable */
+  autoRechargeAmountCents?: number | null;
   status: AdAccountStatus;
   /** @nullable */
   viewerRole?: AdAccountViewerRole;
@@ -1623,8 +1632,78 @@ export interface AdWalletTransaction {
 export interface AdWallet {
   accountId: number;
   balanceCents: number;
+  creditBalanceCents: number;
+  spentCents: number;
+  /** @nullable */
+  spendLimitCents?: number | null;
   currency: string;
+  autoRechargeEnabled: boolean;
   transactions: AdWalletTransaction[];
+}
+
+export interface CheckoutSession {
+  url: string;
+}
+
+export interface WalletTopupInput {
+  /**
+     * @minimum 500
+     * @maximum 500000
+     */
+  amountCents: number;
+}
+
+export interface SavedCard {
+  id: string;
+  brand: string;
+  last4: string;
+  expMonth: number;
+  expYear: number;
+  isDefault: boolean;
+}
+
+export interface SetDefaultCardInput {
+  /** @minLength 1 */
+  paymentMethodId: string;
+}
+
+export interface BillingSettings {
+  /** @nullable */
+  spendLimitCents: number | null;
+  autoRechargeEnabled: boolean;
+  /** @nullable */
+  autoRechargeThresholdCents: number | null;
+  /** @nullable */
+  autoRechargeAmountCents: number | null;
+  hasPaymentMethod: boolean;
+  /** @nullable */
+  defaultPaymentMethodId?: string | null;
+  paymentsEnabled: boolean;
+}
+
+export interface BillingSettingsUpdate {
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  spendLimitCents?: number | null;
+  autoRechargeEnabled?: boolean;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  autoRechargeThresholdCents?: number | null;
+  /**
+     * @minimum 500
+     * @maximum 500000
+     * @nullable
+     */
+  autoRechargeAmountCents?: number | null;
+}
+
+export interface RedeemCouponInput {
+  /** @minLength 1 */
+  code: string;
 }
 
 export interface AdCoupon {
@@ -1644,6 +1723,12 @@ export interface AdCoupon {
   /** @nullable */
   note?: string | null;
   createdAt: string;
+}
+
+export interface RedeemCouponResult {
+  creditBalanceCents: number;
+  balanceCents: number;
+  coupon: AdCoupon;
 }
 
 export type SavedItemEntityType = typeof SavedItemEntityType[keyof typeof SavedItemEntityType];

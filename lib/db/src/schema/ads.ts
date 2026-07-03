@@ -2,6 +2,9 @@ import {
   pgTable,
   serial,
   integer,
+  bigint,
+  boolean,
+  date,
   uuid,
   text,
   jsonb,
@@ -48,10 +51,29 @@ export const adAccountsTable = pgTable(
     name: text("name").notNull(),
     currency: text("currency").notNull().default("USD"),
     timezone: text("timezone").notNull().default("UTC"),
-    // Cached wallet balance in cents. The append-only ledger
-    // (ad_wallet_transactions) is the source of truth; this column is a fast
-    // read cache maintained by the Payments task.
+    // Cached REAL-money wallet balance in cents (top-ups, refunds). The
+    // append-only ledger (ad_wallet_transactions) is the source of truth; this
+    // column is a fast read cache maintained by the billing engine.
     balanceCents: integer("balance_cents").notNull().default(0),
+    // Cached promotional credit balance in cents (redeemed coupons / ad
+    // credits). Spend is drawn from credit FIRST, then real balance.
+    creditBalanceCents: integer("credit_balance_cents").notNull().default(0),
+    // Cached lifetime spend in cents (SUM of charge magnitudes). Used to
+    // enforce the optional account spend limit.
+    spentCents: integer("spent_cents").notNull().default(0),
+    // Optional hard cap on lifetime spend; ads pause once reached.
+    spendLimitCents: integer("spend_limit_cents"),
+    // Stripe customer id (payment methods live in Stripe, referenced by id).
+    stripeCustomerId: text("stripe_customer_id"),
+    // Saved default payment method used for off-session auto-recharge.
+    defaultPaymentMethodId: text("default_payment_method_id"),
+    // Billing threshold: when TRUE and available funds drop below
+    // autoRechargeThresholdCents, charge the saved card by autoRechargeAmountCents.
+    autoRechargeEnabled: boolean("auto_recharge_enabled")
+      .notNull()
+      .default(false),
+    autoRechargeThresholdCents: integer("auto_recharge_threshold_cents"),
+    autoRechargeAmountCents: integer("auto_recharge_amount_cents"),
     // active | suspended | closed
     status: text("status").notNull().default("active"),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -62,12 +84,25 @@ export const adAccountsTable = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date()),
   },
-  (t) => [index("ad_accounts_owner_idx").on(t.ownerId)],
+  (t) => [
+    index("ad_accounts_owner_idx").on(t.ownerId),
+    // Money-integrity guardrails: cached balances can never go negative.
+    check("ad_accounts_balance_nonneg", sql`${t.balanceCents} >= 0`),
+    check("ad_accounts_credit_nonneg", sql`${t.creditBalanceCents} >= 0`),
+    check(
+      "ad_accounts_spend_limit_nonneg",
+      sql`${t.spendLimitCents} is null or ${t.spendLimitCents} >= 0`,
+    ),
+  ],
 );
 
 export const insertAdAccountSchema = createInsertSchema(adAccountsTable).omit({
   id: true,
   balanceCents: true,
+  creditBalanceCents: true,
+  spentCents: true,
+  stripeCustomerId: true,
+  defaultPaymentMethodId: true,
   createdAt: true,
   updatedAt: true,
 });
@@ -115,6 +150,8 @@ export const adCampaignsTable = pgTable(
     status: text("status").notNull().default("draft"),
     dailyBudgetCents: integer("daily_budget_cents"),
     lifetimeBudgetCents: integer("lifetime_budget_cents"),
+    // Cached lifetime spend in cents; enforces the lifetime budget.
+    spentCents: integer("spent_cents").notNull().default(0),
     createdBy: uuid("created_by"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -154,6 +191,18 @@ export const adSetsTable = pgTable(
     lifetimeBudgetCents: integer("lifetime_budget_cents"),
     // impressions | clicks
     billingEvent: text("billing_event").notNull().default("impressions"),
+    // Bid in cents. When billingEvent="clicks" it is the cost-per-click (CPC);
+    // when "impressions" it is the CPM (cost per 1000 impressions). Impressions
+    // are billed via microcent accrual (see accruedMicrocents) so low CPMs stay
+    // exact without losing sub-cent amounts.
+    bidCents: integer("bid_cents").notNull().default(50),
+    // Cached lifetime spend in cents; enforces the lifetime budget.
+    spentCents: integer("spent_cents").notNull().default(0),
+    // Unflushed sub-cent spend accumulator (1 cent = 1000 microcents). Whole
+    // cents are flushed to the wallet ledger; the remainder lives here.
+    accruedMicrocents: bigint("accrued_microcents", { mode: "number" })
+      .notNull()
+      .default(0),
     // reach | link_clicks | engagement | conversions
     optimizationGoal: text("optimization_goal").notNull().default("reach"),
     // Optional reusable audience; targeting row still holds the effective spec.
@@ -397,6 +446,11 @@ export const adWalletTransactionsTable = pgTable(
   (t) => [
     index("ad_wallet_tx_account_created_idx").on(t.accountId, t.createdAt),
     check("ad_wallet_tx_amount_nonzero", sql`${t.amountCents} <> 0`),
+    // Idempotency guard: a given external event (e.g. a Stripe payment intent)
+    // can only ever produce ONE ledger row. Partial so many rows may have NULL.
+    uniqueIndex("ad_wallet_tx_reference_uniq_idx")
+      .on(t.referenceId)
+      .where(sql`${t.referenceId} is not null`),
   ],
 );
 
@@ -433,6 +487,38 @@ export const adCouponsTable = pgTable(
 );
 
 export type AdCoupon = typeof adCouponsTable.$inferSelect;
+
+/**
+ * Per-ad-set daily spend rollup (one row per ad set per calendar day, in the
+ * account timezone). Lets serving enforce the daily budget cheaply and lets it
+ * AUTO-RECOVER the next day (unlike lifetime limits, which flip status).
+ */
+export const adSpendDailyTable = pgTable(
+  "ad_spend_daily",
+  {
+    id: serial("id").primaryKey(),
+    accountId: integer("account_id")
+      .notNull()
+      .references(() => adAccountsTable.id, { onDelete: "cascade" }),
+    campaignId: integer("campaign_id")
+      .notNull()
+      .references(() => adCampaignsTable.id, { onDelete: "cascade" }),
+    adSetId: integer("ad_set_id")
+      .notNull()
+      .references(() => adSetsTable.id, { onDelete: "cascade" }),
+    // Calendar day (account tz) this spend belongs to.
+    day: date("day").notNull(),
+    spentCents: integer("spent_cents").notNull().default(0),
+  },
+  (t) => [
+    uniqueIndex("ad_spend_daily_ad_set_day_uniq_idx").on(t.adSetId, t.day),
+    index("ad_spend_daily_account_day_idx").on(t.accountId, t.day),
+    index("ad_spend_daily_campaign_day_idx").on(t.campaignId, t.day),
+    check("ad_spend_daily_nonneg", sql`${t.spentCents} >= 0`),
+  ],
+);
+
+export type AdSpendDaily = typeof adSpendDailyTable.$inferSelect;
 
 // ---------------------------------------------------------------------------
 // Tracking tables — created now, wired up by the Serving / Analytics tasks.
