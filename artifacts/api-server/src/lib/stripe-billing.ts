@@ -158,6 +158,16 @@ export async function removeCard(
   paymentMethodId: string,
 ): Promise<void> {
   const stripe = getStripe();
+  // Tenant guard: only detach a card that belongs to THIS account's customer,
+  // so a leaked/guessed payment-method id can't be used to detach another
+  // advertiser's card.
+  if (!account.stripeCustomerId) {
+    throw new Error("payment method does not belong to this account");
+  }
+  const pm = await stripe.paymentMethods.retrieve(paymentMethodId);
+  if (pm.customer !== account.stripeCustomerId) {
+    throw new Error("payment method does not belong to this account");
+  }
   await stripe.paymentMethods.detach(paymentMethodId);
   if (account.defaultPaymentMethodId === paymentMethodId) {
     await db
@@ -193,19 +203,29 @@ export async function maybeAutoRecharge(accountId: number): Promise<void> {
 
   const stripe = getStripe();
   try {
-    await stripe.paymentIntents.create({
-      amount: account.autoRechargeAmountCents,
-      currency: account.currency.toLowerCase(),
-      customer: account.stripeCustomerId,
-      payment_method: account.defaultPaymentMethodId,
-      off_session: true,
-      confirm: true,
-      metadata: {
-        adAccountId: String(account.id),
-        purpose: "auto_recharge",
-        amountCents: String(account.autoRechargeAmountCents),
+    // Single-flight guard: a burst of charges crossing the threshold in the
+    // same minute all produce the SAME idempotency key, so Stripe returns the
+    // one PaymentIntent instead of charging the card multiple times before the
+    // webhook credit lands.
+    const idempotencyKey = `autorecharge:${account.id}:${Math.floor(
+      Date.now() / 60000,
+    )}`;
+    await stripe.paymentIntents.create(
+      {
+        amount: account.autoRechargeAmountCents,
+        currency: account.currency.toLowerCase(),
+        customer: account.stripeCustomerId,
+        payment_method: account.defaultPaymentMethodId,
+        off_session: true,
+        confirm: true,
+        metadata: {
+          adAccountId: String(account.id),
+          purpose: "auto_recharge",
+          amountCents: String(account.autoRechargeAmountCents),
+        },
       },
-    });
+      { idempotencyKey },
+    );
   } catch (err) {
     // A failed off-session charge (e.g. authentication required) must not throw
     // into the tracking hot path. Disable auto-recharge so we stop retrying.

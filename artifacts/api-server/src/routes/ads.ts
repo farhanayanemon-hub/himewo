@@ -1247,7 +1247,7 @@ router.get("/ads/serve", requireAuth, async (req, res): Promise<void> => {
   const targetingByAdSet = new Map(targetingRows.map((t) => [t.adSetId, t]));
   const creativeById = new Map(creatives.map((c) => [c.id, c]));
 
-  const eligible = inFlight.filter(({ ad, adSet }) => {
+  const eligible = affordable.filter(({ ad, adSet }) => {
     if (recentlySeen.has(ad.id)) return false;
     return matchesTargeting(targetingByAdSet.get(adSet.id), viewer ?? null);
   });
@@ -2334,6 +2334,7 @@ router.post(
         event: "impression",
         viewerId,
         placement: body.data.placement ?? null,
+        dedupeMs: TRACK_DEDUPE_MS,
       });
       if (result.shouldAutoRecharge) {
         void maybeAutoRecharge(ad.accountId).catch(() => {});
@@ -2370,6 +2371,7 @@ router.post("/ads/:id/click", requireAuth, async (req, res): Promise<void> => {
       event: "click",
       viewerId,
       placement: body.data.placement ?? null,
+      dedupeMs: TRACK_DEDUPE_MS,
     });
     if (result.shouldAutoRecharge) {
       void maybeAutoRecharge(ad.accountId).catch(() => {});
