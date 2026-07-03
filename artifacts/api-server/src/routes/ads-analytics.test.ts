@@ -150,6 +150,10 @@ describe("Task #5 — insights aggregation", () => {
     expect(s.ctr).toBeCloseTo(1 / 3, 5);
     // CPC = spend / clicks
     expect(s.cpcCents).toBe(SEEDED_SPEND);
+    // No conversions yet: cost-per-conversion is null (no divide-by-zero) and
+    // ROAS is 0 (spend > 0 but no conversion value returned).
+    expect(s.costPerResultCents).toBeNull();
+    expect(s.roas).toBe(0);
     // Breakdown has the campaign with a resolved name.
     expect(res.body.breakdown.length).toBe(1);
     expect(res.body.breakdown[0].name).toBe("Ana Campaign");
@@ -264,5 +268,21 @@ describe("Task #5 — pixel endpoint + conversion attribution", () => {
     expect(events).toContain("purchase");
     expect(events).toContain("lead");
     expect(events).toContain("signup");
+  });
+
+  it("exposes ROAS and cost-per-conversion once conversions exist", async () => {
+    const res = await api(`/ad-accounts/${accountId}/insights`, owner);
+    expect(res.status).toBe(200);
+    const s = res.body.summary;
+    // Conversions were recorded above, so both metrics are now populated.
+    expect(s.conversions).toBeGreaterThan(0);
+    expect(s.conversionValueCents).toBeGreaterThan(0);
+    // ROAS = conversion value / spend (a positive ratio, spend > 0).
+    expect(s.roas).toBeGreaterThan(0);
+    expect(s.roas).toBeCloseTo(s.conversionValueCents / s.spentCents, 5);
+    // Cost per conversion = spend / conversions (no longer null).
+    expect(s.costPerResultCents).toBe(
+      Math.round(s.spentCents / s.conversions),
+    );
   });
 });

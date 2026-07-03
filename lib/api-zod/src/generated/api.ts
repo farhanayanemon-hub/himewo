@@ -6172,6 +6172,7 @@ export const GetAdAccountInsightsResponse = zod.object({
   "spentCents": zod.number(),
   "conversions": zod.number(),
   "conversionValueCents": zod.number(),
+  "roas": zod.number().nullable(),
   "cpcCents": zod.number().nullable(),
   "cpmCents": zod.number().nullable(),
   "costPerResultCents": zod.number().nullable()
@@ -6194,6 +6195,7 @@ export const GetAdAccountInsightsResponse = zod.object({
   "spentCents": zod.number(),
   "conversions": zod.number(),
   "conversionValueCents": zod.number(),
+  "roas": zod.number().nullable(),
   "cpcCents": zod.number().nullable(),
   "cpmCents": zod.number().nullable(),
   "costPerResultCents": zod.number().nullable()

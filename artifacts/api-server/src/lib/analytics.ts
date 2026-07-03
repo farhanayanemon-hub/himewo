@@ -73,9 +73,10 @@ export interface InsightsSummary {
   spentCents: number;
   conversions: number;
   conversionValueCents: number;
+  roas: number | null; // conversion value / spend (null when spend is 0)
   cpcCents: number | null; // spend / clicks
   cpmCents: number | null; // spend / impressions * 1000
-  costPerResultCents: number | null; // spend / conversions
+  costPerResultCents: number | null; // spend / conversions (a.k.a. cost per conversion)
 }
 
 export interface InsightsRow extends InsightsSummary {
@@ -110,10 +111,11 @@ function ratios(base: {
   conversions: number;
   conversionValueCents: number;
 }): InsightsSummary {
-  const { impressions, clicks, spentCents, conversions } = base;
+  const { impressions, clicks, spentCents, conversions, conversionValueCents } = base;
   return {
     ...base,
     ctr: impressions > 0 ? clicks / impressions : 0,
+    roas: spentCents > 0 ? conversionValueCents / spentCents : null,
     cpcCents: clicks > 0 ? Math.round(spentCents / clicks) : null,
     cpmCents: impressions > 0 ? Math.round((spentCents / impressions) * 1000) : null,
     costPerResultCents: conversions > 0 ? Math.round(spentCents / conversions) : null,

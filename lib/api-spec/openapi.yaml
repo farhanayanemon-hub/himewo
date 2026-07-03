@@ -4470,6 +4470,7 @@ components:
           spentCents,
           conversions,
           conversionValueCents,
+          roas,
           cpcCents,
           cpmCents,
           costPerResultCents,
@@ -4482,6 +4483,7 @@ components:
         spentCents: { type: integer }
         conversions: { type: integer }
         conversionValueCents: { type: integer }
+        roas: { type: ["number", "null"] }
         cpcCents: { type: ["integer", "null"] }
         cpmCents: { type: ["integer", "null"] }
         costPerResultCents: { type: ["integer", "null"] }
@@ -4499,6 +4501,7 @@ components:
           spentCents,
           conversions,
           conversionValueCents,
+          roas,
           cpcCents,
           cpmCents,
           costPerResultCents,
@@ -4514,6 +4517,7 @@ components:
         spentCents: { type: integer }
         conversions: { type: integer }
         conversionValueCents: { type: integer }
+        roas: { type: ["number", "null"] }
         cpcCents: { type: ["integer", "null"] }
         cpmCents: { type: ["integer", "null"] }
         costPerResultCents: { type: ["integer", "null"] }

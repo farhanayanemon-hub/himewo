@@ -15,6 +15,8 @@ export interface InsightsMetrics {
   conversions: number;
   conversionValueCents: number;
   /** @nullable */
+  roas: number | null;
+  /** @nullable */
   cpcCents: number | null;
   /** @nullable */
   cpmCents: number | null;
