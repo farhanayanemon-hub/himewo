@@ -1987,6 +1987,112 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  # ---------------- Ads: serving + tracking ----------------
+  /ads/serve:
+    get:
+      operationId: serveAds
+      tags: [ads]
+      summary: Approved ads eligible for the current viewer at a placement.
+      parameters:
+        - name: placement
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [feed, reels, marketplace, stories, sidebar]
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 10 }
+      responses:
+        "200":
+          description: Sponsored items
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ServedAd" }
+  /ads/{id}/impression:
+    post:
+      operationId: recordAdImpression
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdEventInput" }
+      responses:
+        "204": { description: Recorded }
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /ads/{id}/click:
+    post:
+      operationId: recordAdClick
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdEventInput" }
+      responses:
+        "204": { description: Recorded }
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ---------------- Ads: boost (lightweight ad creation) ----------------
+  /posts/{id}/boost:
+    post:
+      operationId: boostPost
+      tags: [ads]
+      summary: Create a sponsored ad from a post and submit it for review.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BoostPostInput" }
+      responses:
+        "201":
+          description: Ad created and submitted for review
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Ad" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /pages/{id}/boost:
+    post:
+      operationId: boostPage
+      tags: [ads]
+      summary: Create a sponsored ad from a page and submit it for review.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BoostPageInput" }
+      responses:
+        "201":
+          description: Ad created and submitted for review
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Ad" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   # ---------------- Ads: creatives ----------------
   /ad-accounts/{id}/creatives:
     get:
@@ -3874,8 +3980,61 @@ components:
         reviewStatus: { type: string, enum: [pending, approved, rejected] }
         reviewNote: { type: ["string", "null"] }
         destinationUrl: { type: ["string", "null"] }
+        boostedPostId: { type: ["integer", "null"] }
+        boostedPageId: { type: ["integer", "null"] }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
+    ServedAd:
+      type: object
+      required: [adId, accountId, placement, name]
+      properties:
+        adId: { type: integer }
+        accountId: { type: integer }
+        placement: { type: string }
+        name: { type: string }
+        destinationUrl: { type: ["string", "null"] }
+        creative:
+          oneOf:
+            - { $ref: "#/components/schemas/AdCreative" }
+            - { type: "null" }
+        boostedPost:
+          oneOf:
+            - { $ref: "#/components/schemas/Post" }
+            - { type: "null" }
+        boostedPage:
+          oneOf:
+            - { $ref: "#/components/schemas/Page" }
+            - { type: "null" }
+    AdEventInput:
+      type: object
+      properties:
+        placement:
+          type: string
+          enum: [feed, reels, marketplace, stories, sidebar]
+    BoostPostInput:
+      type: object
+      required: [budgetCents, days]
+      properties:
+        budgetCents: { type: integer, minimum: 100 }
+        days: { type: integer, minimum: 1, maximum: 30 }
+        headline: { type: string }
+        callToAction:
+          type: string
+          enum:
+            [learn_more, shop_now, sign_up, book_now, contact_us, download, none]
+        destinationUrl: { type: string }
+    BoostPageInput:
+      type: object
+      required: [budgetCents, days]
+      properties:
+        budgetCents: { type: integer, minimum: 100 }
+        days: { type: integer, minimum: 1, maximum: 30 }
+        headline: { type: string }
+        callToAction:
+          type: string
+          enum:
+            [learn_more, shop_now, sign_up, book_now, contact_us, download, none]
+        destinationUrl: { type: string }
     AdInput:
       type: object
       required: [name]

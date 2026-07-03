@@ -1458,8 +1458,91 @@ export interface Ad {
   reviewNote?: string | null;
   /** @nullable */
   destinationUrl?: string | null;
+  /** @nullable */
+  boostedPostId?: number | null;
+  /** @nullable */
+  boostedPageId?: number | null;
   createdAt: string;
   updatedAt?: string;
+}
+
+export interface ServedAd {
+  adId: number;
+  accountId: number;
+  placement: string;
+  name: string;
+  /** @nullable */
+  destinationUrl?: string | null;
+  creative?: AdCreative | null;
+  boostedPost?: Post | null;
+  boostedPage?: Page | null;
+}
+
+export type AdEventInputPlacement = typeof AdEventInputPlacement[keyof typeof AdEventInputPlacement];
+
+
+export const AdEventInputPlacement = {
+  feed: 'feed',
+  reels: 'reels',
+  marketplace: 'marketplace',
+  stories: 'stories',
+  sidebar: 'sidebar',
+} as const;
+
+export interface AdEventInput {
+  placement?: AdEventInputPlacement;
+}
+
+export type BoostPostInputCallToAction = typeof BoostPostInputCallToAction[keyof typeof BoostPostInputCallToAction];
+
+
+export const BoostPostInputCallToAction = {
+  learn_more: 'learn_more',
+  shop_now: 'shop_now',
+  sign_up: 'sign_up',
+  book_now: 'book_now',
+  contact_us: 'contact_us',
+  download: 'download',
+  none: 'none',
+} as const;
+
+export interface BoostPostInput {
+  /** @minimum 100 */
+  budgetCents: number;
+  /**
+     * @minimum 1
+     * @maximum 30
+     */
+  days: number;
+  headline?: string;
+  callToAction?: BoostPostInputCallToAction;
+  destinationUrl?: string;
+}
+
+export type BoostPageInputCallToAction = typeof BoostPageInputCallToAction[keyof typeof BoostPageInputCallToAction];
+
+
+export const BoostPageInputCallToAction = {
+  learn_more: 'learn_more',
+  shop_now: 'shop_now',
+  sign_up: 'sign_up',
+  book_now: 'book_now',
+  contact_us: 'contact_us',
+  download: 'download',
+  none: 'none',
+} as const;
+
+export interface BoostPageInput {
+  /** @minimum 100 */
+  budgetCents: number;
+  /**
+     * @minimum 1
+     * @maximum 30
+     */
+  days: number;
+  headline?: string;
+  callToAction?: BoostPageInputCallToAction;
+  destinationUrl?: string;
 }
 
 export type AdInputStatus = typeof AdInputStatus[keyof typeof AdInputStatus];
@@ -2174,6 +2257,26 @@ radiusKm?: number;
 export type GeocodeLocationParams = {
 q: string;
 };
+
+export type ServeAdsParams = {
+placement?: ServeAdsPlacement;
+/**
+ * @minimum 1
+ * @maximum 10
+ */
+limit?: number;
+};
+
+export type ServeAdsPlacement = typeof ServeAdsPlacement[keyof typeof ServeAdsPlacement];
+
+
+export const ServeAdsPlacement = {
+  feed: 'feed',
+  reels: 'reels',
+  marketplace: 'marketplace',
+  stories: 'stories',
+  sidebar: 'sidebar',
+} as const;
 
 export type GetPagePostsParams = {
 cursor?: number;

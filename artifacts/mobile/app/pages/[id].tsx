@@ -18,6 +18,8 @@ import {
   getListPagesQueryKey,
   getGetPageQueryKey,
 } from "@workspace/api-client-react";
+import { useState } from "react";
+import { BoostSheet } from "@/components/BoostSheet";
 import { useColors } from "@/hooks/useColors";
 
 export default function PageDetailScreen() {
@@ -27,6 +29,7 @@ export default function PageDetailScreen() {
   const id = Number(idParam);
 
   const { data: page, isLoading } = useGetPage(id);
+  const [boostOpen, setBoostOpen] = useState(false);
   const followPage = useFollowPage();
   const unfollowPage = useUnfollowPage();
 
@@ -82,27 +85,38 @@ export default function PageDetailScreen() {
                 <Ionicons name="document-text" size={36} color={c.primary} />
               )}
             </View>
-            <Pressable
-              style={[
-                styles.followBtn,
-                { backgroundColor: page.viewerFollows ? c.secondary : c.primary },
-              ]}
-              onPress={handleFollow}
-              disabled={busy}
-            >
-              {busy ? (
-                <ActivityIndicator color={page.viewerFollows ? c.foreground : "#fff"} size="small" />
-              ) : (
-                <Text
-                  style={{
-                    color: page.viewerFollows ? c.foreground : "#fff",
-                    fontFamily: "Inter_700Bold",
-                  }}
+            <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-end" }}>
+              {page.viewerCanPost && (
+                <Pressable
+                  style={[styles.followBtn, { backgroundColor: c.secondary, flexDirection: "row", alignItems: "center", gap: 6 }]}
+                  onPress={() => setBoostOpen(true)}
                 >
-                  {page.viewerFollows ? "Following" : "Follow"}
-                </Text>
+                  <Ionicons name="rocket" size={16} color={c.foreground} />
+                  <Text style={{ color: c.foreground, fontFamily: "Inter_700Bold" }}>Boost</Text>
+                </Pressable>
               )}
-            </Pressable>
+              <Pressable
+                style={[
+                  styles.followBtn,
+                  { backgroundColor: page.viewerFollows ? c.secondary : c.primary },
+                ]}
+                onPress={handleFollow}
+                disabled={busy}
+              >
+                {busy ? (
+                  <ActivityIndicator color={page.viewerFollows ? c.foreground : "#fff"} size="small" />
+                ) : (
+                  <Text
+                    style={{
+                      color: page.viewerFollows ? c.foreground : "#fff",
+                      fontFamily: "Inter_700Bold",
+                    }}
+                  >
+                    {page.viewerFollows ? "Following" : "Follow"}
+                  </Text>
+                )}
+              </Pressable>
+            </View>
           </View>
           <Text style={[styles.name, { color: c.foreground }]}>{page.name}</Text>
           {page.category ? (
@@ -116,6 +130,16 @@ export default function PageDetailScreen() {
           </Text>
         </View>
       </ScrollView>
+
+      {page.viewerCanPost && (
+        <BoostSheet
+          type="page"
+          id={id}
+          visible={boostOpen}
+          onClose={() => setBoostOpen(false)}
+          onDone={invalidate}
+        />
+      )}
     </SafeAreaView>
   );
 }

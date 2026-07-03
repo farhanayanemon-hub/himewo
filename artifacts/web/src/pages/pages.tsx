@@ -44,7 +44,9 @@ import {
   UserPlus,
   Pencil,
   Trash2,
+  Rocket,
 } from "lucide-react";
+import { BoostDialog } from "@/components/boost-dialog";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -576,6 +578,7 @@ function PageDetail({ id }: { id: number }) {
   const { data: posts, isLoading: postsLoading } = useGetPagePosts(id);
   const queryClient = useQueryClient();
   const [editOpen, setEditOpen] = useState(false);
+  const [boostOpen, setBoostOpen] = useState(false);
 
   const followPage = useFollowPage();
   const unfollowPage = useUnfollowPage();
@@ -629,9 +632,15 @@ function PageDetail({ id }: { id: number }) {
               </Button>
               <PageCTA page={page} />
               {page.viewerCanPost && (
-                <Button variant="secondary" size="icon" onClick={() => setEditOpen(true)} aria-label="Edit page">
-                  <Pencil className="w-4 h-4" />
-                </Button>
+                <>
+                  <Button variant="secondary" onClick={() => setBoostOpen(true)}>
+                    <Rocket className="w-4 h-4 mr-2" />
+                    Boost
+                  </Button>
+                  <Button variant="secondary" size="icon" onClick={() => setEditOpen(true)} aria-label="Edit page">
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                </>
               )}
             </div>
           </div>
@@ -668,7 +677,10 @@ function PageDetail({ id }: { id: number }) {
       </div>
 
       {page.viewerCanPost && (
-        <EditPageDialog page={page} open={editOpen} onOpenChange={setEditOpen} />
+        <>
+          <EditPageDialog page={page} open={editOpen} onOpenChange={setEditOpen} />
+          <BoostDialog type="page" id={id} open={boostOpen} onOpenChange={setBoostOpen} onDone={invalidate} />
+        </>
       )}
     </MainLayout>
   );

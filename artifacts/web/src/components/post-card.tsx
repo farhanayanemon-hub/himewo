@@ -14,7 +14,9 @@ import {
   Users,
   Lock,
   MapPin,
+  Rocket,
 } from "lucide-react";
+import { BoostDialog } from "@/components/boost-dialog";
 import {
   Post,
   useSetPostReaction,
@@ -81,8 +83,10 @@ export function PostCard({ post }: { post: Post }) {
   const [shareCaption, setShareCaption] = useState("");
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(post.content);
+  const [showBoost, setShowBoost] = useState(false);
 
   const isOwner = !!user && user.id === post.author.id;
+  const canBoost = isOwner && post.privacy === "public";
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: getGetFeedQueryKey() });
@@ -297,6 +301,12 @@ export function PostCard({ post }: { post: Post }) {
                       </DropdownMenuRadioGroup>
                     </DropdownMenuSubContent>
                   </DropdownMenuSub>
+                  {canBoost && (
+                    <DropdownMenuItem onSelect={() => setShowBoost(true)}>
+                      <Rocket className="w-4 h-4" />
+                      Boost post
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <AlertDialogTrigger asChild>
                     <DropdownMenuItem
@@ -462,6 +472,10 @@ export function PostCard({ post }: { post: Post }) {
           <span className="font-semibold">Share</span>
         </Button>
       </div>
+
+      {canBoost && (
+        <BoostDialog type="post" id={post.id} open={showBoost} onOpenChange={setShowBoost} />
+      )}
 
       {showShare && (
         <div className="mt-3 pt-3 border-t border-border space-y-2 animate-in fade-in slide-in-from-top-1">

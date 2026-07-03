@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { PostCard } from "@/components/post-card";
 import { PostComposer } from "@/components/post-composer";
+import { SponsoredCard } from "@/components/sponsored-card";
 import {
   useGetFeed,
+  useServeAds,
   useListFriends,
   useListStories,
   useListFriendRequests,
@@ -294,6 +296,9 @@ export default function HomePage() {
   const posts = pages.flat();
   const lastId = posts.length ? posts[posts.length - 1].id : undefined;
 
+  const { data: ads } = useServeAds({ placement: "feed", limit: 3 });
+  const AD_EVERY = 5;
+
   const loadMore = () => {
     if (!hasMore || isFetching || lastId === undefined) return;
     setCursor(lastId);
@@ -328,7 +333,17 @@ export default function HomePage() {
           ) : posts.length === 0 ? (
             <div className="text-center py-10 text-muted-foreground bg-card border border-border rounded-xl">No posts yet. Create one!</div>
           ) : (
-            posts.map((post) => <PostCard key={post.id} post={post} />)
+            posts.map((post, i) => {
+              const adIdx = Math.floor(i / AD_EVERY);
+              const showAd =
+                i > 0 && i % AD_EVERY === 0 && ads && ads[adIdx - 1];
+              return (
+                <div key={post.id} className="space-y-4">
+                  {showAd && <SponsoredCard ad={ads[adIdx - 1]} />}
+                  <PostCard post={post} />
+                </div>
+              );
+            })
           )}
 
           {/* Infinite scroll sentinel */}

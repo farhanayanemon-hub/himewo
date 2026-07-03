@@ -34,6 +34,7 @@ import type {
   AdCreative,
   AdCreativeInput,
   AdCreativeUpdate,
+  AdEventInput,
   AdInput,
   AdSchedule,
   AdScheduleInput,
@@ -55,6 +56,8 @@ import type {
   AlbumInput,
   AlbumPhoto,
   BadRequestResponse,
+  BoostPageInput,
+  BoostPostInput,
   Comment,
   CommentInput,
   CommentUpdate,
@@ -137,6 +140,8 @@ import type {
   SavedItemInput,
   SearchUsersParams,
   SellingOverview,
+  ServeAdsParams,
+  ServedAd,
   SetMemberRoleInput,
   ShareInput,
   Story,
@@ -8800,6 +8805,362 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getSubmitAdForReviewMutationOptions(options));
+    }
+
+export const getServeAdsUrl = (params?: ServeAdsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/ads/serve?${stringifiedParams}` : `/api/ads/serve`
+}
+
+/**
+ * @summary Approved ads eligible for the current viewer at a placement.
+ */
+export const serveAds = async (params?: ServeAdsParams, options?: RequestInit): Promise<ServedAd[]> => {
+
+  return customFetch<ServedAd[]>(getServeAdsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getServeAdsQueryKey = (params?: ServeAdsParams,) => {
+    return [
+    `/api/ads/serve`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getServeAdsQueryOptions = <TData = Awaited<ReturnType<typeof serveAds>>, TError = ErrorType<unknown>>(params?: ServeAdsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof serveAds>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getServeAdsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof serveAds>>> = ({ signal }) => serveAds(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof serveAds>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ServeAdsQueryResult = NonNullable<Awaited<ReturnType<typeof serveAds>>>
+export type ServeAdsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Approved ads eligible for the current viewer at a placement.
+ */
+
+export function useServeAds<TData = Awaited<ReturnType<typeof serveAds>>, TError = ErrorType<unknown>>(
+ params?: ServeAdsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof serveAds>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getServeAdsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRecordAdImpressionUrl = (id: number,) => {
+
+
+
+
+  return `/api/ads/${id}/impression`
+}
+
+export const recordAdImpression = async (id: number,
+    adEventInput?: AdEventInput, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getRecordAdImpressionUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adEventInput)
+  }
+);}
+
+
+
+
+export const getRecordAdImpressionMutationOptions = <TError = ErrorType<NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordAdImpression>>, TError,{id: number;data?: BodyType<AdEventInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordAdImpression>>, TError,{id: number;data?: BodyType<AdEventInput>}, TContext> => {
+
+const mutationKey = ['recordAdImpression'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordAdImpression>>, {id: number;data?: BodyType<AdEventInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  recordAdImpression(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordAdImpressionMutationResult = NonNullable<Awaited<ReturnType<typeof recordAdImpression>>>
+    export type RecordAdImpressionMutationBody = BodyType<AdEventInput> | undefined
+    export type RecordAdImpressionMutationError = ErrorType<NotFoundResponse>
+
+    export const useRecordAdImpression = <TError = ErrorType<NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordAdImpression>>, TError,{id: number;data?: BodyType<AdEventInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordAdImpression>>,
+        TError,
+        {id: number;data?: BodyType<AdEventInput>},
+        TContext
+      > => {
+      return useMutation(getRecordAdImpressionMutationOptions(options));
+    }
+
+export const getRecordAdClickUrl = (id: number,) => {
+
+
+
+
+  return `/api/ads/${id}/click`
+}
+
+export const recordAdClick = async (id: number,
+    adEventInput?: AdEventInput, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getRecordAdClickUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adEventInput)
+  }
+);}
+
+
+
+
+export const getRecordAdClickMutationOptions = <TError = ErrorType<NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordAdClick>>, TError,{id: number;data?: BodyType<AdEventInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordAdClick>>, TError,{id: number;data?: BodyType<AdEventInput>}, TContext> => {
+
+const mutationKey = ['recordAdClick'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordAdClick>>, {id: number;data?: BodyType<AdEventInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  recordAdClick(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordAdClickMutationResult = NonNullable<Awaited<ReturnType<typeof recordAdClick>>>
+    export type RecordAdClickMutationBody = BodyType<AdEventInput> | undefined
+    export type RecordAdClickMutationError = ErrorType<NotFoundResponse>
+
+    export const useRecordAdClick = <TError = ErrorType<NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordAdClick>>, TError,{id: number;data?: BodyType<AdEventInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordAdClick>>,
+        TError,
+        {id: number;data?: BodyType<AdEventInput>},
+        TContext
+      > => {
+      return useMutation(getRecordAdClickMutationOptions(options));
+    }
+
+export const getBoostPostUrl = (id: number,) => {
+
+
+
+
+  return `/api/posts/${id}/boost`
+}
+
+/**
+ * @summary Create a sponsored ad from a post and submit it for review.
+ */
+export const boostPost = async (id: number,
+    boostPostInput: BoostPostInput, options?: RequestInit): Promise<Ad> => {
+
+  return customFetch<Ad>(getBoostPostUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(boostPostInput)
+  }
+);}
+
+
+
+
+export const getBoostPostMutationOptions = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof boostPost>>, TError,{id: number;data: BodyType<BoostPostInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof boostPost>>, TError,{id: number;data: BodyType<BoostPostInput>}, TContext> => {
+
+const mutationKey = ['boostPost'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof boostPost>>, {id: number;data: BodyType<BoostPostInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  boostPost(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BoostPostMutationResult = NonNullable<Awaited<ReturnType<typeof boostPost>>>
+    export type BoostPostMutationBody = BodyType<BoostPostInput>
+    export type BoostPostMutationError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Create a sponsored ad from a post and submit it for review.
+ */
+export const useBoostPost = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof boostPost>>, TError,{id: number;data: BodyType<BoostPostInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof boostPost>>,
+        TError,
+        {id: number;data: BodyType<BoostPostInput>},
+        TContext
+      > => {
+      return useMutation(getBoostPostMutationOptions(options));
+    }
+
+export const getBoostPageUrl = (id: number,) => {
+
+
+
+
+  return `/api/pages/${id}/boost`
+}
+
+/**
+ * @summary Create a sponsored ad from a page and submit it for review.
+ */
+export const boostPage = async (id: number,
+    boostPageInput: BoostPageInput, options?: RequestInit): Promise<Ad> => {
+
+  return customFetch<Ad>(getBoostPageUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(boostPageInput)
+  }
+);}
+
+
+
+
+export const getBoostPageMutationOptions = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof boostPage>>, TError,{id: number;data: BodyType<BoostPageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof boostPage>>, TError,{id: number;data: BodyType<BoostPageInput>}, TContext> => {
+
+const mutationKey = ['boostPage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof boostPage>>, {id: number;data: BodyType<BoostPageInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  boostPage(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BoostPageMutationResult = NonNullable<Awaited<ReturnType<typeof boostPage>>>
+    export type BoostPageMutationBody = BodyType<BoostPageInput>
+    export type BoostPageMutationError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Create a sponsored ad from a page and submit it for review.
+ */
+export const useBoostPage = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof boostPage>>, TError,{id: number;data: BodyType<BoostPageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof boostPage>>,
+        TError,
+        {id: number;data: BodyType<BoostPageInput>},
+        TContext
+      > => {
+      return useMutation(getBoostPageMutationOptions(options));
     }
 
 export const getListAdCreativesUrl = (id: number,) => {

@@ -29,6 +29,7 @@ import {
 } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
 import { MediaGrid } from "@/components/MediaGrid";
+import { BoostSheet } from "@/components/BoostSheet";
 import { ReactionBar } from "@/components/ReactionBar";
 import { reactionConfig } from "@/constants/reactions";
 import { useColors } from "@/hooks/useColors";
@@ -68,6 +69,7 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
   const [privacy, setPrivacy] = useState<string>(post.privacy);
   const [menuOpen, setMenuOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [boostOpen, setBoostOpen] = useState(false);
   const [draft, setDraft] = useState(post.content);
 
   const setReaction = useSetPostReaction();
@@ -78,6 +80,7 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
   const deletePost = useDeletePost();
 
   const isOwner = !!user && user.id === post.author.id;
+  const canBoost = isOwner && privacy === "public";
   const viewerReaction = summary.viewerReaction ?? null;
 
   const syncServer = () => {
@@ -331,6 +334,19 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
               </Text>
             </Pressable>
 
+            {canBoost && (
+              <Pressable
+                style={styles.row}
+                onPress={() => {
+                  setMenuOpen(false);
+                  setBoostOpen(true);
+                }}
+              >
+                <Ionicons name="rocket-outline" size={22} color={c.foreground} />
+                <Text style={[styles.rowLabel, { color: c.foreground }]}>Boost post</Text>
+              </Pressable>
+            )}
+
             <View style={[styles.sheetDivider, { backgroundColor: c.border }]} />
             <Text style={[styles.sheetLabel, { color: c.mutedForeground }]}>Who can see this</Text>
             {privacyOptions.map((opt) => {
@@ -392,6 +408,15 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {canBoost && (
+        <BoostSheet
+          type="post"
+          id={post.id}
+          visible={boostOpen}
+          onClose={() => setBoostOpen(false)}
+        />
+      )}
     </View>
   );
 }
