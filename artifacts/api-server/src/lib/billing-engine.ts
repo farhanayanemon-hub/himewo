@@ -9,7 +9,7 @@ import {
   adWalletTransactionsTable,
   adSpendDailyTable,
 } from "@workspace/db";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, gt, sql } from "drizzle-orm";
 
 // 1 whole cent = 1000 microcents. Impressions accrue sub-cent cost until a
 // whole cent can be flushed to the wallet ledger, so low CPMs stay exact.
@@ -71,8 +71,16 @@ export async function chargeAdEvent(opts: {
   event: BillableEvent;
   viewerId: string;
   placement: string | null;
+  /**
+   * If a matching tracking row for this viewer+ad already exists within this
+   * many ms, treat the event as a duplicate and do NOT re-charge. This check
+   * runs INSIDE the transaction after the account row is locked FOR UPDATE, so
+   * concurrent duplicate events serialize and only the first one is charged
+   * (replay-proof against the request-level race).
+   */
+  dedupeMs?: number;
 }): Promise<ChargeResult> {
-  const { ad, event, viewerId, placement } = opts;
+  const { ad, event, viewerId, placement, dedupeMs = 0 } = opts;
   const now = new Date();
 
   return db.transaction(async (tx): Promise<ChargeResult> => {
@@ -94,15 +102,19 @@ export async function chargeAdEvent(opts: {
           .for("update")
       : [undefined];
 
-    const insertTracking = async (costCents: number): Promise<void> => {
-      const table = event === "impression" ? adImpressionsTable : adClicksTable;
-      await tx.insert(table).values({
-        adId: ad.id,
-        accountId: ad.accountId,
-        viewerId,
-        placement,
-        costCents,
-      });
+    const insertTracking = async (costCents: number): Promise<number> => {
+      if (event === "impression") {
+        const [row] = await tx
+          .insert(adImpressionsTable)
+          .values({ adId: ad.id, accountId: ad.accountId, viewerId, placement, costCents })
+          .returning({ id: adImpressionsTable.id });
+        return row.id;
+      }
+      const [row] = await tx
+        .insert(adClicksTable)
+        .values({ adId: ad.id, accountId: ad.accountId, viewerId, placement, costCents })
+        .returning({ id: adClicksTable.id });
+      return row.id;
     };
 
     const noCharge: ChargeResult = {
@@ -111,6 +123,36 @@ export async function chargeAdEvent(opts: {
       shouldAutoRecharge: false,
       paused: { adSet: false, campaign: false, account: false },
     };
+
+    // Authoritative duplicate guard: now that the account row is locked, a
+    // concurrent request for the same viewer+ad will have committed its tracking
+    // row before we get here, so we can safely no-op without double-charging.
+    if (dedupeMs > 0) {
+      const cutoff = new Date(now.getTime() - dedupeMs);
+      const dup =
+        event === "impression"
+          ? await tx
+              .select({ id: adImpressionsTable.id })
+              .from(adImpressionsTable)
+              .where(
+                and(
+                  eq(adImpressionsTable.adId, ad.id),
+                  eq(adImpressionsTable.viewerId, viewerId),
+                  gt(adImpressionsTable.createdAt, cutoff),
+                ),
+              )
+          : await tx
+              .select({ id: adClicksTable.id })
+              .from(adClicksTable)
+              .where(
+                and(
+                  eq(adClicksTable.adId, ad.id),
+                  eq(adClicksTable.viewerId, viewerId),
+                  gt(adClicksTable.createdAt, cutoff),
+                ),
+              );
+      if (dup.length > 0) return noCharge;
+    }
 
     if (!account || !adSet || !campaign) {
       await insertTracking(0);
@@ -196,7 +238,7 @@ export async function chargeAdEvent(opts: {
     const newAdSetSpent = adSet.spentCents + chargeCents;
     const newCampaignSpent = campaign.spentCents + chargeCents;
 
-    await insertTracking(chargeCents);
+    const trackingId = await insertTracking(chargeCents);
 
     if (chargeCents > 0) {
       await tx.insert(adWalletTransactionsTable).values({
@@ -206,6 +248,9 @@ export async function chargeAdEvent(opts: {
         currency: account.currency,
         balanceAfterCents: newCredit + newBalance,
         description: `Ad ${event} — ${ad.name} (#${ad.id})`,
+        // Ledger row keyed to the tracking event for audit/reconciliation; the
+        // partial-unique index on reference_id also backstops any true replay.
+        referenceId: `charge:${event}:${trackingId}`,
       });
       await tx
         .update(adAccountsTable)
