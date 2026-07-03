@@ -70,6 +70,11 @@ function formatNum(n: number): string {
   return new Intl.NumberFormat().format(n);
 }
 
+function formatRoas(roas: number | null | undefined): string {
+  if (roas == null) return "—";
+  return `${roas.toFixed(2)}x`;
+}
+
 export default function InsightsPage() {
   const { selectedAccountId, selectedAccount } = useAccount();
   const { toast } = useToast();
@@ -148,16 +153,20 @@ export default function InsightsPage() {
       value: s ? formatCents(s.conversionValueCents, currency) : "—",
     },
     {
+      label: "ROAS",
+      value: s ? formatRoas(s.roas) : "—",
+    },
+    {
+      label: "Cost / conversion",
+      value: s ? (s.costPerResultCents != null ? formatCents(s.costPerResultCents, currency) : "—") : "—",
+    },
+    {
       label: "CPC",
       value: s ? formatCents(s.cpcCents ?? 0, currency) : "—",
     },
     {
       label: "CPM",
       value: s ? formatCents(s.cpmCents ?? 0, currency) : "—",
-    },
-    {
-      label: "Cost / result",
-      value: s ? formatCents(s.costPerResultCents ?? 0, currency) : "—",
     },
   ];
 
@@ -316,6 +325,8 @@ export default function InsightsPage() {
                   <TableHead className="text-right">CTR</TableHead>
                   <TableHead className="text-right">Spend</TableHead>
                   <TableHead className="text-right">Conv.</TableHead>
+                  <TableHead className="text-right">ROAS</TableHead>
+                  <TableHead className="text-right">Cost / conv.</TableHead>
                   <TableHead className="text-right">CPC</TableHead>
                 </TableRow>
               </TableHeader>
@@ -340,6 +351,14 @@ export default function InsightsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       {formatNum(row.conversions)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatRoas(row.roas)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {row.costPerResultCents != null
+                        ? formatCents(row.costPerResultCents, currency)
+                        : "—"}
                     </TableCell>
                     <TableCell className="text-right">
                       {row.cpcCents != null
