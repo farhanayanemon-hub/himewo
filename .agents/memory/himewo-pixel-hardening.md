@@ -42,4 +42,4 @@ conversion) and the pixel can't be trusted to send well-formed input.
 **How to apply:** when adding any field or column captured from the pixel,
 clamp/cap/validate it in `capturePixelConversion` and make sure a bad value can
 only degrade to a clean default — never throw. Tests live in
-`ads-analytics.test.ts` under "Task #14 — conversion pixel hardening".
+`ads-analytics.test.ts` under the "conversion pixel hardening" describe block.
