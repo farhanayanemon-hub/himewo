@@ -4,12 +4,15 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   useListAdCampaigns,
   useCreateAdCampaign,
+  useUpdateAdCampaign,
   useDeleteAdCampaign,
   getListAdCampaignsQueryKey,
   type AdCampaignInput,
+  type AdCampaignUpdate,
+  type AdCampaign,
 } from "@workspace/api-client-react";
 import { useAccount } from "@/lib/account-context";
-import { formatCents, toCents } from "@/lib/money";
+import { formatCents, toCents, centsToAmount } from "@/lib/money";
 import { formatDay } from "@/lib/money";
 import { useToast } from "@/hooks/use-toast";
 import { NoAccount } from "@/components/no-account";
@@ -52,7 +55,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 
 type Objective = NonNullable<AdCampaignInput["objective"]>;
 type Status = NonNullable<AdCampaignInput["status"]>;
@@ -88,6 +91,7 @@ export default function CampaignsPage() {
     },
   });
   const create = useCreateAdCampaign();
+  const update = useUpdateAdCampaign();
   const del = useDeleteAdCampaign();
 
   const [open, setOpen] = useState(false);
@@ -96,6 +100,13 @@ export default function CampaignsPage() {
   const [status, setStatus] = useState<Status>("draft");
   const [daily, setDaily] = useState("");
   const [lifetime, setLifetime] = useState("");
+
+  const [editId, setEditId] = useState<number | null>(null);
+  const [eName, setEName] = useState("");
+  const [eObjective, setEObjective] = useState<Objective>("traffic");
+  const [eStatus, setEStatus] = useState<Status>("draft");
+  const [eDaily, setEDaily] = useState("");
+  const [eLifetime, setELifetime] = useState("");
 
   const invalidate = () =>
     qc.invalidateQueries({ queryKey: getListAdCampaignsQueryKey(accountId) });
@@ -148,6 +159,43 @@ export default function CampaignsPage() {
           }),
       },
     );
+
+  const openEdit = (c: AdCampaign) => {
+    setEditId(c.id);
+    setEName(c.name);
+    setEObjective(c.objective as Objective);
+    setEStatus(c.status as Status);
+    setEDaily(centsToAmount(c.dailyBudgetCents));
+    setELifetime(centsToAmount(c.lifetimeBudgetCents));
+  };
+
+  const submitEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editId == null) return;
+    const data: AdCampaignUpdate = {
+      name: eName.trim(),
+      objective: eObjective,
+      status: eStatus,
+      dailyBudgetCents: toCents(eDaily),
+      lifetimeBudgetCents: toCents(eLifetime),
+    };
+    update.mutate(
+      { id: editId, data },
+      {
+        onSuccess: () => {
+          invalidate();
+          setEditId(null);
+          toast({ title: "Campaign update hoyeche" });
+        },
+        onError: (err) =>
+          toast({
+            title: "Update hoyni",
+            description: err instanceof Error ? err.message : "Try again.",
+            variant: "destructive",
+          }),
+      },
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -302,6 +350,15 @@ export default function CampaignsPage() {
                     {formatDay(c.createdAt)}
                   </TableCell>
                   <TableCell>
+                    <div className="flex items-center justify-end gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openEdit(c)}
+                      data-testid={`edit-campaign-${c.id}`}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="ghost" size="icon">
@@ -323,6 +380,7 @@ export default function CampaignsPage() {
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -330,6 +388,95 @@ export default function CampaignsPage() {
           </Table>
         </Card>
       )}
+
+      <Dialog
+        open={editId != null}
+        onOpenChange={(o) => {
+          if (!o) setEditId(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit campaign</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={submitEdit} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="e-name">Name</Label>
+              <Input
+                id="e-name"
+                value={eName}
+                onChange={(e) => setEName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Objective</Label>
+                <Select
+                  value={eObjective}
+                  onValueChange={(v) => setEObjective(v as Objective)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {OBJECTIVES.map((o) => (
+                      <SelectItem key={o} value={o}>
+                        {o.replace(/_/g, " ")}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Status</Label>
+                <Select
+                  value={eStatus}
+                  onValueChange={(v) => setEStatus(v as Status)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUSES.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Daily budget ({selectedAccount?.currency})</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={eDaily}
+                  onChange={(e) => setEDaily(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Lifetime budget ({selectedAccount?.currency})</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={eLifetime}
+                  onChange={(e) => setELifetime(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={update.isPending}>
+                {update.isPending ? "Update hocche..." : "Save"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
