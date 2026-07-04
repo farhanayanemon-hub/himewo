@@ -259,6 +259,18 @@ router.post("/ad-accounts", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   const uid = req.userId!;
+  // Cap the number of ad accounts a single user can create (own).
+  const MAX_AD_ACCOUNTS_PER_USER = 2;
+  const ownedAccounts = await db
+    .select({ id: adAccountsTable.id })
+    .from(adAccountsTable)
+    .where(eq(adAccountsTable.ownerId, uid));
+  if (ownedAccounts.length >= MAX_AD_ACCOUNTS_PER_USER) {
+    res.status(403).json({
+      error: `You can create a maximum of ${MAX_AD_ACCOUNTS_PER_USER} ad accounts.`,
+    });
+    return;
+  }
   const account = await db.transaction(async (tx) => {
     const [created] = await tx
       .insert(adAccountsTable)
