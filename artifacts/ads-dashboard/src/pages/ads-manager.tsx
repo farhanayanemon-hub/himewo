@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CampaignsPanel } from "@/pages/campaigns";
 import { AdSetsPanel } from "@/pages/ad-sets-all";
 import { AdsPanel } from "@/pages/ads-all";
+import { CreateAdWizard } from "@/components/create-wizard";
 
 export default function AdsManagerPage() {
   const { selectedAccountId, selectedAccount } = useAccount();
@@ -12,9 +13,12 @@ export default function AdsManagerPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Ads Manager</h1>
-        <p className="text-sm text-muted-foreground">{selectedAccount?.name}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Ads Manager</h1>
+          <p className="text-sm text-muted-foreground">{selectedAccount?.name}</p>
+        </div>
+        <CreateAdWizard />
       </div>
       <Tabs defaultValue="campaigns">
         <TabsList>
