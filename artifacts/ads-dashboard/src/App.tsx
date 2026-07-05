@@ -14,6 +14,7 @@ import CampaignDetailPage from "@/pages/campaign-detail";
 import AdSetDetailPage from "@/pages/adset-detail";
 import AudiencesPage from "@/pages/audiences";
 import CreativesPage from "@/pages/creatives";
+import InsightsPage from "@/pages/insights";
 import TeamPage from "@/pages/team";
 import WalletPage from "@/pages/wallet";
 import SettingsPage from "@/pages/settings";
@@ -48,6 +49,7 @@ function AppRoutes() {
           <Route path="/campaigns" component={CampaignsPage} />
           <Route path="/campaigns/:campaignId" component={CampaignDetailPage} />
           <Route path="/adsets/:adSetId" component={AdSetDetailPage} />
+          <Route path="/insights" component={InsightsPage} />
           <Route path="/audiences" component={AudiencesPage} />
           <Route path="/creatives" component={CreativesPage} />
           <Route path="/team" component={TeamPage} />
