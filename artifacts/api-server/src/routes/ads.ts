@@ -1,5 +1,3 @@
-
-===== artifacts/api-server/src/routes/ads.ts (200) =====
 import { Router, type IRouter, type Response } from "express";
 import {
   db,
