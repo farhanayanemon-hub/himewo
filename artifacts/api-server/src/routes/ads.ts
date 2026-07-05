@@ -1072,8 +1072,7 @@ router.post("/ad-sets/:id/ads", requireAuth, async (req, res): Promise<void> => 
       accountId: adSet.accountId,
       name: body.data.name,
       creativeId: body.data.creativeId ?? null,
-      status: "in_review",
-      reviewStatus: "pending",
+      status: body.data.status ?? "draft",
       destinationUrl: body.data.destinationUrl ?? null,
       createdBy: req.userId!,
     })

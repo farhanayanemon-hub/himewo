@@ -21,7 +21,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -106,7 +105,6 @@ export default function CampaignDetailPage() {
 
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
-  const [status, setStatus] = useState<Status>("active");
   const [billing, setBilling] = useState<Billing>("impressions");
   const [goal, setGoal] = useState<Goal>("reach");
   const [daily, setDaily] = useState("");
@@ -137,7 +135,7 @@ export default function CampaignDetailPage() {
     e.preventDefault();
     const data: AdSetInput = {
       name: name.trim(),
-      status,
+      status: "draft",
       billingEvent: billing,
       optimizationGoal: goal,
       dailyBudgetCents: toCents(daily),
@@ -226,14 +224,8 @@ export default function CampaignDetailPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label>Status</Label>
-                  <div className="flex h-10 items-center gap-2">
-                    <Switch
-                      checked={status === "active"}
-                      onCheckedChange={(on) => setStatus(on ? "active" : "paused")}
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      {status === "active" ? "Active" : "Paused"}
-                    </span>
+                  <div className="flex h-10 items-center">
+                    <Badge variant="outline">Draft</Badge>
                   </div>
                 </div>
                 <div className="space-y-1.5">
