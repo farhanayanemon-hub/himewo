@@ -9,7 +9,7 @@ import { DashboardLayout } from "@/components/dashboard-layout";
 import AuthPage from "@/pages/auth";
 import NotFound from "@/pages/not-found";
 import AccountsPage from "@/pages/accounts";
-import CampaignsPage from "@/pages/campaigns";
+import AdsManagerPage from "@/pages/ads-manager";
 import CampaignDetailPage from "@/pages/campaign-detail";
 import AdSetDetailPage from "@/pages/adset-detail";
 import AudiencesPage from "@/pages/audiences";
@@ -44,9 +44,9 @@ function AppRoutes() {
     <AccountProvider>
       <DashboardLayout>
         <Switch>
-          <Route path="/" component={CampaignsPage} />
+          <Route path="/" component={AdsManagerPage} />
           <Route path="/accounts" component={AccountsPage} />
-          <Route path="/campaigns" component={CampaignsPage} />
+          <Route path="/campaigns" component={AdsManagerPage} />
           <Route path="/campaigns/:campaignId" component={CampaignDetailPage} />
           <Route path="/adsets/:adSetId" component={AdSetDetailPage} />
           <Route path="/insights" component={InsightsPage} />
