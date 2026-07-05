@@ -1,3 +1,5 @@
+
+===== artifacts/api-server/src/routes/ads.ts (200) =====
 import { Router, type IRouter, type Response } from "express";
 import {
   db,
@@ -1070,7 +1072,8 @@ router.post("/ad-sets/:id/ads", requireAuth, async (req, res): Promise<void> => 
       accountId: adSet.accountId,
       name: body.data.name,
       creativeId: body.data.creativeId ?? null,
-      status: body.data.status ?? "draft",
+      status: "in_review",
+      reviewStatus: "pending",
       destinationUrl: body.data.destinationUrl ?? null,
       createdBy: req.userId!,
     })
@@ -2771,3 +2774,4 @@ router.get(
 );
 
 export default router;
+
