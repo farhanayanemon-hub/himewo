@@ -63,11 +63,11 @@ export default function AccountsPage() {
           setSelectedAccountId(acc.id);
           setOpen(false);
           setName("");
-          toast({ title: "Ad account toiri hoyeche" });
+          toast({ title: "Ad account created" });
         },
         onError: (err) =>
           toast({
-            title: "Toiri hoyni",
+            title: "Couldn't create",
             description: err instanceof Error ? err.message : "Try again.",
             variant: "destructive",
           }),
@@ -81,7 +81,7 @@ export default function AccountsPage() {
         <div>
           <h1 className="text-2xl font-bold">Ad Accounts</h1>
           <p className="text-sm text-muted-foreground">
-            Ekta account select korun ba notun toiri korun.
+            Select an account or create a new one.
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -125,7 +125,7 @@ export default function AccountsPage() {
               </div>
               <DialogFooter>
                 <Button type="submit" disabled={create.isPending}>
-                  {create.isPending ? "Toiri hocche..." : "Create"}
+                  {create.isPending ? "Creating..." : "Create"}
                 </Button>
               </DialogFooter>
             </form>
@@ -138,7 +138,7 @@ export default function AccountsPage() {
       ) : accounts.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            Kono ad account nei. Prothome ekta toiri korun.
+            No ad accounts yet. Create one first.
           </CardContent>
         </Card>
       ) : (

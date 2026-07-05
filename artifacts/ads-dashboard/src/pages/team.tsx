@@ -93,11 +93,11 @@ export default function TeamPage() {
           invalidate();
           setOpen(false);
           setUserId("");
-          toast({ title: "Member add hoyeche" });
+          toast({ title: "Member added" });
         },
         onError: (err) =>
           toast({
-            title: "Add hoyni",
+            title: "Couldn't add",
             description: err instanceof Error ? err.message : "Try again.",
             variant: "destructive",
           }),
@@ -111,11 +111,11 @@ export default function TeamPage() {
       {
         onSuccess: () => {
           invalidate();
-          toast({ title: "Role update hoyeche" });
+          toast({ title: "Role updated" });
         },
         onError: (err) =>
           toast({
-            title: "Update hoyni",
+            title: "Couldn't update",
             description: err instanceof Error ? err.message : "Try again.",
             variant: "destructive",
           }),
@@ -128,11 +128,11 @@ export default function TeamPage() {
       {
         onSuccess: () => {
           invalidate();
-          toast({ title: "Member remove hoyeche" });
+          toast({ title: "Member removed" });
         },
         onError: (err) =>
           toast({
-            title: "Remove hoyni",
+            title: "Couldn't remove",
             description: err instanceof Error ? err.message : "Try again.",
             variant: "destructive",
           }),
@@ -145,7 +145,7 @@ export default function TeamPage() {
         <div>
           <h1 className="text-2xl font-bold">Team</h1>
           <p className="text-sm text-muted-foreground">
-            Ei ad account ke ke access pabe ta thik korun.
+            Choose who can access this ad account.
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -185,7 +185,7 @@ export default function TeamPage() {
               </div>
               <DialogFooter>
                 <Button type="submit" disabled={add.isPending}>
-                  {add.isPending ? "Add hocche..." : "Add member"}
+                  {add.isPending ? "Adding..." : "Add member"}
                 </Button>
               </DialogFooter>
             </form>
@@ -198,7 +198,7 @@ export default function TeamPage() {
       ) : !members || members.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            Kono team member nei.
+            No team members yet.
           </CardContent>
         </Card>
       ) : (
@@ -268,7 +268,7 @@ export default function TeamPage() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Remove member?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Ei member ar access pabe na.
+                            This member will lose access.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

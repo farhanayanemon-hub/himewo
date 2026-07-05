@@ -58,11 +58,11 @@ export default function SettingsPage() {
       {
         onSuccess: () => {
           qc.invalidateQueries({ queryKey: getListAdAccountsQueryKey() });
-          toast({ title: "Settings save hoyeche" });
+          toast({ title: "Settings saved" });
         },
         onError: (err) =>
           toast({
-            title: "Save hoyni",
+            title: "Couldn't save",
             description: err instanceof Error ? err.message : "Try again.",
             variant: "destructive",
           }),
@@ -75,7 +75,7 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-2xl font-bold">Account Settings</h1>
         <p className="text-sm text-muted-foreground">
-          Ad account er tottho update korun.
+          Update your ad account details.
         </p>
       </div>
 
@@ -125,7 +125,7 @@ export default function SettingsPage() {
               </Select>
             </div>
             <Button type="submit" disabled={update.isPending}>
-              {update.isPending ? "Save hocche..." : "Save changes"}
+              {update.isPending ? "Saving..." : "Save changes"}
             </Button>
           </form>
         </CardContent>

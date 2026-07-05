@@ -209,11 +209,11 @@ function AdsTab({ adSetId, accountId }: { adSetId: number; accountId: number }) 
           setName("");
           setDestinationUrl("");
           setCreativeId(NO_CREATIVE);
-          toast({ title: "Ad toiri hoyeche" });
+          toast({ title: "Ad created" });
         },
         onError: (err) =>
           toast({
-            title: "Toiri hoyni",
+            title: "Couldn't create",
             description: err instanceof Error ? err.message : "Try again.",
             variant: "destructive",
           }),
@@ -227,11 +227,11 @@ function AdsTab({ adSetId, accountId }: { adSetId: number; accountId: number }) 
       {
         onSuccess: () => {
           invalidate();
-          toast({ title: "Ad delete hoyeche" });
+          toast({ title: "Ad deleted" });
         },
         onError: (err) =>
           toast({
-            title: "Delete hoyni",
+            title: "Couldn't delete",
             description: err instanceof Error ? err.message : "Try again.",
             variant: "destructive",
           }),
@@ -244,11 +244,11 @@ function AdsTab({ adSetId, accountId }: { adSetId: number; accountId: number }) 
       {
         onSuccess: () => {
           invalidate();
-          toast({ title: on ? "Ad chalu hoyeche" : "Ad bondho hoyeche" });
+          toast({ title: on ? "Ad turned on" : "Ad turned off" });
         },
         onError: (err) =>
           toast({
-            title: "Hoyni",
+            title: "Something went wrong",
             description: err instanceof Error ? err.message : "Try again.",
             variant: "destructive",
           }),
@@ -261,11 +261,11 @@ function AdsTab({ adSetId, accountId }: { adSetId: number; accountId: number }) 
       {
         onSuccess: () => {
           invalidate();
-          toast({ title: "Review er jonno pathano hoyeche" });
+          toast({ title: "Sent for review" });
         },
         onError: (err) =>
           toast({
-            title: "Pathano jayni",
+            title: "Couldn't send",
             description: err instanceof Error ? err.message : "Try again.",
             variant: "destructive",
           }),
@@ -320,11 +320,11 @@ function AdsTab({ adSetId, accountId }: { adSetId: number; accountId: number }) 
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Notun ad draft thakbe. Campaign publish korle review-e jabe.
+                The new ad stays a draft. It goes for review when you publish the campaign.
               </p>
               <DialogFooter>
                 <Button type="submit" disabled={create.isPending}>
-                  {create.isPending ? "Toiri hocche..." : "Create ad"}
+                  {create.isPending ? "Creating..." : "Create ad"}
                 </Button>
               </DialogFooter>
             </form>
@@ -337,7 +337,7 @@ function AdsTab({ adSetId, accountId }: { adSetId: number; accountId: number }) 
       ) : !ads || ads.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            Kono ad nei. Notun ekta toiri korun.
+            No ads yet. Create a new one.
           </CardContent>
         </Card>
       ) : (
@@ -445,11 +445,11 @@ function TargetingTab({
           qc.invalidateQueries({
             queryKey: getGetAdSetTargetingQueryKey(adSetId),
           });
-          toast({ title: "Targeting save hoyeche" });
+          toast({ title: "Targeting saved" });
         },
         onError: (err) =>
           toast({
-            title: "Save hoyni",
+            title: "Couldn't save",
             description: err instanceof Error ? err.message : "Try again.",
             variant: "destructive",
           }),
@@ -461,7 +461,7 @@ function TargetingTab({
       <CardContent className="space-y-4 pt-6">
         <TargetingForm value={spec} onChange={setSpec} />
         <Button onClick={onSave} disabled={save.isPending}>
-          {save.isPending ? "Save hocche..." : "Save targeting"}
+          {save.isPending ? "Saving..." : "Save targeting"}
         </Button>
       </CardContent>
     </Card>
@@ -512,11 +512,11 @@ function ScheduleTab({
           qc.invalidateQueries({
             queryKey: getListAdSchedulesQueryKey(adSetId),
           });
-          toast({ title: "Schedule save hoyeche" });
+          toast({ title: "Schedule saved" });
         },
         onError: (err) =>
           toast({
-            title: "Save hoyni",
+            title: "Couldn't save",
             description: err instanceof Error ? err.message : "Try again.",
             variant: "destructive",
           }),
@@ -528,7 +528,7 @@ function ScheduleTab({
     <Card>
       <CardContent className="space-y-4 pt-6">
         <p className="text-sm text-muted-foreground">
-          Kokhon ad dekhabe ta thik korun. Khali rakhle sob somoy cholbe.
+          Set when the ad runs. Leave empty to run all the time.
         </p>
         {rows.map((row, i) => (
           <div key={i} className="flex flex-wrap items-end gap-2">
@@ -583,7 +583,7 @@ function ScheduleTab({
             <Plus className="mr-2 h-4 w-4" /> Add slot
           </Button>
           <Button onClick={onSave} disabled={save.isPending}>
-            {save.isPending ? "Save hocche..." : "Save schedule"}
+            {save.isPending ? "Saving..." : "Save schedule"}
           </Button>
         </div>
       </CardContent>

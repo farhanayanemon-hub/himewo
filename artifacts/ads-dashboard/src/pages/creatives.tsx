@@ -107,12 +107,12 @@ export default function CreativesPage() {
     } catch (err) {
       if (err instanceof UploadUnavailableError) {
         toast({
-          title: "Upload off ache",
-          description: "Media URL manually paste korun.",
+          title: "Upload unavailable",
+          description: "Paste the media URL manually.",
         });
       } else {
         toast({
-          title: "Upload hoyni",
+          title: "Upload failed",
           description: err instanceof Error ? err.message : "Try again.",
           variant: "destructive",
         });
@@ -147,11 +147,11 @@ export default function CreativesPage() {
           setDescription("");
           setLinkUrl("");
           setMediaText("");
-          toast({ title: "Creative toiri hoyeche" });
+          toast({ title: "Creative created" });
         },
         onError: (err) =>
           toast({
-            title: "Toiri hoyni",
+            title: "Couldn't create",
             description: err instanceof Error ? err.message : "Try again.",
             variant: "destructive",
           }),
@@ -165,11 +165,11 @@ export default function CreativesPage() {
       {
         onSuccess: () => {
           invalidate();
-          toast({ title: "Creative delete hoyeche" });
+          toast({ title: "Creative deleted" });
         },
         onError: (err) =>
           toast({
-            title: "Delete hoyni",
+            title: "Couldn't delete",
             description: err instanceof Error ? err.message : "Try again.",
             variant: "destructive",
           }),
@@ -182,7 +182,7 @@ export default function CreativesPage() {
         <div>
           <h1 className="text-2xl font-bold">Creatives</h1>
           <p className="text-sm text-muted-foreground">
-            Ad er chobi, text o call-to-action.
+            Ad image, text and call-to-action.
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -297,7 +297,7 @@ export default function CreativesPage() {
               </div>
               <DialogFooter>
                 <Button type="submit" disabled={create.isPending}>
-                  {create.isPending ? "Toiri hocche..." : "Create creative"}
+                  {create.isPending ? "Creating..." : "Create creative"}
                 </Button>
               </DialogFooter>
             </form>
@@ -310,7 +310,7 @@ export default function CreativesPage() {
       ) : !creatives || creatives.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            Kono creative nei.
+            No creatives yet.
           </CardContent>
         </Card>
       ) : (
@@ -338,7 +338,7 @@ export default function CreativesPage() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Delete creative?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        "{c.name}" delete hobe.
+                        "{c.name}" will be deleted.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

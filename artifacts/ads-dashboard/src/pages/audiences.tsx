@@ -85,11 +85,11 @@ export default function AudiencesPage() {
           setOpen(false);
           setName("");
           setSpec({});
-          toast({ title: "Audience save hoyeche" });
+          toast({ title: "Audience saved" });
         },
         onError: (err) =>
           toast({
-            title: "Save hoyni",
+            title: "Couldn't save",
             description: err instanceof Error ? err.message : "Try again.",
             variant: "destructive",
           }),
@@ -103,11 +103,11 @@ export default function AudiencesPage() {
       {
         onSuccess: () => {
           invalidate();
-          toast({ title: "Audience delete hoyeche" });
+          toast({ title: "Audience deleted" });
         },
         onError: (err) =>
           toast({
-            title: "Delete hoyni",
+            title: "Couldn't delete",
             description: err instanceof Error ? err.message : "Try again.",
             variant: "destructive",
           }),
@@ -120,7 +120,7 @@ export default function AudiencesPage() {
         <div>
           <h1 className="text-2xl font-bold">Saved Audiences</h1>
           <p className="text-sm text-muted-foreground">
-            Reusable targeting group toiri korun.
+            Create a reusable targeting group.
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -145,7 +145,7 @@ export default function AudiencesPage() {
               <TargetingForm value={spec} onChange={setSpec} />
               <DialogFooter>
                 <Button type="submit" disabled={create.isPending}>
-                  {create.isPending ? "Save hocche..." : "Save audience"}
+                  {create.isPending ? "Saving..." : "Save audience"}
                 </Button>
               </DialogFooter>
             </form>
@@ -158,7 +158,7 @@ export default function AudiencesPage() {
       ) : !audiences || audiences.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            Kono saved audience nei.
+            No saved audiences yet.
           </CardContent>
         </Card>
       ) : (
@@ -177,7 +177,7 @@ export default function AudiencesPage() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Delete audience?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        "{a.name}" delete hobe.
+                        "{a.name}" will be deleted.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
