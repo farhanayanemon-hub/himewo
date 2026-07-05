@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
@@ -78,7 +79,7 @@ function statusVariant(status: string) {
   return "outline" as const;
 }
 
-export default function CampaignsPage() {
+export function CampaignsPanel() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const { selectedAccountId, selectedAccount } = useAccount();
@@ -198,12 +199,8 @@ export default function CampaignsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Campaigns</h1>
-          <p className="text-sm text-muted-foreground">{selectedAccount?.name}</p>
-        </div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-end">
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button data-testid="new-campaign">
@@ -477,6 +474,19 @@ export default function CampaignsPage() {
           </form>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+export default function CampaignsPage() {
+  const { selectedAccount } = useAccount();
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">Campaigns</h1>
+        <p className="text-sm text-muted-foreground">{selectedAccount?.name}</p>
+      </div>
+      <CampaignsPanel />
     </div>
   );
 }
