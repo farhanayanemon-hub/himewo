@@ -159,11 +159,11 @@ export default function CampaignDetailPage() {
           setAudienceId(NO_AUDIENCE);
           setStartAt("");
           setEndAt("");
-          toast({ title: "Ad set toiri hoyeche" });
+          toast({ title: "Ad set created" });
         },
         onError: (err) =>
           toast({
-            title: "Toiri hoyni",
+            title: "Couldn't create",
             description: err instanceof Error ? err.message : "Try again.",
             variant: "destructive",
           }),
@@ -177,11 +177,11 @@ export default function CampaignDetailPage() {
       {
         onSuccess: () => {
           invalidate();
-          toast({ title: "Ad set delete hoyeche" });
+          toast({ title: "Ad set deleted" });
         },
         onError: (err) =>
           toast({
-            title: "Delete hoyni",
+            title: "Couldn't delete",
             description: err instanceof Error ? err.message : "Try again.",
             variant: "destructive",
           }),
@@ -322,7 +322,7 @@ export default function CampaignDetailPage() {
               </div>
               <DialogFooter>
                 <Button type="submit" disabled={create.isPending}>
-                  {create.isPending ? "Toiri hocche..." : "Create ad set"}
+                  {create.isPending ? "Creating..." : "Create ad set"}
                 </Button>
               </DialogFooter>
             </form>
@@ -335,7 +335,7 @@ export default function CampaignDetailPage() {
       ) : !adSets || adSets.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            Kono ad set nei. Notun ekta toiri korun.
+            No ad sets yet. Create a new one.
           </CardContent>
         </Card>
       ) : (
@@ -384,7 +384,7 @@ export default function CampaignDetailPage() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Delete ad set?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            "{s.name}" o er ad gulo delete hobe.
+                            "{s.name}" and its ads will be deleted.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

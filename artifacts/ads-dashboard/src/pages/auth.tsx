@@ -33,8 +33,8 @@ export default function AuthPage() {
       await signInWithEmail(email, password);
     } catch (err) {
       toast({
-        title: "Login hoyni",
-        description: err instanceof Error ? err.message : "Abar try korun.",
+        title: "Login failed",
+        description: err instanceof Error ? err.message : "Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -51,7 +51,7 @@ export default function AuthPage() {
           </div>
           <CardTitle className="text-2xl">HiMewo Ads Manager</CardTitle>
           <CardDescription>
-            Apnar ad campaign toiri o manage korun.
+            Create and manage your ad campaigns.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -79,7 +79,7 @@ export default function AuthPage() {
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={busy}>
-                  {busy ? "Login hocche..." : "Login"}
+                  {busy ? "Logging in..." : "Login"}
                 </Button>
               </form>
               <Button
@@ -94,7 +94,7 @@ export default function AuthPage() {
           ) : (
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground text-center">
-                Dev mode — ekjon user select korun.
+                Dev mode — select a user.
               </p>
               {devUsers.map((u) => (
                 <Button

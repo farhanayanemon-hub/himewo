@@ -36,7 +36,7 @@ export function TargetingForm({
           value={(value.locations ?? []).join(", ")}
           onChange={(e) => set({ locations: toList(e.target.value) })}
         />
-        <p className="text-xs text-muted-foreground">Comma diye alada korun.</p>
+        <p className="text-xs text-muted-foreground">Separate with commas.</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -95,7 +95,7 @@ export function TargetingForm({
           })}
         </div>
         <p className="text-xs text-muted-foreground">
-          Khali rakhle sobar jonno.
+          Leave empty to target everyone.
         </p>
       </div>
 

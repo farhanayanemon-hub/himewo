@@ -120,9 +120,9 @@ export default function InsightsPage() {
     if (!pixel?.snippet) return;
     try {
       await navigator.clipboard.writeText(pixel.snippet);
-      toast({ title: "Pixel code copy hoyeche" });
+      toast({ title: "Pixel code copied" });
     } catch {
-      toast({ title: "Copy hoyni, manually select korun", variant: "destructive" });
+      toast({ title: "Couldn't copy, please select manually", variant: "destructive" });
     }
   };
 
@@ -132,7 +132,7 @@ export default function InsightsPage() {
         <h1 className="text-2xl font-bold">Insights</h1>
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            Age ekta ad account select korun.
+            Please select an ad account first.
           </CardContent>
         </Card>
       </div>
@@ -221,7 +221,7 @@ export default function InsightsPage() {
             </div>
             {series.length === 0 ? (
               <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
-                Kono data nei.
+                No data.
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={256}>
@@ -260,7 +260,7 @@ export default function InsightsPage() {
             </div>
             {series.length === 0 ? (
               <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
-                Kono data nei.
+                No data.
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={256}>
@@ -311,7 +311,7 @@ export default function InsightsPage() {
         </div>
         {!data || data.breakdown.length === 0 ? (
           <CardContent className="py-12 text-center text-muted-foreground">
-            Ei range e kono data nei.
+            No data for this range.
           </CardContent>
         ) : (
           <div className="overflow-x-auto">
@@ -383,7 +383,7 @@ export default function InsightsPage() {
         </div>
         {!conversions || conversions.length === 0 ? (
           <CardContent className="py-12 text-center text-muted-foreground">
-            Akhono kono conversion record hoyni.
+            No conversions recorded yet.
           </CardContent>
         ) : (
           <div className="overflow-x-auto">
@@ -426,8 +426,8 @@ export default function InsightsPage() {
             <div className="flex-1">
               <h2 className="font-semibold">Conversion pixel</h2>
               <p className="text-xs text-muted-foreground">
-                Ei code ta apnar website er &lt;/body&gt; er age boshan. Purchase
-                ba signup er por conversion track hobe.
+                Place this code just before the &lt;/body&gt; tag on your website. After a purchase
+                or signup, the conversion is tracked.
               </p>
             </div>
             <Button

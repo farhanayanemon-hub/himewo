@@ -80,7 +80,7 @@ export function AdsPanel() {
     return (
       <Card>
         <CardContent className="py-12 text-center text-muted-foreground">
-          Kono ad nei. Ekta ad set-e dhuke ad toiri korun.
+          No ads yet. Open an ad set to create one.
         </CardContent>
       </Card>
     );

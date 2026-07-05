@@ -172,12 +172,12 @@ export function CreateAdWizard() {
     } catch (err) {
       if (err instanceof UploadUnavailableError) {
         toast({
-          title: "Upload off ache",
-          description: "Media URL manually paste korun.",
+          title: "Upload unavailable",
+          description: "Paste the media URL manually.",
         });
       } else {
         toast({
-          title: "Upload hoyni",
+          title: "Upload failed",
           description: err instanceof Error ? err.message : "Try again.",
           variant: "destructive",
         });
@@ -248,16 +248,16 @@ export function CreateAdWizard() {
         queryKey: getListAdCreativesQueryKey(accountId),
       });
       toast({
-        title: publish ? "Publish hoyeche" : "Draft save hoyeche",
+        title: publish ? "Published" : "Draft saved",
         description: publish
-          ? "Ad review-e gelo. Admin approve korle run korbe."
-          : "Campaign, ad set o ad draft hishebe toiri holo.",
+          ? "Your ad was sent for review. It'll run once an admin approves."
+          : "Campaign, ad set and ad were created as drafts.",
       });
       reset();
       setOpen(false);
     } catch (err) {
       toast({
-        title: "Hoyni",
+        title: "Something went wrong",
         description: err instanceof Error ? err.message : "Try again.",
         variant: "destructive",
       });
@@ -285,7 +285,7 @@ export function CreateAdWizard() {
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create ad — ek shathe</DialogTitle>
+          <DialogTitle>Create ad — all in one</DialogTitle>
         </DialogHeader>
 
         {/* Stepper */}
@@ -331,7 +331,7 @@ export function CreateAdWizard() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Objective (mul goal)</Label>
+                <Label>Objective (main goal)</Label>
                 <Select
                   value={objective}
                   onValueChange={(v) => setObjective(v as Objective)}
@@ -433,7 +433,7 @@ export function CreateAdWizard() {
               <Separator />
               <div>
                 <p className="mb-2 text-sm font-medium">
-                  Audience — kake dekhabo (optional)
+                  Audience — who to show (optional)
                 </p>
                 <TargetingForm value={targeting} onChange={setTargeting} />
               </div>
@@ -460,7 +460,7 @@ export function CreateAdWizard() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={NEW_CREATIVE}>
-                      + Notun creative banai
+                      + Create new creative
                     </SelectItem>
                     {(creatives ?? []).map((c) => (
                       <SelectItem key={c.id} value={String(c.id)}>
@@ -478,7 +478,7 @@ export function CreateAdWizard() {
                     <Input
                       value={crName}
                       onChange={(e) => setCrName(e.target.value)}
-                      placeholder="Khali rakhle creative chara ad hobe"
+                      placeholder="Leave empty to create an ad without a creative"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -578,8 +578,8 @@ export function CreateAdWizard() {
           {step === 3 && (
             <div className="space-y-3 text-sm">
               <p className="text-muted-foreground">
-                Ekbar dekhe nin. Publish korle campaign + ad set chalu hobe ar ad
-                review-e jabe.
+                Review everything. Publishing activates the campaign + ad set and sends
+                the ad for review.
               </p>
               <div className="rounded-lg border">
                 <Row label="Campaign" value={cName || "—"} sub={objective.replace(/_/g, " ")} />
@@ -597,8 +597,8 @@ export function CreateAdWizard() {
                           (targeting.genders ?? []).join(", "),
                         ]
                           .filter(Boolean)
-                          .join(" · ") || "sobar jonno"
-                      : "sobar jonno"
+                          .join(" · ") || "Everyone"
+                      : "Everyone"
                   }
                 />
                 <Separator />
@@ -606,7 +606,7 @@ export function CreateAdWizard() {
                   label="Creative"
                   value={
                     makingNewCreative
-                      ? crName || "Creative chara"
+                      ? crName || "No creative"
                       : selectedCreativeName ?? "—"
                   }
                   sub={makingNewCreative && crName ? format.replace(/_/g, " ") : ""}
@@ -650,7 +650,7 @@ export function CreateAdWizard() {
                 data-testid="wizard-publish"
               >
                 <Rocket className="mr-2 h-4 w-4" />
-                {busy ? "Publish hocche..." : "Publish now"}
+                {busy ? "Publishing..." : "Publish now"}
               </Button>
             </div>
           )}

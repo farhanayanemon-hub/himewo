@@ -137,11 +137,11 @@ export function CampaignsPanel() {
           setName("");
           setDaily("");
           setLifetime("");
-          toast({ title: "Campaign toiri hoyeche" });
+          toast({ title: "Campaign created" });
         },
         onError: (err) =>
           toast({
-            title: "Toiri hoyni",
+            title: "Couldn't create",
             description: err instanceof Error ? err.message : "Try again.",
             variant: "destructive",
           }),
@@ -155,11 +155,11 @@ export function CampaignsPanel() {
       {
         onSuccess: () => {
           invalidate();
-          toast({ title: "Campaign delete hoyeche" });
+          toast({ title: "Campaign deleted" });
         },
         onError: (err) =>
           toast({
-            title: "Delete hoyni",
+            title: "Couldn't delete",
             description: err instanceof Error ? err.message : "Try again.",
             variant: "destructive",
           }),
@@ -172,11 +172,11 @@ export function CampaignsPanel() {
       {
         onSuccess: () => {
           invalidate();
-          toast({ title: on ? "Campaign chalu" : "Campaign bondho" });
+          toast({ title: on ? "Campaign on" : "Campaign off" });
         },
         onError: (err) =>
           toast({
-            title: "Hoyni",
+            title: "Something went wrong",
             description: err instanceof Error ? err.message : "Try again.",
             variant: "destructive",
           }),
@@ -203,12 +203,12 @@ export function CampaignsPanel() {
       }
       invalidate();
       toast({
-        title: "Publish hoyeche",
-        description: "Ad gulo review-e gelo. Admin approve korle run korbe.",
+        title: "Published",
+        description: "Your ads were sent for review. They'll run once an admin approves.",
       });
     } catch (err) {
       toast({
-        title: "Publish hoyni",
+        title: "Publish failed",
         description: err instanceof Error ? err.message : "Try again.",
         variant: "destructive",
       });
@@ -242,11 +242,11 @@ export function CampaignsPanel() {
         onSuccess: () => {
           invalidate();
           setEditId(null);
-          toast({ title: "Campaign update hoyeche" });
+          toast({ title: "Campaign updated" });
         },
         onError: (err) =>
           toast({
-            title: "Update hoyni",
+            title: "Couldn't update",
             description: err instanceof Error ? err.message : "Try again.",
             variant: "destructive",
           }),
@@ -326,12 +326,12 @@ export function CampaignsPanel() {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                Campaign draft hishebe toiri hobe. Ad set + ad add korar por
-                "Publish" korle sob review-e jabe.
+                The campaign is created as a draft. After you add an ad set + ad,
+                clicking "Publish" sends everything for review.
               </p>
               <DialogFooter>
                 <Button type="submit" disabled={create.isPending}>
-                  {create.isPending ? "Toiri hocche..." : "Create"}
+                  {create.isPending ? "Creating..." : "Create"}
                 </Button>
               </DialogFooter>
             </form>
@@ -344,7 +344,7 @@ export function CampaignsPanel() {
       ) : !campaigns || campaigns.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            Kono campaign nei. Notun ekta toiri korun.
+            No campaigns yet. Create a new one.
           </CardContent>
         </Card>
       ) : (
@@ -404,7 +404,7 @@ export function CampaignsPanel() {
                         data-testid={`publish-campaign-${c.id}`}
                       >
                         <Rocket className="mr-1 h-3.5 w-3.5" />
-                        {publishingId === c.id ? "Publish hocche..." : "Publish"}
+                        {publishingId === c.id ? "Publishing..." : "Publish"}
                       </Button>
                     ) : (
                       <div className="mr-1 flex items-center gap-1.5">
@@ -435,7 +435,7 @@ export function CampaignsPanel() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Delete campaign?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            "{c.name}" o er ad set/ad gulo delete hobe.
+                            "{c.name}" and its ad sets/ads will be deleted.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -531,7 +531,7 @@ export function CampaignsPanel() {
             </div>
             <DialogFooter>
               <Button type="submit" disabled={update.isPending}>
-                {update.isPending ? "Update hocche..." : "Save"}
+                {update.isPending ? "Updating..." : "Save"}
               </Button>
             </DialogFooter>
           </form>

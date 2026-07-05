@@ -56,7 +56,7 @@ export function AdSetsPanel() {
     return (
       <Card>
         <CardContent className="py-12 text-center text-muted-foreground">
-          Kono ad set nei. Ekta campaign-e dhuke ad set toiri korun.
+          No ad sets yet. Open a campaign to create one.
         </CardContent>
       </Card>
     );

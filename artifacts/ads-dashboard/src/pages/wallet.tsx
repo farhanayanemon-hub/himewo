@@ -54,7 +54,7 @@ export default function WalletPage() {
       <div>
         <h1 className="text-2xl font-bold">Wallet</h1>
         <p className="text-sm text-muted-foreground">
-          Balance, transaction o coupon dekhun.
+          View your balance, transactions and coupons.
         </p>
       </div>
 
@@ -138,7 +138,7 @@ export default function WalletPage() {
             <p className="p-6 text-muted-foreground">Loading...</p>
           ) : !txns || txns.length === 0 ? (
             <p className="p-6 text-center text-muted-foreground">
-              Kono transaction nei.
+              No transactions yet.
             </p>
           ) : (
             <Table>
