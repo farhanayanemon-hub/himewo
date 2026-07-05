@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
@@ -71,7 +72,6 @@ const OBJECTIVES: Objective[] = [
   "page_boost",
   "post_boost",
 ];
-const STATUSES: Status[] = ["draft", "active", "paused", "completed", "archived"];
 
 function statusVariant(status: string) {
   if (status === "active") return "default" as const;
@@ -98,14 +98,14 @@ export function CampaignsPanel() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [objective, setObjective] = useState<Objective>("traffic");
-  const [status, setStatus] = useState<Status>("draft");
+  const [status, setStatus] = useState<Status>("active");
   const [daily, setDaily] = useState("");
   const [lifetime, setLifetime] = useState("");
 
   const [editId, setEditId] = useState<number | null>(null);
   const [eName, setEName] = useState("");
   const [eObjective, setEObjective] = useState<Objective>("traffic");
-  const [eStatus, setEStatus] = useState<Status>("draft");
+  const [eStatus, setEStatus] = useState<Status>("active");
   const [eDaily, setEDaily] = useState("");
   const [eLifetime, setELifetime] = useState("");
 
@@ -242,21 +242,15 @@ export function CampaignsPanel() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Status</Label>
-                  <Select
-                    value={status}
-                    onValueChange={(v) => setStatus(v as Status)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {STATUSES.map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {s}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex h-10 items-center gap-2">
+                    <Switch
+                      checked={status === "active"}
+                      onCheckedChange={(on) => setStatus(on ? "active" : "paused")}
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      {status === "active" ? "Active" : "Paused"}
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -427,21 +421,15 @@ export function CampaignsPanel() {
               </div>
               <div className="space-y-1.5">
                 <Label>Status</Label>
-                <Select
-                  value={eStatus}
-                  onValueChange={(v) => setEStatus(v as Status)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUSES.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex h-10 items-center gap-2">
+                  <Switch
+                    checked={eStatus === "active"}
+                    onCheckedChange={(on) => setEStatus(on ? "active" : "paused")}
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    {eStatus === "active" ? "Active" : "Paused"}
+                  </span>
+                </div>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">

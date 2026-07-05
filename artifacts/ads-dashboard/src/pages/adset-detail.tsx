@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useParams } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
@@ -5,6 +6,7 @@ import {
   useGetAdSet,
   useListAds,
   useCreateAd,
+  useUpdateAd,
   useDeleteAd,
   useSubmitAdForReview,
   useListAdCreatives,
@@ -30,6 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -57,8 +60,6 @@ import {
 } from "@/components/ui/dialog";
 import { ArrowLeft, Plus, Trash2, Send } from "lucide-react";
 
-type AdStatus = NonNullable<AdInput["status"]>;
-const AD_STATUSES: AdStatus[] = ["draft", "active", "paused", "archived"];
 const NO_CREATIVE = "__none__";
 const EVERY_DAY = "__every__";
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -180,6 +181,7 @@ function AdsTab({ adSetId, accountId }: { adSetId: number; accountId: number }) 
     },
   });
   const create = useCreateAd();
+  const update = useUpdateAd();
   const del = useDeleteAd();
   const submit = useSubmitAdForReview();
 
@@ -187,7 +189,6 @@ function AdsTab({ adSetId, accountId }: { adSetId: number; accountId: number }) 
   const [name, setName] = useState("");
   const [creativeId, setCreativeId] = useState(NO_CREATIVE);
   const [destinationUrl, setDestinationUrl] = useState("");
-  const [status, setStatus] = useState<AdStatus>("draft");
 
   const invalidate = () =>
     qc.invalidateQueries({ queryKey: getListAdsQueryKey(adSetId) });
@@ -198,7 +199,6 @@ function AdsTab({ adSetId, accountId }: { adSetId: number; accountId: number }) 
       name: name.trim(),
       creativeId: creativeId === NO_CREATIVE ? undefined : Number(creativeId),
       destinationUrl: destinationUrl.trim() || undefined,
-      status,
     };
     create.mutate(
       { id: adSetId, data },
@@ -232,6 +232,23 @@ function AdsTab({ adSetId, accountId }: { adSetId: number; accountId: number }) 
         onError: (err) =>
           toast({
             title: "Delete hoyni",
+            description: err instanceof Error ? err.message : "Try again.",
+            variant: "destructive",
+          }),
+      },
+    );
+
+  const toggleAd = (id: number, on: boolean) =>
+    update.mutate(
+      { id, data: { status: on ? "active" : "paused" } },
+      {
+        onSuccess: () => {
+          invalidate();
+          toast({ title: on ? "Ad chalu hoyeche" : "Ad bondho hoyeche" });
+        },
+        onError: (err) =>
+          toast({
+            title: "Hoyni",
             description: err instanceof Error ? err.message : "Try again.",
             variant: "destructive",
           }),
@@ -302,21 +319,9 @@ function AdsTab({ adSetId, accountId }: { adSetId: number; accountId: number }) 
                   onChange={(e) => setDestinationUrl(e.target.value)}
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label>Status</Label>
-                <Select value={status} onValueChange={(v) => setStatus(v as AdStatus)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {AD_STATUSES.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                Notun ad review-e jabe. Approve hole delivery shuru hobe.
+              </p>
               <DialogFooter>
                 <Button type="submit" disabled={create.isPending}>
                   {create.isPending ? "Toiri hocche..." : "Create ad"}
@@ -353,7 +358,21 @@ function AdsTab({ adSetId, accountId }: { adSetId: number; accountId: number }) 
                 <TableRow key={a.id}>
                   <TableCell className="font-medium">{a.name}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">{a.status}</Badge>
+                    {a.reviewStatus === "approved" ? (
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={a.status === "active"}
+                          onCheckedChange={(on) => toggleAd(a.id, on)}
+                        />
+                        <span className="text-xs text-muted-foreground">
+                          {a.status === "active" ? "On" : "Off"}
+                        </span>
+                      </div>
+                    ) : (
+                      <Badge variant="outline">
+                        {a.status === "in_review" ? "in review" : a.status}
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Badge variant={reviewVariant(a.reviewStatus)}>
@@ -567,3 +586,4 @@ function ScheduleTab({
     </Card>
   );
 }
+
