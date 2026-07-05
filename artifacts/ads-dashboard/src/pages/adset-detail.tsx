@@ -320,7 +320,7 @@ function AdsTab({ adSetId, accountId }: { adSetId: number; accountId: number }) 
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Notun ad review-e jabe. Approve hole delivery shuru hobe.
+                Notun ad draft thakbe. Campaign publish korle review-e jabe.
               </p>
               <DialogFooter>
                 <Button type="submit" disabled={create.isPending}>
@@ -375,9 +375,13 @@ function AdsTab({ adSetId, accountId }: { adSetId: number; accountId: number }) 
                     )}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={reviewVariant(a.reviewStatus)}>
-                      {a.reviewStatus}
-                    </Badge>
+                    {a.status === "draft" ? (
+                      <span className="text-muted-foreground">—</span>
+                    ) : (
+                      <Badge variant={reviewVariant(a.reviewStatus)}>
+                        {a.reviewStatus}
+                      </Badge>
+                    )}
                     {a.reviewNote ? (
                       <p className="mt-1 text-xs text-muted-foreground">
                         {a.reviewNote}

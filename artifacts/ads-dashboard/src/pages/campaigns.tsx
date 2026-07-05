@@ -8,6 +8,11 @@ import {
   useUpdateAdCampaign,
   useDeleteAdCampaign,
   getListAdCampaignsQueryKey,
+  updateAdCampaign,
+  updateAdSet,
+  listAdSets,
+  listAds,
+  submitAdForReview,
   type AdCampaignInput,
   type AdCampaignUpdate,
   type AdCampaign,
@@ -57,7 +62,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Rocket } from "lucide-react";
 
 type Objective = NonNullable<AdCampaignInput["objective"]>;
 type Status = NonNullable<AdCampaignInput["status"]>;
@@ -98,7 +103,6 @@ export function CampaignsPanel() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [objective, setObjective] = useState<Objective>("traffic");
-  const [status, setStatus] = useState<Status>("active");
   const [daily, setDaily] = useState("");
   const [lifetime, setLifetime] = useState("");
 
@@ -108,6 +112,7 @@ export function CampaignsPanel() {
   const [eStatus, setEStatus] = useState<Status>("active");
   const [eDaily, setEDaily] = useState("");
   const [eLifetime, setELifetime] = useState("");
+  const [publishingId, setPublishingId] = useState<number | null>(null);
 
   const invalidate = () =>
     qc.invalidateQueries({ queryKey: getListAdCampaignsQueryKey(accountId) });
@@ -119,7 +124,7 @@ export function CampaignsPanel() {
     const data: AdCampaignInput = {
       name: name.trim(),
       objective,
-      status,
+      status: "draft",
       dailyBudgetCents: toCents(daily),
       lifetimeBudgetCents: toCents(lifetime),
     };
@@ -160,6 +165,57 @@ export function CampaignsPanel() {
           }),
       },
     );
+
+  const toggleCampaign = (c: AdCampaign, on: boolean) =>
+    update.mutate(
+      { id: c.id, data: { status: on ? "active" : "paused" } },
+      {
+        onSuccess: () => {
+          invalidate();
+          toast({ title: on ? "Campaign chalu" : "Campaign bondho" });
+        },
+        onError: (err) =>
+          toast({
+            title: "Hoyni",
+            description: err instanceof Error ? err.message : "Try again.",
+            variant: "destructive",
+          }),
+      },
+    );
+
+  const publishCampaign = async (c: AdCampaign) => {
+    setPublishingId(c.id);
+    try {
+      if (c.status === "draft") {
+        await updateAdCampaign(c.id, { status: "active" });
+      }
+      const adSets = await listAdSets(c.id);
+      for (const s of adSets) {
+        if (s.status === "draft") {
+          await updateAdSet(s.id, { status: "active" });
+        }
+        const ads = await listAds(s.id);
+        for (const a of ads) {
+          if (a.status === "draft") {
+            await submitAdForReview(a.id);
+          }
+        }
+      }
+      invalidate();
+      toast({
+        title: "Publish hoyeche",
+        description: "Ad gulo review-e gelo. Admin approve korle run korbe.",
+      });
+    } catch (err) {
+      toast({
+        title: "Publish hoyni",
+        description: err instanceof Error ? err.message : "Try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setPublishingId(null);
+    }
+  };
 
   const openEdit = (c: AdCampaign) => {
     setEditId(c.id);
@@ -242,14 +298,8 @@ export function CampaignsPanel() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Status</Label>
-                  <div className="flex h-10 items-center gap-2">
-                    <Switch
-                      checked={status === "active"}
-                      onCheckedChange={(on) => setStatus(on ? "active" : "paused")}
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      {status === "active" ? "Active" : "Paused"}
-                    </span>
+                  <div className="flex h-10 items-center">
+                    <Badge variant="outline">Draft</Badge>
                   </div>
                 </div>
               </div>
@@ -275,6 +325,10 @@ export function CampaignsPanel() {
                   />
                 </div>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Campaign draft hishebe toiri hobe. Ad set + ad add korar por
+                "Publish" korle sob review-e jabe.
+              </p>
               <DialogFooter>
                 <Button type="submit" disabled={create.isPending}>
                   {create.isPending ? "Toiri hocche..." : "Create"}
@@ -342,6 +396,27 @@ export function CampaignsPanel() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end gap-1">
+                    {c.status === "draft" ? (
+                      <Button
+                        size="sm"
+                        onClick={() => publishCampaign(c)}
+                        disabled={publishingId === c.id}
+                        data-testid={`publish-campaign-${c.id}`}
+                      >
+                        <Rocket className="mr-1 h-3.5 w-3.5" />
+                        {publishingId === c.id ? "Publish hocche..." : "Publish"}
+                      </Button>
+                    ) : (
+                      <div className="mr-1 flex items-center gap-1.5">
+                        <Switch
+                          checked={c.status === "active"}
+                          onCheckedChange={(on) => toggleCampaign(c, on)}
+                        />
+                        <span className="text-xs text-muted-foreground">
+                          {c.status === "active" ? "On" : "Off"}
+                        </span>
+                      </div>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
