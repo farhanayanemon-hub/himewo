@@ -14,6 +14,8 @@ Three live surfaces, three mechanisms:
 - **Why outside repo:** wrangler chokes / picks up repo state if run inside the git tree.
 - Verify: `himewo.com` / `admin.himewo.com` return 200; confirm new JS hash matches local build.
 
+- The **ads dashboard** (`@workspace/ads-dashboard` → Cloudflare project `himewo-ads`, `ads.himewo.com`) has its OWN GitHub Action `.github/workflows/deploy-ads.yml` (mirrors deploy-admin.yml; triggers on `artifacts/ads-dashboard/**` or `lib/**`). Ads-dashboard changes auto-deploy on push to main — no manual wrangler. Build out dir `artifacts/ads-dashboard/dist/public`; vite build only (no tsc gate, so type errors do NOT fail the deploy).
+
 ## API → Railway, which auto-builds from GitHub `main`
 - Railway service `@workspace/api-server` auto-deploys on every push to GitHub `main`. So deploying the API = **push to GitHub main**, nothing else.
 - IDs: project `hospitable-nourishment`, env `production`, service id `7e88b9c9-8548-46a5-a736-034448eccffb`, env id `ee90bb4c-d8f2-4a68-8c11-6351393174b1`. Builder = RAILPACK.

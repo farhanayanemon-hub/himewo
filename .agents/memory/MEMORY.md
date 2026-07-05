@@ -8,6 +8,7 @@
 - [Mobile preview web links](himewo-preview-web-links.md) — both Expo apps mirrored as web on Cloudflare Pages (himewo-mobile / himewo-chat .pages.dev); rebuild steps + OOM build gotcha.
 - [Live login fails](himewo-live-auth-login.md) — "stays on login": check (1) Supabase email-confirm/SMTP, (2) live DB schema drift → /api/auth/me 500. NEVER blind drizzle-push to live (drops admin cols).
 - [Deploy pipeline](himewo-deploy.md) — web/admin via wrangler-from-/tmp; API auto-builds from GitHub main; Railway token=GraphQL-only; MUST pin pnpm@10.26.1 or frozen install fails; git CLI blocked→push via REST.
+- [Ads workspace÷GitHub divergence](himewo-ads-workspace-divergence.md) — Replit workspace is ads-ONLY w/ own git history; GitHub himewo is full combined repo. NEVER blanket-push workspace→GitHub (overwrites root config, breaks live social builds). Ads = web-only (ads-mobile deleted).
 - [App sounds](himewo-sound-system.md) — client-side expo-audio SoundProvider in both apps; call ringtone handled GLOBALLY via realtime events (not CallEngine); reaction sound is FB-only.
 - [Main app → Chat app](himewo-chat-app-promo.md) — main mobile app has NO in-app chat; /messages is an animated promo pushing users to the HiMewo Chat app (scheme `mobilechat://`); [id] redirects; Play Store pkg still placeholder.
 - [reanimated not wired](himewo-reanimated-not-wired.md) — artifacts/mobile has reanimated in package.json but NO babel worklets plugin → it crashes; use RN built-in Animated instead.
@@ -34,3 +35,7 @@
 - [Poll posts](himewo-poll-posts.md) — one optional poll per post (question separate from content); one-vote-per-poll (unique idx+upsert), option-belongs-to-poll guard, canViewPost gate; vote routes path-only (no barrel re-export).
 - [Generated query hooks queryKey](himewo-generated-query-hooks.md) — Orval query hooks make queryKey REQUIRED when passing a query options object (enabled); new consumer apps hit TS2741; pass get*QueryKey.
 - [Conversion pixel hardening](himewo-pixel-hardening.md) — public /ads/pixel(.gif) beacon must NEVER 500 + rows stay clean: clamp valueCents (int4), UUID-guard viewer w/ FK-retry, cap metadata, 10s rapid-dup suppression.
+- [Ads Insights dev DB](ads-insights-dev-db.md) — drizzle-kit push/push-force fail here (needs TTY for conflict prompts) → apply DDL via executeSql; dev DB holds a huge orphaned himewo social+ads schema unrelated to current code.
+- [Ads Insights index perf](ads-insights-index-perf.md) — event tables have (account_id,created_at[,campaign/adset]) composite indexes; date filter MUST stay sargable (compare bare created_at, no `::date` cast on the column) or indexes go unused.
+- [Ads Insights live DB](ads-insights-live-db.md) — Insights reads LIVE prod DB via Railway-resolved URL (not a stored secret); live events NOT denormalized → join ads→ad_sets; dev push stays safe.
+- [ads live false-blank](ads-live-false-blank.md) — screenshot tool showed ads.himewo.com blank but it renders fine (jsdom + user confirmed); cross-check before "fixing", chromium wont launch here (missing libglib).
