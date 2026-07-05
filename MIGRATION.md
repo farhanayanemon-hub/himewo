@@ -23,6 +23,19 @@ new workspace at them.
 
 ---
 
+## LATEST WORK (as of 2026-07-05)
+
+- **Ads dashboard** (ads.himewo.com) is live and current: a Facebook-style tabbed
+  **Ads Manager** (Campaigns / Ad Sets / Ads), a unified **Create Ad wizard**
+  (Campaign → Audience → Creative & Ad → Review in one dialog), a
+  draft → Publish → pending-review → admin-approve lifecycle, and **Insights** with
+  CSV export + a conversion pixel. All ads-dashboard **UI copy is English** (the app
+  UI is English; chat with the user stays Banglish).
+- Everything above is pushed to GitHub `main` and deployed. The live checks in
+  step 4 all return 200.
+
+---
+
 ## PROMPT TO GIVE THE NEW AGENT
 
 > You are taking over the **HiMewo** project — a Facebook-style, Banglish-friendly
@@ -34,6 +47,7 @@ new workspace at them.
 > monorepo with these artifacts:
 > - `artifacts/web` — social website (React + Vite) → Cloudflare Pages project `himewo` (himewo.com)
 > - `artifacts/admin` — admin panel (React + Vite) → Cloudflare Pages project `himewo-admin` (admin.himewo.com)
+> - `artifacts/ads-dashboard` — Facebook-style Ads Manager (React + Vite) → Cloudflare Pages project `himewo-ads` (ads.himewo.com); auto-deploys via its own Action `.github/workflows/deploy-ads.yml`
 > - `artifacts/api-server` — Express 5 API → Railway (api.himewo.com), auto-builds on push to GitHub `main`
 > - `artifacts/mobile` — main social Expo app → web mirror at himewo-mobile.pages.dev
 > - `artifacts/mobile-chat` — Messenger Expo app → web mirror at himewo-chat.pages.dev
@@ -54,6 +68,13 @@ new workspace at them.
 > `GITHUB_TOKEN` (see `himewo-github-push.md`). Deploy web/admin with `wrangler`
 > run from `/tmp` (outside the repo). The API deploys automatically when you push
 > to `main`.
+>
+> NOTE ON THE ADS DASHBOARD: in the OLD account the Replit workspace had DIVERGED to
+> ads-dashboard-only with its own git history, so ads edits were made directly to the
+> GitHub repo via the REST API and NEVER blanket-pushed from the workspace (that would
+> overwrite root config and break the social builds). On a FRESH import of the full
+> repo this divergence goes away — just edit normally and push to `main`. See
+> `himewo-ads-workspace-divergence.md`.
 
 ---
 
@@ -98,6 +119,7 @@ pnpm run typecheck                   # full typecheck across all packages
 curl -o /dev/null -w "%{http_code}\n" https://api.himewo.com/api/healthz   # 200
 curl -o /dev/null -w "%{http_code}\n" https://himewo.com                    # 200
 curl -o /dev/null -w "%{http_code}\n" https://admin.himewo.com             # 200
+curl -o /dev/null -w "%{http_code}\n" https://ads.himewo.com               # 200
 curl -o /dev/null -w "%{http_code}\n" https://himewo-mobile.pages.dev      # 200
 curl -o /dev/null -w "%{http_code}\n" https://himewo-chat.pages.dev        # 200
 ```
@@ -110,6 +132,9 @@ curl -o /dev/null -w "%{http_code}\n" https://himewo-chat.pages.dev        # 200
 - **Web / Admin**: build locally with the `VITE_*` env present, copy `dist/public`
   to `/tmp`, and run `wrangler pages deploy` from `/tmp` (see
   `himewo-cloudflare-pages-deploy.md`).
+- **Ads dashboard**: pushing changes under `artifacts/ads-dashboard/**` (or `lib/**`)
+  to `main` auto-deploys to Cloudflare project `himewo-ads` via `deploy-ads.yml` — no
+  manual wrangler needed.
 - **Mobile mirrors**: `expo export --platform web` then `wrangler pages deploy` to
   `himewo-mobile` / `himewo-chat` (see `himewo-preview-web-links.md`).
 
@@ -120,8 +145,8 @@ These are NOT part of Replit and must be transferred or shared at the provider l
 - **GitHub** account `farhanayanemon-hub` (repo `himewo`).
 - **Supabase** project ref `rzdfgbfyhnkvqbcegguk` (Postgres + Auth).
 - **Railway** project `hospitable-nourishment` (api-server service).
-- **Cloudflare** account (Pages projects `himewo`, `himewo-admin`, `himewo-mobile`,
-  `himewo-chat` + DNS for himewo.com / admin.himewo.com).
+- **Cloudflare** account (Pages projects `himewo`, `himewo-admin`, `himewo-ads`,
+  `himewo-mobile`, `himewo-chat` + DNS for himewo.com / admin.himewo.com / ads.himewo.com).
 
 If the user wants the new Replit account to control these too, they must log into
 each provider and add the new account/owner there — Replit cannot transfer them.

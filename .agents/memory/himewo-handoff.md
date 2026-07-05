@@ -13,8 +13,9 @@ tooling.
 There is a top-level `MIGRATION.md` in the repo with the full paste-able handoff
 prompt + step-by-step for a new account — keep it in sync with this file.
 
-## Current live state (as of 2026-06-30)
-- **marketplace location** (latest feature, LIVE): listings carry lat/lng, "near me" radius search sorted by distance, keyless OpenStreetMap/Nominatim geocoding + autocomplete on create+browse (web & mobile). See `himewo-marketplace-location.md`.
+## Current live state (as of 2026-07-05)
+- **ads dashboard** (latest, LIVE): ads.himewo.com — Cloudflare Pages project `himewo-ads`, own Action `deploy-ads.yml` (auto-deploys on push to `main`). Facebook-style tabbed Ads Manager (Campaigns/Ad Sets/Ads) + a unified **Create Ad wizard** (Campaign → Audience → Creative & Ad → Review) + draft/Publish/pending-review/admin-approve lifecycle + Insights (CSV export + conversion pixel). App UI is **English** (chat stays Banglish). See `himewo-ads-system.md`, `himewo-ads-serving-boost.md`, `himewo-ads-analytics.md`, `ads-insights-*.md`, `himewo-ads-workspace-divergence.md`.
+- **marketplace location** (LIVE): listings carry lat/lng, "near me" radius search sorted by distance, keyless OpenStreetMap/Nominatim geocoding + autocomplete on create+browse (web & mobile). See `himewo-marketplace-location.md`.
 - **web**: himewo.com — Cloudflare Pages (project `himewo`), auto-deploys on push to main via GitHub Actions.
 - **mobile previews** (view-only web mirrors): social → https://himewo-mobile.pages.dev, Messenger/chat → https://himewo-chat.pages.dev (rebuild steps in `himewo-preview-web-links.md`). Messenger app was rebuilt to a Facebook-Messenger UI (4-tab shell incl. Notifications, Messenger settings menu, 2-tab message requests) — all wired to the live backend.
 - **admin**: admin.himewo.com — Cloudflare Pages (project `himewo-admin`), own Action. Login = Supabase email+password, gated by `/api/admin/me` (role admin/moderator/support). WORKING.
