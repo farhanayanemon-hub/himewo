@@ -199,7 +199,7 @@ export function Aurora({ theme = 'dark' }: { theme?: Theme }) {
                     <span>4 mutual friends</span>
                   </div>
                   <div className="flex gap-2 mt-2">
-                    <button className="bg-teal-500 hover:bg-teal-400 text-slate-900 font-semibold px-3 py-1.5 rounded-lg text-sm flex-1 transition-colors">Confirm</button>
+                    <button className="aurora-button font-semibold px-3 py-1.5 rounded-lg text-sm flex-1 transition-colors">Confirm</button>
                     <button className="ap-fill-2 ap-hover ap-text font-semibold px-3 py-1.5 rounded-lg text-sm flex-1 transition-colors">Delete</button>
                   </div>
                 </div>
