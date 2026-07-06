@@ -1,0 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+.sunset-theme {
+  --hm-orange: #FF7A1A;
+  --hm-orange-hover: #E66A12;
+  --hm-coral: #FF5A5F;
+  --hm-amber: #FFB020;
+  --hm-magenta: #D91C84;
+  --hm-bg: #FFF6F0; /* Soft warm background */
+  --hm-surface: #FFFFFF;
+  --hm-text: #2D1A11;
+  --hm-text-muted: #7A5F52;
+  --hm-border: #F3E4DC;
+  
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: var(--hm-bg);
+  color: var(--hm-text);
+}
+
+/* Base utility overrides within theme */
+.sunset-theme * {
+  border-color: var(--hm-border);
+}
+
+/* Playful gradients */
+.sunset-gradient-bg {
+  background: linear-gradient(135deg, var(--hm-orange) 0%, var(--hm-magenta) 100%);
+}
+.sunset-gradient-text {
+  background: linear-gradient(135deg, var(--hm-orange) 0%, var(--hm-coral) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Custom rounded shapes */
+.sunset-card {
+  background-color: var(--hm-surface);
+  border-radius: 1.5rem; /* 3xl */
+  box-shadow: 0 8px 30px -12px rgba(255, 122, 26, 0.08);
+  border: 1px solid rgba(255, 122, 26, 0.05);
+}
+
+.sunset-btn-primary {
+  background: linear-gradient(135deg, var(--hm-orange), var(--hm-coral));
+  color: white;
+  border-radius: 9999px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.sunset-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px -3px rgba(255, 122, 26, 0.3);
+}
+
+.sunset-btn-secondary {
+  background-color: #FFF0E6;
+  color: var(--hm-orange);
+  border-radius: 9999px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.sunset-btn-secondary:hover {
+  background-color: #FFE4D1;
+}
+
+.sunset-btn-icon {
+  background-color: #FFF0E6;
+  color: var(--hm-text);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+.sunset-btn-icon:hover {
+  background-color: #FFE4D1;
+  color: var(--hm-orange);
+}
+
+/* Story rings */
+.sunset-story-ring {
+  background: linear-gradient(var(--hm-surface), var(--hm-surface)) padding-box,
+              linear-gradient(135deg, var(--hm-orange), var(--hm-magenta)) border-box;
+  border: 4px solid transparent;
+  border-radius: 1.5rem;
+}
+
+/* Smooth scrollbar */
+.sunset-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.sunset-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sunset-scroll::-webkit-scrollbar-thumb {
+  background-color: #EAC9B8;
+  border-radius: 10px;
+}

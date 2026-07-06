@@ -1,0 +1,27 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+.chat-editorial {
+  --bg-paper: #F7F5F0;
+  --text-ink: #1C1C19;
+  --text-muted: #595854;
+  --accent-teal: #2D5A5A; /* Deep muted teal */
+  --accent-red: #A33A36; /* Calm brick red */
+  --accent-green: #3D6B42; /* Calm sage green */
+  --border-hairline: #E2E0D8;
+  --surface-alt: #EFECE5;
+  
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-paper);
+  color: var(--text-ink);
+}
+
+.chat-editorial h1, 
+.chat-editorial h2, 
+.chat-editorial h3, 
+.chat-editorial .font-serif {
+  font-family: 'Fraunces', serif;
+}
+
+.chat-editorial * {
+  border-color: var(--border-hairline);
+}
