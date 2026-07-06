@@ -242,6 +242,63 @@ router.post("/posts", requireAuth, async (req, res): Promise<void> => {
       })),
     );
   }
+  // Mentions in the post body: tokens of the form @[Name](user:<uuid>), plus
+  // the special @[Highlight](user:highlight) token which notifies ALL of the
+  // author's friends (Facebook-style @highlight). Skip notifications entirely
+  // for private posts and posts pending group approval — they aren't visible
+  // to the mentioned users yet.
+  if (!pendingApproval && effectivePrivacy !== "private") {
+    const rawIds = [
+      ...new Set(
+        [...(content ?? "").matchAll(/@\[[^\]]+\]\(user:([^)]+)\)/g)].map(
+          (m) => m[1],
+        ),
+      ),
+    ];
+    const hasHighlight = rawIds.includes("highlight");
+    const mentionIds = rawIds
+      .filter(
+        (mid) =>
+          mid !== req.userId &&
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            mid,
+          ),
+      )
+      .slice(0, 10);
+    const notifyIds = new Set<string>();
+    if (mentionIds.length > 0) {
+      const mentioned = await db
+        .select({ id: profilesTable.id })
+        .from(profilesTable)
+        .where(inArray(profilesTable.id, mentionIds));
+      for (const m of mentioned) notifyIds.add(m.id);
+    }
+    if (hasHighlight) {
+      const rows = await db
+        .select({
+          a: friendshipsTable.userAId,
+          b: friendshipsTable.userBId,
+        })
+        .from(friendshipsTable)
+        .where(
+          or(
+            eq(friendshipsTable.userAId, req.userId!),
+            eq(friendshipsTable.userBId, req.userId!),
+          ),
+        );
+      for (const r of rows) notifyIds.add(r.a === req.userId ? r.b : r.a);
+    }
+    notifyIds.delete(req.userId!);
+    for (const uid of [...notifyIds].slice(0, 500)) {
+      await createNotification({
+        userId: uid,
+        actorId: req.userId!,
+        type: "mention",
+        entityType: "post",
+        entityId: post.id,
+      });
+    }
+  }
   await awardPoints({
     userId: req.userId!,
     action: "post",

@@ -16,11 +16,17 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { Image as ImageIcon, Video, Loader2, X, Globe, Users, Lock, ChevronDown, BarChart3, Plus, Smile, MapPin, Search, MoreHorizontal, SmilePlus } from "lucide-react";
+import { Image as ImageIcon, Video, Loader2, X, Globe, Users, Lock, ChevronDown, BarChart3, Plus, Smile, MapPin, Search, MoreHorizontal, SmilePlus, AtSign, Megaphone } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { uploadMedia, UploadUnavailableError, type UploadedMedia } from "@/lib/upload";
 import { toast } from "@/hooks/use-toast";
 import EmojiPicker, { type EmojiClickData, Theme } from "emoji-picker-react";
+import {
+  MentionSuggestions,
+  activeMentionQuery,
+  insertMention,
+  HIGHLIGHT_TOKEN,
+} from "@/components/mention";
 
 const PRIVACY_OPTIONS = [
   { value: PostInputPrivacy.public, label: "Public", icon: Globe },
@@ -101,6 +107,27 @@ export function PostComposer({
   const [location, setLocation] = useState("");
   const [showLocation, setShowLocation] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const mentionQuery = activeMentionQuery(content);
+
+  // Append text to the composer (used by the Mention / Highlight actions),
+  // making sure there's a space before the inserted token.
+  const appendToContent = (text: string) => {
+    setContent((prev) =>
+      prev.length === 0 || prev.endsWith(" ") || prev.endsWith("\n")
+        ? prev + text
+        : `${prev} ${text}`,
+    );
+    // Radix returns focus to the trigger after the menu closes — refocus the
+    // textarea afterwards so the user can keep typing.
+    setTimeout(() => {
+      const el = textareaRef.current;
+      if (el) {
+        el.focus();
+        el.setSelectionRange(el.value.length, el.value.length);
+      }
+    }, 50);
+  };
 
   const filledOptions = pollOptions.map((o) => o.trim()).filter(Boolean);
   const pollValid =
@@ -247,13 +274,25 @@ export function PostComposer({
             </DropdownMenu>
             )}
           </div>
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            rows={content || media.length ? 3 : 1}
-            className="w-full bg-muted/50 border-none rounded-2xl px-4 py-2.5 text-base focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-muted-foreground resize-none"
-            placeholder={`What's on your mind, ${user?.displayName?.split(" ")[0] || ""}?`}
-          />
+          <div className="relative">
+            {mentionQuery !== null && (
+              <MentionSuggestions
+                query={mentionQuery}
+                onSelect={(p) => {
+                  setContent((prev) => insertMention(prev, p));
+                  textareaRef.current?.focus();
+                }}
+              />
+            )}
+            <textarea
+              ref={textareaRef}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              rows={content || media.length ? 3 : 1}
+              className="w-full bg-muted/50 border-none rounded-2xl px-4 py-2.5 text-base focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-muted-foreground resize-none"
+              placeholder={`What's on your mind, ${user?.displayName?.split(" ")[0] || ""}?`}
+            />
+          </div>
         </div>
       </div>
 
@@ -537,6 +576,20 @@ export function PostComposer({
             >
               <SmilePlus className="w-4 h-4 text-teal-500" />
               Emoji
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => appendToContent("@")}
+              className="gap-2"
+            >
+              <AtSign className="w-4 h-4 text-blue-500" />
+              Mention someone
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => appendToContent(`${HIGHLIGHT_TOKEN} `)}
+              className="gap-2"
+            >
+              <Megaphone className="w-4 h-4 text-pink-500" />
+              Highlight (all friends)
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

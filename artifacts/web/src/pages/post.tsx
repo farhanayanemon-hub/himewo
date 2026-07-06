@@ -227,7 +227,7 @@ export default function PostPage() {
                 )}
                 <div className="flex gap-2 items-center">
                   <div className="relative flex-1 flex items-center gap-1 bg-muted/50 rounded-full pr-2 focus-within:ring-1 focus-within:ring-primary">
-                    {mentionQuery && (
+                    {mentionQuery !== null && (
                       <MentionSuggestions
                         query={mentionQuery}
                         onSelect={(p) => {
