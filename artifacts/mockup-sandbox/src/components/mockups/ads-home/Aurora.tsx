@@ -53,7 +53,7 @@ export function Aurora({ theme = 'dark' }: { theme?: Theme }) {
             <span className="ap-muted text-xs">Balance</span>
             <span className="font-bold text-[var(--accent-teal)]">৳12,450</span>
           </div>
-          <button className="aurora-button px-4 py-2 rounded-full font-medium flex items-center gap-2 text-sm shadow-[0_0_15px_rgba(59,130,246,0.3)] hover:shadow-[0_0_25px_rgba(129,140,248,0.5)]">
+          <button className="aurora-button px-4 py-2 rounded-full font-medium flex items-center gap-2 text-sm">
             <Plus className="w-4 h-4" />
             <span>Create Ad</span>
           </button>
@@ -69,8 +69,8 @@ export function Aurora({ theme = 'dark' }: { theme?: Theme }) {
         <aside className="w-[240px] hidden lg:flex flex-col gap-1 p-4 h-[calc(100vh-64px)] sticky top-16 border-r ap-bd">
           <div className="text-xs font-semibold ap-muted uppercase tracking-wider mb-2 px-3 mt-4">Menu</div>
 
-          <a href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-gradient-to-r from-[var(--accent-blue)]/10 to-transparent border border-[var(--accent-blue)]/20 text-[var(--accent-blue)] relative overflow-hidden group">
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--accent-blue)] rounded-r-full" />
+          <a href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-lg ap-fill border ap-bd ap-text relative overflow-hidden group">
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-current rounded-r-full" />
             <LayoutDashboard className="w-5 h-5" />
             <span className="font-medium">Campaigns</span>
           </a>
