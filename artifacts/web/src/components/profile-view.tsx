@@ -97,12 +97,12 @@ export function ProfileView({
   return (
     <>
       {/* Cover + header */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm mb-4">
+      <div className="aurora-glass-card rounded-2xl overflow-hidden mb-4">
         <div className="h-48 md:h-64 bg-muted relative">
           {profile.coverUrl ? (
             <img src={profile.coverUrl} className="w-full h-full object-cover" alt="Cover" />
           ) : (
-            <div className="w-full h-full bg-gradient-to-r from-primary/20 to-primary/40" />
+            <div className="w-full h-full bg-gradient-to-r from-teal-400/50 via-purple-400/50 to-pink-400/50" />
           )}
         </div>
         <div className="px-6 pb-4 relative">
@@ -132,7 +132,7 @@ export function ProfileView({
       </div>
 
       {showLocked ? (
-        <div className="bg-card border border-border rounded-xl shadow-sm p-10 text-center">
+        <div className="aurora-glass-card rounded-2xl p-10 text-center">
           <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
             <Lock className="w-7 h-7 text-muted-foreground" />
           </div>
@@ -146,7 +146,7 @@ export function ProfileView({
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-start">
         <div className="lg:col-span-2 space-y-4">
           {/* Intro */}
-          <div className="bg-card border border-border rounded-xl shadow-sm p-4">
+          <div className="aurora-glass-card rounded-2xl p-4">
             <h2 className="font-bold text-lg mb-3">Intro</h2>
             {profile.bio && <p className="text-[15px] mb-3 whitespace-pre-wrap">{profile.bio}</p>}
             {hasIntro ? (
@@ -175,7 +175,7 @@ export function ProfileView({
           </div>
 
           {/* Friends */}
-          <div className="bg-card border border-border rounded-xl shadow-sm p-4">
+          <div className="aurora-glass-card rounded-2xl p-4">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-bold text-lg">Friends</h2>
               <Link href="/friends">
@@ -206,7 +206,7 @@ export function ProfileView({
           </div>
 
           {/* Photos */}
-          <div className="bg-card border border-border rounded-xl shadow-sm p-4">
+          <div className="aurora-glass-card rounded-2xl p-4">
             <h2 className="font-bold text-lg mb-3">Photos</h2>
             {photoUrls.length > 0 ? (
               <div className="grid grid-cols-3 gap-2">
@@ -225,7 +225,7 @@ export function ProfileView({
           </div>
 
           {/* Albums */}
-          <div className="bg-card border border-border rounded-xl shadow-sm p-4">
+          <div className="aurora-glass-card rounded-2xl p-4">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-bold text-lg">Albums</h2>
               {isOwnProfile && (
@@ -293,7 +293,7 @@ export function ProfileView({
           {postsLoading ? (
             <div className="py-4 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" /></div>
           ) : posts?.length === 0 ? (
-            <div className="text-center py-10 bg-card border border-border rounded-xl text-muted-foreground">
+            <div className="text-center py-10 aurora-glass-card rounded-2xl text-muted-foreground">
               {isOwnProfile ? "You haven't posted anything yet." : "No posts yet"}
             </div>
           ) : (
