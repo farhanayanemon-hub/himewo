@@ -16,11 +16,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { Image as ImageIcon, Video, Loader2, X, Globe, Users, Lock, ChevronDown, BarChart3, Plus, Smile, MapPin, Search } from "lucide-react";
+import { Image as ImageIcon, Video, Loader2, X, Globe, Users, Lock, ChevronDown, BarChart3, Plus, Smile, MapPin, Search, MoreHorizontal, SmilePlus } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { uploadMedia, UploadUnavailableError, type UploadedMedia } from "@/lib/upload";
 import { toast } from "@/hooks/use-toast";
-import { EmojiPickerButton } from "@/components/emoji-picker";
+import EmojiPicker, { type EmojiClickData, Theme } from "emoji-picker-react";
 
 const PRIVACY_OPTIONS = [
   { value: PostInputPrivacy.public, label: "Public", icon: Globe },
@@ -100,6 +100,7 @@ export function PostComposer({
   const [feelingSearch, setFeelingSearch] = useState("");
   const [location, setLocation] = useState("");
   const [showLocation, setShowLocation] = useState(false);
+  const [showEmoji, setShowEmoji] = useState(false);
 
   const filledOptions = pollOptions.map((o) => o.trim()).filter(Boolean);
   const pollValid =
@@ -456,6 +457,24 @@ export function PostComposer({
         onChange={(e) => handleFiles(e.target.files)}
       />
 
+      {showEmoji && (
+        <div className="mt-3 rounded-xl border border-border overflow-hidden animate-in fade-in slide-in-from-top-1">
+          <EmojiPicker
+            onEmojiClick={(data: EmojiClickData) =>
+              setContent((prev) => prev + data.emoji)
+            }
+            theme={
+              document.documentElement.classList.contains("dark")
+                ? Theme.DARK
+                : Theme.LIGHT
+            }
+            width="100%"
+            height={320}
+            lazyLoadEmojis
+          />
+        </div>
+      )}
+
       <div className="mt-3 pt-3 border-t border-border flex gap-1 sm:gap-2 items-center min-w-0">
         <Button
           variant="ghost"
@@ -465,7 +484,7 @@ export function PostComposer({
           disabled={uploading}
         >
           {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImageIcon className="w-5 h-5 text-green-500" />}
-          <span className="hidden xl:inline ml-1">Photo</span>
+          <span className="hidden sm:inline ml-1">Photo</span>
         </Button>
         <Button
           variant="ghost"
@@ -475,7 +494,7 @@ export function PostComposer({
           disabled={uploading}
         >
           <Video className="w-5 h-5 text-red-500" />
-          <span className="hidden xl:inline ml-1">Video</span>
+          <span className="hidden sm:inline ml-1">Video</span>
         </Button>
         <Button
           variant="ghost"
@@ -484,32 +503,43 @@ export function PostComposer({
           onClick={() => (showPoll ? resetPoll() : setShowPoll(true))}
         >
           <BarChart3 className="w-5 h-5 text-amber-500" />
-          <span className="hidden xl:inline ml-1">Poll</span>
+          <span className="hidden sm:inline ml-1">Poll</span>
         </Button>
-        <Button
-          variant="ghost"
-          aria-label="Add feeling or activity"
-          className={`flex-1 min-w-0 px-2 hover:text-foreground hover:bg-muted/50 rounded-lg ${feeling || feelingOpen ? "text-primary" : "text-muted-foreground"}`}
-          onClick={() => setFeelingOpen((v) => !v)}
-        >
-          <Smile className="w-5 h-5 text-yellow-500" />
-          <span className="hidden xl:inline ml-1">Feeling</span>
-        </Button>
-        <Button
-          variant="ghost"
-          aria-label="Check in"
-          className={`flex-1 min-w-0 px-2 hover:text-foreground hover:bg-muted/50 rounded-lg ${showLocation || location ? "text-primary" : "text-muted-foreground"}`}
-          onClick={() => setShowLocation((v) => !v)}
-        >
-          <MapPin className="w-5 h-5 text-red-500" />
-          <span className="hidden xl:inline ml-1">Check in</span>
-        </Button>
-        <div className="flex-1 min-w-0 flex justify-center">
-          <EmojiPickerButton
-            onSelect={(emoji) => setContent((prev) => prev + emoji)}
-            className="w-full min-w-0 px-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg flex items-center justify-center gap-2"
-          />
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              aria-label="More options"
+              className={`flex-1 min-w-0 px-2 hover:text-foreground hover:bg-muted/50 rounded-lg ${feeling || feelingOpen || showLocation || location || showEmoji ? "text-primary" : "text-muted-foreground"}`}
+            >
+              <MoreHorizontal className="w-5 h-5 text-purple-500" />
+              <span className="hidden sm:inline ml-1">More</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem
+              onSelect={() => setFeelingOpen((v) => !v)}
+              className="gap-2"
+            >
+              <Smile className="w-4 h-4 text-yellow-500" />
+              Feeling / Activity
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => setShowLocation((v) => !v)}
+              className="gap-2"
+            >
+              <MapPin className="w-4 h-4 text-red-500" />
+              Check in
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => setShowEmoji((v) => !v)}
+              className="gap-2"
+            >
+              <SmilePlus className="w-4 h-4 text-teal-500" />
+              Emoji
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Button
           onClick={submit}
           disabled={
