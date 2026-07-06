@@ -11,7 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MapPin, X, Plus } from "lucide-react";
+import { MapPin, X, Plus, Map as MapIcon } from "lucide-react";
+import { LocationMap } from "@/components/location-map";
 
 // Facebook-style location suggestions: countries + Bangladesh divisions and
 // major cities. Free typing is still allowed — this is a suggestion list,
@@ -213,6 +214,8 @@ export function TargetingForm({
   const set = (patch: Partial<AdTargetingSpec>) =>
     onChange({ ...value, ...patch });
 
+  const [showMap, setShowMap] = useState(false);
+
   const genders = value.genders ?? [];
   const genderChoice: GenderChoice =
     genders.length === 1 ? (genders[0] as GenderChoice) : "all";
@@ -224,10 +227,22 @@ export function TargetingForm({
     <div className="space-y-5">
       {/* Locations */}
       <div className="space-y-1.5">
-        <Label className="flex items-center gap-1.5">
-          <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-          Locations
-        </Label>
+        <div className="flex items-center justify-between">
+          <Label className="flex items-center gap-1.5">
+            <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+            Locations
+          </Label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1.5 text-xs"
+            onClick={() => setShowMap((s) => !s)}
+          >
+            <MapIcon className="h-3.5 w-3.5" />
+            {showMap ? "Hide map" : "Select on map"}
+          </Button>
+        </div>
         <TagPicker
           values={value.locations ?? []}
           onChange={(next) => set({ locations: next })}
@@ -235,6 +250,22 @@ export function TargetingForm({
           placeholder="Search city or country (e.g. Dhaka)"
           addLabel="Add location"
         />
+        {showMap && (
+          <LocationMap
+            selected={value.locations ?? []}
+            onToggle={(name) => {
+              const cur = value.locations ?? [];
+              const has = cur.some(
+                (l) => l.toLowerCase() === name.toLowerCase(),
+              );
+              set({
+                locations: has
+                  ? cur.filter((l) => l.toLowerCase() !== name.toLowerCase())
+                  : [...cur, name],
+              });
+            }}
+          />
+        )}
         <p className="text-xs text-muted-foreground">
           Leave empty to show your ad everywhere.
         </p>
