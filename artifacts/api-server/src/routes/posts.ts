@@ -273,7 +273,10 @@ router.post("/posts", requireAuth, async (req, res): Promise<void> => {
         .where(inArray(profilesTable.id, mentionIds));
       for (const m of mentioned) notifyIds.add(m.id);
     }
-    if (hasHighlight) {
+    // Load the author's friend set when we need it: to expand @highlight,
+    // and to visibility-gate mentions on friends-only posts.
+    let friendSet: Set<string> | null = null;
+    if (hasHighlight || effectivePrivacy === "friends") {
       const rows = await db
         .select({
           a: friendshipsTable.userAId,
@@ -286,9 +289,31 @@ router.post("/posts", requireAuth, async (req, res): Promise<void> => {
             eq(friendshipsTable.userBId, req.userId!),
           ),
         );
-      for (const r of rows) notifyIds.add(r.a === req.userId ? r.b : r.a);
+      friendSet = new Set(rows.map((r) => (r.a === req.userId ? r.b : r.a)));
+    }
+    if (hasHighlight && friendSet) {
+      for (const fid of friendSet) notifyIds.add(fid);
     }
     notifyIds.delete(req.userId!);
+    // Visibility gate: never notify someone who can't actually see the post.
+    // Group posts → active group members only; friends-only posts → the
+    // author's friends only. (Page and public posts are visible to everyone.)
+    if (notifyIds.size > 0 && groupId != null) {
+      const members = await db
+        .select({ userId: groupMembersTable.userId })
+        .from(groupMembersTable)
+        .where(
+          and(
+            eq(groupMembersTable.groupId, groupId),
+            eq(groupMembersTable.status, "active"),
+            inArray(groupMembersTable.userId, [...notifyIds]),
+          ),
+        );
+      const allowed = new Set(members.map((m) => m.userId));
+      for (const id of [...notifyIds]) if (!allowed.has(id)) notifyIds.delete(id);
+    } else if (notifyIds.size > 0 && effectivePrivacy === "friends" && friendSet) {
+      for (const id of [...notifyIds]) if (!friendSet.has(id)) notifyIds.delete(id);
+    }
     for (const uid of [...notifyIds].slice(0, 500)) {
       await createNotification({
         userId: uid,
