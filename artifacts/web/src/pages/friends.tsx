@@ -33,7 +33,34 @@ export default function FriendsPage() {
   return (
     <MainLayout>
       <div className="space-y-8 animate-in fade-in">
-        <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
+        <div className="aurora-glass-card rounded-2xl p-4">
+          <h2 className="text-xl font-bold mb-4">
+            Your Friends{friends && friends.length > 0 ? ` (${friends.length})` : ""}
+          </h2>
+          {!friends || friends.length === 0 ? (
+            <p className="text-muted-foreground text-sm">
+              No friends yet — send some requests below!
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {friends.map(friend => (
+                <Link
+                  key={friend.id}
+                  href={`/profile/${friend.id}`}
+                  className="border border-border rounded-xl p-4 flex flex-col items-center text-center gap-2 hover:bg-muted/40 transition-colors"
+                >
+                  <img src={friend.avatarUrl || ""} className="w-16 h-16 rounded-full object-cover bg-muted" alt="" />
+                  <span className="font-semibold text-sm truncate w-full">{friend.displayName}</span>
+                  {friend.username && (
+                    <span className="text-xs text-muted-foreground truncate w-full">@{friend.username}</span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="aurora-glass-card rounded-2xl p-4">
           <h2 className="text-xl font-bold mb-4">Friend Requests</h2>
           {requests?.length === 0 ? (
             <p className="text-muted-foreground text-sm">No pending requests</p>
