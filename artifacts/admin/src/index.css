@@ -1,21 +1,32 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --color-brand-50: #eef2ff;
-  --color-brand-100: #e0e7ff;
-  --color-brand-200: #c7d2fe;
-  --color-brand-300: #a5b4fc;
-  --color-brand-400: #818cf8;
-  --color-brand-500: #6366f1;
-  --color-brand-600: #4f46e5;
-  --color-brand-700: #4338ca;
-  --color-brand-800: #3730a3;
-  --color-brand-900: #312e81;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --color-brand-50: #faf5ff;
+  --color-brand-100: #f3e8ff;
+  --color-brand-200: #e9d5ff;
+  --color-brand-300: #d8b4fe;
+  --color-brand-400: #c084fc;
+  --color-brand-500: #b06cf7;
+  --color-brand-600: #a855f7;
+  --color-brand-700: #7e22ce;
+  --color-brand-800: #6b21a8;
+  --color-brand-900: #581c87;
 }
 
 :root {
   color-scheme: light;
+
+  /* Aurora Glass — LIGHT tokens */
+  --ap-bg: #ffffff;
+  --ap-text: #0f172a;
+  --ap-muted: #64748b;
+  --ap-glass: rgba(15, 23, 42, 0.03);
+  --ap-glass-2: rgba(15, 23, 42, 0.05);
+  --ap-border: rgba(15, 23, 42, 0.08);
+  --ap-border-strong: rgba(15, 23, 42, 0.14);
+  --ap-hover: rgba(15, 23, 42, 0.04);
+  --ap-header: rgba(255, 255, 255, 0.72);
 }
 
 html,
@@ -27,11 +38,63 @@ body,
 body {
   margin: 0;
   font-family: var(--font-sans);
-  background-color: #f1f5f9;
-  color: #0f172a;
+  background-color: var(--ap-bg);
+  color: var(--ap-text);
   -webkit-font-smoothing: antialiased;
 }
 
 * {
   box-sizing: border-box;
+}
+
+/* ---- Aurora Glass surfaces ---- */
+.aurora-glass {
+  background: var(--ap-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--ap-border);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.08);
+}
+
+.aurora-glass-card {
+  background: var(--ap-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--ap-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+.aurora-glass-header {
+  background: var(--ap-header);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--ap-border);
+}
+
+/* ---- Accent identity ---- */
+.aurora-gradient {
+  background: linear-gradient(135deg, #5eead4, #c084fc, #f472b6);
+}
+
+.aurora-gradient-text {
+  background: linear-gradient(135deg, #5eead4, #c084fc, #f472b6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.aurora-button {
+  background: linear-gradient(135deg, rgba(94, 234, 212, 0.9), rgba(192, 132, 252, 0.9));
+  color: white;
+  transition: all 0.3s ease;
+}
+.aurora-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(94, 234, 212, 1), rgba(192, 132, 252, 1));
+  box-shadow: 0 0 15px rgba(192, 132, 252, 0.5);
+}
+
+.aurora-ring {
+  background: linear-gradient(135deg, #5eead4, #c084fc, #f472b6);
+  padding: 2px;
+  border-radius: 50%;
 }

@@ -45,9 +45,9 @@ export function MobileNav({
   const [menuOpen, setMenuOpen] = useState(false);
 
   const bottomItems: (MobileNavItem & { grad: string })[] = [
-    { href: "/", icon: Home, label: "Home", grad: "from-violet-500 to-purple-600" },
-    { href: "/friends", icon: Users, label: "Friends", grad: "from-violet-400 to-fuchsia-600" },
-    { href: "/reels", icon: Video, label: "Reels", grad: "from-fuchsia-500 to-purple-600" },
+    { href: "/", icon: Home, label: "Home", grad: "from-teal-400 to-purple-500" },
+    { href: "/friends", icon: Users, label: "Friends", grad: "from-teal-400 to-purple-500" },
+    { href: "/reels", icon: Video, label: "Reels", grad: "from-purple-400 to-pink-500" },
     { href: "/marketplace", icon: Store, label: "Market", grad: "from-amber-400 to-orange-500" },
   ];
 
@@ -60,7 +60,7 @@ export function MobileNav({
     <>
       {/* App-style bottom tab bar — mobile only */}
       <nav
-        className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80"
+        className="md:hidden fixed bottom-0 inset-x-0 z-50 aurora-glass-header"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="flex items-stretch justify-around h-16">
@@ -121,7 +121,7 @@ export function MobileNav({
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
         <SheetContent side="right" className="w-[300px] overflow-y-auto p-0">
           <SheetHeader className="px-4 pt-4 pb-2 text-left">
-            <SheetTitle className="text-primary text-xl font-extrabold">
+            <SheetTitle className="text-xl font-extrabold aurora-gradient-text">
               HiMewo
             </SheetTitle>
           </SheetHeader>
@@ -150,7 +150,7 @@ export function MobileNav({
                   onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
                 >
-                  <IconTile icon={Icon} grad={item.grad ?? "from-violet-500 to-purple-600"} />
+                  <IconTile icon={Icon} grad={item.grad ?? "from-teal-400 to-purple-500"} />
                   <span className="font-medium">{item.label}</span>
                 </Link>
               );
@@ -165,7 +165,7 @@ export function MobileNav({
                   onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
                 >
-                  <IconTile icon={Icon} grad={item.grad ?? "from-fuchsia-400 to-violet-600"} />
+                  <IconTile icon={Icon} grad={item.grad ?? "from-purple-400 to-pink-500"} />
                   <span className="font-medium">{item.label}</span>
                 </Link>
               );

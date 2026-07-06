@@ -77,7 +77,7 @@ export function SponsoredCard({ ad }: { ad: ServedAd }) {
   return (
     <div
       ref={cardRef}
-      className="bg-card border border-card-border rounded-2xl p-4 card-depth animate-in fade-in slide-in-from-bottom-2 duration-300"
+      className="aurora-glass-card rounded-2xl p-4 animate-in fade-in slide-in-from-bottom-2 duration-300"
     >
       <div className="flex items-center gap-3 mb-3">
         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">

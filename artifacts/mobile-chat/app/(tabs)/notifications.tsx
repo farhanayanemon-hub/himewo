@@ -29,30 +29,32 @@ import { timeAgo } from "@/lib/format";
 type IconName = keyof typeof Ionicons.glyphMap;
 
 function iconFor(type: Notification["type"]): { name: IconName; color: string } {
+  const brand = "#c084fc";
+  const brandAlt = "#f472b6";
   switch (type) {
     case "reaction":
       return { name: "heart", color: "#f3425f" };
     case "comment":
-      return { name: "chatbubble", color: "#6c4be0" };
+      return { name: "chatbubble", color: brand };
     case "friend_request":
-      return { name: "person-add", color: "#6c4be0" };
+      return { name: "person-add", color: brand };
     case "friend_accept":
       return { name: "people", color: "#31a24c" };
     case "follow":
     case "page_follow":
-      return { name: "person", color: "#6c4be0" };
+      return { name: "person", color: brand };
     case "message":
-      return { name: "chatbubble-ellipses", color: "#6c4be0" };
+      return { name: "chatbubble-ellipses", color: brand };
     case "group_invite":
-      return { name: "people-circle", color: "#8b6dff" };
+      return { name: "people-circle", color: brandAlt };
     case "mention":
-      return { name: "at", color: "#6c4be0" };
+      return { name: "at", color: brand };
     case "share":
       return { name: "arrow-redo", color: "#31a24c" };
     case "story_view":
-      return { name: "eye", color: "#8b6dff" };
+      return { name: "eye", color: brandAlt };
     default:
-      return { name: "notifications", color: "#6c4be0" };
+      return { name: "notifications", color: brand };
   }
 }
 

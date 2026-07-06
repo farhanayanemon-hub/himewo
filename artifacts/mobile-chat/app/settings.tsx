@@ -81,12 +81,12 @@ export default function SettingsScreen() {
         <View style={[styles.card, { backgroundColor: c.card }, shadow("md")]}>
           <ToggleRow c={c} icon="ellipse" iconColor="#31a24c" title="Active status"
             subtitle={activeStatus ? "On" : "Off"} value={activeStatus} onValueChange={setActiveStatus} />
-          <ToggleRow c={c} icon="moon" iconColor="#8b6dff" title="Dark mode"
+          <ToggleRow c={c} icon="moon" iconColor={c.primary} title="Dark mode"
             subtitle={themeMode === "dark" ? "On" : "Off"} value={themeMode === "dark"}
             onValueChange={(v) => setThemeMode(v ? "dark" : "light")} />
           <Row c={c} icon="notifications" iconColor="#f3425f" title="Notifications and sounds"
             onPress={() => router.push("/notification-settings")} />
-          <Row c={c} icon="shield-checkmark" iconColor="#6c4be0" title="Privacy and safety"
+          <Row c={c} icon="shield-checkmark" iconColor={c.primary} title="Privacy and safety"
             onPress={() => router.push("/privacy-settings")} last />
         </View>
 
@@ -97,7 +97,7 @@ export default function SettingsScreen() {
           <Row c={c} icon="archive" iconColor="#65676b" title="Archived chats"
             onPress={() => router.push("/archive")} />
           {!supabaseEnabled && (
-            <Row c={c} icon="swap-horizontal" iconColor="#6c4be0" title="Switch profile"
+            <Row c={c} icon="swap-horizontal" iconColor={c.primary} title="Switch profile"
               subtitle={`Signed in as ${user?.displayName ?? ""}`} onPress={() => setSwitchOpen(true)} />
           )}
           <Row c={c} icon="log-out" iconColor={c.destructive} title="Log out"

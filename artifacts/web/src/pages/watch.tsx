@@ -55,7 +55,7 @@ export default function WatchPage() {
     <MainLayout>
       <div className="space-y-4">
         <div className="flex items-center gap-3 bg-card border border-border rounded-xl p-4">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-purple-500 flex items-center justify-center">
             <MonitorPlay className="w-5 h-5 text-white" />
           </div>
           <div>

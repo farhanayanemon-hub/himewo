@@ -27,13 +27,13 @@ export function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-white px-4">
       <Card className="w-full max-w-md">
         <div className="flex flex-col items-center gap-1 border-b border-slate-100 px-6 py-7 text-center">
-          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-600 text-2xl">
-            🐾
+          <div className="aurora-gradient mb-2 flex h-12 w-12 items-center justify-center rounded-2xl text-2xl font-bold text-white">
+            H
           </div>
-          <h1 className="text-lg font-bold text-slate-900">HiMewo Admin</h1>
+          <h1 className="aurora-gradient-text text-lg font-bold">HiMewo Admin</h1>
           <p className="text-sm text-slate-500">
             Sign in with a staff account to continue.
           </p>

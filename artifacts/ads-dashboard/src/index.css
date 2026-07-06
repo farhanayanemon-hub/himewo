@@ -6,36 +6,36 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
-  --color-card-border: hsl(var(--card-border));
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-card-border: var(--card-border);
 
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
-  --color-popover-border: hsl(var(--popover-border));
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover-border: var(--popover-border);
 
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
 
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
 
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
 
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
 
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
 
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, monospace;
 
@@ -52,52 +52,70 @@
 }
 
 :root {
-  --background: 240 12% 96%;
-  --foreground: 240 6% 10%;
-  --card: 0 0% 100%;
-  --card-foreground: 240 6% 10%;
-  --card-border: 240 11% 91%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 240 6% 10%;
-  --popover-border: 240 11% 91%;
-  --primary: 252 100% 68%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 240 24% 96%;
-  --secondary-foreground: 240 6% 10%;
-  --muted: 240 24% 96%;
-  --muted-foreground: 240 4% 54%;
-  --accent: 252 100% 96%;
-  --accent-foreground: 252 80% 55%;
-  --destructive: 358 90% 57%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 240 11% 91%;
-  --input: 240 11% 91%;
-  --ring: 252 100% 68%;
+  /* Aurora Glass — LIGHT (pure white, no gradient) */
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --card: rgba(15, 23, 42, 0.03);
+  --card-foreground: #0f172a;
+  --card-border: rgba(15, 23, 42, 0.08);
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --popover-border: rgba(15, 23, 42, 0.08);
+  --primary: #9333ea;
+  --primary-foreground: #ffffff;
+  --secondary: rgba(15, 23, 42, 0.05);
+  --secondary-foreground: #0f172a;
+  --muted: rgba(15, 23, 42, 0.05);
+  --muted-foreground: #64748b;
+  --accent: rgba(15, 23, 42, 0.04);
+  --accent-foreground: #0f172a;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: rgba(15, 23, 42, 0.08);
+  --input: rgba(15, 23, 42, 0.14);
+  --ring: #9333ea;
   --radius: 1rem;
+
+  /* Aurora Glass helper tokens */
+  --aurora-glass: rgba(15, 23, 42, 0.03);
+  --aurora-glass-2: rgba(15, 23, 42, 0.05);
+  --aurora-border: rgba(15, 23, 42, 0.08);
+  --aurora-border-strong: rgba(15, 23, 42, 0.14);
+  --aurora-hover: rgba(15, 23, 42, 0.04);
+  --aurora-header: rgba(255, 255, 255, 0.72);
 }
 
 .dark {
-  --background: 0 0% 0%;
-  --foreground: 0 0% 100%;
-  --card: 240 3% 11%;
-  --card-foreground: 0 0% 100%;
-  --card-border: 240 3% 22%;
-  --popover: 240 3% 11%;
-  --popover-foreground: 0 0% 100%;
-  --popover-border: 240 3% 22%;
-  --primary: 252 100% 71%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 240 3% 17%;
-  --secondary-foreground: 0 0% 100%;
-  --muted: 240 3% 17%;
-  --muted-foreground: 240 3% 61%;
-  --accent: 252 40% 22%;
-  --accent-foreground: 252 100% 85%;
-  --destructive: 358 70% 52%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 240 3% 22%;
-  --input: 240 3% 22%;
-  --ring: 252 100% 71%;
+  /* Aurora Glass — DARK (pure black, no gradient) */
+  --background: #000000;
+  --foreground: #e5e7eb;
+  --card: rgba(255, 255, 255, 0.04);
+  --card-foreground: #e5e7eb;
+  --card-border: rgba(255, 255, 255, 0.10);
+  --popover: #0a0a0c;
+  --popover-foreground: #e5e7eb;
+  --popover-border: rgba(255, 255, 255, 0.10);
+  --primary: #c084fc;
+  --primary-foreground: #ffffff;
+  --secondary: rgba(255, 255, 255, 0.07);
+  --secondary-foreground: #e5e7eb;
+  --muted: rgba(255, 255, 255, 0.07);
+  --muted-foreground: #94a3b8;
+  --accent: rgba(255, 255, 255, 0.06);
+  --accent-foreground: #e5e7eb;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.10);
+  --input: rgba(255, 255, 255, 0.18);
+  --ring: #c084fc;
+
+  /* Aurora Glass helper tokens */
+  --aurora-glass: rgba(255, 255, 255, 0.04);
+  --aurora-glass-2: rgba(255, 255, 255, 0.07);
+  --aurora-border: rgba(255, 255, 255, 0.10);
+  --aurora-border-strong: rgba(255, 255, 255, 0.18);
+  --aurora-hover: rgba(255, 255, 255, 0.06);
+  --aurora-header: rgba(10, 10, 12, 0.65);
 }
 
 @layer base {
@@ -138,6 +156,78 @@
   }
   .press:active {
     transform: scale(0.96);
+  }
+
+  /* ---- Aurora Glass utilities ---- */
+  .aurora-glass {
+    background: var(--aurora-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--aurora-border);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  }
+  .aurora-glass-card {
+    background: var(--aurora-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--aurora-border);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  }
+  .aurora-header {
+    background: var(--aurora-header);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+  .aurora-fill {
+    background: var(--aurora-glass);
+  }
+  .aurora-fill-2 {
+    background: var(--aurora-glass-2);
+  }
+  .aurora-hover {
+    transition: background-color 0.2s ease;
+  }
+  .aurora-hover:hover {
+    background: var(--aurora-hover);
+  }
+  .aurora-gradient-text {
+    background: linear-gradient(135deg, #5eead4, #c084fc, #f472b6);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+  .aurora-brand-icon {
+    background: linear-gradient(135deg, #5eead4, #c084fc, #f472b6);
+  }
+  .aurora-ring {
+    background: linear-gradient(135deg, #5eead4, #c084fc, #f472b6);
+  }
+}
+
+@layer components {
+  /* Aurora gradient primary CTA buttons (default shadcn button variant) */
+  button.bg-primary,
+  a.bg-primary,
+  [role="button"].bg-primary {
+    background-image: linear-gradient(
+      135deg,
+      rgba(94, 234, 212, 0.9),
+      rgba(192, 132, 252, 0.9)
+    );
+    color: #ffffff;
+    border-color: transparent;
+    transition: box-shadow 0.3s ease, background-image 0.3s ease;
+  }
+  button.bg-primary:hover,
+  a.bg-primary:hover,
+  [role="button"].bg-primary:hover {
+    background-image: linear-gradient(
+      135deg,
+      rgba(94, 234, 212, 1),
+      rgba(192, 132, 252, 1)
+    );
+    box-shadow: 0 0 15px rgba(192, 132, 252, 0.5);
   }
 }
 

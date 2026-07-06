@@ -1,8 +1,10 @@
 import { Pressable, ScrollView, Text, View, StyleSheet } from "react-native";
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useListStories, type StoryGroup } from "@workspace/api-client-react";
+import colorTokens from "@/constants/colors";
 import { useAuth } from "@/lib/auth";
 import { useColors } from "@/hooks/useColors";
 
@@ -58,18 +60,28 @@ export function StoryBar() {
                 <View style={[StyleSheet.absoluteFill, { backgroundColor: c.secondary }]} />
               )}
               <View style={styles.storyTop}>
-                <View
-                  style={[
-                    styles.storyRing,
-                    { borderColor: group.hasUnseen ? c.primary : c.border },
-                  ]}
-                >
-                  <Image
-                    source={{ uri: group.author?.avatarUrl ?? undefined }}
-                    style={styles.storyAvatar}
-                    contentFit="cover"
-                  />
-                </View>
+                {group.hasUnseen ? (
+                  <LinearGradient
+                    colors={colorTokens.auroraGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={[styles.storyRing, { borderWidth: 0 }]}
+                  >
+                    <Image
+                      source={{ uri: group.author?.avatarUrl ?? undefined }}
+                      style={[styles.storyAvatar, { borderColor: c.background, borderWidth: 2 }]}
+                      contentFit="cover"
+                    />
+                  </LinearGradient>
+                ) : (
+                  <View style={[styles.storyRing, { borderColor: c.border }]}>
+                    <Image
+                      source={{ uri: group.author?.avatarUrl ?? undefined }}
+                      style={styles.storyAvatar}
+                      contentFit="cover"
+                    />
+                  </View>
+                )}
               </View>
               <Text numberOfLines={1} style={styles.storyName}>
                 {group.author?.displayName ?? "Story"}

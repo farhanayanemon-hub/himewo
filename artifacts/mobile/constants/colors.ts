@@ -1,86 +1,111 @@
 /**
  * Semantic design tokens for the HiMewo mobile app.
  *
- * Apple / iOS-inspired palette: clean neutral surfaces with a soft violet
- * primary (#7c5cff). This is the unified HiMewo brand accent, shared across the
- * web, ads dashboard, and both mobile apps. The Messenger app (mobile-chat)
- * uses a slightly deeper violet so the two apps stay visually distinct.
+ * "Aurora Glass" palette: solid black (dark) / solid white (light) backgrounds
+ * with translucent "glass" surfaces, and a teal -> purple -> pink aurora accent
+ * identity. This is the unified HiMewo brand accent, shared across the web, ads
+ * dashboard, and mobile apps. The primary accent is purple (#c084fc) with teal
+ * (#5eead4) as the secondary accent.
+ *
+ * RN has no backdrop-filter, so glass surfaces are approximated with the
+ * translucent fill values below plus a 1px border on cards.
  *
  * The useColors() hook automatically picks the light/dark variant based on the
  * device color scheme.
  */
 
+// Aurora accent identity (same in both themes)
+const AURORA_TEAL = "#5eead4";
+const AURORA_PURPLE = "#c084fc";
+const AURORA_PINK = "#f472b6";
+const AURORA_GRADIENT = [AURORA_TEAL, AURORA_PURPLE, AURORA_PINK] as const;
+const AURORA_BUTTON_GRADIENT = ["rgba(94,234,212,0.9)", "rgba(192,132,252,0.9)"] as const;
+
 const colors = {
   light: {
     // Legacy aliases (kept for backward compatibility)
-    text: "#1d1d1f",
-    tint: "#7c5cff",
+    text: "#0f172a",
+    tint: AURORA_PURPLE,
 
-    // Core surfaces (Apple light gray)
-    background: "#f5f5f7",
-    foreground: "#1d1d1f",
+    // Core surface (pure white, no gradient)
+    background: "#ffffff",
+    foreground: "#0f172a",
 
-    // Cards / elevated surfaces
-    card: "#ffffff",
-    cardForeground: "#1d1d1f",
-    cardBorder: "#e5e5ea",
+    // Cards / elevated glass surfaces
+    card: "rgba(15,23,42,0.03)",
+    cardForeground: "#0f172a",
+    cardBorder: "rgba(15,23,42,0.08)",
 
-    // Primary action color (soft violet)
-    primary: "#7c5cff",
+    // Primary action color (aurora purple)
+    primary: AURORA_PURPLE,
     primaryForeground: "#ffffff",
 
-    // Secondary / less-emphasis interactive surfaces
-    secondary: "#f2f2f7",
-    secondaryForeground: "#1d1d1f",
+    // Secondary / stronger glass interactive surfaces
+    secondary: "rgba(15,23,42,0.05)",
+    secondaryForeground: "#0f172a",
 
     // Muted / subdued elements (dividers, timestamps, placeholders)
-    muted: "#f2f2f7",
-    mutedForeground: "#86868b",
+    muted: "rgba(15,23,42,0.03)",
+    mutedForeground: "#64748b",
 
     // Accent highlights (badges, selected items, focus rings)
-    accent: "#efeaff",
-    accentForeground: "#7c5cff",
+    accent: "rgba(192,132,252,0.12)",
+    accentForeground: AURORA_PURPLE,
 
     // Destructive actions (delete, error states)
     destructive: "#ef4343",
     destructiveForeground: "#ffffff",
 
     // Borders and input outlines
-    border: "#e5e5ea",
-    input: "#e5e5ea",
+    border: "rgba(15,23,42,0.08)",
+    borderStrong: "rgba(15,23,42,0.14)",
+    input: "rgba(15,23,42,0.08)",
+
+    // Aurora extras
+    secondaryAccent: AURORA_TEAL,
+    header: "rgba(255,255,255,0.72)",
   },
 
   dark: {
-    text: "#f5f5f7",
-    tint: "#8b6dff",
+    text: "#e5e7eb",
+    tint: AURORA_PURPLE,
 
     background: "#000000",
-    foreground: "#f5f5f7",
+    foreground: "#e5e7eb",
 
-    card: "#1c1c1e",
-    cardForeground: "#f5f5f7",
-    cardBorder: "#38383a",
+    card: "rgba(255,255,255,0.04)",
+    cardForeground: "#e5e7eb",
+    cardBorder: "rgba(255,255,255,0.10)",
 
-    primary: "#8b6dff",
+    primary: AURORA_PURPLE,
     primaryForeground: "#ffffff",
 
-    secondary: "#2c2c2e",
-    secondaryForeground: "#f5f5f7",
+    secondary: "rgba(255,255,255,0.07)",
+    secondaryForeground: "#e5e7eb",
 
-    muted: "#2c2c2e",
-    mutedForeground: "#98989d",
+    muted: "rgba(255,255,255,0.04)",
+    mutedForeground: "#94a3b8",
 
-    accent: "#2a2140",
-    accentForeground: "#b9a6ff",
+    accent: "rgba(192,132,252,0.15)",
+    accentForeground: AURORA_PURPLE,
 
-    destructive: "#7c1d1d",
+    destructive: "#ef4343",
     destructiveForeground: "#ffffff",
 
-    border: "#38383a",
-    input: "#38383a",
+    border: "rgba(255,255,255,0.10)",
+    borderStrong: "rgba(255,255,255,0.18)",
+    input: "rgba(255,255,255,0.10)",
+
+    // Aurora extras
+    secondaryAccent: AURORA_TEAL,
+    header: "rgba(10,10,12,0.65)",
   },
 
-  // Border radius (in px). Apple-style rounded corners.
+  // Aurora accent gradients (theme-independent)
+  auroraGradient: AURORA_GRADIENT,
+  auroraButtonGradient: AURORA_BUTTON_GRADIENT,
+
+  // Border radius (in px). Rounded corners (~1rem).
   radius: 16,
 };
 

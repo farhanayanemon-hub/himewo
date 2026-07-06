@@ -30,8 +30,7 @@ export function Button({
   loading?: boolean;
 }) {
   const variants: Record<ButtonVariant, string> = {
-    primary:
-      "bg-brand-600 text-white hover:bg-brand-700 shadow-sm disabled:opacity-50",
+    primary: "aurora-button text-white shadow-sm disabled:opacity-50",
     secondary:
       "bg-slate-100 text-slate-800 hover:bg-slate-200 disabled:opacity-50",
     ghost: "text-slate-600 hover:bg-slate-100 disabled:opacity-50",
@@ -69,10 +68,7 @@ export function Card({
 }) {
   return (
     <div
-      className={cn(
-        "rounded-2xl border border-slate-200 bg-white shadow-sm",
-        className,
-      )}
+      className={cn("aurora-glass-card rounded-2xl", className)}
     >
       {children}
     </div>
