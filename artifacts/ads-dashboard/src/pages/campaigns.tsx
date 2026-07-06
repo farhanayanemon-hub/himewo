@@ -4,7 +4,6 @@ import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListAdCampaigns,
-  useCreateAdCampaign,
   useUpdateAdCampaign,
   useDeleteAdCampaign,
   getListAdCampaignsQueryKey,
@@ -49,7 +48,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -62,7 +60,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, Rocket } from "lucide-react";
+import { Pencil, Trash2, Rocket } from "lucide-react";
 
 type Objective = NonNullable<AdCampaignInput["objective"]>;
 type Status = NonNullable<AdCampaignInput["status"]>;
@@ -96,15 +94,8 @@ export function CampaignsPanel() {
       queryKey: getListAdCampaignsQueryKey(accountId),
     },
   });
-  const create = useCreateAdCampaign();
   const update = useUpdateAdCampaign();
   const del = useDeleteAdCampaign();
-
-  const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [objective, setObjective] = useState<Objective>("traffic");
-  const [daily, setDaily] = useState("");
-  const [lifetime, setLifetime] = useState("");
 
   const [editId, setEditId] = useState<number | null>(null);
   const [eName, setEName] = useState("");
@@ -118,36 +109,6 @@ export function CampaignsPanel() {
     qc.invalidateQueries({ queryKey: getListAdCampaignsQueryKey(accountId) });
 
   if (selectedAccountId == null) return <NoAccount />;
-
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const data: AdCampaignInput = {
-      name: name.trim(),
-      objective,
-      status: "draft",
-      dailyBudgetCents: toCents(daily),
-      lifetimeBudgetCents: toCents(lifetime),
-    };
-    create.mutate(
-      { id: accountId, data },
-      {
-        onSuccess: () => {
-          invalidate();
-          setOpen(false);
-          setName("");
-          setDaily("");
-          setLifetime("");
-          toast({ title: "Campaign created" });
-        },
-        onError: (err) =>
-          toast({
-            title: "Couldn't create",
-            description: err instanceof Error ? err.message : "Try again.",
-            variant: "destructive",
-          }),
-      },
-    );
-  };
 
   const remove = (id: number) =>
     del.mutate(
@@ -256,89 +217,6 @@ export function CampaignsPanel() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-end">
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="new-campaign">
-              <Plus className="mr-2 h-4 w-4" /> New campaign
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>New campaign</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={submit} className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="c-name">Name</Label>
-                <Input
-                  id="c-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label>Objective</Label>
-                  <Select
-                    value={objective}
-                    onValueChange={(v) => setObjective(v as Objective)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {OBJECTIVES.map((o) => (
-                        <SelectItem key={o} value={o}>
-                          {o.replace(/_/g, " ")}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Status</Label>
-                  <div className="flex h-10 items-center">
-                    <Badge variant="outline">Draft</Badge>
-                  </div>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label>Daily budget ({selectedAccount?.currency})</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={daily}
-                    onChange={(e) => setDaily(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Lifetime budget ({selectedAccount?.currency})</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={lifetime}
-                    onChange={(e) => setLifetime(e.target.value)}
-                  />
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                The campaign is created as a draft. After you add an ad set + ad,
-                clicking "Publish" sends everything for review.
-              </p>
-              <DialogFooter>
-                <Button type="submit" disabled={create.isPending}>
-                  {create.isPending ? "Creating..." : "Create"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
       {isLoading ? (
         <p className="text-muted-foreground">Loading...</p>
       ) : !campaigns || campaigns.length === 0 ? (
