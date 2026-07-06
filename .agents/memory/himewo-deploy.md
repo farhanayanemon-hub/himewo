@@ -15,6 +15,7 @@ Three live surfaces, three mechanisms:
 - Verify: `himewo.com` / `admin.himewo.com` return 200; confirm new JS hash matches local build.
 
 - The **ads dashboard** (`@workspace/ads-dashboard` → Cloudflare project `himewo-ads`, `ads.himewo.com`) has its OWN GitHub Action `.github/workflows/deploy-ads.yml` (mirrors deploy-admin.yml; triggers on `artifacts/ads-dashboard/**` or `lib/**`). Ads-dashboard changes auto-deploy on push to main — no manual wrangler. Build out dir `artifacts/ads-dashboard/dist/public`; vite build only (no tsc gate, so type errors do NOT fail the deploy).
+- **Web and Admin ALSO have GitHub Actions** ("Deploy Web/Admin to Cloudflare Pages") that auto-deploy on push to main. So a push alone ships all three web surfaces; manual wrangler is only a faster path / fallback. Both mechanisms deploy the same build, no conflict.
 
 ## API → Railway, which auto-builds from GitHub `main`
 - Railway service `@workspace/api-server` auto-deploys on every push to GitHub `main`. So deploying the API = **push to GitHub main**, nothing else.
@@ -35,6 +36,8 @@ Three live surfaces, three mechanisms:
 - The git CLI (push/commit) is hard-blocked in this env. Push via GitHub REST API with `GITHUB_TOKEN`:
   create blobs for changed files → new tree with `base_tree` = remote tree (preserves remote-only files like `.github/workflows`) → commit with `parents` = remote HEAD (fast-forward, no force, nothing deleted) → PATCH `refs/heads/main`.
 - Repo: `farhanayanemon-hub/himewo`. A 120s bash run may time out AFTER the ref update succeeds — always re-verify HEAD via `GET /repos/.../git/ref/heads/main` before re-pushing.
+- **Never hardcode the remote HEAD in the diff/push helper scripts** — fetch it live from the ref API each run. A stale head makes the push fail with 422 "Update is not a fast forward"; the fix is re-diff against the live HEAD, not force-push.
+- Verify a Cloudflare deploy by comparing the live `index.html` asset hashes to the local build — the external screenshot tool can serve a CACHED old page and false-alarm; cache-bust with `?v=...` to re-screenshot.
 - To push the WORKING-TREE version of a file (uncommitted local edit), read it from disk for the blob — don't rely on `git ls-tree HEAD`.
 
 ## Verify API live

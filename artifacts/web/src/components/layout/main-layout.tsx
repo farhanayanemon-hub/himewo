@@ -49,7 +49,7 @@ function ThemeToggle() {
       variant="ghost"
       size="icon"
       onClick={toggle}
-      className="rounded-full bg-muted/50 hover:bg-muted"
+      className="rounded-full aurora-glass hover:bg-muted/60"
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
     >
       {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -57,27 +57,17 @@ function ThemeToggle() {
   );
 }
 
-function IconTile({
+function NavIcon({
   icon: Icon,
-  grad,
+  color,
   size = "md",
-  active = false,
 }: {
   icon: LucideIcon;
-  grad: string;
+  color?: string;
   size?: "sm" | "md";
-  active?: boolean;
 }) {
-  const box = size === "sm" ? "w-8 h-8" : "w-9 h-9";
-  const ic = size === "sm" ? "w-4 h-4" : "w-[18px] h-[18px]";
-  return (
-    <span
-      className={`relative flex items-center justify-center ${box} rounded-[12px] bg-gradient-to-br ${grad} ring-1 ring-black/5 transition-all duration-200 ${active ? "scale-105 shadow-lg" : "shadow-md"}`}
-    >
-      <span className="pointer-events-none absolute inset-x-1 top-1 h-1/3 rounded-full bg-white/40 blur-[1px]" />
-      <Icon className={`relative ${ic} text-white drop-shadow`} />
-    </span>
-  );
+  const ic = size === "sm" ? "w-5 h-5" : "w-[22px] h-[22px]";
+  return <Icon className={`${ic} ${color ?? "text-muted-foreground"}`} />;
 }
 
 export function MainLayout({ children, rightSidebar }: { children: ReactNode; rightSidebar?: ReactNode }) {
@@ -95,24 +85,24 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
   };
 
   const navItems = [
-    { href: "/", icon: Home, label: "Home", grad: "from-teal-400 to-purple-500" },
-    { href: "/friends", icon: Users, label: "Friends", grad: "from-teal-400 to-purple-500" },
-    { href: "/reels", icon: Video, label: "Reels", grad: "from-purple-400 to-pink-500" },
-    { href: "/groups", icon: UsersRound, label: "Groups", grad: "from-emerald-400 to-teal-500" },
-    { href: "/pages", icon: FileText, label: "Pages", grad: "from-orange-400 to-red-500" },
-    { href: "/marketplace", icon: Store, label: "Marketplace", grad: "from-amber-400 to-orange-500" },
+    { href: "/", icon: Home, label: "Home", color: "text-teal-500" },
+    { href: "/friends", icon: Users, label: "Friends", color: "text-purple-500" },
+    { href: "/reels", icon: Video, label: "Reels", color: "text-pink-500" },
+    { href: "/groups", icon: UsersRound, label: "Groups", color: "text-emerald-500" },
+    { href: "/pages", icon: FileText, label: "Pages", color: "text-orange-500" },
+    { href: "/marketplace", icon: Store, label: "Marketplace", color: "text-amber-500" },
     ...(earnings?.enabled
-      ? [{ href: "/earnings", icon: Wallet, label: "Earnings", grad: "from-lime-400 to-green-600" }]
+      ? [{ href: "/earnings", icon: Wallet, label: "Earnings", color: "text-green-500" }]
       : []),
   ];
 
   const shortcutItems = [
-    { href: "/live", icon: Radio, label: "Live", grad: "from-red-500 to-red-700" },
-    { href: "/watch", icon: MonitorPlay, label: "Watch", grad: "from-teal-400 to-purple-500" },
-    { href: "/events", icon: CalendarDays, label: "Events", grad: "from-red-400 to-rose-600" },
-    { href: "/stories", icon: Clapperboard, label: "Stories", grad: "from-purple-400 to-pink-500" },
-    { href: "/memories", icon: Clock, label: "Memories", grad: "from-teal-400 to-purple-500" },
-    { href: "/saved", icon: Bookmark, label: "Saved", grad: "from-purple-400 to-pink-500" },
+    { href: "/live", icon: Radio, label: "Live", color: "text-red-500" },
+    { href: "/watch", icon: MonitorPlay, label: "Watch", color: "text-teal-500" },
+    { href: "/events", icon: CalendarDays, label: "Events", color: "text-rose-500" },
+    { href: "/stories", icon: Clapperboard, label: "Stories", color: "text-purple-500" },
+    { href: "/memories", icon: Clock, label: "Memories", color: "text-cyan-500" },
+    { href: "/saved", icon: Bookmark, label: "Saved", color: "text-pink-500" },
   ];
 
   return (
@@ -143,10 +133,10 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
                 const isActive = location === item.href;
                 return (
                   <Link key={item.href} href={item.href} className="relative">
-                    <Button variant="ghost" size="icon" className={`rounded-xl w-14 h-12 press ${isActive ? "bg-accent" : "hover:bg-muted/60"}`}>
-                      <IconTile icon={Icon} grad={item.grad} active={isActive} />
+                    <Button variant="ghost" size="icon" className={`rounded-xl w-14 h-12 press [&_svg]:!size-6 ${isActive ? "bg-accent text-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`}>
+                      <Icon />
                     </Button>
-                    {isActive && <span className="absolute -bottom-[14px] left-2 right-2 h-1 rounded-full bg-primary" />}
+                    {isActive && <span className="absolute -bottom-[14px] left-2 right-2 h-1 rounded-full bg-gradient-to-r from-teal-400 via-purple-400 to-pink-400" />}
                   </Link>
                 );
               })}
@@ -156,12 +146,12 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <Link href="/messages">
-              <Button variant="ghost" size="icon" className="rounded-full bg-muted/50 hover:bg-muted">
+              <Button variant="ghost" size="icon" className="rounded-full aurora-glass hover:bg-muted/60">
                 <MessageCircle className="w-5 h-5" />
               </Button>
             </Link>
             <Link href="/notifications">
-              <Button variant="ghost" size="icon" className="rounded-full bg-muted/50 hover:bg-muted relative">
+              <Button variant="ghost" size="icon" className="rounded-full aurora-glass hover:bg-muted/60 relative">
                 <Bell className="w-5 h-5" />
                 {unreadCount?.count ? (
                   <span className="absolute top-0 right-0 w-4 h-4 bg-destructive text-white text-[10px] font-bold flex items-center justify-center rounded-full">
@@ -189,7 +179,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
               const Icon = item.icon;
               return (
                 <Link key={item.href} href={item.href} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
-                  <IconTile icon={Icon} grad={item.grad} size="sm" />
+                  <NavIcon icon={Icon} color={item.color} size="sm" />
                   <span className="font-medium">{item.label}</span>
                 </Link>
               );
@@ -198,18 +188,18 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
               const Icon = item.icon;
               return (
                 <Link key={item.href} href={item.href} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
-                  <IconTile icon={Icon} grad={item.grad} size="sm" />
+                  <NavIcon icon={Icon} color={item.color} size="sm" />
                   <span className="font-medium">{item.label}</span>
                 </Link>
               );
             })}
             <div className="my-4 border-t border-border" />
             <Link href="/settings" className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
-              <IconTile icon={Settings} grad="from-slate-500 to-slate-700" size="sm" />
+              <NavIcon icon={Settings} color="text-slate-500" size="sm" />
               <span className="font-medium">Settings</span>
             </Link>
             <button onClick={signOut} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
-              <IconTile icon={LogOut} grad="from-red-500 to-rose-600" size="sm" />
+              <NavIcon icon={LogOut} color="text-red-500" size="sm" />
               <span className="font-medium">Log Out</span>
             </button>
           </nav>

@@ -456,49 +456,58 @@ export function PostComposer({
         onChange={(e) => handleFiles(e.target.files)}
       />
 
-      <div className="mt-3 pt-3 border-t border-border flex gap-2 items-center">
+      <div className="mt-3 pt-3 border-t border-border flex gap-1 sm:gap-2 items-center min-w-0">
         <Button
           variant="ghost"
-          className="flex-1 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg"
+          aria-label="Add photo"
+          className="flex-1 min-w-0 px-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg"
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
         >
-          {uploading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <ImageIcon className="w-5 h-5 mr-2 text-green-500" />}
-          Photo
+          {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImageIcon className="w-5 h-5 text-green-500" />}
+          <span className="hidden xl:inline ml-1">Photo</span>
         </Button>
         <Button
           variant="ghost"
-          className="flex-1 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg"
+          aria-label="Add video"
+          className="flex-1 min-w-0 px-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg"
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
         >
-          <Video className="w-5 h-5 mr-2 text-red-500" /> Video
+          <Video className="w-5 h-5 text-red-500" />
+          <span className="hidden xl:inline ml-1">Video</span>
         </Button>
         <Button
           variant="ghost"
-          className={`flex-1 hover:text-foreground hover:bg-muted/50 rounded-lg ${showPoll ? "text-primary" : "text-muted-foreground"}`}
+          aria-label="Add poll"
+          className={`flex-1 min-w-0 px-2 hover:text-foreground hover:bg-muted/50 rounded-lg ${showPoll ? "text-primary" : "text-muted-foreground"}`}
           onClick={() => (showPoll ? resetPoll() : setShowPoll(true))}
         >
-          <BarChart3 className="w-5 h-5 mr-2 text-amber-500" /> Poll
+          <BarChart3 className="w-5 h-5 text-amber-500" />
+          <span className="hidden xl:inline ml-1">Poll</span>
         </Button>
         <Button
           variant="ghost"
-          className={`flex-1 hover:text-foreground hover:bg-muted/50 rounded-lg ${feeling || feelingOpen ? "text-primary" : "text-muted-foreground"}`}
+          aria-label="Add feeling or activity"
+          className={`flex-1 min-w-0 px-2 hover:text-foreground hover:bg-muted/50 rounded-lg ${feeling || feelingOpen ? "text-primary" : "text-muted-foreground"}`}
           onClick={() => setFeelingOpen((v) => !v)}
         >
-          <Smile className="w-5 h-5 mr-2 text-yellow-500" /> Feeling
+          <Smile className="w-5 h-5 text-yellow-500" />
+          <span className="hidden xl:inline ml-1">Feeling</span>
         </Button>
         <Button
           variant="ghost"
-          className={`flex-1 hover:text-foreground hover:bg-muted/50 rounded-lg ${showLocation || location ? "text-primary" : "text-muted-foreground"}`}
+          aria-label="Check in"
+          className={`flex-1 min-w-0 px-2 hover:text-foreground hover:bg-muted/50 rounded-lg ${showLocation || location ? "text-primary" : "text-muted-foreground"}`}
           onClick={() => setShowLocation((v) => !v)}
         >
-          <MapPin className="w-5 h-5 mr-2 text-red-500" /> Check in
+          <MapPin className="w-5 h-5 text-red-500" />
+          <span className="hidden xl:inline ml-1">Check in</span>
         </Button>
-        <div className="flex-1 flex justify-center">
+        <div className="flex-1 min-w-0 flex justify-center">
           <EmojiPickerButton
             onSelect={(emoji) => setContent((prev) => prev + emoji)}
-            className="w-full text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg flex items-center justify-center gap-2"
+            className="w-full min-w-0 px-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg flex items-center justify-center gap-2"
           />
         </div>
         <Button
@@ -508,7 +517,7 @@ export function PostComposer({
             pollInvalid ||
             createPost.isPending
           }
-          className="rounded-lg px-6 aurora-button"
+          className="rounded-lg px-4 sm:px-6 shrink-0 aurora-button"
         >
           {createPost.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Post"}
         </Button>
