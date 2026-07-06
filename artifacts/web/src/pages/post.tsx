@@ -25,8 +25,9 @@ import {
   RenderWithMentions,
   MentionSuggestions,
   activeMentionQuery,
-  insertMention,
-  mentionToken,
+  pickMention,
+  applyMentionTokens,
+  type MentionTarget,
 } from "@/components/mention";
 import { X } from "lucide-react";
 
@@ -135,6 +136,7 @@ export default function PostPage() {
   const createComment = useCreateComment();
   const queryClient = useQueryClient();
   const [content, setContent] = useState("");
+  const [mentionTargets, setMentionTargets] = useState<MentionTarget[]>([]);
   const [gifUrl, setGifUrl] = useState<string | null>(null);
   const [replyTo, setReplyTo] = useState<ReplyTarget | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -158,10 +160,16 @@ export default function PostPage() {
 
   const startReply = (target: ReplyTarget) => {
     setReplyTo(target);
-    setContent((prev) => {
-      const token = `${mentionToken(target.author)} `;
-      return prev.trim().length === 0 ? token : prev;
-    });
+    // Only prefill (and track the mention target) when the box is empty —
+    // otherwise no "@Name" text is inserted, so no target should be added.
+    if (content.trim().length === 0) {
+      setContent(`@${target.author.displayName} `);
+      setMentionTargets((prev) =>
+        prev.some((t) => t.id === target.author.id)
+          ? prev
+          : [...prev, target.author],
+      );
+    }
     inputRef.current?.focus();
   };
 
@@ -174,7 +182,7 @@ export default function PostPage() {
       {
         id: postId,
         data: {
-          content,
+          content: applyMentionTokens(content, mentionTargets),
           ...(gifUrl ? { mediaUrl: gifUrl } : {}),
           ...(replyTo ? { parentId: replyTo.parentId } : {}),
         },
@@ -182,6 +190,7 @@ export default function PostPage() {
       {
         onSuccess: () => {
           setContent("");
+          setMentionTargets([]);
           setGifUrl(null);
           setReplyTo(null);
           queryClient.invalidateQueries({ queryKey: getListCommentsQueryKey(postId) });
@@ -231,7 +240,9 @@ export default function PostPage() {
                       <MentionSuggestions
                         query={mentionQuery}
                         onSelect={(p) => {
-                          setContent((prev) => insertMention(prev, p));
+                          const picked = pickMention(content, mentionTargets, p);
+                          setContent(picked.text);
+                          setMentionTargets(picked.targets);
                           inputRef.current?.focus();
                         }}
                       />

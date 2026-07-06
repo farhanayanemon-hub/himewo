@@ -24,8 +24,11 @@ import EmojiPicker, { type EmojiClickData, Theme } from "emoji-picker-react";
 import {
   MentionSuggestions,
   activeMentionQuery,
-  insertMention,
+  pickMention,
+  applyMentionTokens,
+  HIGHLIGHT_ID,
   HIGHLIGHT_TOKEN,
+  type MentionTarget,
 } from "@/components/mention";
 
 const PRIVACY_OPTIONS = [
@@ -109,6 +112,9 @@ export function PostComposer({
   const [showEmoji, setShowEmoji] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const mentionQuery = activeMentionQuery(content);
+  // Profiles picked from the mention dropdown. The textarea shows friendly
+  // "@Name" text; these targets convert it to real tokens on submit.
+  const [mentionTargets, setMentionTargets] = useState<MentionTarget[]>([]);
 
   // Append text to the composer (used by the Mention / Highlight actions),
   // making sure there's a space before the inserted token.
@@ -194,7 +200,7 @@ export function PostComposer({
     createPost.mutate(
       {
         data: {
-          content,
+          content: applyMentionTokens(content, mentionTargets),
           // Community posts don't carry an author-chosen audience.
           privacy: inCommunity ? undefined : privacyReady ? privacy : undefined,
           groupId,
@@ -212,6 +218,7 @@ export function PostComposer({
       {
         onSuccess: () => {
           setContent("");
+          setMentionTargets([]);
           setMedia([]);
           setPrivacyTouched(false);
           resetPoll();
@@ -279,7 +286,9 @@ export function PostComposer({
               <MentionSuggestions
                 query={mentionQuery}
                 onSelect={(p) => {
-                  setContent((prev) => insertMention(prev, p));
+                  const picked = pickMention(content, mentionTargets, p);
+                  setContent(picked.text);
+                  setMentionTargets(picked.targets);
                   textareaRef.current?.focus();
                 }}
               />
@@ -585,7 +594,21 @@ export function PostComposer({
               Mention someone
             </DropdownMenuItem>
             <DropdownMenuItem
-              onSelect={() => appendToContent(`${HIGHLIGHT_TOKEN} `)}
+              onSelect={() => {
+                // If a real user named "Highlight" is already mentioned,
+                // plain "@Highlight" would be ambiguous — use the raw token.
+                const clash = mentionTargets.some(
+                  (t) => t.displayName === "Highlight" && t.id !== HIGHLIGHT_ID,
+                );
+                appendToContent(clash ? `${HIGHLIGHT_TOKEN} ` : "@Highlight ");
+                if (!clash) {
+                  setMentionTargets((prev) =>
+                    prev.some((t) => t.id === HIGHLIGHT_ID)
+                      ? prev
+                      : [...prev, { id: HIGHLIGHT_ID, displayName: "Highlight" }],
+                  );
+                }
+              }}
               className="gap-2"
             >
               <Megaphone className="w-4 h-4 text-pink-500" />

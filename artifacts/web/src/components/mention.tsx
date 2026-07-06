@@ -33,6 +33,72 @@ export function insertMention(text: string, profile: MentionTarget): string {
   );
 }
 
+// Insert a human-friendly "@Name " into the input (no raw token — the token
+// would look like code to the user). Track the picked profile separately and
+// convert with applyMentionTokens() on submit.
+export function insertMentionDisplay(
+  text: string,
+  profile: MentionTarget,
+): string {
+  return text.replace(
+    /(^|\s)@[^\s@[\]()]{0,30}$/,
+    `$1@${profile.displayName} `,
+  );
+}
+
+// Pick a profile from the mention dropdown. Normally inserts friendly
+// "@Name " text and records the target for submit-time conversion. If a
+// DIFFERENT already-picked target has the same display name, the plain-text
+// form would be ambiguous — fall back to inserting the raw token so both
+// users stay distinct.
+export function pickMention(
+  text: string,
+  targets: MentionTarget[],
+  profile: MentionTarget,
+): { text: string; targets: MentionTarget[] } {
+  const clash = targets.some(
+    (t) => t.displayName === profile.displayName && t.id !== profile.id,
+  );
+  if (clash) return { text: insertMention(text, profile), targets };
+  const next = targets.some((t) => t.id === profile.id)
+    ? targets
+    : [...targets, profile];
+  return { text: insertMentionDisplay(text, profile), targets: next };
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Convert "@Name" occurrences back into mention tokens for the picked
+// targets. Longest names first so "@Jo" never eats part of "@John Doe",
+// and only on exact word boundaries so "@Johnx" (a partial edit) stays
+// plain text instead of becoming a wrong mention.
+export function applyMentionTokens(
+  text: string,
+  targets: MentionTarget[],
+): string {
+  let out = text;
+  const seenIds = new Set<string>();
+  const usedNames = new Set<string>();
+  for (const t of [...targets].sort(
+    (a, b) => b.displayName.length - a.displayName.length,
+  )) {
+    if (seenIds.has(t.id)) continue;
+    seenIds.add(t.id);
+    // Two different ids with the same name: plain text is ambiguous — skip
+    // (pickMention already inserted a raw token for the clashing pick).
+    if (usedNames.has(t.displayName)) continue;
+    usedNames.add(t.displayName);
+    const re = new RegExp(
+      `(^|\\s)@${escapeRegExp(t.displayName)}(?=$|\\s|[.,!?;:])`,
+      "g",
+    );
+    out = out.replace(re, `$1${mentionToken(t)}`);
+  }
+  return out;
+}
+
 export function mentionToken(profile: Pick<Profile, "id" | "displayName">) {
   return `@[${profile.displayName}](user:${profile.id})`;
 }
