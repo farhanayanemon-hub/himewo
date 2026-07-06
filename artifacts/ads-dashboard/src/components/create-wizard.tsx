@@ -21,6 +21,7 @@ import { toCents } from "@/lib/money";
 import { useToast } from "@/hooks/use-toast";
 import { uploadMedia, UploadUnavailableError } from "@/lib/upload";
 import { TargetingForm } from "@/components/targeting-form";
+import { AdPreview } from "@/components/ad-preview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -267,8 +268,23 @@ export function CreateAdWizard() {
   };
 
   const currency = selectedAccount?.currency;
-  const selectedCreativeName =
-    creatives?.find((c) => String(c.id) === creativeMode)?.name ?? null;
+  const selectedCreative =
+    creatives?.find((c) => String(c.id) === creativeMode) ?? null;
+  const selectedCreativeName = selectedCreative?.name ?? null;
+
+  const previewData = makingNewCreative
+    ? {
+        headline: headline,
+        primaryText: primaryText,
+        mediaUrl: toList(mediaText)[0],
+        callToAction: cta,
+      }
+    : {
+        headline: selectedCreative?.headline ?? undefined,
+        primaryText: selectedCreative?.primaryText ?? undefined,
+        mediaUrl: selectedCreative?.mediaUrls?.[0],
+        callToAction: selectedCreative?.callToAction,
+      };
 
   return (
     <Dialog
@@ -571,6 +587,18 @@ export function CreateAdWizard() {
                   onChange={(e) => setAUrl(e.target.value)}
                 />
               </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-muted-foreground">Ad preview</Label>
+                <AdPreview
+                  pageName={selectedAccount?.name}
+                  primaryText={previewData.primaryText}
+                  headline={previewData.headline}
+                  mediaUrl={previewData.mediaUrl}
+                  callToAction={previewData.callToAction}
+                  destinationUrl={aUrl}
+                />
+              </div>
             </>
           )}
 
@@ -613,6 +641,19 @@ export function CreateAdWizard() {
                 />
                 <Separator />
                 <Row label="Ad" value={aName || "—"} sub={aUrl} />
+              </div>
+              <div className="space-y-1.5">
+                <p className="text-xs font-medium text-muted-foreground">
+                  Ad preview
+                </p>
+                <AdPreview
+                  pageName={selectedAccount?.name}
+                  primaryText={previewData.primaryText}
+                  headline={previewData.headline}
+                  mediaUrl={previewData.mediaUrl}
+                  callToAction={previewData.callToAction}
+                  destinationUrl={aUrl}
+                />
               </div>
             </div>
           )}
