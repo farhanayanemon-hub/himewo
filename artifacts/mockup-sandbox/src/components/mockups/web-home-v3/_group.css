@@ -1,0 +1,75 @@
+@keyframes neon-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+@keyframes neon-scan {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.neon-grid-bg {
+  background-color: #05060a;
+  background-image:
+    radial-gradient(circle at 15% 12%, rgba(34, 211, 238, 0.14), transparent 42%),
+    radial-gradient(circle at 85% 8%, rgba(217, 70, 239, 0.14), transparent 45%),
+    radial-gradient(circle at 50% 100%, rgba(163, 230, 53, 0.08), transparent 55%),
+    linear-gradient(rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+  background-size: auto, auto, auto, 44px 44px, 44px 44px;
+}
+
+.neon-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.neon-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.neon-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.35);
+  border-radius: 9999px;
+}
+.neon-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 211, 238, 0.6);
+}
+
+/* ===== Luxe Dark Gold ===== */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+.luxe-scope {
+  --luxe-bg: #0b0b0d;
+  --luxe-panel: #141417;
+  --luxe-panel-2: #1a1a1f;
+  --luxe-hairline: rgba(200, 164, 100, 0.18);
+  --luxe-gold: #c8a464;
+  --luxe-gold-bright: #e3c589;
+  --luxe-text: #ece7de;
+  --luxe-muted: #8f8a7f;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.luxe-serif {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+}
+
+.luxe-gold-gradient {
+  background: linear-gradient(135deg, #e3c589 0%, #c8a464 45%, #a5813f 100%);
+}
+
+.luxe-gold-text {
+  background: linear-gradient(135deg, #e9cf95 0%, #c8a464 60%, #b18e4d 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.luxe-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
+.luxe-scrollbar::-webkit-scrollbar-thumb { background: rgba(200,164,100,0.25); border-radius: 999px; }
+.luxe-scrollbar::-webkit-scrollbar-track { background: transparent; }
+
+@keyframes luxe-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(200,164,100,0.35); }
+  50% { box-shadow: 0 0 0 4px rgba(200,164,100,0); }
+}
+.luxe-online-dot { animation: luxe-pulse 2.4s ease-in-out infinite; }

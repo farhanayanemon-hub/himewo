@@ -1,0 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap');
+
+.theme-editorial {
+  /* Colors */
+  --bg-paper: #F7F6F3;
+  --bg-card: #FFFFFF;
+  --text-main: #1C1917;
+  --text-muted: #57534E;
+  --text-faint: #A8A29E;
+  --accent-ink: #1B3B5A;
+  --accent-ink-hover: #12283E;
+  --border-thin: #E7E5E0;
+  --positive: #2E5C46;
+  --negative: #8A3B35;
+  
+  /* Fonts */
+  --font-serif: 'Newsreader', serif;
+  --font-sans: 'Inter', sans-serif;
+}
+
+.theme-editorial * {
+  border-color: var(--border-thin);
+}

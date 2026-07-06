@@ -1,0 +1,94 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+.sunset-theme {
+  --font-sunset: 'Plus Jakarta Sans', sans-serif;
+  --sunset-bg: #FFF7F2;
+  --sunset-surface: #FFFFFF;
+  --sunset-primary: #FF7A1A;
+  --sunset-primary-hover: #E66A15;
+  --sunset-coral: #FF5A5F;
+  --sunset-magenta: #D93674;
+  --sunset-amber: #FFB300;
+  --sunset-text-main: #2D1A11;
+  --sunset-text-muted: #8A6E63;
+  --sunset-border: #F5E6DF;
+  --sunset-success: #10B981;
+  
+  font-family: var(--font-sunset);
+  background-color: var(--sunset-bg);
+  color: var(--sunset-text-main);
+  min-height: 100vh;
+}
+
+.sunset-card {
+  background-color: var(--sunset-surface);
+  border: 1px solid var(--sunset-border);
+  border-radius: 1.5rem; /* rounded-3xl */
+  box-shadow: 0 10px 40px -10px rgba(255, 122, 26, 0.05);
+}
+
+.sunset-button {
+  background: linear-gradient(135deg, var(--sunset-primary), var(--sunset-coral));
+  color: white;
+  border-radius: 9999px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(255, 122, 26, 0.25);
+}
+
+.sunset-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(255, 122, 26, 0.35);
+}
+
+.sunset-button-secondary {
+  background-color: #FFEDDF;
+  color: var(--sunset-primary);
+  border-radius: 9999px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.sunset-button-secondary:hover {
+  background-color: #FFDFCA;
+}
+
+.sunset-nav-item {
+  color: var(--sunset-text-muted);
+  border-radius: 1rem;
+  transition: all 0.2s ease;
+  font-weight: 600;
+}
+
+.sunset-nav-item:hover {
+  background-color: #FFEDDF;
+  color: var(--sunset-primary);
+}
+
+.sunset-nav-item.active {
+  background-color: #FFEDDF;
+  color: var(--sunset-primary);
+}
+
+.sunset-chart-area {
+  background: linear-gradient(180deg, rgba(255, 122, 26, 0.1) 0%, rgba(255, 90, 95, 0.01) 100%);
+}
+
+.sunset-table th {
+  color: var(--sunset-text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  padding: 1rem;
+  border-bottom: 1px solid var(--sunset-border);
+}
+
+.sunset-table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--sunset-border);
+}
+
+.sunset-table tr:last-child td {
+  border-bottom: none;
+}

@@ -1,0 +1,98 @@
+/* aurora.css — Aurora Glass, solid black/white background (no gradient) */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+.aurora-bg {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--ap-bg);
+  color: var(--ap-text);
+}
+
+/* ---- Themes: only the background color differs (black / white) ---- */
+.aurora-dark {
+  --ap-bg: #000000;
+  --ap-text: #e5e7eb;
+  --ap-muted: #94a3b8;
+  --ap-glass: rgba(255, 255, 255, 0.04);
+  --ap-glass-2: rgba(255, 255, 255, 0.07);
+  --ap-border: rgba(255, 255, 255, 0.10);
+  --ap-border-strong: rgba(255, 255, 255, 0.18);
+  --ap-hover: rgba(255, 255, 255, 0.06);
+  --ap-header: rgba(10, 10, 12, 0.65);
+  --ap-ring-bg: #000000;
+}
+
+.aurora-light {
+  --ap-bg: #ffffff;
+  --ap-text: #0f172a;
+  --ap-muted: #64748b;
+  --ap-glass: rgba(15, 23, 42, 0.03);
+  --ap-glass-2: rgba(15, 23, 42, 0.05);
+  --ap-border: rgba(15, 23, 42, 0.08);
+  --ap-border-strong: rgba(15, 23, 42, 0.14);
+  --ap-hover: rgba(15, 23, 42, 0.04);
+  --ap-header: rgba(255, 255, 255, 0.72);
+  --ap-ring-bg: #ffffff;
+}
+
+/* ---- Variable-driven utilities ---- */
+.ap-text { color: var(--ap-text); }
+.ap-muted { color: var(--ap-muted); }
+.ap-fill { background: var(--ap-glass); }
+.ap-fill-2 { background: var(--ap-glass-2); }
+.ap-bd { border-color: var(--ap-border); }
+.ap-bd-strong { border-color: var(--ap-border-strong); }
+.ap-hover { transition: background-color 0.2s ease; }
+.ap-hover:hover { background: var(--ap-hover); }
+.ap-ring { border-color: var(--ap-ring-bg); }
+.ap-divider { background: var(--ap-border); }
+
+/* ---- Glass surfaces ---- */
+.aurora-glass {
+  background: var(--ap-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--ap-border);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.08);
+}
+
+.aurora-glass-card {
+  background: var(--ap-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--ap-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+.aurora-glass-header {
+  background: var(--ap-header);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--ap-border);
+}
+
+/* ---- Accent identity (same in both themes) ---- */
+.aurora-gradient-text {
+  background: linear-gradient(135deg, #5eead4, #c084fc, #f472b6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.aurora-button {
+  background: linear-gradient(135deg, rgba(94, 234, 212, 0.9), rgba(192, 132, 252, 0.9));
+  color: white;
+  transition: all 0.3s ease;
+}
+.aurora-button:hover {
+  background: linear-gradient(135deg, rgba(94, 234, 212, 1), rgba(192, 132, 252, 1));
+  box-shadow: 0 0 15px rgba(192, 132, 252, 0.5);
+}
+
+.aurora-story-ring {
+  background: linear-gradient(135deg, #5eead4, #c084fc, #f472b6);
+  padding: 2px;
+  border-radius: 50%;
+}
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

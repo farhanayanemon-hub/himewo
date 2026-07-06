@@ -1,0 +1,154 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+.swiss-theme {
+  font-family: 'Space Grotesk', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.swiss-light {
+  --bg-color: #ffffff;
+  --bg-elevated: #ffffff;
+  --text-primary: #000000;
+  --text-secondary: #666666;
+  --border-color: #e5e5e5;
+  --accent-color: #ff3b30;
+  --accent-hover: #e02a20;
+  --nav-bg: #ffffff;
+  --hover-bg: #f5f5f5;
+  --story-bg: #f9f9f9;
+}
+
+.swiss-dark {
+  --bg-color: #0b0b0b;
+  --bg-elevated: #0b0b0b;
+  --text-primary: #ffffff;
+  --text-secondary: #888888;
+  --border-color: #222222;
+  --accent-color: #ff3b30;
+  --accent-hover: #e02a20;
+  --nav-bg: #0b0b0b;
+  --hover-bg: #1a1a1a;
+  --story-bg: #111111;
+}
+
+.swiss-panel {
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+}
+
+.swiss-border {
+  border-color: var(--border-color);
+}
+
+.swiss-border-b {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.swiss-border-t {
+  border-top: 1px solid var(--border-color);
+}
+
+.swiss-border-r {
+  border-right: 1px solid var(--border-color);
+}
+
+.swiss-border-l {
+  border-left: 1px solid var(--border-color);
+}
+
+.swiss-text-secondary {
+  color: var(--text-secondary);
+}
+
+.swiss-accent {
+  color: var(--accent-color);
+}
+
+.swiss-bg-accent {
+  background-color: var(--accent-color);
+}
+
+.swiss-hover:hover {
+  background-color: var(--hover-bg);
+}
+
+.swiss-nav {
+  background-color: var(--nav-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.swiss-input {
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.swiss-input:focus {
+  border-color: var(--text-primary);
+  outline: none;
+}
+
+.swiss-input::placeholder {
+  color: var(--text-secondary);
+}
+
+.swiss-btn {
+  background-color: transparent;
+  border: 1px solid var(--text-primary);
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.swiss-btn:hover {
+  background-color: var(--text-primary);
+  color: var(--bg-color);
+}
+
+.swiss-btn-accent {
+  background-color: var(--accent-color);
+  border: 1px solid var(--accent-color);
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.swiss-btn-accent:hover {
+  background-color: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.swiss-pill {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 50;
+  background-color: var(--text-primary);
+  color: var(--bg-color);
+  padding: 4px 12px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.swiss-story {
+  background-color: var(--story-bg);
+  border: 1px solid var(--border-color);
+}
+
+/* Scrollbar hiding */
+.swiss-scroll::-webkit-scrollbar {
+  display: none;
+}
+.swiss-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

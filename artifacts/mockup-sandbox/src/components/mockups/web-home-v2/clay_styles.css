@@ -1,0 +1,206 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+.clay-theme {
+  font-family: 'Nunito', sans-serif;
+}
+
+.clay-light {
+  --bg-app: #f4f6fa;
+  --bg-card: #f4f6fa;
+  --bg-card-raised: #ffffff;
+  --text-main: #3d415b;
+  --text-muted: #7b83a3;
+  --primary: #8a7df0;
+  --primary-bg: #e6e2ff;
+  --mint: #9be7c4;
+  --peach: #ffc9a3;
+  --sky: #a3d9ff;
+  
+  --shadow-dark: rgba(182, 194, 217, 0.6);
+  --shadow-light: rgba(255, 255, 255, 0.9);
+  --shadow-inset-light: rgba(255, 255, 255, 0.5);
+  --shadow-inset-dark: rgba(182, 194, 217, 0.2);
+}
+
+.clay-dark {
+  --bg-app: #1e1b2e;
+  --bg-card: #252238;
+  --bg-card-raised: #2a273e;
+  --text-main: #e6e4f2;
+  --text-muted: #9590ab;
+  --primary: #b6a8ff;
+  --primary-bg: #3d3568;
+  --mint: #62aa88;
+  --peach: #c98e64;
+  --sky: #649abc;
+
+  --shadow-dark: rgba(15, 12, 28, 0.8);
+  --shadow-light: rgba(56, 51, 84, 0.6);
+  --shadow-inset-light: rgba(255, 255, 255, 0.05);
+  --shadow-inset-dark: rgba(15, 12, 28, 0.4);
+}
+
+.clay-panel {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  min-height: 100%;
+}
+
+.clay-card {
+  background-color: var(--bg-card);
+  border-radius: 2rem;
+  box-shadow: 
+    8px 8px 16px var(--shadow-dark), 
+    -8px -8px 16px var(--shadow-light);
+  border: 2px solid transparent;
+}
+
+.clay-card-raised {
+  background-color: var(--bg-card-raised);
+  border-radius: 2rem;
+  box-shadow: 
+    10px 10px 20px var(--shadow-dark), 
+    -10px -10px 20px var(--shadow-light);
+}
+
+.clay-button {
+  background-color: var(--bg-card);
+  border-radius: 1rem;
+  box-shadow: 
+    4px 4px 8px var(--shadow-dark), 
+    -4px -4px 8px var(--shadow-light);
+  transition: all 0.2s ease;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-main);
+  border: none;
+}
+
+.clay-button:active {
+  box-shadow: 
+    inset 4px 4px 8px var(--shadow-dark), 
+    inset -4px -4px 8px var(--shadow-light);
+  transform: scale(0.98);
+}
+
+.clay-button-primary {
+  background-color: var(--primary);
+  color: white;
+  border-radius: 1rem;
+  box-shadow: 
+    4px 4px 10px rgba(138, 125, 240, 0.4),
+    -4px -4px 8px var(--shadow-light);
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clay-button-primary:active {
+  transform: scale(0.98);
+}
+
+.clay-input {
+  background-color: var(--bg-card);
+  border-radius: 1rem;
+  box-shadow: 
+    inset 4px 4px 8px var(--shadow-dark), 
+    inset -4px -4px 8px var(--shadow-light);
+  border: none;
+  outline: none;
+  padding: 0.75rem 1.25rem;
+  color: var(--text-main);
+  width: 100%;
+}
+.clay-input::placeholder {
+  color: var(--text-muted);
+}
+
+.clay-pill {
+  background-color: var(--bg-card);
+  border-radius: 9999px;
+  box-shadow: 
+    3px 3px 6px var(--shadow-dark), 
+    -3px -3px 6px var(--shadow-light);
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 900;
+  color: var(--text-main);
+  letter-spacing: 0.05em;
+}
+
+.clay-nav-icon {
+  background-color: var(--bg-card);
+  border-radius: 1rem;
+  box-shadow: 
+    3px 3px 6px var(--shadow-dark), 
+    -3px -3px 6px var(--shadow-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.clay-nav-icon:active {
+  transform: scale(0.95);
+}
+.clay-nav-icon.active {
+  box-shadow: 
+    inset 3px 3px 6px var(--shadow-dark), 
+    inset -3px -3px 6px var(--shadow-light);
+  color: var(--primary);
+}
+
+.clay-avatar {
+  border-radius: 1rem;
+  box-shadow: 
+    3px 3px 6px var(--shadow-dark), 
+    -3px -3px 6px var(--shadow-light);
+  object-fit: cover;
+}
+
+.clay-story-card {
+  border-radius: 1.5rem;
+  box-shadow: 
+    4px 4px 8px var(--shadow-dark), 
+    -4px -4px 8px var(--shadow-light);
+  overflow: hidden;
+  position: relative;
+  height: 220px;
+  width: 130px;
+  flex-shrink: 0;
+  background-color: var(--bg-card);
+}
+.clay-story-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.9;
+}
+
+.clay-badge {
+  background-color: #ef4444;
+  color: white;
+  border-radius: 999px;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.6rem;
+  font-weight: 800;
+  position: absolute;
+  top: -4px;
+  right: -4px;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

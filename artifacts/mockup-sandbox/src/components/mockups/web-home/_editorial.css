@@ -1,0 +1,59 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..900&family=Inter:wght@300..600&display=swap');
+
+.editorial-theme {
+  --bg-color: #fcfbf9;
+  --surface-color: #ffffff;
+  --text-primary: #1a1a18;
+  --text-secondary: #666560;
+  --border-color: #e6e5e1;
+  --accent-color: #1b4b5a; /* Deep muted teal */
+  --accent-hover: #133a46;
+  
+  --font-serif: 'Fraunces', serif;
+  --font-sans: 'Inter', sans-serif;
+
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
+
+.editorial-theme .font-serif {
+  font-family: var(--font-serif);
+}
+
+.editorial-theme .font-sans {
+  font-family: var(--font-sans);
+}
+
+.editorial-theme .bg-surface {
+  background-color: var(--surface-color);
+}
+
+.editorial-theme .border-hairline {
+  border: 1px solid var(--border-color);
+}
+
+.editorial-theme .text-primary {
+  color: var(--text-primary);
+}
+
+.editorial-theme .text-secondary {
+  color: var(--text-secondary);
+}
+
+.editorial-theme .text-accent {
+  color: var(--accent-color);
+}
+
+.editorial-theme .bg-accent {
+  background-color: var(--accent-color);
+}
+
+.editorial-theme .bg-accent:hover {
+  background-color: var(--accent-hover);
+}
+
+.editorial-theme .stroke-accent {
+  stroke: var(--accent-color);
+}

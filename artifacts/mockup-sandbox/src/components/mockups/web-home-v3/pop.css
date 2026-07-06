@@ -1,0 +1,28 @@
+@keyframes pop-float {
+  0%, 100% { transform: translateY(0) rotate(var(--pop-rot, 0deg)); }
+  50% { transform: translateY(-10px) rotate(var(--pop-rot, 0deg)); }
+}
+
+@keyframes pop-wiggle {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+@keyframes pop-pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(255, 90, 140, 0.55); }
+  70% { box-shadow: 0 0 0 8px rgba(255, 90, 140, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 90, 140, 0); }
+}
+
+.pop-float { animation: pop-float 6s ease-in-out infinite; }
+.pop-wiggle-hover:hover { animation: pop-wiggle 0.45s ease-in-out; }
+.pop-online-ring { animation: pop-pulse-ring 2.2s infinite; }
+
+.pop-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
+.pop-scroll::-webkit-scrollbar-thumb { background: #ffd23f; border-radius: 999px; }
+.pop-scroll::-webkit-scrollbar-track { background: transparent; }
+
+.pop-dots {
+  background-image: radial-gradient(#ffffff55 1.6px, transparent 1.6px);
+  background-size: 14px 14px;
+}
