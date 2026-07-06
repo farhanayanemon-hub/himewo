@@ -12,10 +12,12 @@ import {
   StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { Avatar } from "@/components/Avatar";
 import { useAuth } from "@/lib/auth";
 import { useColors } from "@/hooks/useColors";
+import { auroraGradient } from "@/constants/colors";
 
 type Mode = "signin" | "signup";
 type Method = "email" | "phone";
@@ -131,9 +133,14 @@ export default function LoginScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.brand}>
-          <View style={[styles.logo, { backgroundColor: c.primary }, glow(c.primary)]}>
+          <LinearGradient
+            colors={[...auroraGradient]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.logo, glow(c.primary)]}
+          >
             <Ionicons name="chatbubble-ellipses" size={34} color="#fff" />
-          </View>
+          </LinearGradient>
           <Text style={[styles.title, { color: c.primary }]}>HiMewo Chat</Text>
           <Text style={{ color: c.mutedForeground, fontSize: fs(14) }}>
             Messenger — message, call & connect instantly

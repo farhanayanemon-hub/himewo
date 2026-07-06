@@ -208,7 +208,7 @@ export function PostComposer({
   };
 
   return (
-    <div className="bg-card border border-card-border rounded-2xl p-4 card-depth mb-6">
+    <div className="aurora-glass-card rounded-2xl p-4 mb-6">
       <div className="flex gap-3">
         <img src={user?.avatarUrl || ""} className="w-10 h-10 rounded-full object-cover" alt="" />
         <div className="flex-1">
@@ -508,7 +508,7 @@ export function PostComposer({
             pollInvalid ||
             createPost.isPending
           }
-          className="rounded-lg px-6"
+          className="rounded-lg px-6 aurora-button"
         >
           {createPost.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Post"}
         </Button>

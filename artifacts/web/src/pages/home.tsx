@@ -42,7 +42,7 @@ function StoryRow() {
             alt=""
           />
         </div>
-        <div className="absolute top-[calc(66%-16px)] left-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white border-4 border-card">
+        <div className="absolute top-[calc(66%-16px)] left-1/2 -translate-x-1/2 w-9 h-9 rounded-full aurora-button flex items-center justify-center text-white border-4 border-card">
           <Plus className="w-5 h-5" />
         </div>
         <div className="absolute bottom-2 left-0 right-0 text-center text-foreground text-xs font-semibold leading-tight px-1">
@@ -64,9 +64,9 @@ function StoryRow() {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
           <div
-            className={`absolute top-3 left-3 w-9 h-9 rounded-full overflow-hidden border-[3px] ${group.hasUnseen ? "border-primary" : "border-white/60"}`}
+            className={`absolute top-3 left-3 rounded-full ${group.hasUnseen ? "aurora-story-ring" : "p-[2px] bg-white/60"}`}
           >
-            <img src={group.author.avatarUrl || ""} className="w-full h-full object-cover" alt="" />
+            <img src={group.author.avatarUrl || ""} className="w-8 h-8 rounded-full object-cover border-2 border-black/40" alt="" />
           </div>
           <div className="absolute bottom-2 left-2 right-2 text-white text-xs font-medium leading-tight line-clamp-2">
             {group.author.displayName}

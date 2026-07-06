@@ -23,7 +23,7 @@ interface Shortcut {
 const SHORTCUTS: Shortcut[] = [
   { label: "Friends", icon: "people", color: "#1877f2", href: "/friends" },
   { label: "Saved", icon: "bookmark", color: "#a855f7", href: "/saved" },
-  { label: "Marketplace", icon: "storefront", color: "#7c5cff", href: "/marketplace" },
+  { label: "Marketplace", icon: "storefront", color: "#c084fc", href: "/marketplace" },
   { label: "Groups", icon: "people-circle", color: "#0a7ea4", href: "/groups" },
   { label: "Pages", icon: "document-text", color: "#d946ef", href: "/pages" },
   { label: "Reels", icon: "film", color: "#e9710f", href: "/reels" },

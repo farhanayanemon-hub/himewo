@@ -190,7 +190,7 @@ export function PostCard({ post }: { post: Post }) {
   const PrivacyIcon = meta.icon;
 
   return (
-    <div className="bg-card border border-card-border rounded-2xl p-4 card-depth animate-in fade-in slide-in-from-bottom-2 duration-300">
+    <div className="aurora-glass-card rounded-2xl p-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div className="flex items-center justify-between mb-3">
         <Link href={`/profile/${post.author.id}`} className="flex items-center gap-3 group">
           <img src={post.author.avatarUrl || ""} className="w-10 h-10 rounded-full object-cover group-hover:ring-2 ring-primary transition-all" alt="" />

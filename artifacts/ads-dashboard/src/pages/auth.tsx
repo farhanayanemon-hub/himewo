@@ -43,13 +43,13 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-muted/30 p-4">
+    <div className="min-h-screen w-full flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+          <div className="aurora-brand-icon mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl text-white shadow-[0_0_15px_rgba(192,132,252,0.4)]">
             <Megaphone className="h-6 w-6" />
           </div>
-          <CardTitle className="text-2xl">HiMewo Ads Manager</CardTitle>
+          <CardTitle className="text-2xl aurora-gradient-text">HiMewo Ads Manager</CardTitle>
           <CardDescription>
             Create and manage your ad campaigns.
           </CardDescription>

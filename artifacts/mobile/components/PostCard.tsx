@@ -191,7 +191,7 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
     .filter(Boolean);
 
   return (
-    <View style={[styles.card, { backgroundColor: c.card }]}>
+    <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
       <Pressable
         style={styles.header}
         onPress={() => router.push(`/profile/${post.author.id}`)}
@@ -422,7 +422,7 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
 }
 
 const styles = StyleSheet.create({
-  card: { marginBottom: 8, paddingTop: 12 },
+  card: { marginBottom: 8, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth },
   header: {
     flexDirection: "row",
     alignItems: "center",

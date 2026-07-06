@@ -1,5 +1,7 @@
 import { Image } from "expo-image";
 import { View, Text, StyleSheet } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import colorTokens from "@/constants/colors";
 import { useColors } from "@/hooks/useColors";
 
 interface AvatarProps {
@@ -20,42 +22,62 @@ function initials(name?: string): string {
 export function Avatar({ uri, name, size = 40, online, ring }: AvatarProps) {
   const c = useColors();
   const radius = size / 2;
+  const innerSize = ring ? size - 4 : size;
+
+  const inner = (
+    <View
+      style={{
+        width: innerSize,
+        height: innerSize,
+        borderRadius: innerSize / 2,
+        backgroundColor: c.secondary,
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+      }}
+    >
+      {uri ? (
+        <Image
+          source={{ uri }}
+          style={{ width: innerSize, height: innerSize }}
+          contentFit="cover"
+          transition={150}
+        />
+      ) : (
+        <Text
+          style={{
+            color: c.mutedForeground,
+            fontFamily: "Inter_600SemiBold",
+            fontSize: size * 0.4,
+          }}
+        >
+          {initials(name)}
+        </Text>
+      )}
+    </View>
+  );
 
   return (
     <View style={{ width: size, height: size }}>
-      <View
-        style={[
-          {
+      {ring ? (
+        <LinearGradient
+          colors={colorTokens.auroraGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{
             width: size,
             height: size,
             borderRadius: radius,
-            backgroundColor: c.secondary,
+            padding: 2,
             alignItems: "center",
             justifyContent: "center",
-            overflow: "hidden",
-          },
-          ring && { borderWidth: 2, borderColor: c.primary },
-        ]}
-      >
-        {uri ? (
-          <Image
-            source={{ uri }}
-            style={{ width: size, height: size }}
-            contentFit="cover"
-            transition={150}
-          />
-        ) : (
-          <Text
-            style={{
-              color: c.mutedForeground,
-              fontFamily: "Inter_600SemiBold",
-              fontSize: size * 0.4,
-            }}
-          >
-            {initials(name)}
-          </Text>
-        )}
-      </View>
+          }}
+        >
+          {inner}
+        </LinearGradient>
+      ) : (
+        inner
+      )}
       {online && (
         <View
           style={[

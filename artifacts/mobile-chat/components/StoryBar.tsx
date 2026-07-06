@@ -3,12 +3,14 @@ import { fs } from "@/constants/typography";
 import { shadow } from "@/constants/shadows";
 import { Pressable, ScrollView, Text, View, StyleSheet } from "react-native";
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useListStories, type StoryGroup } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
 import { useAuth } from "@/lib/auth";
 import { useColors } from "@/hooks/useColors";
+import { auroraGradient } from "@/constants/colors";
 
 export function StoryBar() {
   const c = useColors();
@@ -44,20 +46,32 @@ export function StoryBar() {
               style={styles.item}
               onPress={() => router.push(`/story/${cover.id}`)}
             >
-              <View
-                style={[
-                  styles.ring,
-                  { borderColor: group.hasUnseen ? c.primary : c.border },
-                ]}
-              >
-                <View style={[styles.ringInner, { borderColor: c.background }]}>
-                  <Image
-                    source={{ uri: group.author?.avatarUrl ?? undefined }}
-                    style={styles.avatar}
-                    contentFit="cover"
-                  />
+              {group.hasUnseen ? (
+                <LinearGradient
+                  colors={[...auroraGradient]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.ring}
+                >
+                  <View style={[styles.ringInner, { borderColor: c.background }]}>
+                    <Image
+                      source={{ uri: group.author?.avatarUrl ?? undefined }}
+                      style={styles.avatar}
+                      contentFit="cover"
+                    />
+                  </View>
+                </LinearGradient>
+              ) : (
+                <View style={[styles.ring, styles.ringSeen, { borderColor: c.border }]}>
+                  <View style={[styles.ringInner, { borderColor: c.background }]}>
+                    <Image
+                      source={{ uri: group.author?.avatarUrl ?? undefined }}
+                      style={styles.avatar}
+                      contentFit="cover"
+                    />
+                  </View>
                 </View>
-              </View>
+              )}
               <Text numberOfLines={1} style={[styles.name, { color: c.foreground }]}>
                 {group.author?.displayName?.split(" ")[0] ?? "Story"}
               </Text>
@@ -80,10 +94,12 @@ const styles = StyleSheet.create({
     width: RING,
     height: RING,
     borderRadius: RING / 2,
-    borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
     ...shadow("md"),
+  },
+  ringSeen: {
+    borderWidth: 2,
   },
   ringInner: {
     width: INNER,

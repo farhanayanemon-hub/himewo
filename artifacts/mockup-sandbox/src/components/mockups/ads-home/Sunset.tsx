@@ -23,7 +23,7 @@ export function Sunset() {
       <header className="h-20 bg-white border-b border-[#F5E6DF] flex items-center justify-between px-6 shrink-0 z-10">
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-2 text-[#FF7A1A]">
-            <Megaphone size={28} weight="fill" className="fill-current" />
+            <Megaphone size={28} className="fill-current" />
             <span className="text-2xl font-extrabold tracking-tight">HiMewo Ads</span>
           </div>
           

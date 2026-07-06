@@ -1,84 +1,99 @@
 /**
  * Semantic design tokens for the HiMewo Chat (Messenger) mobile app.
  *
- * Apple / iOS-inspired palette shared with the rest of HiMewo, but the
- * Messenger app uses a slightly DEEPER violet primary (#6c4be0) plus clean
- * white surfaces and rounder bubbles so it stays visually distinct from the
- * main social app (which uses the lighter violet #7c5cff). Both apps share the
- * same structure/components; only the palette differs.
+ * Aurora Glass theme. Solid pure-black (dark) / pure-white (light) backgrounds
+ * with translucent "glass" surfaces (approximating backdrop blur with
+ * translucent fills + 1px borders, since React Native has no backdrop-filter).
+ *
+ * The Chat app leans PURPLE/PINK within the aurora family (primary #c084fc,
+ * secondary accent #f472b6) so it stays visually distinct from the main social
+ * app (which leans teal/purple). The shared 3-color aurora gradient
+ * (#5eead4 -> #c084fc -> #f472b6) is used for story/avatar rings, brand text,
+ * and outgoing message bubbles.
  *
  * The useColors() hook automatically picks the light/dark variant based on the
- * device color scheme.
+ * device color scheme / user preference.
  */
+
+// Shared accent identity (same in both themes).
+export const auroraGradient = ["#5eead4", "#c084fc", "#f472b6"] as const;
+export const auroraButtonGradient = ["#c084fc", "#f472b6"] as const;
 
 const colors = {
   light: {
     // Legacy aliases (kept for backward compatibility)
-    text: "#1d1d1f",
-    tint: "#6c4be0",
+    text: "#0f172a",
+    tint: "#c084fc",
 
-    // Core surfaces (Messenger clean white)
+    // Core surfaces (solid pure white)
     background: "#ffffff",
-    foreground: "#1d1d1f",
+    foreground: "#0f172a",
 
-    // Cards / elevated surfaces
+    // Cards / elevated surfaces (glass)
     card: "#ffffff",
-    cardForeground: "#1d1d1f",
-    cardBorder: "#e5e5ea",
+    cardForeground: "#0f172a",
+    cardBorder: "rgba(15,23,42,0.08)",
 
-    // Primary action color (deep violet)
-    primary: "#6c4be0",
+    // Primary action color (aurora purple)
+    primary: "#c084fc",
     primaryForeground: "#ffffff",
 
-    // Secondary / less-emphasis interactive surfaces
-    secondary: "#f2f2f7",
-    secondaryForeground: "#1d1d1f",
+    // Secondary accent (aurora pink)
+    accentSecondary: "#f472b6",
+
+    // Secondary / less-emphasis interactive surfaces (stronger glass)
+    secondary: "rgba(15,23,42,0.05)",
+    secondaryForeground: "#0f172a",
 
     // Muted / subdued elements (dividers, timestamps, placeholders)
-    muted: "#f2f2f7",
-    mutedForeground: "#86868b",
+    muted: "rgba(15,23,42,0.03)",
+    mutedForeground: "#64748b",
 
     // Accent highlights
-    accent: "#ece5ff",
-    accentForeground: "#6c4be0",
+    accent: "rgba(192,132,252,0.12)",
+    accentForeground: "#c084fc",
 
     // Destructive actions (delete, error states)
-    destructive: "#ef4343",
+    destructive: "#ef4444",
     destructiveForeground: "#ffffff",
 
     // Borders and input outlines
-    border: "#e5e5ea",
-    input: "#e5e5ea",
+    border: "rgba(15,23,42,0.08)",
+    borderStrong: "rgba(15,23,42,0.14)",
+    input: "rgba(15,23,42,0.08)",
   },
 
   dark: {
-    text: "#f5f5f7",
-    tint: "#8b6dff",
+    text: "#e5e7eb",
+    tint: "#c084fc",
 
     background: "#000000",
-    foreground: "#f5f5f7",
+    foreground: "#e5e7eb",
 
-    card: "#1c1c1e",
-    cardForeground: "#f5f5f7",
-    cardBorder: "#38383a",
+    card: "rgba(255,255,255,0.04)",
+    cardForeground: "#e5e7eb",
+    cardBorder: "rgba(255,255,255,0.10)",
 
-    primary: "#8b6dff",
+    primary: "#c084fc",
     primaryForeground: "#ffffff",
 
-    secondary: "#2c2c2e",
-    secondaryForeground: "#f5f5f7",
+    accentSecondary: "#f472b6",
 
-    muted: "#2c2c2e",
-    mutedForeground: "#98989d",
+    secondary: "rgba(255,255,255,0.07)",
+    secondaryForeground: "#e5e7eb",
 
-    accent: "#2a2140",
-    accentForeground: "#b9a6ff",
+    muted: "rgba(255,255,255,0.04)",
+    mutedForeground: "#94a3b8",
 
-    destructive: "#7c1d1d",
+    accent: "rgba(192,132,252,0.16)",
+    accentForeground: "#c084fc",
+
+    destructive: "#ef4444",
     destructiveForeground: "#ffffff",
 
-    border: "#38383a",
-    input: "#38383a",
+    border: "rgba(255,255,255,0.10)",
+    borderStrong: "rgba(255,255,255,0.18)",
+    input: "rgba(255,255,255,0.10)",
   },
 
   // Border radius (in px). Messenger uses fully rounded bubbles/controls.

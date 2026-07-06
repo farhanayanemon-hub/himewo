@@ -50,14 +50,14 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
     useAccount();
 
   return (
-    <div className="min-h-screen w-full bg-muted/20">
+    <div className="min-h-screen w-full bg-background">
       {/* Top bar */}
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background px-4">
+      <header className="aurora-header sticky top-0 z-30 flex h-14 items-center gap-3 border-b px-4">
         <Link href="/campaigns" className="flex items-center gap-2 font-semibold">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <span className="aurora-brand-icon flex h-8 w-8 items-center justify-center rounded-lg text-white shadow-[0_0_15px_rgba(192,132,252,0.4)]">
             <Megaphone className="h-4 w-4" />
           </span>
-          <span className="hidden sm:inline">HiMewo Ads</span>
+          <span className="hidden sm:inline aurora-gradient-text">HiMewo Ads</span>
         </Link>
 
         <div className="ml-2 flex items-center gap-2">
@@ -121,7 +121,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
 
       <div className="mx-auto flex w-full max-w-7xl">
         {/* Sidebar */}
-        <aside className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-56 shrink-0 border-r bg-background p-3 md:block">
+        <aside className="aurora-fill sticky top-14 hidden h-[calc(100vh-3.5rem)] w-56 shrink-0 border-r p-3 md:block">
           <nav className="space-y-1">
             {NAV.map((item) => {
               const active =
@@ -148,7 +148,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
         </aside>
 
         {/* Mobile nav */}
-        <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t bg-background py-1 md:hidden">
+        <div className="aurora-header fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t py-1 md:hidden">
           {NAV.map((item) => {
             const active =
               location === item.href || location.startsWith(item.href + "/");

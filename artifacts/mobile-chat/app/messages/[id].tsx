@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -40,6 +41,7 @@ import { useAuth } from "@/lib/auth";
 import { useRealtime, type RealtimeEvent } from "@/lib/realtime";
 import { useCall } from "@/components/CallProvider";
 import { useColors } from "@/hooks/useColors";
+import { auroraButtonGradient } from "@/constants/colors";
 import { formatClock } from "@/lib/format";
 import { uploadMedia, uploadAudio, UploadUnavailableError, type PickedAsset } from "@/lib/upload";
 import {
@@ -429,14 +431,21 @@ export default function ChatThreadScreen() {
             <Touchable
               onPress={sendText}
               disabled={!canSend}
-              style={[styles.sendBtn, { backgroundColor: c.primary }, glow(c.primary)]}
+              style={[styles.sendBtn, glow(c.primary)]}
               hitSlop={6}
             >
-              {sending ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <Ionicons name="send" size={18} color="#fff" />
-              )}
+              <LinearGradient
+                colors={[...auroraButtonGradient]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.sendBtnFill}
+              >
+                {sending ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Ionicons name="send" size={18} color="#fff" />
+                )}
+              </LinearGradient>
             </Touchable>
           ) : (
             <Touchable
@@ -517,21 +526,36 @@ function MessageBubble({
               </Touchable>
             ),
           )}
-        {message.content.length > 0 && (
-          <View
-            style={[
-              styles.bubble,
-              shadow("sm"),
-              mine
-                ? { backgroundColor: c.primary, borderBottomRightRadius: 4 }
-                : { backgroundColor: c.secondary, borderBottomLeftRadius: 4 },
-            ]}
-          >
-            <Text style={{ color: mine ? "#fff" : c.foreground, fontSize: fs(15), lineHeight: 20 }}>
-              {message.content}
-            </Text>
-          </View>
-        )}
+        {message.content.length > 0 &&
+          (mine ? (
+            <LinearGradient
+              colors={[...auroraButtonGradient]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.bubble, shadow("sm"), { borderBottomRightRadius: 4 }]}
+            >
+              <Text style={{ color: "#fff", fontSize: fs(15), lineHeight: 20 }}>
+                {message.content}
+              </Text>
+            </LinearGradient>
+          ) : (
+            <View
+              style={[
+                styles.bubble,
+                shadow("sm"),
+                {
+                  backgroundColor: c.secondary,
+                  borderWidth: 1,
+                  borderColor: c.border,
+                  borderBottomLeftRadius: 4,
+                },
+              ]}
+            >
+              <Text style={{ color: c.foreground, fontSize: fs(15), lineHeight: 20 }}>
+                {message.content}
+              </Text>
+            </View>
+          ))}
         <Text
           style={[
             styles.time,
@@ -639,7 +663,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   composerBtn: { width: 38, height: 38, alignItems: "center", justifyContent: "center" },
-  sendBtn: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
+  sendBtn: { width: 38, height: 38, borderRadius: 19, overflow: "hidden" },
+  sendBtnFill: { flex: 1, alignItems: "center", justifyContent: "center" },
   composerBtnRec: { backgroundColor: "#ef4343", borderRadius: 19 },
   inputWrap: {
     flex: 1,

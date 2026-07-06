@@ -95,10 +95,10 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
   };
 
   const navItems = [
-    { href: "/", icon: Home, label: "Home", grad: "from-violet-500 to-purple-600" },
-    { href: "/friends", icon: Users, label: "Friends", grad: "from-violet-400 to-fuchsia-600" },
-    { href: "/reels", icon: Video, label: "Reels", grad: "from-fuchsia-500 to-purple-600" },
-    { href: "/groups", icon: UsersRound, label: "Groups", grad: "from-emerald-400 to-teal-600" },
+    { href: "/", icon: Home, label: "Home", grad: "from-teal-400 to-purple-500" },
+    { href: "/friends", icon: Users, label: "Friends", grad: "from-teal-400 to-purple-500" },
+    { href: "/reels", icon: Video, label: "Reels", grad: "from-purple-400 to-pink-500" },
+    { href: "/groups", icon: UsersRound, label: "Groups", grad: "from-emerald-400 to-teal-500" },
     { href: "/pages", icon: FileText, label: "Pages", grad: "from-orange-400 to-red-500" },
     { href: "/marketplace", icon: Store, label: "Marketplace", grad: "from-amber-400 to-orange-500" },
     ...(earnings?.enabled
@@ -108,20 +108,20 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
 
   const shortcutItems = [
     { href: "/live", icon: Radio, label: "Live", grad: "from-red-500 to-red-700" },
-    { href: "/watch", icon: MonitorPlay, label: "Watch", grad: "from-violet-500 to-purple-600" },
+    { href: "/watch", icon: MonitorPlay, label: "Watch", grad: "from-teal-400 to-purple-500" },
     { href: "/events", icon: CalendarDays, label: "Events", grad: "from-red-400 to-rose-600" },
-    { href: "/stories", icon: Clapperboard, label: "Stories", grad: "from-rose-400 to-pink-600" },
-    { href: "/memories", icon: Clock, label: "Memories", grad: "from-violet-400 to-purple-600" },
-    { href: "/saved", icon: Bookmark, label: "Saved", grad: "from-fuchsia-400 to-violet-600" },
+    { href: "/stories", icon: Clapperboard, label: "Stories", grad: "from-purple-400 to-pink-500" },
+    { href: "/memories", icon: Clock, label: "Memories", grad: "from-teal-400 to-purple-500" },
+    { href: "/saved", icon: Bookmark, label: "Saved", grad: "from-purple-400 to-pink-500" },
   ];
 
   return (
     <div className="min-h-screen bg-background flex flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-50 w-full bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 shadow-card">
+      <header className="sticky top-0 z-50 w-full aurora-glass-header">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/" className="text-2xl font-extrabold text-primary tracking-tight">
+            <Link href="/" className="text-2xl font-extrabold tracking-tight aurora-gradient-text">
               HiMewo
             </Link>
             <form onSubmit={handleSearch} className="hidden md:flex relative">
@@ -181,7 +181,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
         {/* Left Sidebar */}
         <aside className="hidden lg:block w-[280px] shrink-0 sticky top-[88px] h-[calc(100vh-88px)] overflow-y-auto pb-6">
           <nav className="space-y-1">
-            <Link href="/me" className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors">
+            <Link href="/me" className="flex items-center gap-3 p-3 mb-2 rounded-2xl aurora-glass-card hover:bg-muted/40 transition-colors">
               <img src={user?.avatarUrl || ""} alt="" className="w-8 h-8 rounded-full object-cover" />
               <span className="font-medium">{user?.displayName}</span>
             </Link>

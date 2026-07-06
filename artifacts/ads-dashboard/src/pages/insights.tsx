@@ -233,7 +233,7 @@ export default function InsightsPage() {
                   <Line
                     type="monotone"
                     dataKey="impressions"
-                    stroke="hsl(var(--primary))"
+                    stroke="#c084fc"
                     strokeWidth={2}
                     dot={false}
                     name="Impressions"
@@ -271,7 +271,7 @@ export default function InsightsPage() {
                   <Tooltip />
                   <Bar
                     dataKey="spend"
-                    fill="hsl(var(--primary))"
+                    fill="#c084fc"
                     name={`Spend (${currency})`}
                     radius={[3, 3, 0, 0]}
                   />
