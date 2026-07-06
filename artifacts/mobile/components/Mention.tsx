@@ -44,15 +44,27 @@ export function MentionText({
       parts.push(content.slice(last, m.index));
     }
     const userId = m[2];
-    parts.push(
-      <Text
-        key={`m-${i++}`}
-        style={{ color: c.primary, fontFamily: "Inter_600SemiBold" }}
-        onPress={() => router.push(`/profile/${userId}` as never)}
-      >
-        @{m[1]}
-      </Text>,
-    );
+    if (userId === "highlight") {
+      // Special @highlight token — notifies all friends; not a profile link.
+      parts.push(
+        <Text
+          key={`m-${i++}`}
+          style={{ color: c.primary, fontFamily: "Inter_600SemiBold" }}
+        >
+          @{m[1]}
+        </Text>,
+      );
+    } else {
+      parts.push(
+        <Text
+          key={`m-${i++}`}
+          style={{ color: c.primary, fontFamily: "Inter_600SemiBold" }}
+          onPress={() => router.push(`/profile/${userId}` as never)}
+        >
+          @{m[1]}
+        </Text>,
+      );
+    }
     last = m.index! + m[0].length;
   }
   if (last < content.length) parts.push(content.slice(last));

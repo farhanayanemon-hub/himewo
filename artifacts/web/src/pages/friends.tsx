@@ -71,7 +71,7 @@ export default function FriendsPage() {
           )}
         </div>
 
-        <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
+        <div className="aurora-glass-card rounded-2xl p-4">
           <h2 className="text-xl font-bold mb-4">People You May Know</h2>
           <div className="grid grid-cols-2 gap-4">
             {suggestions?.map(user => (
