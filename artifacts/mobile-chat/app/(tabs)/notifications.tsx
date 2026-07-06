@@ -33,26 +33,26 @@ function iconFor(type: Notification["type"]): { name: IconName; color: string } 
     case "reaction":
       return { name: "heart", color: "#f3425f" };
     case "comment":
-      return { name: "chatbubble", color: "#0084ff" };
+      return { name: "chatbubble", color: "#6c4be0" };
     case "friend_request":
-      return { name: "person-add", color: "#0084ff" };
+      return { name: "person-add", color: "#6c4be0" };
     case "friend_accept":
       return { name: "people", color: "#31a24c" };
     case "follow":
     case "page_follow":
-      return { name: "person", color: "#0084ff" };
+      return { name: "person", color: "#6c4be0" };
     case "message":
-      return { name: "chatbubble-ellipses", color: "#0084ff" };
+      return { name: "chatbubble-ellipses", color: "#6c4be0" };
     case "group_invite":
-      return { name: "people-circle", color: "#a033ff" };
+      return { name: "people-circle", color: "#8b6dff" };
     case "mention":
-      return { name: "at", color: "#0084ff" };
+      return { name: "at", color: "#6c4be0" };
     case "share":
       return { name: "arrow-redo", color: "#31a24c" };
     case "story_view":
-      return { name: "eye", color: "#a033ff" };
+      return { name: "eye", color: "#8b6dff" };
     default:
-      return { name: "notifications", color: "#0084ff" };
+      return { name: "notifications", color: "#6c4be0" };
   }
 }
 

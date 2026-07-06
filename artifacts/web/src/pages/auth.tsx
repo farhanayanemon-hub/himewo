@@ -34,7 +34,7 @@ function GoogleIcon() {
 }
 
 const inputClass =
-  "h-12 rounded-lg border-[#dddfe2] dark:border-[#3e4042] bg-white dark:bg-[#3a3b3c] px-4 text-base placeholder:text-[#90949c] focus-visible:ring-2 focus-visible:ring-[#1877F2]";
+  "h-12 rounded-lg border-[#dddfe2] dark:border-[#3e4042] bg-white dark:bg-[#3a3b3c] px-4 text-base placeholder:text-[#90949c] focus-visible:ring-2 focus-visible:ring-[#7c5cff]";
 
 function DevLogin() {
   const { devUsers, signInAsDevUser } = useAuth();
@@ -115,7 +115,7 @@ function SignInForm() {
       <Button
         type="submit"
         disabled={loading}
-        className="w-full h-12 text-lg font-bold rounded-lg bg-[#1877F2] hover:bg-[#166fe5] text-white"
+        className="w-full h-12 text-lg font-bold rounded-lg bg-[#7c5cff] hover:bg-[#6c4be0] text-white"
       >
         {loading ? "Logging in…" : "Log in"}
       </Button>
@@ -271,7 +271,7 @@ function PhoneAuth() {
         <Button
           type="submit"
           disabled={loading}
-          className="w-full h-12 text-lg font-bold rounded-lg bg-[#1877F2] hover:bg-[#166fe5] text-white"
+          className="w-full h-12 text-lg font-bold rounded-lg bg-[#7c5cff] hover:bg-[#6c4be0] text-white"
         >
           {loading ? "Verifying…" : "Verify & Continue"}
         </Button>
@@ -310,7 +310,7 @@ function PhoneAuth() {
       <Button
         type="submit"
         disabled={loading}
-        className="w-full h-12 text-lg font-bold rounded-lg bg-[#1877F2] hover:bg-[#166fe5] text-white"
+        className="w-full h-12 text-lg font-bold rounded-lg bg-[#7c5cff] hover:bg-[#6c4be0] text-white"
       >
         {loading ? "Sending code…" : "Send Code"}
       </Button>
@@ -350,7 +350,7 @@ function FacebookCard() {
                     description: "Password reset is still being built.",
                   })
                 }
-                className="text-sm text-[#1877F2] hover:underline"
+                className="text-sm text-[#7c5cff] hover:underline"
               >
                 Forgotten password?
               </button>
@@ -386,7 +386,7 @@ function FacebookCard() {
             <button
               type="button"
               onClick={() => setMode("phone")}
-              className="block w-full text-center text-sm text-[#1877F2] hover:underline"
+              className="block w-full text-center text-sm text-[#7c5cff] hover:underline"
             >
               Log in with phone number
             </button>
@@ -403,7 +403,7 @@ function FacebookCard() {
             <button
               type="button"
               onClick={() => setMode("login")}
-              className="block w-full text-center text-sm text-[#1877F2] hover:underline"
+              className="block w-full text-center text-sm text-[#7c5cff] hover:underline"
             >
               Already have an account? Log in
             </button>
@@ -419,7 +419,7 @@ function FacebookCard() {
             <button
               type="button"
               onClick={() => setMode("login")}
-              className="block w-full text-center text-sm text-[#1877F2] hover:underline"
+              className="block w-full text-center text-sm text-[#7c5cff] hover:underline"
             >
               ← Log in with email
             </button>
@@ -444,7 +444,7 @@ export default function AuthPage() {
       <div className="flex-1 flex items-center justify-center px-4 py-10">
         <div className="w-full max-w-[980px] grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
           <div className="text-center md:text-left animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <h1 className="text-[#1877F2] dark:text-[#2D88FF] text-6xl md:text-7xl font-extrabold tracking-tight drop-shadow-sm">
+            <h1 className="text-[#7c5cff] dark:text-[#8b6dff] text-6xl md:text-7xl font-extrabold tracking-tight drop-shadow-sm">
               HiMewo
             </h1>
             <p className="mt-3 text-xl md:text-2xl leading-snug text-foreground max-w-md mx-auto md:mx-0">

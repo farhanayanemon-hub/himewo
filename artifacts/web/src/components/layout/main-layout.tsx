@@ -95,8 +95,8 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
   };
 
   const navItems = [
-    { href: "/", icon: Home, label: "Home", grad: "from-blue-500 to-indigo-600" },
-    { href: "/friends", icon: Users, label: "Friends", grad: "from-sky-400 to-cyan-600" },
+    { href: "/", icon: Home, label: "Home", grad: "from-violet-500 to-purple-600" },
+    { href: "/friends", icon: Users, label: "Friends", grad: "from-violet-400 to-fuchsia-600" },
     { href: "/reels", icon: Video, label: "Reels", grad: "from-fuchsia-500 to-purple-600" },
     { href: "/groups", icon: UsersRound, label: "Groups", grad: "from-emerald-400 to-teal-600" },
     { href: "/pages", icon: FileText, label: "Pages", grad: "from-orange-400 to-red-500" },
@@ -108,11 +108,11 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
 
   const shortcutItems = [
     { href: "/live", icon: Radio, label: "Live", grad: "from-red-500 to-red-700" },
-    { href: "/watch", icon: MonitorPlay, label: "Watch", grad: "from-blue-500 to-indigo-600" },
+    { href: "/watch", icon: MonitorPlay, label: "Watch", grad: "from-violet-500 to-purple-600" },
     { href: "/events", icon: CalendarDays, label: "Events", grad: "from-red-400 to-rose-600" },
     { href: "/stories", icon: Clapperboard, label: "Stories", grad: "from-rose-400 to-pink-600" },
     { href: "/memories", icon: Clock, label: "Memories", grad: "from-violet-400 to-purple-600" },
-    { href: "/saved", icon: Bookmark, label: "Saved", grad: "from-cyan-400 to-blue-600" },
+    { href: "/saved", icon: Bookmark, label: "Saved", grad: "from-fuchsia-400 to-violet-600" },
   ];
 
   return (

@@ -45,8 +45,8 @@ export function MobileNav({
   const [menuOpen, setMenuOpen] = useState(false);
 
   const bottomItems: (MobileNavItem & { grad: string })[] = [
-    { href: "/", icon: Home, label: "Home", grad: "from-blue-500 to-indigo-600" },
-    { href: "/friends", icon: Users, label: "Friends", grad: "from-sky-400 to-cyan-600" },
+    { href: "/", icon: Home, label: "Home", grad: "from-violet-500 to-purple-600" },
+    { href: "/friends", icon: Users, label: "Friends", grad: "from-violet-400 to-fuchsia-600" },
     { href: "/reels", icon: Video, label: "Reels", grad: "from-fuchsia-500 to-purple-600" },
     { href: "/marketplace", icon: Store, label: "Market", grad: "from-amber-400 to-orange-500" },
   ];
@@ -150,7 +150,7 @@ export function MobileNav({
                   onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
                 >
-                  <IconTile icon={Icon} grad={item.grad ?? "from-blue-500 to-indigo-600"} />
+                  <IconTile icon={Icon} grad={item.grad ?? "from-violet-500 to-purple-600"} />
                   <span className="font-medium">{item.label}</span>
                 </Link>
               );
@@ -165,7 +165,7 @@ export function MobileNav({
                   onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
                 >
-                  <IconTile icon={Icon} grad={item.grad ?? "from-cyan-400 to-blue-600"} />
+                  <IconTile icon={Icon} grad={item.grad ?? "from-fuchsia-400 to-violet-600"} />
                   <span className="font-medium">{item.label}</span>
                 </Link>
               );
