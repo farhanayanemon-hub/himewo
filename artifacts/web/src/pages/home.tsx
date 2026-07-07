@@ -24,10 +24,12 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Plus, Cake } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRealtime } from "@/lib/realtime";
+import { useAuth } from "@/lib/auth";
 import { Link } from "wouter";
 
 function StoryRow() {
   const { data: stories } = useListStories();
+  const { user } = useAuth();
 
   return (
     <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
@@ -38,7 +40,7 @@ function StoryRow() {
       >
         <div className="h-2/3 overflow-hidden">
           <img
-            src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&q=80"
+            src={avatarSrc(user?.avatarUrl)}
             className="w-full h-full object-cover"
             alt=""
           />
