@@ -40,6 +40,10 @@ export interface Profile {
   isVerified: boolean;
   createdAt: Date;
   /** @nullable */
+  usernameChangedAt?: Date | null;
+  /** @nullable */
+  displayNameChangedAt?: Date | null;
+  /** @nullable */
   friendCount?: number | null;
   /** @nullable */
   followerCount?: number | null;

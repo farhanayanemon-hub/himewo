@@ -17,8 +17,14 @@ import {
   inArray,
   notInArray,
   isNull,
+  sql,
 } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
+import {
+  USERNAME_PATTERN,
+  isReservedUsername,
+  isUniqueViolation,
+} from "../lib/username";
 import {
   toProfile,
   buildProfileDetail,
@@ -32,6 +38,8 @@ import {
   GetFriendSuggestionsResponse,
   UpdateMyProfileBody,
   UpdateMyProfileResponse,
+  GetUserByUsernameParams,
+  GetUserByUsernameResponse,
   GetUserParams,
   GetUserResponse,
   GetUserPostsParams,
@@ -166,6 +174,13 @@ router.get(
   },
 );
 
+// FB-style rename cooldowns: username locks for 30 days after a change,
+// display name for 60 days. The value picked at signup can be changed once
+// immediately (changedAt is null until the first user-initiated change).
+const USERNAME_COOLDOWN_DAYS = 30;
+const DISPLAY_NAME_COOLDOWN_DAYS = 60;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 router.patch("/users/me", requireAuth, async (req, res): Promise<void> => {
   const parsed = UpdateMyProfileBody.safeParse(req.body);
   if (!parsed.success) {
@@ -177,13 +192,124 @@ router.patch("/users/me", requireAuth, async (req, res): Promise<void> => {
     const b = String(updates.birthday ?? "").trim();
     updates.birthday = b.length ? b : null;
   }
-  await db
-    .update(profilesTable)
-    .set(updates)
+
+  const [me] = await db
+    .select()
+    .from(profilesTable)
     .where(eq(profilesTable.id, req.userId!));
+  if (!me) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  const now = new Date();
+
+  if (typeof updates.username === "string") {
+    const next = updates.username.trim().toLowerCase();
+    if (next === me.username.toLowerCase()) {
+      delete updates.username;
+    } else {
+      if (!USERNAME_PATTERN.test(next)) {
+        res.status(400).json({
+          error:
+            "Usernames can only contain lowercase letters, numbers, periods and underscores.",
+        });
+        return;
+      }
+      if (isReservedUsername(next)) {
+        res.status(409).json({ error: "This username is not available." });
+        return;
+      }
+      if (me.usernameChangedAt) {
+        const nextAllowed = new Date(
+          me.usernameChangedAt.getTime() + USERNAME_COOLDOWN_DAYS * DAY_MS,
+        );
+        if (now < nextAllowed) {
+          res.status(403).json({
+            error: `You can change your username again on ${nextAllowed.toISOString().slice(0, 10)}. Usernames can only be changed once every ${USERNAME_COOLDOWN_DAYS} days.`,
+          });
+          return;
+        }
+      }
+      const [taken] = await db
+        .select({ id: profilesTable.id })
+        .from(profilesTable)
+        .where(sql`lower(${profilesTable.username}) = ${next}`);
+      if (taken) {
+        res.status(409).json({ error: "This username is already taken." });
+        return;
+      }
+      updates.username = next;
+      updates.usernameChangedAt = now;
+    }
+  }
+
+  if (typeof updates.displayName === "string") {
+    const next = updates.displayName.trim();
+    if (!next.length || next === me.displayName) {
+      delete updates.displayName;
+    } else {
+      if (me.displayNameChangedAt) {
+        const nextAllowed = new Date(
+          me.displayNameChangedAt.getTime() +
+            DISPLAY_NAME_COOLDOWN_DAYS * DAY_MS,
+        );
+        if (now < nextAllowed) {
+          res.status(403).json({
+            error: `You can change your name again on ${nextAllowed.toISOString().slice(0, 10)}. Names can only be changed once every ${DISPLAY_NAME_COOLDOWN_DAYS} days.`,
+          });
+          return;
+        }
+      }
+      updates.displayName = next;
+      updates.displayNameChangedAt = now;
+    }
+  }
+
+  if (Object.keys(updates).length > 0) {
+    try {
+      await db
+        .update(profilesTable)
+        .set(updates)
+        .where(eq(profilesTable.id, req.userId!));
+    } catch (err) {
+      // Concurrent rename race: the unique lower(username) index wins.
+      if (isUniqueViolation(err)) {
+        res.status(409).json({ error: "This username is already taken." });
+        return;
+      }
+      throw err;
+    }
+  }
   const profile = await buildProfileDetail(req.userId!, req.userId);
   res.json(UpdateMyProfileResponse.parse(profile));
 });
+
+router.get(
+  "/users/by-username/:username",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = GetUserByUsernameParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const uname = params.data.username.trim().toLowerCase();
+    const [row] = await db
+      .select({ id: profilesTable.id })
+      .from(profilesTable)
+      .where(sql`lower(${profilesTable.username}) = ${uname}`);
+    if (!row) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+    const profile = await buildProfileDetail(row.id, req.userId);
+    if (!profile) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+    res.json(GetUserByUsernameResponse.parse(profile));
+  },
+);
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

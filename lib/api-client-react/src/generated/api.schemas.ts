@@ -68,6 +68,10 @@ export interface Profile {
   isVerified: boolean;
   createdAt: string;
   /** @nullable */
+  usernameChangedAt?: string | null;
+  /** @nullable */
+  displayNameChangedAt?: string | null;
+  /** @nullable */
   friendCount?: number | null;
   /** @nullable */
   followerCount?: number | null;
@@ -105,6 +109,12 @@ export interface ProfileInput {
 }
 
 export interface ProfileUpdate {
+  /**
+     * @minLength 3
+     * @maxLength 30
+     * @pattern ^[a-z0-9](?:[a-z0-9._]*[a-z0-9])?$
+     */
+  username?: string;
   /** @minLength 1 */
   displayName?: string;
   bio?: string;

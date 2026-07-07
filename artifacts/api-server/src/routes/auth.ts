@@ -1,7 +1,9 @@
 import { Router, type IRouter } from "express";
+import { sql } from "drizzle-orm";
 import { db, profilesTable } from "@workspace/db";
 import { requireAuth } from "../lib/auth";
 import { buildProfileDetail } from "../lib/serialize";
+import { normalizeUsername, isReservedUsername } from "../lib/username";
 import {
   GetCurrentUserResponse,
   SyncProfileBody,
@@ -9,6 +11,32 @@ import {
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
+
+/**
+ * Pick an available canonical username for signup. Normalizes the requested
+ * name (lowercase, strip invalid chars) and, if it's taken/reserved/empty,
+ * falls back to numbered variants so signup never fails on a name collision.
+ */
+async function pickAvailableUsername(requested: string): Promise<string> {
+  const base = normalizeUsername(requested) || "user";
+  const candidates = [base];
+  for (let i = 0; i < 5; i++) {
+    candidates.push(
+      `${base}${Math.floor(Math.random() * 100000)
+        .toString()
+        .padStart(2, "0")}`,
+    );
+  }
+  for (const candidate of candidates) {
+    if (isReservedUsername(candidate)) continue;
+    const [taken] = await db
+      .select({ id: profilesTable.id })
+      .from(profilesTable)
+      .where(sql`lower(${profilesTable.username}) = ${candidate}`);
+    if (!taken) return candidate;
+  }
+  return `${base}${Date.now().toString(36)}`;
+}
 
 router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
   const profile = await buildProfileDetail(req.userId!, req.userId);
@@ -27,11 +55,12 @@ router.post("/auth/sync", requireAuth, async (req, res): Promise<void> => {
   }
   const userId = req.userId!;
   const data = parsed.data;
+  const username = await pickAvailableUsername(data.username);
   const [row] = await db
     .insert(profilesTable)
     .values({
       id: userId,
-      username: data.username,
+      username,
       displayName: data.displayName,
       email: data.email ?? null,
       phone: data.phone ?? null,

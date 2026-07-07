@@ -138,6 +138,21 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/Profile" }
+  /users/by-username/{username}:
+    get:
+      operationId: getUserByUsername
+      tags: [users]
+      parameters:
+        - { name: username, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /users/{id}:
     get:
       operationId: getUser
@@ -3268,6 +3283,8 @@ components:
         website: { type: ["string", "null"] }
         isVerified: { type: boolean }
         createdAt: { type: string, format: date-time }
+        usernameChangedAt: { type: ["string", "null"], format: date-time }
+        displayNameChangedAt: { type: ["string", "null"], format: date-time }
         friendCount: { type: ["integer", "null"] }
         followerCount: { type: ["integer", "null"] }
         followingCount: { type: ["integer", "null"] }
@@ -3302,6 +3319,13 @@ components:
     ProfileUpdate:
       type: object
       properties:
+        username:
+          {
+            type: string,
+            minLength: 3,
+            maxLength: 30,
+            pattern: "^[a-z0-9](?:[a-z0-9._]*[a-z0-9])?$",
+          }
         displayName: { type: string, minLength: 1 }
         bio: { type: string }
         birthday: { type: string }
