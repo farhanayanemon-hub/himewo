@@ -733,6 +733,77 @@ export function useGetTodaysBirthdays<TData = Awaited<ReturnType<typeof getToday
 
 
 
+export const getGetUserByUsernameUrl = (username: string,) => {
+
+
+
+
+  return `/api/users/by-username/${username}`
+}
+
+export const getUserByUsername = async (username: string, options?: RequestInit): Promise<Profile> => {
+
+  return customFetch<Profile>(getGetUserByUsernameUrl(username),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetUserByUsernameQueryKey = (username: string,) => {
+    return [
+    `/api/users/by-username/${username}`
+    ] as const;
+    }
+
+
+export const getGetUserByUsernameQueryOptions = <TData = Awaited<ReturnType<typeof getUserByUsername>>, TError = ErrorType<NotFoundResponse>>(username: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUserByUsername>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetUserByUsernameQueryKey(username);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getUserByUsername>>> = ({ signal }) => getUserByUsername(username, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: username !== null && username !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getUserByUsername>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetUserByUsernameQueryResult = NonNullable<Awaited<ReturnType<typeof getUserByUsername>>>
+export type GetUserByUsernameQueryError = ErrorType<NotFoundResponse>
+
+
+
+export function useGetUserByUsername<TData = Awaited<ReturnType<typeof getUserByUsername>>, TError = ErrorType<NotFoundResponse>>(
+ username: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUserByUsername>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetUserByUsernameQueryOptions(username,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getGetUserUrl = (id: string,) => {
 
 

@@ -1,10 +1,21 @@
-import { pgTable, uuid, text, boolean, timestamp, date } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  uuid,
+  text,
+  boolean,
+  timestamp,
+  date,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { userRoleEnum } from "./enums";
 
 // Profiles are keyed by the Supabase Auth user id (auth.users.id).
-export const profilesTable = pgTable("profiles", {
+export const profilesTable = pgTable(
+  "profiles",
+  {
   id: uuid("id").primaryKey(),
   username: text("username").notNull().unique(),
   displayName: text("display_name").notNull(),
@@ -22,6 +33,11 @@ export const profilesTable = pgTable("profiles", {
   interests: text("interests"),
   website: text("website"),
   isVerified: boolean("is_verified").notNull().default(false),
+  // FB-style rename cooldowns. Null = never changed since signup (first change is free).
+  usernameChangedAt: timestamp("username_changed_at", { withTimezone: true }),
+  displayNameChangedAt: timestamp("display_name_changed_at", {
+    withTimezone: true,
+  }),
   // Platform role. Governs admin-panel access and RBAC. Defaults to "user".
   role: userRoleEnum("role").notNull().default("user"),
   // Moderation state (set from the admin panel).
@@ -35,7 +51,12 @@ export const profilesTable = pgTable("profiles", {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
-});
+  },
+  (t) => [
+    // Case-insensitive uniqueness: "John" and "john" are the same username.
+    uniqueIndex("profiles_username_lower_idx").on(sql`lower(${t.username})`),
+  ],
+);
 
 export const insertProfileSchema = createInsertSchema(profilesTable).omit({
   createdAt: true,

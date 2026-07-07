@@ -34,6 +34,7 @@ import SavedPage from "@/pages/saved";
 import AlbumPage from "@/pages/album";
 import EventsPage, { EventDetailPage } from "@/pages/events";
 import LivePage, { LiveStreamPage } from "@/pages/live";
+import UsernameProfilePage from "@/pages/username-profile";
 import WatchPage from "@/pages/watch";
 import MarketplacePage, {
   MarketplaceListingPage,
@@ -100,6 +101,8 @@ function AppRoutes() {
       <Route path="/watch" component={WatchPage} />
       <Route path="/live" component={LivePage} />
       <Route path="/live/:id" component={LiveStreamPage} />
+      {/* himewo.com/<username> → profile. Must stay last before NotFound. */}
+      <Route path="/:username" component={UsernameProfilePage} />
       <Route component={NotFound} />
     </Switch>
   );

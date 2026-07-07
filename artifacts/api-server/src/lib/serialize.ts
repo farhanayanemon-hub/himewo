@@ -90,6 +90,9 @@ export function toProfile(
     website: includeIntro ? row.website : null,
     isVerified: row.isVerified,
     createdAt: row.createdAt,
+    // Rename-cooldown timestamps are owner-only (shown in Settings).
+    usernameChangedAt: includeContact ? row.usernameChangedAt : null,
+    displayNameChangedAt: includeContact ? row.displayNameChangedAt : null,
   };
 }
 
