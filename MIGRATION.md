@@ -23,14 +23,25 @@ new workspace at them.
 
 ---
 
-## LATEST WORK (as of 2026-07-05)
+## LATEST WORK (as of 2026-07-07)
 
-- **Ads dashboard** (ads.himewo.com) is live and current: a Facebook-style tabbed
-  **Ads Manager** (Campaigns / Ad Sets / Ads), a unified **Create Ad wizard**
-  (Campaign → Audience → Creative & Ad → Review in one dialog), a
-  draft → Publish → pending-review → admin-approve lifecycle, and **Insights** with
-  CSV export + a conversion pixel. All ads-dashboard **UI copy is English** (the app
-  UI is English; chat with the user stays Banglish).
+- **Username system (FB-style)** just shipped: username changeable from
+  Settings → Account Center with a **30-day cooldown** (display name: **60-day**
+  cooldown; the first change after signup is free — `usernameChangedAt` /
+  `displayNameChangedAt` start NULL). `himewo.com/<username>` resolves to the
+  profile via a catch-all web route. Case-insensitive uniqueness is enforced by a
+  `lower(username)` unique index on BOTH dev and live DBs; all username writes go
+  through `artifacts/api-server/src/lib/username.ts` (normalize + reserved-name
+  list). See `.agents/memory/himewo-username-system.md`.
+- **All user accounts were wiped on 2026-07-07** at the user's request (Supabase
+  auth users deleted + `profiles` truncated on live). Fresh signups only.
+- Earlier the same day: FB-style default avatar (`artifacts/web/src/lib/avatar.ts`),
+  black primary buttons, Create Story card shows the user's photo.
+- **Ads dashboard** (ads.himewo.com) is live: Facebook-style Ads Manager
+  (Campaigns / Ad Sets / Ads), Create Ad wizard, review lifecycle, Insights with
+  CSV export + conversion pixel. All in-app UI copy is English.
+- **The agent memory (`.agents/memory/`) is committed in this repo** — the new
+  account's agent gets the full memory automatically on import.
 - Everything above is pushed to GitHub `main` and deployed. The live checks in
   step 4 all return 200.
 

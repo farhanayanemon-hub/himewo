@@ -28,6 +28,7 @@
 - [Dark mode + verified badge](himewo-darkmode-verified.md) — theme init MUST run in main.tsx pre-render (localStorage `himewo-theme`); isVerified already in Profile contract, only UI badge was missing; follow UI already existed.
 - [api-zod codegen ambiguity](himewo-api-zod-codegen.md) — new OpenAPI path+query endpoint needs a manual *Params re-export in lib/api-zod/src/index.ts or codegen typecheck fails (TS2308).
 - [Comment replies & mentions](himewo-comment-mentions.md) — one-level threads (server flattens reply-to-reply); mention token `@[Name](user:<uuid>)` shared contract; UUID-guard before profiles lookup.
+- [Mentions + @highlight](himewo-mentions-highlight.md) — bare `@` shows friends (empty query valid, check `!== null`); @highlight token notifies all friends; mention notifs MUST be visibility-gated.
 - [Reel reactions / method drift](himewo-reel-reactions.md) — reel_likes.type + reaction routes; Express verb MUST match OpenAPI verb (spec-PUT vs server-POST silently 404s all generated clients).
 - [Feeling/activity + check-in](himewo-feeling-checkin.md) — posts have feeling_verb/feeling/feeling_emoji/location text cols; feelings verb="feeling", activities own verb; location is free text (no geo); render each half independently.
 - [Ads backend](himewo-ads-system.md) — FB-style ads (account→campaign→ad set→ad); roles admin/advertiser/analyst; ANY client-supplied FK (creativeId/savedAudienceId) MUST be verified same-account (serial-ID cross-tenant guard); text status cols; live tables via Supabase Mgmt API.
@@ -37,6 +38,9 @@
 - [Generated query hooks queryKey](himewo-generated-query-hooks.md) — Orval query hooks make queryKey REQUIRED when passing a query options object (enabled); new consumer apps hit TS2741; pass get*QueryKey.
 - [Conversion pixel hardening](himewo-pixel-hardening.md) — public /ads/pixel(.gif) beacon must NEVER 500 + rows stay clean: clamp valueCents (int4), UUID-guard viewer w/ FK-retry, cap metadata, 10s rapid-dup suppression.
 - [Ads Insights dev DB](ads-insights-dev-db.md) — drizzle-kit push/push-force fail here (needs TTY for conflict prompts) → apply DDL via executeSql; dev DB holds a huge orphaned himewo social+ads schema unrelated to current code.
+- [Username system](himewo-username-system.md) — 30d/60d rename cooldowns (null=first change free); ALL username writes must go through lib/username.ts; lower(username) unique index on dev+live; new top-level web route ⇒ add to reserved list.
 - [Ads Insights index perf](ads-insights-index-perf.md) — event tables have (account_id,created_at[,campaign/adset]) composite indexes; date filter MUST stay sargable (compare bare created_at, no `::date` cast on the column) or indexes go unused.
 - [Ads Insights live DB](ads-insights-live-db.md) — Insights reads LIVE prod DB via Railway-resolved URL (not a stored secret); live events NOT denormalized → join ads→ad_sets; dev push stays safe.
 - [ads live false-blank](ads-live-false-blank.md) — screenshot tool showed ads.himewo.com blank but it renders fine (jsdom + user confirmed); cross-check before "fixing", chromium wont launch here (missing libglib).
+- [Ads map + preview](himewo-ads-map-preview.md) — location targeting is NAME-only (no geo/radius — would break matching); Leaflet CircleMarker needs bubblingMouseEvents:false or map-click double-toggles.
+- [Live users wipe + profiles table](himewo-live-users-wipe.md) — live DB user table is `profiles` (not `users`); wipe = Supabase admin delete + TRUNCATE profiles CASCADE; ads preview moved to /ads-manager (root conflict).
