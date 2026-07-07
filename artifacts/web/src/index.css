@@ -61,7 +61,7 @@
   --popover: 240 20% 98%;
   --popover-foreground: 222 47% 11%;
   --popover-border: 240 8% 93%;
-  --primary: 271 70% 50%;
+  --primary: 0 0% 0%;
   --primary-foreground: 0 0% 100%;
   --secondary: 240 6% 95%;
   --secondary-foreground: 222 47% 11%;
@@ -73,7 +73,7 @@
   --destructive-foreground: 0 0% 100%;
   --border: 240 8% 93%;
   --input: 240 8% 93%;
-  --ring: 271 70% 50%;
+  --ring: 0 0% 0%;
   --radius: 1rem;
 
   /* Aurora glass tokens (LIGHT) */
@@ -96,8 +96,8 @@
   --popover: 0 0% 4%;
   --popover-foreground: 220 13% 91%;
   --popover-border: 0 0% 10%;
-  --primary: 270 95% 75%;
-  --primary-foreground: 0 0% 100%;
+  --primary: 0 0% 98%;
+  --primary-foreground: 0 0% 5%;
   --secondary: 0 0% 7%;
   --secondary-foreground: 220 13% 91%;
   --muted: 0 0% 7%;
@@ -197,13 +197,17 @@
   }
 
   .aurora-button {
-    background: linear-gradient(135deg, rgba(94, 234, 212, 0.9), rgba(192, 132, 252, 0.9));
+    background: #000000;
     color: #ffffff;
+    border: 1px solid #000000;
     transition: all 0.3s ease;
   }
   .aurora-button:hover {
-    background: linear-gradient(135deg, rgba(94, 234, 212, 1), rgba(192, 132, 252, 1));
-    box-shadow: 0 0 15px rgba(192, 132, 252, 0.5);
+    background: #1a1a1a;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.35);
+  }
+  .dark .aurora-button {
+    border-color: rgba(255, 255, 255, 0.6);
   }
 
   .aurora-story-ring {

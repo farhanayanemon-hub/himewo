@@ -1,4 +1,5 @@
 import { MainLayout } from "@/components/layout/main-layout";
+import { avatarSrc } from "@/lib/avatar";
 import {
   useListNotifications,
   useMarkAllNotificationsRead,
@@ -147,7 +148,7 @@ export default function NotificationsPage() {
       <div className="relative shrink-0">
         <div className="w-14 h-14 rounded-full bg-muted overflow-hidden">
           {notif.actor?.avatarUrl && (
-            <img src={notif.actor.avatarUrl} className="w-full h-full object-cover" alt="" />
+            <img src={avatarSrc(notif.actor.avatarUrl)} className="w-full h-full object-cover" alt="" />
           )}
         </div>
         <div className="absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full bg-primary flex items-center justify-center border-2 border-card">

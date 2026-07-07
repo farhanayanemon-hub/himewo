@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { avatarSrc } from "@/lib/avatar";
 import { Link } from "wouter";
 import {
   useGetUserFriends,
@@ -108,7 +109,7 @@ export function ProfileView({
         <div className="px-6 pb-4 relative">
           <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-16">
             <img
-              src={profile.avatarUrl || ""}
+              src={avatarSrc(profile.avatarUrl)}
               className="w-32 h-32 rounded-full border-4 border-card object-cover bg-muted relative z-10"
               alt="Avatar"
             />
@@ -191,7 +192,7 @@ export function ProfileView({
                   <Link key={f.id} href={`/profile/${f.id}`}>
                     <div className="cursor-pointer">
                       <img
-                        src={f.avatarUrl || ""}
+                        src={avatarSrc(f.avatarUrl)}
                         className="w-full aspect-square rounded-lg object-cover bg-muted"
                         alt={f.displayName}
                       />

@@ -1,4 +1,5 @@
 import { MainLayout } from "@/components/layout/main-layout";
+import { avatarSrc } from "@/lib/avatar";
 import {
   useListReels,
   useLikeReel,
@@ -67,7 +68,7 @@ function ReelCard({
         <div className="absolute bottom-4 left-4 right-16 text-white z-10">
           <div className="flex items-center gap-2 mb-2">
             <img
-              src={reel.author.avatarUrl || ""}
+              src={avatarSrc(reel.author.avatarUrl)}
               className="w-10 h-10 rounded-full object-cover border border-white/20"
               alt=""
             />

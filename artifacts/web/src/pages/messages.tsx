@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { avatarSrc } from "@/lib/avatar";
 import { MainLayout } from "@/components/layout/main-layout";
 import { 
   useListConversations, 
@@ -221,7 +222,7 @@ export default function MessagesPage() {
                     <ArrowLeft className="w-6 h-6" />
                   </Link>
                   <img 
-                    src={activeConv?.avatarUrl || activeConv?.members.find(m => m.user.id !== user?.id)?.user.avatarUrl || ""} 
+                    src={avatarSrc(activeConv?.avatarUrl || activeConv?.members.find(m => m.user.id !== user?.id)?.user.avatarUrl)} 
                     className="w-10 h-10 rounded-full object-cover bg-muted" 
                     alt="" 
                   />
@@ -253,7 +254,7 @@ export default function MessagesPage() {
                       return (
                         <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}>
                           {!isMe && (
-                            <img src={msg.sender.avatarUrl || ""} className="w-8 h-8 rounded-full object-cover self-end mr-2 bg-muted" alt="" />
+                            <img src={avatarSrc(msg.sender.avatarUrl)} className="w-8 h-8 rounded-full object-cover self-end mr-2 bg-muted" alt="" />
                           )}
                           <div className={`max-w-[70%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                             <div 
@@ -353,7 +354,7 @@ export default function MessagesPage() {
                     disabled={createConversation.isPending}
                     className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/60 transition-colors text-left disabled:opacity-60"
                   >
-                    <img src={friend.avatarUrl || ""} className="w-11 h-11 rounded-full object-cover bg-muted" alt="" />
+                    <img src={avatarSrc(friend.avatarUrl)} className="w-11 h-11 rounded-full object-cover bg-muted" alt="" />
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold truncate">{friend.displayName}</div>
                       <div className="text-xs text-muted-foreground truncate">@{friend.username}</div>

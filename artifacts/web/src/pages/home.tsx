@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { avatarSrc } from "@/lib/avatar";
 import { MainLayout } from "@/components/layout/main-layout";
 import { PostCard } from "@/components/post-card";
 import { PostComposer } from "@/components/post-composer";
@@ -58,7 +59,7 @@ function StoryRow() {
           className="w-28 h-48 shrink-0 rounded-2xl relative overflow-hidden group cursor-pointer border border-card-border card-depth lift-on-hover"
         >
           <img
-            src={group.stories[0]?.mediaUrl || group.author.avatarUrl || ""}
+            src={group.stories[0]?.mediaUrl || avatarSrc(group.author.avatarUrl)}
             className="w-full h-full object-cover"
             alt=""
           />
@@ -66,7 +67,7 @@ function StoryRow() {
           <div
             className={`absolute top-3 left-3 rounded-full ${group.hasUnseen ? "aurora-story-ring" : "p-[2px] bg-white/60"}`}
           >
-            <img src={group.author.avatarUrl || ""} className="w-8 h-8 rounded-full object-cover border-2 border-black/40" alt="" />
+            <img src={avatarSrc(group.author.avatarUrl)} className="w-8 h-8 rounded-full object-cover border-2 border-black/40" alt="" />
           </div>
           <div className="absolute bottom-2 left-2 right-2 text-white text-xs font-medium leading-tight line-clamp-2">
             {group.author.displayName}
@@ -101,7 +102,7 @@ function FriendRequestsRail() {
         {requests.slice(0, 4).map((req) => (
           <div key={req.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/40 transition-colors">
             <Link href={`/profile/${req.requester.id}`}>
-              <img src={req.requester.avatarUrl || ""} className="w-12 h-12 rounded-full object-cover bg-muted shrink-0" alt="" />
+              <img src={avatarSrc(req.requester.avatarUrl)} className="w-12 h-12 rounded-full object-cover bg-muted shrink-0" alt="" />
             </Link>
             <div className="flex-1 min-w-0">
               <Link href={`/profile/${req.requester.id}`} className="font-semibold text-sm hover:underline block truncate">
@@ -153,9 +154,9 @@ function BirthdaysRail() {
               className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/50 transition-colors"
             >
               <div className="relative shrink-0">
-                <img src={friend.avatarUrl || ""} className="w-9 h-9 rounded-full object-cover bg-muted" alt="" />
+                <img src={avatarSrc(friend.avatarUrl)} className="w-9 h-9 rounded-full object-cover bg-muted" alt="" />
                 <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center border-2 border-card">
-                  <Cake className="w-3 h-3 text-white" />
+                  <Cake className="w-3 h-3 text-primary-foreground" />
                 </div>
               </div>
               <p className="text-sm text-foreground">
@@ -195,7 +196,7 @@ function ContactsRail() {
                 className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/50 transition-colors"
               >
                 <div className="relative">
-                  <img src={friend.avatarUrl || ""} className="w-8 h-8 rounded-full object-cover bg-muted" alt="" />
+                  <img src={avatarSrc(friend.avatarUrl)} className="w-8 h-8 rounded-full object-cover bg-muted" alt="" />
                   {online && <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-card rounded-full" />}
                 </div>
                 <span className="font-medium text-sm">{friend.displayName}</span>
@@ -231,7 +232,7 @@ function PeopleYouMayKnowRail() {
         {suggestions.slice(0, 3).map((user) => (
           <div key={user.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/40 transition-colors">
             <Link href={`/profile/${user.id}`}>
-              <img src={user.avatarUrl || ""} className="w-12 h-12 rounded-full object-cover bg-muted shrink-0" alt="" />
+              <img src={avatarSrc(user.avatarUrl)} className="w-12 h-12 rounded-full object-cover bg-muted shrink-0" alt="" />
             </Link>
             <div className="flex-1 min-w-0">
               <Link href={`/profile/${user.id}`} className="font-semibold text-sm hover:underline block truncate">

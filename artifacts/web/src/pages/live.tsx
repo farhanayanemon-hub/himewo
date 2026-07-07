@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { avatarSrc } from "@/lib/avatar";
 import { useParams, Link, useLocation } from "wouter";
 import { MainLayout } from "@/components/layout/main-layout";
 import {
@@ -156,7 +157,7 @@ export default function LivePage() {
               <Link key={s.id} href={`/live/${s.id}`}>
                 <div className="bg-card border border-border rounded-xl shadow-sm p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors cursor-pointer">
                   <img
-                    src={s.host.avatarUrl || ""}
+                    src={avatarSrc(s.host.avatarUrl)}
                     className="w-12 h-12 rounded-full object-cover bg-muted"
                     alt=""
                   />
@@ -539,7 +540,7 @@ export function LiveStreamPage() {
             <div className="bg-card border border-border rounded-xl shadow-sm p-4 flex items-center gap-3">
               <Link href={`/profile/${stream.host.id}`}>
                 <img
-                  src={stream.host.avatarUrl || ""}
+                  src={avatarSrc(stream.host.avatarUrl)}
                   className="w-11 h-11 rounded-full object-cover bg-muted cursor-pointer"
                   alt=""
                 />

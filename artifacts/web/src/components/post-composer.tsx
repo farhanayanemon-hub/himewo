@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { avatarSrc } from "@/lib/avatar";
 import {
   useGetCurrentUser,
   useCreatePost,
@@ -245,7 +246,7 @@ export function PostComposer({
   return (
     <div className="aurora-glass-card rounded-2xl p-4 mb-6">
       <div className="flex gap-3">
-        <img src={user?.avatarUrl || ""} className="w-10 h-10 rounded-full object-cover" alt="" />
+        <img src={avatarSrc(user?.avatarUrl)} className="w-10 h-10 rounded-full object-cover" alt="" />
         <div className="flex-1">
           <div className="mb-2 flex items-center gap-2">
             <span className="text-sm font-semibold text-foreground">

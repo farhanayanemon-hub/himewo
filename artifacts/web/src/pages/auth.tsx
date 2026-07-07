@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { avatarSrc } from "@/lib/avatar";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,7 +53,7 @@ function DevLogin() {
             onClick={() => signInAsDevUser(u.id)}
             className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:border-primary hover:bg-primary/5 transition-all text-left"
           >
-            <img src={u.avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover bg-muted" />
+            <img src={avatarSrc(u.avatarUrl)} alt="" className="w-10 h-10 rounded-full object-cover bg-muted" />
             <div className="overflow-hidden">
               <div className="font-medium text-sm truncate">{u.displayName}</div>
               <div className="text-xs text-muted-foreground truncate">@{u.username}</div>
@@ -202,7 +203,7 @@ function SignUpForm() {
       <Button
         type="submit"
         disabled={loading}
-        className="w-full h-12 text-lg font-bold rounded-lg bg-[#42b72a] hover:bg-[#36a420] text-white"
+        className="w-full h-12 text-lg font-bold rounded-lg bg-black hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200"
       >
         {loading ? "Creating account…" : "Sign Up"}
       </Button>
@@ -359,7 +360,7 @@ function FacebookCard() {
             <Button
               type="button"
               onClick={() => setMode("signup")}
-              className="w-full h-12 text-lg font-bold rounded-lg bg-[#42b72a] hover:bg-[#36a420] text-white"
+              className="w-full h-12 text-lg font-bold rounded-lg bg-black hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200"
             >
               Create new account
             </Button>

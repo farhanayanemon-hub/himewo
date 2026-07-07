@@ -1,4 +1,5 @@
 import { useState, type ComponentType } from "react";
+import { avatarSrc } from "@/lib/avatar";
 import { Link, useLocation } from "wouter";
 import {
   Home,
@@ -123,7 +124,7 @@ export function MobileNav({
               className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors"
             >
               <img
-                src={user?.avatarUrl || ""}
+                src={avatarSrc(user?.avatarUrl)}
                 alt=""
                 className="w-9 h-9 rounded-full object-cover"
               />

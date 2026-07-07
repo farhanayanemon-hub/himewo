@@ -1,4 +1,5 @@
 import { MainLayout } from "@/components/layout/main-layout";
+import { avatarSrc } from "@/lib/avatar";
 import {
   useGetPost,
   useListComments,
@@ -76,7 +77,7 @@ function CommentItem({
   return (
     <div className="flex gap-3">
       <img
-        src={comment.author.avatarUrl || ""}
+        src={avatarSrc(comment.author.avatarUrl)}
         className={`${isReply ? "w-7 h-7" : "w-8 h-8"} rounded-full object-cover shrink-0`}
         alt=""
       />

@@ -1,4 +1,5 @@
 import { MainLayout } from "@/components/layout/main-layout";
+import { avatarSrc } from "@/lib/avatar";
 import {
   useListFriends,
   useListFriendRequests,
@@ -49,7 +50,7 @@ export default function FriendsPage() {
                   href={`/profile/${friend.id}`}
                   className="border border-border rounded-xl p-4 flex flex-col items-center text-center gap-2 hover:bg-muted/40 transition-colors"
                 >
-                  <img src={friend.avatarUrl || ""} className="w-16 h-16 rounded-full object-cover bg-muted" alt="" />
+                  <img src={avatarSrc(friend.avatarUrl)} className="w-16 h-16 rounded-full object-cover bg-muted" alt="" />
                   <span className="font-semibold text-sm truncate w-full">{friend.displayName}</span>
                   {friend.username && (
                     <span className="text-xs text-muted-foreground truncate w-full">@{friend.username}</span>
@@ -68,7 +69,7 @@ export default function FriendsPage() {
             <div className="grid grid-cols-2 gap-4">
               {requests?.map(req => (
                 <div key={req.id} className="border border-border rounded-xl p-4 flex flex-col items-center text-center gap-3">
-                  <img src={req.requester.avatarUrl || ""} className="w-20 h-20 rounded-full object-cover" alt="" />
+                  <img src={avatarSrc(req.requester.avatarUrl)} className="w-20 h-20 rounded-full object-cover" alt="" />
                   <div>
                     <Link href={`/profile/${req.requester.id}`} className="font-semibold hover:underline">
                       {req.requester.displayName}
@@ -103,7 +104,7 @@ export default function FriendsPage() {
           <div className="grid grid-cols-2 gap-4">
             {suggestions?.map(user => (
               <div key={user.id} className="border border-border rounded-xl p-4 flex flex-col items-center text-center gap-3">
-                <img src={user.avatarUrl || ""} className="w-20 h-20 rounded-full object-cover" alt="" />
+                <img src={avatarSrc(user.avatarUrl)} className="w-20 h-20 rounded-full object-cover" alt="" />
                 <div>
                   <Link href={`/profile/${user.id}`} className="font-semibold hover:underline">
                     {user.displayName}

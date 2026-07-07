@@ -1,4 +1,5 @@
 import { MainLayout } from "@/components/layout/main-layout";
+import { avatarSrc } from "@/lib/avatar";
 import { Bookmark, Loader2, MapPin, ImagePlus, X, Play, Heart } from "lucide-react";
 import { Link } from "wouter";
 import {
@@ -182,7 +183,7 @@ export default function SavedPage() {
                           </div>
                           <div className="absolute bottom-2 left-2 right-2 flex items-center gap-2 text-white">
                             <img
-                              src={reel.author.avatarUrl || ""}
+                              src={avatarSrc(reel.author.avatarUrl)}
                               className="w-6 h-6 rounded-full object-cover border border-white/30"
                               alt=""
                             />

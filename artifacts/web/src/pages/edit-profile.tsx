@@ -1,4 +1,5 @@
 import { MainLayout } from "@/components/layout/main-layout";
+import { avatarSrc } from "@/lib/avatar";
 import { useAuth } from "@/lib/auth";
 import { useUpdateMyProfile, getGetCurrentUserQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -34,7 +35,7 @@ export default function EditProfilePage() {
     email: user?.email || "",
     phone: user?.phone || "",
   });
-  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || "");
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl ?? "");
   const [coverUrl, setCoverUrl] = useState(user?.coverUrl || "");
   const [uploading, setUploading] = useState<"avatar" | "cover" | null>(null);
 
@@ -147,7 +148,7 @@ export default function EditProfilePage() {
           <div className="px-6">
             <div className="relative inline-block -mt-14">
               <img
-                src={avatarUrl || ""}
+                src={avatarSrc(avatarUrl)}
                 className="w-28 h-28 rounded-full border-4 border-card object-cover bg-muted"
                 alt="Avatar"
               />
