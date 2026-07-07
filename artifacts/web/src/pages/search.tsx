@@ -1,4 +1,5 @@
 import { MainLayout } from "@/components/layout/main-layout";
+import { avatarSrc } from "@/lib/avatar";
 import { useSearchUsers } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { Loader2, Search } from "lucide-react";
@@ -29,7 +30,7 @@ export default function SearchPage() {
             users?.map(user => (
               <div key={user.id} className="flex items-center gap-4 p-4 border border-border rounded-xl hover:bg-muted/50 transition-colors">
                 <Link href={`/profile/${user.id}`} className="w-16 h-16 shrink-0">
-                  <img src={user.avatarUrl || ""} className="w-full h-full rounded-full object-cover bg-muted" alt="" />
+                  <img src={avatarSrc(user.avatarUrl)} className="w-full h-full rounded-full object-cover bg-muted" alt="" />
                 </Link>
                 <div className="flex-1 min-w-0">
                   <Link href={`/profile/${user.id}`} className="font-bold text-lg hover:underline truncate block">

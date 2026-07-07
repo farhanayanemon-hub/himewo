@@ -1,31 +1,32 @@
 kind = "web"
-previewPath = "/"
-title = "HiMewo Ads Manager"
-version = "1.0.0"
-id = "artifacts/ads-dashboard"
-router = "path"
+  previewPath = "/ads-manager"
+  title = "HiMewo Ads Manager"
+  version = "1.0.0"
+  id = "artifacts/ads-dashboard"
+  router = "path"
 
-[[integratedSkills]]
-name = "react-vite"
-version = "1.0.0"
+  [[integratedSkills]]
+  name = "react-vite"
+  version = "1.0.0"
 
-[[services]]
-name = "ads-dashboard"
-paths = [ "/" ]
-localPort = 22334
+  [[services]]
+  name = "ads-dashboard"
+  paths = [ "/ads-manager" ]
+  localPort = 22334
 
-[services.development]
-run = "pnpm --filter @workspace/ads-dashboard run dev"
+  [services.development]
+  run = "pnpm --filter @workspace/ads-dashboard run dev"
 
-[services.production]
-build = [ "pnpm", "--filter", "@workspace/ads-dashboard", "run", "build" ]
-publicDir = "artifacts/ads-dashboard/dist/public"
-serve = "static"
+  [services.production]
+  build = [ "pnpm", "--filter", "@workspace/ads-dashboard", "run", "build" ]
+  publicDir = "artifacts/ads-dashboard/dist/public"
+  serve = "static"
 
-[[services.production.rewrites]]
-from = "/*"
-to = "/index.html"
+  [[services.production.rewrites]]
+  from = "/*"
+  to = "/index.html"
 
-[services.env]
-PORT = "22334"
-BASE_PATH = "/"
+  [services.env]
+  PORT = "22334"
+  BASE_PATH = "/ads-manager"
+  

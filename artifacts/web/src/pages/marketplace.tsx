@@ -1,4 +1,5 @@
 import { MainLayout } from "@/components/layout/main-layout";
+import { avatarSrc } from "@/lib/avatar";
 import {
   useListMarketplaceListings,
   useGetMarketplaceListing,
@@ -526,7 +527,7 @@ export function MarketplaceListingPage() {
               <div className="flex items-center gap-3 hover:bg-muted/50 rounded-xl p-2 -mx-2 transition-colors cursor-pointer">
                 <div className="w-11 h-11 rounded-full bg-muted overflow-hidden">
                   {listing.seller.avatarUrl ? (
-                    <img src={listing.seller.avatarUrl} alt="" className="w-full h-full object-cover" />
+                    <img src={avatarSrc(listing.seller.avatarUrl)} alt="" className="w-full h-full object-cover" />
                   ) : null}
                 </div>
                 <div>

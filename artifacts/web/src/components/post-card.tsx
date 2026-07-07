@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { avatarSrc } from "@/lib/avatar";
 import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { VerifiedBadge } from "@/components/verified-badge";
@@ -193,7 +194,7 @@ export function PostCard({ post }: { post: Post }) {
     <div className="aurora-glass-card rounded-2xl p-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div className="flex items-center justify-between mb-3">
         <Link href={`/profile/${post.author.id}`} className="flex items-center gap-3 group">
-          <img src={post.author.avatarUrl || ""} className="w-10 h-10 rounded-full object-cover group-hover:ring-2 ring-primary transition-all" alt="" />
+          <img src={avatarSrc(post.author.avatarUrl)} className="w-10 h-10 rounded-full object-cover group-hover:ring-2 ring-primary transition-all" alt="" />
           <div>
             <div className="font-semibold">
               <span className="group-hover:underline">{post.author.displayName}</span>

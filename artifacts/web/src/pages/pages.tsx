@@ -1,4 +1,5 @@
 import { MainLayout } from "@/components/layout/main-layout";
+import { avatarSrc } from "@/lib/avatar";
 import {
   useListPages,
   useGetPage,
@@ -123,7 +124,7 @@ function PageList() {
                 <div className="border border-border rounded-xl p-4 flex gap-4 hover:bg-muted/50 transition-colors group cursor-pointer">
                   <div className="w-16 h-16 rounded-full bg-muted shrink-0 overflow-hidden">
                     {page.avatarUrl ? (
-                      <img src={page.avatarUrl} className="w-full h-full object-cover" alt="" />
+                      <img src={avatarSrc(page.avatarUrl)} className="w-full h-full object-cover" alt="" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary">
                         <FileText className="w-6 h-6" />
@@ -415,7 +416,7 @@ function ReviewsSection({ page }: { page: Page }) {
           {reviews?.map((rev: PageReview) => (
             <div key={rev.id} className="flex gap-3">
               <img
-                src={rev.user.avatarUrl || ""}
+                src={avatarSrc(rev.user.avatarUrl)}
                 className="w-10 h-10 rounded-full object-cover bg-muted shrink-0"
                 alt=""
               />
@@ -617,7 +618,7 @@ function PageDetail({ id }: { id: number }) {
         <div className="px-6 pb-6 relative">
           <div className="flex justify-between items-end mb-4">
             <img 
-              src={page.avatarUrl || ""} 
+              src={avatarSrc(page.avatarUrl)} 
               className="w-32 h-32 rounded-full border-4 border-card object-cover -mt-16 bg-muted relative z-10" 
               alt="Avatar" 
             />

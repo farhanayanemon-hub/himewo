@@ -1,4 +1,5 @@
 import { MainLayout } from "@/components/layout/main-layout";
+import { avatarSrc } from "@/lib/avatar";
 import {
   useListStories,
   useCreateStory,
@@ -198,7 +199,7 @@ export default function StoriesPage() {
 
           {/* Author Header */}
           <div className="absolute top-6 left-4 right-4 flex items-center gap-3 z-20">
-            <img src={activeGroup.author.avatarUrl || ""} className="w-10 h-10 rounded-full border border-white/20 object-cover" alt="" />
+            <img src={avatarSrc(activeGroup.author.avatarUrl)} className="w-10 h-10 rounded-full border border-white/20 object-cover" alt="" />
             <div>
               <div className="font-bold text-white text-sm drop-shadow-md">{activeGroup.author.displayName}</div>
             </div>

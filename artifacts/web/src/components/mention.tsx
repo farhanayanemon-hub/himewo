@@ -1,3 +1,4 @@
+import { avatarSrc } from "@/lib/avatar";
 import {
   useSearchUsers,
   getSearchUsersQueryKey,
@@ -198,7 +199,7 @@ export function MentionSuggestions({
           className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted/60 text-left"
         >
           <img
-            src={p.avatarUrl || ""}
+            src={avatarSrc(p.avatarUrl)}
             alt=""
             className="w-7 h-7 rounded-full object-cover bg-muted"
           />

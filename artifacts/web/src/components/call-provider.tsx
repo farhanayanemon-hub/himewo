@@ -1,3 +1,4 @@
+import { avatarSrc } from "@/lib/avatar";
 import {
   createContext,
   useCallback,
@@ -265,7 +266,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
             ) : (
               <div className="flex flex-col items-center gap-4 text-white">
                 {peer.avatarUrl ? (
-                  <img src={peer.avatarUrl} className="w-28 h-28 rounded-full object-cover" alt="" />
+                  <img src={avatarSrc(peer.avatarUrl)} className="w-28 h-28 rounded-full object-cover" alt="" />
                 ) : (
                   <div className="w-28 h-28 rounded-full bg-primary/30 flex items-center justify-center text-4xl font-bold">
                     {(peer.name || "?").charAt(0).toUpperCase()}

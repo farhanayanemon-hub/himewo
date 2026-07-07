@@ -1,4 +1,5 @@
 import { MainLayout } from "@/components/layout/main-layout";
+import { avatarSrc } from "@/lib/avatar";
 import {
   useListGroups,
   useGetGroup,
@@ -141,7 +142,7 @@ function GroupList() {
                   <div className="w-20 h-20 rounded-xl bg-muted shrink-0 overflow-hidden">
                     {group.avatarUrl ? (
                       <img
-                        src={group.avatarUrl}
+                        src={avatarSrc(group.avatarUrl)}
                         className="w-full h-full object-cover"
                         alt=""
                       />

@@ -1,4 +1,5 @@
 import { ReactNode, useState, useCallback } from "react";
+import { avatarSrc } from "@/lib/avatar";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import {
@@ -161,7 +162,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
               </Button>
             </Link>
             <Link href="/me">
-              <img src={user?.avatarUrl || ""} alt="" className="w-10 h-10 rounded-full border border-border cursor-pointer object-cover hover:ring-2 ring-primary transition-all" />
+              <img src={avatarSrc(user?.avatarUrl)} alt="" className="w-10 h-10 rounded-full border border-border cursor-pointer object-cover hover:ring-2 ring-primary transition-all" />
             </Link>
           </div>
         </div>
@@ -172,7 +173,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
         <aside className="hidden lg:block w-[280px] shrink-0 sticky top-[88px] h-[calc(100vh-88px)] overflow-y-auto pb-6">
           <nav className="space-y-1">
             <Link href="/me" className="flex items-center gap-3 p-3 mb-2 rounded-2xl aurora-glass-card hover:bg-muted/40 transition-colors">
-              <img src={user?.avatarUrl || ""} alt="" className="w-8 h-8 rounded-full object-cover" />
+              <img src={avatarSrc(user?.avatarUrl)} alt="" className="w-8 h-8 rounded-full object-cover" />
               <span className="font-medium">{user?.displayName}</span>
             </Link>
             {navItems.map(item => {

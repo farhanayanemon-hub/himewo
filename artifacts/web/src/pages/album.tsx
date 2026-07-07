@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { avatarSrc } from "@/lib/avatar";
 import { useParams, Link, useLocation } from "wouter";
 import { MainLayout } from "@/components/layout/main-layout";
 import {
@@ -410,7 +411,7 @@ export default function AlbumPage() {
                         className="w-full flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-left hover:bg-muted transition-colors disabled:opacity-60"
                       >
                         <img
-                          src={f.avatarUrl || ""}
+                          src={avatarSrc(f.avatarUrl)}
                           className="w-7 h-7 rounded-full object-cover bg-muted"
                           alt=""
                         />

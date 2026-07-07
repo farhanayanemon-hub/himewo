@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { avatarSrc } from "@/lib/avatar";
 import { useParams, Link, useLocation } from "wouter";
 import { MainLayout } from "@/components/layout/main-layout";
 import {
@@ -426,7 +427,7 @@ function AttendeeList({ title, people }: { title: string; people: Profile[] }) {
             <Link key={p.id} href={`/profile/${p.id}`}>
               <div className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-muted transition-colors cursor-pointer">
                 <img
-                  src={p.avatarUrl || ""}
+                  src={avatarSrc(p.avatarUrl)}
                   className="w-8 h-8 rounded-full object-cover bg-muted"
                   alt=""
                 />
