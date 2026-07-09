@@ -112,8 +112,10 @@ export function ReactionControl({ viewerReaction, onReact, count, size = "defaul
       {showPicker && (
         // Wrapper spans down to the button (pb-3) so there is NO empty gap between
         // the button and the pill — keeps hover continuous and clicks reliable.
+        // Anchored to the button's left edge (not centered) so the pill never
+        // spills off-screen when the Like button sits near the screen edge.
         <div
-          className="absolute bottom-full left-1/2 -translate-x-1/2 pb-3 z-40"
+          className="absolute bottom-full left-0 pb-3 z-40"
           onMouseEnter={open}
           onMouseLeave={close}
         >
