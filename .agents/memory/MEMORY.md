@@ -44,3 +44,4 @@
 - [ads live false-blank](ads-live-false-blank.md) — screenshot tool showed ads.himewo.com blank but it renders fine (jsdom + user confirmed); cross-check before "fixing", chromium wont launch here (missing libglib).
 - [Ads map + preview](himewo-ads-map-preview.md) — location targeting is NAME-only (no geo/radius — would break matching); Leaflet CircleMarker needs bubblingMouseEvents:false or map-click double-toggles.
 - [Live users wipe + profiles table](himewo-live-users-wipe.md) — live DB user table is `profiles` (not `users`); wipe = Supabase admin delete + TRUNCATE profiles CASCADE; ads preview moved to /ads-manager (root conflict).
+- [Hashtags + auto-albums](himewo-hashtags-albums.md) — hashtag regex/route contract, post bodies MUST render via mention renderers or tags go dead; albums.kind auto-albums non-deletable; /hashtag route before /:username.
