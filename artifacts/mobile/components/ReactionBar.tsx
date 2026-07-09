@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import {
+  Dimensions,
   Modal,
   Pressable,
   Text,
@@ -37,7 +38,11 @@ export function ReactionBar({
     const node = btnRef.current && findNodeHandle(btnRef.current);
     if (node) {
       UIManager.measureInWindow(node, (x, y) => {
-        setAnchor({ x: Math.max(12, x - 8), y: Math.max(80, y - 64) });
+        // Clamp so the picker never spills off either screen edge.
+        const screenW = Dimensions.get("window").width;
+        const pickerW = reactionOrder.length * 38 + 20;
+        const left = Math.min(Math.max(12, x - 8), Math.max(12, screenW - pickerW - 12));
+        setAnchor({ x: left, y: Math.max(80, y - 64) });
         setOpen(true);
       });
     } else {

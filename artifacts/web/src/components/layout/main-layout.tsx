@@ -111,16 +111,16 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
       {/* Top Navbar */}
       <header className="sticky top-0 z-50 w-full aurora-glass-header">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/" className="text-2xl font-extrabold tracking-tight aurora-gradient-text">
-              HiMewo
-            </Link>
+          <div className="flex items-center gap-3">
             <MobileMenuButton
               navItems={navItems}
               shortcutItems={shortcutItems}
               user={user}
               onSignOut={signOut}
             />
+            <Link href="/" className="text-2xl font-extrabold tracking-tight aurora-gradient-text">
+              HiMewo
+            </Link>
 
             <form onSubmit={handleSearch} className="hidden md:flex relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -168,7 +168,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
                 ) : null}
               </Button>
             </Link>
-            <Link href="/me">
+            <Link href="/me" className="hidden md:block">
               <img src={avatarSrc(user?.avatarUrl)} alt="" className="w-10 h-10 rounded-full border border-border cursor-pointer object-cover hover:ring-2 ring-primary transition-all" />
             </Link>
           </div>

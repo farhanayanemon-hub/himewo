@@ -178,9 +178,8 @@
   }
 
   .aurora-glass-header {
-    background: var(--ap-header);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    /* Flat solid background — white in light mode, black in dark mode. */
+    background: hsl(var(--background));
     border-bottom: 1px solid var(--ap-border);
   }
 

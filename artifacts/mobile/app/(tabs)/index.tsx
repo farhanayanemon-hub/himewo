@@ -109,13 +109,13 @@ export default function HomeScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top"]}>
       <View style={[styles.header, { backgroundColor: c.card, borderBottomColor: c.border }]}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-          <Text style={[styles.brand, { color: c.primary }]}>HiMewo</Text>
           <Pressable
             style={[styles.iconBtn, { backgroundColor: c.secondary }]}
             onPress={() => router.push("/menu" as never)}
           >
             <Ionicons name="menu" size={20} color={c.foreground} />
           </Pressable>
+          <Text style={[styles.brand, { color: c.primary }]}>HiMewo</Text>
         </View>
         <View style={{ flexDirection: "row", gap: 8 }}>
           <Pressable

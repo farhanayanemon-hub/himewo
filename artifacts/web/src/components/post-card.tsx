@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { avatarSrc } from "@/lib/avatar";
 import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
@@ -87,6 +87,11 @@ export function PostCard({ post }: { post: Post }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(post.content);
   const [showBoost, setShowBoost] = useState(false);
+  // Optimistic reaction state — updates instantly on tap, server sync follows.
+  const [summary, setSummary] = useState(post.reactions);
+  useEffect(() => {
+    setSummary(post.reactions);
+  }, [post.reactions]);
 
   const isOwner = !!user && user.id === post.author.id;
   const canBoost = isOwner && post.privacy === "public";
@@ -119,10 +124,35 @@ export function PostCard({ post }: { post: Post }) {
   const savePending = saveItem.isPending || unsaveItem.isPending;
 
   const handleReaction = (type: ReactionType) => {
-    if (post.reactions.viewerReaction === type) {
-      removeReaction.mutate({ id: post.id }, { onSuccess: invalidate });
+    const prev = summary.viewerReaction as ReactionType | null | undefined;
+    if (prev === type) {
+      // Optimistically remove the reaction right away.
+      setSummary((s) => {
+        const byType = { ...s.byType };
+        if (byType[type] !== undefined) {
+          byType[type] = Math.max(0, (byType[type] ?? 1) - 1);
+          if (byType[type] === 0) delete byType[type];
+        }
+        return { ...s, total: Math.max(0, s.total - 1), byType, viewerReaction: null };
+      });
+      removeReaction.mutate({ id: post.id }, { onSettled: invalidate });
     } else {
-      setReaction.mutate({ id: post.id, data: { type } }, { onSuccess: invalidate });
+      // Optimistically set/switch the reaction right away.
+      setSummary((s) => {
+        const byType = { ...s.byType };
+        if (prev && byType[prev] !== undefined) {
+          byType[prev] = Math.max(0, (byType[prev] ?? 1) - 1);
+          if (byType[prev] === 0) delete byType[prev];
+        }
+        byType[type] = (byType[type] ?? 0) + 1;
+        return {
+          ...s,
+          total: prev ? s.total : s.total + 1,
+          byType,
+          viewerReaction: type,
+        };
+      });
+      setReaction.mutate({ id: post.id, data: { type } }, { onSettled: invalidate });
     }
   };
 
@@ -188,7 +218,7 @@ export function PostCard({ post }: { post: Post }) {
     }
   };
 
-  const viewerReaction = post.reactions.viewerReaction as ReactionType | null | undefined;
+  const viewerReaction = summary.viewerReaction as ReactionType | null | undefined;
   const meta = privacyMeta[post.privacy] ?? privacyMeta.public;
   const PrivacyIcon = meta.icon;
 
@@ -425,10 +455,10 @@ export function PostCard({ post }: { post: Post }) {
 
       <div className="flex justify-between items-center text-sm text-muted-foreground py-2 border-b border-border mb-1">
         <div className="flex items-center gap-1">
-          {post.reactionsEnabled && post.reactions.total > 0 && (
+          {post.reactionsEnabled && summary.total > 0 && (
             <>
               <div className="flex -space-x-1">
-                {Object.keys(post.reactions.byType).slice(0, 3).map((type) => {
+                {Object.keys(summary.byType).slice(0, 3).map((type) => {
                   const rType = type as ReactionType;
                   return (
                     <div key={type} className="w-5 h-5 rounded-full flex items-center justify-center bg-background border border-border text-[11px] leading-none">
@@ -437,7 +467,7 @@ export function PostCard({ post }: { post: Post }) {
                   );
                 })}
               </div>
-              <span className="ml-1">{post.reactions.total}</span>
+              <span className="ml-1">{summary.total}</span>
             </>
           )}
         </div>
