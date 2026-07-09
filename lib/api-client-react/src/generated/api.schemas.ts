@@ -1909,12 +1909,22 @@ export interface SavedItemInput {
   entityId: number;
 }
 
+export type AlbumKind = typeof AlbumKind[keyof typeof AlbumKind];
+
+
+export const AlbumKind = {
+  custom: 'custom',
+  profile: 'profile',
+  cover: 'cover',
+} as const;
+
 export interface Album {
   id: number;
   ownerId: string;
   name: string;
   /** @nullable */
   description?: string | null;
+  kind?: AlbumKind;
   /** @nullable */
   coverUrl?: string | null;
   photoCount: number;
@@ -2428,6 +2438,11 @@ limit?: number;
 };
 
 export type GetWatchFeedParams = {
+cursor?: number;
+limit?: number;
+};
+
+export type GetHashtagPostsParams = {
 cursor?: number;
 limit?: number;
 };

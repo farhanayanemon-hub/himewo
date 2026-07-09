@@ -31,7 +31,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { MobileNav } from "./mobile-nav";
+import { MobileNav, MobileMenuButton } from "./mobile-nav";
 
 function ThemeToggle() {
   const [isDark, setIsDark] = useState(() =>
@@ -115,6 +115,13 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
             <Link href="/" className="text-2xl font-extrabold tracking-tight aurora-gradient-text">
               HiMewo
             </Link>
+            <MobileMenuButton
+              navItems={navItems}
+              shortcutItems={shortcutItems}
+              user={user}
+              onSignOut={signOut}
+            />
+
             <form onSubmit={handleSearch} className="hidden md:flex relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input 
@@ -226,12 +233,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
         </aside>
       </div>
 
-      <MobileNav
-        navItems={navItems}
-        shortcutItems={shortcutItems}
-        user={user}
-        onSignOut={signOut}
-      />
+      <MobileNav user={user} />
     </div>
   );
 }

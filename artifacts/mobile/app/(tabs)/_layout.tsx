@@ -81,12 +81,16 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="menu"
+        name="profile"
         options={{
-          title: "Menu",
-          tabBarIcon: ({ color, size }) => <Ionicons name="menu" size={size} color={color} />,
+          title: "Profile",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person-circle" size={size} color={color} />
+          ),
         }}
       />
+      {/* Menu now opens from the header button beside the logo. */}
+      <Tabs.Screen name="menu" options={{ href: null }} />
     </Tabs>
   );
 }

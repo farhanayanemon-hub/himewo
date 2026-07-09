@@ -10,7 +10,7 @@ const RESERVED_USERNAMES = new Set([
   "messages", "reels", "groups", "pages", "marketplace", "notifications",
   "search", "settings", "earnings", "stories", "memories", "saved", "albums",
   "events", "watch", "live", "login", "signup", "auth", "help", "about",
-  "terms", "privacy", "himewo", "ads", "ads-manager",
+  "terms", "privacy", "himewo", "ads", "ads-manager", "hashtag", "hashtags",
 ]);
 
 export function isReservedUsername(name: string): boolean {

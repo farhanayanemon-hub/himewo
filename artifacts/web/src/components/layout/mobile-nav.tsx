@@ -24,7 +24,11 @@ function NavIcon({ icon: Icon, color }: { icon: IconType; color?: string }) {
   return <Icon className={`w-5 h-5 ${color ?? "text-muted-foreground"}`} />;
 }
 
-export function MobileNav({
+/**
+ * Menu button that lives in the top header (right beside the logo) on
+ * mobile. Opens the full menu drawer with all navigation + settings.
+ */
+export function MobileMenuButton({
   navItems,
   shortcutItems,
   user,
@@ -35,81 +39,18 @@ export function MobileNav({
   user: { displayName?: string | null; avatarUrl?: string | null } | null;
   onSignOut: () => void;
 }) {
-  const [location] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
-
-  const bottomItems: (MobileNavItem & { color: string })[] = [
-    { href: "/", icon: Home, label: "Home", color: "text-teal-500" },
-    { href: "/friends", icon: Users, label: "Friends", color: "text-purple-500" },
-    { href: "/reels", icon: Video, label: "Reels", color: "text-pink-500" },
-    { href: "/marketplace", icon: Store, label: "Market", color: "text-amber-500" },
-  ];
-
-  const onBottomRoute = bottomItems.some((i) =>
-    i.href === "/" ? location === "/" : location.startsWith(i.href),
-  );
-  const menuActive = !onBottomRoute;
 
   return (
     <>
-      {/* App-style bottom tab bar — mobile only */}
-      <nav
-        className="md:hidden fixed bottom-0 inset-x-0 z-50 aurora-glass-header"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      <button
+        onClick={() => setMenuOpen(true)}
+        aria-label="Menu"
+        className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl aurora-glass press"
       >
-        <div className="flex items-stretch justify-around h-16">
-          {bottomItems.map((item) => {
-            const Icon = item.icon;
-            const isActive =
-              item.href === "/"
-                ? location === "/"
-                : location.startsWith(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex flex-1 flex-col items-center justify-center gap-1 press"
-              >
-                <span
-                  className={`relative flex items-center justify-center w-9 h-9 rounded-[12px] transition-all duration-200 ${
-                    isActive
-                      ? "aurora-glass scale-110 -translate-y-0.5"
-                      : "opacity-80"
-                  }`}
-                >
-                  <Icon className={`relative w-[20px] h-[20px] ${isActive ? item.color : "text-muted-foreground"}`} />
-                </span>
-                <span
-                  className={`text-[10px] font-medium ${isActive ? "text-primary" : "text-muted-foreground"}`}
-                >
-                  {item.label}
-                </span>
-              </Link>
-            );
-          })}
-          <button
-            onClick={() => setMenuOpen(true)}
-            className="flex flex-1 flex-col items-center justify-center gap-1 press"
-          >
-            <span
-              className={`relative flex items-center justify-center w-9 h-9 rounded-[12px] transition-all duration-200 ${
-                menuActive
-                  ? "aurora-glass scale-110 -translate-y-0.5"
-                  : "opacity-80"
-              }`}
-            >
-              <MenuIcon className={`relative w-[20px] h-[20px] ${menuActive ? "text-purple-500" : "text-muted-foreground"}`} />
-            </span>
-            <span
-              className={`text-[10px] font-medium ${menuActive ? "text-primary" : "text-muted-foreground"}`}
-            >
-              Menu
-            </span>
-          </button>
-        </div>
-      </nav>
+        <MenuIcon className="w-5 h-5 text-foreground" />
+      </button>
 
-      {/* Full menu drawer for overflow items */}
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
         <SheetContent side="right" className="w-[300px] overflow-y-auto p-0">
           <SheetHeader className="px-4 pt-4 pb-2 text-left">
@@ -187,5 +128,87 @@ export function MobileNav({
         </SheetContent>
       </Sheet>
     </>
+  );
+}
+
+/** Bottom tab bar (mobile only): Home / Friends / Reels / Market / Profile. */
+export function MobileNav({
+  user,
+}: {
+  user: { displayName?: string | null; avatarUrl?: string | null } | null;
+}) {
+  const [location] = useLocation();
+
+  const bottomItems: (MobileNavItem & { color: string })[] = [
+    { href: "/", icon: Home, label: "Home", color: "text-teal-500" },
+    { href: "/friends", icon: Users, label: "Friends", color: "text-purple-500" },
+    { href: "/reels", icon: Video, label: "Reels", color: "text-pink-500" },
+    { href: "/marketplace", icon: Store, label: "Market", color: "text-amber-500" },
+  ];
+
+  const profileActive = location === "/me" || location.startsWith("/profile/");
+
+  return (
+    <nav
+      className="md:hidden fixed bottom-0 inset-x-0 z-50 aurora-glass-header"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
+      <div className="flex items-stretch justify-around h-16">
+        {bottomItems.map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            item.href === "/"
+              ? location === "/"
+              : location.startsWith(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="flex flex-1 flex-col items-center justify-center gap-1 press"
+            >
+              <span
+                className={`relative flex items-center justify-center w-9 h-9 rounded-[12px] transition-all duration-200 ${
+                  isActive
+                    ? "aurora-glass scale-110 -translate-y-0.5"
+                    : "opacity-80"
+                }`}
+              >
+                <Icon className={`relative w-[20px] h-[20px] ${isActive ? item.color : "text-muted-foreground"}`} />
+              </span>
+              <span
+                className={`text-[10px] font-medium ${isActive ? "text-primary" : "text-muted-foreground"}`}
+              >
+                {item.label}
+              </span>
+            </Link>
+          );
+        })}
+        <Link
+          href="/me"
+          className="flex flex-1 flex-col items-center justify-center gap-1 press"
+        >
+          <span
+            className={`relative flex items-center justify-center w-9 h-9 rounded-[12px] transition-all duration-200 ${
+              profileActive
+                ? "aurora-glass scale-110 -translate-y-0.5"
+                : "opacity-80"
+            }`}
+          >
+            <img
+              src={avatarSrc(user?.avatarUrl)}
+              alt=""
+              className={`w-[24px] h-[24px] rounded-full object-cover ${
+                profileActive ? "ring-2 ring-primary" : ""
+              }`}
+            />
+          </span>
+          <span
+            className={`text-[10px] font-medium ${profileActive ? "text-primary" : "text-muted-foreground"}`}
+          >
+            Profile
+          </span>
+        </Link>
+      </div>
+    </nav>
   );
 }

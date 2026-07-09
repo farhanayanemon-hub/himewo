@@ -109,12 +109,38 @@ export function mentionsToPlainText(content: string): string {
   return content.replace(MENTION_RE, "@$1");
 }
 
+// Facebook-style hashtags: "#word" (letters, digits, underscore) becomes a
+// link to the hashtag feed. Shared shape with the mobile apps.
+export const HASHTAG_RE = /#(\w{1,64})/g;
+
+function withHashtags(text: string, keyBase: string): React.ReactNode[] {
+  const out: React.ReactNode[] = [];
+  let last = 0;
+  let i = 0;
+  for (const m of text.matchAll(HASHTAG_RE)) {
+    if (m.index! > last) out.push(text.slice(last, m.index));
+    out.push(
+      <Link
+        key={`${keyBase}-h${i++}`}
+        href={`/hashtag/${m[1]}`}
+        className="text-primary font-semibold hover:underline"
+      >
+        #{m[1]}
+      </Link>,
+    );
+    last = m.index! + m[0].length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
+
 export function RenderWithMentions({ content }: { content: string }) {
   const parts: React.ReactNode[] = [];
   let last = 0;
   let i = 0;
   for (const m of content.matchAll(MENTION_RE)) {
-    if (m.index! > last) parts.push(content.slice(last, m.index));
+    if (m.index! > last)
+      parts.push(...withHashtags(content.slice(last, m.index), `t${i}`));
     if (m[2] === HIGHLIGHT_ID) {
       parts.push(
         <span
@@ -137,7 +163,8 @@ export function RenderWithMentions({ content }: { content: string }) {
     }
     last = m.index! + m[0].length;
   }
-  if (last < content.length) parts.push(content.slice(last));
+  if (last < content.length)
+    parts.push(...withHashtags(content.slice(last), "tail"));
   return <>{parts}</>;
 }
 

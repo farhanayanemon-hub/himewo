@@ -3,6 +3,8 @@ import { avatarSrc } from "@/lib/avatar";
 import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { VerifiedBadge } from "@/components/verified-badge";
+import { MediaGrid } from "@/components/media-grid";
+import { RenderWithMentions } from "@/components/mention";
 import {
   MessageCircle,
   Share2,
@@ -358,7 +360,11 @@ export function PostCard({ post }: { post: Post }) {
           </div>
         </div>
       ) : (
-        post.content && <p className="text-[15px] whitespace-pre-wrap mb-3">{post.content}</p>
+        post.content && (
+          <p className="text-[15px] whitespace-pre-wrap mb-3">
+            <RenderWithMentions content={post.content} />
+          </p>
+        )
       )}
 
       {post.poll && (
@@ -415,15 +421,7 @@ export function PostCard({ post }: { post: Post }) {
         </div>
       )}
 
-      {post.media && post.media.length > 0 && (
-        <div className="rounded-lg overflow-hidden border border-border mb-3">
-          {post.media[0].type === "video" ? (
-            <video src={post.media[0].url} controls className="w-full object-cover max-h-[500px]" />
-          ) : (
-            <img src={post.media[0].url} className="w-full object-cover max-h-[500px]" alt="" />
-          )}
-        </div>
-      )}
+      {post.media && post.media.length > 0 && <MediaGrid media={post.media} />}
 
       <div className="flex justify-between items-center text-sm text-muted-foreground py-2 border-b border-border mb-1">
         <div className="flex items-center gap-1">
