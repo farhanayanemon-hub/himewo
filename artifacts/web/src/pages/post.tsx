@@ -235,8 +235,8 @@ export default function PostPage() {
                     </button>
                   </div>
                 )}
-                <div className="flex gap-2 items-center">
-                  <div className="relative flex-1 flex items-center gap-1 bg-muted/50 rounded-full pr-2 focus-within:ring-1 focus-within:ring-primary">
+                <div className="flex gap-2 items-center w-full">
+                  <div className="relative flex-1 min-w-0 flex items-center gap-1 bg-muted/50 rounded-full pr-2 focus-within:ring-1 focus-within:ring-primary">
                     {mentionQuery !== null && (
                       <MentionSuggestions
                         query={mentionQuery}
@@ -254,12 +254,12 @@ export default function PostPage() {
                       value={content}
                       onChange={e => setContent(e.target.value)}
                       placeholder={replyTo ? "Write a reply..." : "Write a comment... (@ to mention)"}
-                      className="flex-1 bg-transparent rounded-full px-4 py-2 text-sm focus:outline-none"
+                      className="flex-1 min-w-0 bg-transparent rounded-full px-4 py-2 text-sm focus:outline-none"
                     />
                     <GifPickerButton onSelect={(url) => setGifUrl(url)} />
                     <EmojiPickerButton onSelect={(emoji) => setContent((prev) => prev + emoji)} />
                   </div>
-                  <Button type="submit" disabled={(!content.trim() && !gifUrl) || createComment.isPending} className="rounded-full">
+                  <Button type="submit" disabled={(!content.trim() && !gifUrl) || createComment.isPending} className="rounded-full shrink-0">
                     {replyTo ? "Reply" : "Post"}
                   </Button>
                 </div>
