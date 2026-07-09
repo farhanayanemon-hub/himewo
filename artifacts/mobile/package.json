@@ -58,6 +58,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.108.2",
     "expo-audio": "~1.1.1",
+    "expo-clipboard": "~8.0.8",
     "expo-video": "~3.0.16",
     "react-native-url-polyfill": "^3.0.0"
   }

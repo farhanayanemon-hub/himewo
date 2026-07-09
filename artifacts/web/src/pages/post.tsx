@@ -4,6 +4,8 @@ import {
   useGetPost,
   useListComments,
   useCreateComment,
+  useUpdateComment,
+  useDeleteComment,
   useSetCommentReaction,
   useRemoveCommentReaction,
   getGetPostQueryKey,
@@ -12,7 +14,8 @@ import {
   type Comment,
   type Profile,
 } from "@workspace/api-client-react";
-import { useParams } from "wouter";
+import { useParams, Link } from "wouter";
+import { useAuth } from "@/lib/auth";
 import { PostCard } from "@/components/post-card";
 import { VerifiedBadge } from "@/components/verified-badge";
 import { Loader2 } from "lucide-react";
@@ -30,7 +33,15 @@ import {
   applyMentionTokens,
   type MentionTarget,
 } from "@/components/mention";
-import { X } from "lucide-react";
+import { X, MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+const MENTION_TOKEN_RE = /@\[([^\]]+)\]\(user:([^)]+)\)/g;
 
 interface ReplyTarget {
   parentId: number;
@@ -51,10 +62,48 @@ function CommentItem({
   const queryClient = useQueryClient();
   const setReaction = useSetCommentReaction();
   const removeReaction = useRemoveCommentReaction();
+  const updateComment = useUpdateComment();
+  const deleteComment = useDeleteComment();
+  const { user } = useAuth();
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState("");
+  const [showReplies, setShowReplies] = useState(false);
+
+  const isOwn = !!user && user.id === comment.author.id;
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: getListCommentsQueryKey(postId) });
     queryClient.invalidateQueries({ queryKey: getGetPostQueryKey(postId) });
+  };
+
+  const copyComment = () => {
+    void navigator.clipboard?.writeText(
+      comment.content.replace(MENTION_TOKEN_RE, "@$1"),
+    );
+  };
+
+  const startEdit = () => {
+    setEditText(comment.content);
+    setEditing(true);
+  };
+
+  const saveEdit = () => {
+    const content = editText.trim();
+    if (!content) return;
+    updateComment.mutate(
+      { id: comment.id, data: { content } },
+      {
+        onSuccess: () => {
+          setEditing(false);
+          invalidate();
+        },
+      },
+    );
+  };
+
+  const handleDelete = () => {
+    if (!window.confirm("Delete this comment?")) return;
+    deleteComment.mutate({ id: comment.id }, { onSuccess: invalidate });
   };
 
   const viewerReaction = comment.viewerReaction as ReactionType | null | undefined;
@@ -75,31 +124,93 @@ function CommentItem({
   const replyParentId = comment.parentId ?? comment.id;
 
   return (
-    <div className="flex gap-3">
-      <img
-        src={avatarSrc(comment.author.avatarUrl)}
-        className={`${isReply ? "w-7 h-7" : "w-8 h-8"} rounded-full object-cover shrink-0`}
-        alt=""
-      />
+    <div className="flex gap-3 group/comment">
+      <Link href={`/profile/${comment.author.id}`} className="shrink-0">
+        <img
+          src={avatarSrc(comment.author.avatarUrl)}
+          className={`${isReply ? "w-7 h-7" : "w-8 h-8"} rounded-full object-cover shrink-0`}
+          alt=""
+        />
+      </Link>
       <div className="min-w-0 flex-1">
-        <div className="bg-muted/50 rounded-2xl px-4 py-2 inline-block max-w-full">
-          <div className="font-semibold text-sm">
-            {comment.author.displayName}
-            {comment.author.isVerified && <VerifiedBadge className="w-3.5 h-3.5 ml-1 align-text-bottom" />}
+        <div className="flex items-start gap-1">
+          <div className="bg-muted/50 rounded-2xl px-4 py-2 inline-block max-w-full min-w-0">
+            <Link
+              href={`/profile/${comment.author.id}`}
+              className="font-semibold text-sm hover:underline"
+            >
+              {comment.author.displayName}
+              {comment.author.isVerified && <VerifiedBadge className="w-3.5 h-3.5 ml-1 align-text-bottom" />}
+            </Link>
+            {editing ? (
+              <div className="mt-1">
+                <textarea
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  rows={2}
+                  className="w-full min-w-[220px] bg-background border border-border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+                <div className="flex gap-2 mt-1">
+                  <button
+                    className="text-xs font-semibold text-primary hover:underline disabled:opacity-50"
+                    onClick={saveEdit}
+                    disabled={!editText.trim() || updateComment.isPending}
+                  >
+                    Save
+                  </button>
+                  <button
+                    className="text-xs text-muted-foreground hover:underline"
+                    onClick={() => setEditing(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              comment.content && (
+                <div className="text-[15px] break-words">
+                  <RenderWithMentions content={comment.content} />
+                </div>
+              )
+            )}
+            {comment.mediaUrl && (
+              <img
+                src={comment.mediaUrl}
+                alt=""
+                className="mt-1 rounded-lg max-h-52 max-w-full object-contain"
+                loading="lazy"
+              />
+            )}
           </div>
-          {comment.content && (
-            <div className="text-[15px] break-words">
-              <RenderWithMentions content={comment.content} />
-            </div>
-          )}
-          {comment.mediaUrl && (
-            <img
-              src={comment.mediaUrl}
-              alt=""
-              className="mt-1 rounded-lg max-h-52 max-w-full object-contain"
-              loading="lazy"
-            />
-          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="p-1.5 rounded-full text-muted-foreground hover:bg-muted opacity-0 max-md:opacity-100 group-hover/comment:opacity-100 focus:opacity-100 transition-opacity shrink-0"
+                aria-label="Comment options"
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem
+                onClick={() => onReply({ parentId: replyParentId, author: comment.author })}
+              >
+                Reply
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={copyComment}>Copy text</DropdownMenuItem>
+              {isOwn && (
+                <DropdownMenuItem onClick={startEdit}>Edit</DropdownMenuItem>
+              )}
+              {isOwn && (
+                <DropdownMenuItem
+                  onClick={handleDelete}
+                  className="text-destructive focus:text-destructive"
+                >
+                  Delete
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         <div className="flex gap-3 mt-1 ml-2 text-xs text-muted-foreground font-medium items-center">
           <ReactionControl
@@ -116,11 +227,25 @@ function CommentItem({
           </button>
           <span>{new Date(comment.createdAt).toLocaleDateString()}</span>
         </div>
-        {replies && replies.length > 0 && (
+        {replies && replies.length > 0 && !showReplies && (
+          <button
+            className="mt-2 ml-2 text-xs font-semibold text-muted-foreground hover:underline"
+            onClick={() => setShowReplies(true)}
+          >
+            View {replies.length} {replies.length === 1 ? "reply" : "replies"}
+          </button>
+        )}
+        {replies && replies.length > 0 && showReplies && (
           <div className="mt-3 space-y-3 border-l-2 border-border/60 pl-3">
             {replies.map((r) => (
               <CommentItem key={r.id} comment={r} postId={postId} onReply={onReply} />
             ))}
+            <button
+              className="text-xs font-semibold text-muted-foreground hover:underline"
+              onClick={() => setShowReplies(false)}
+            >
+              Hide replies
+            </button>
           </div>
         )}
       </div>

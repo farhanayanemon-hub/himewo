@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -18,6 +19,8 @@ import {
   useGetPost,
   useListComments,
   useCreateComment,
+  useUpdateComment,
+  useDeleteComment,
   useSetCommentReaction,
   useRemoveCommentReaction,
   getGetPostQueryKey,
@@ -28,6 +31,7 @@ import {
   type ReactionType,
 } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
+import { CommentActionsSheet } from "@/components/CommentActions";
 import { PostCard } from "@/components/PostCard";
 import { ShareSheet } from "@/components/ShareSheet";
 import { EmojiPickerSheet } from "@/components/EmojiPickerSheet";
@@ -41,6 +45,7 @@ import {
 } from "@/components/Mention";
 import { reactionConfig } from "@/constants/reactions";
 import { useColors } from "@/hooks/useColors";
+import { useAuth } from "@/lib/auth";
 import { timeAgo } from "@/lib/format";
 
 export default function PostDetailScreen() {
@@ -57,6 +62,12 @@ export default function PostDetailScreen() {
     parentId: number;
     author: Profile;
   } | null>(null);
+  const [actionsFor, setActionsFor] = useState<Comment | null>(null);
+  const [editing, setEditing] = useState<Comment | null>(null);
+  const [expandedReplies, setExpandedReplies] = useState<Set<number>>(
+    () => new Set(),
+  );
+  const { user } = useAuth();
 
   const {
     data: post,
@@ -98,8 +109,50 @@ export default function PostDetailScreen() {
   }, [comments]);
 
   const createComment = useCreateComment();
+  const updateComment = useUpdateComment();
+  const deleteComment = useDeleteComment();
   const setCommentReaction = useSetCommentReaction();
   const removeCommentReaction = useRemoveCommentReaction();
+
+  const invalidateComments = () => {
+    qc.invalidateQueries({ queryKey: getListCommentsQueryKey(postId) });
+    qc.invalidateQueries({ queryKey: getGetPostQueryKey(postId) });
+    qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
+  };
+
+  const startEdit = (item: Comment) => {
+    setReplyTo(null);
+    setEditing(item);
+    setText(item.content);
+  };
+
+  const confirmDelete = (item: Comment) => {
+    Alert.alert("Delete comment?", "This comment will be removed.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () =>
+          deleteComment.mutate(
+            { id: item.id },
+            { onSuccess: invalidateComments },
+          ),
+      },
+    ]);
+  };
+
+  const openProfile = (author: Profile) => {
+    router.push(`/profile/${author.id}`);
+  };
+
+  const toggleReplies = (parentId: number) => {
+    setExpandedReplies((prev) => {
+      const next = new Set(prev);
+      if (next.has(parentId)) next.delete(parentId);
+      else next.add(parentId);
+      return next;
+    });
+  };
 
   const reactToComment = (item: Comment, type: ReactionType) => {
     const invalidate = () => {
@@ -121,15 +174,29 @@ export default function PostDetailScreen() {
   };
 
   const startReply = (item: Comment) => {
+    const wasEditing = editing != null;
+    setEditing(null);
     setReplyTo({ parentId: item.parentId ?? item.id, author: item.author });
     setText((prev) =>
-      prev.trim().length === 0 ? `${mentionToken(item.author)} ` : prev,
+      wasEditing || prev.trim().length === 0
+        ? `${mentionToken(item.author)} `
+        : prev,
     );
   };
 
   const send = () => {
     const content = text.trim();
     if (!content || !Number.isFinite(postId)) return;
+    if (editing) {
+      const id = editing.id;
+      setText("");
+      setEditing(null);
+      updateComment.mutate(
+        { id, data: { content } },
+        { onSuccess: invalidateComments },
+      );
+      return;
+    }
     const parentId = replyTo?.parentId;
     setText("");
     setReplyTo(null);
@@ -138,13 +205,7 @@ export default function PostDetailScreen() {
         id: postId,
         data: { content, ...(parentId != null ? { parentId } : {}) },
       },
-      {
-        onSuccess: () => {
-          qc.invalidateQueries({ queryKey: getListCommentsQueryKey(postId) });
-          qc.invalidateQueries({ queryKey: getGetPostQueryKey(postId) });
-          qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
-        },
-      },
+      { onSuccess: invalidateComments },
     );
   };
 
@@ -206,118 +267,168 @@ export default function PostDetailScreen() {
                 )}
               </View>
             }
-            renderItem={({ item }) => (
-              <View style={styles.commentRow}>
-                <View style={{ flexDirection: "row", gap: 8 }}>
-                  <Avatar uri={item.author.avatarUrl} name={item.author.displayName} size={34} />
-                  <View style={{ flex: 1 }}>
-                    <View style={[styles.bubble, { backgroundColor: c.secondary }]}>
-                      <Text
-                        style={{
-                          color: c.foreground,
-                          fontFamily: "Inter_600SemiBold",
-                          fontSize: 13,
-                        }}
+            renderItem={({ item }) => {
+              const replies = repliesByParent.get(item.id) ?? [];
+              const expanded = expandedReplies.has(item.id);
+              return (
+                <View style={styles.commentRow}>
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    <Pressable onPress={() => openProfile(item.author)} hitSlop={4}>
+                      <Avatar uri={item.author.avatarUrl} name={item.author.displayName} size={34} />
+                    </Pressable>
+                    <View style={{ flex: 1 }}>
+                      <Pressable
+                        onLongPress={() => setActionsFor(item)}
+                        delayLongPress={300}
+                        style={[styles.bubble, { backgroundColor: c.secondary }]}
                       >
-                        {item.author.displayName}
-                      </Text>
-                      <MentionText
-                        content={item.content}
-                        style={{ color: c.foreground, fontSize: 14, marginTop: 2 }}
-                      />
-                    </View>
-                    <View style={styles.commentFooter}>
-                      <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
-                        {timeAgo(item.createdAt)}
-                      </Text>
-                      <ReactionBar
-                        size="sm"
-                        viewerReaction={item.viewerReaction ?? null}
-                        onReact={(t) => reactToComment(item, t)}
-                      />
-                      <Pressable onPress={() => startReply(item)} hitSlop={6}>
                         <Text
+                          onPress={() => openProfile(item.author)}
                           style={{
-                            color: c.mutedForeground,
-                            fontSize: 11,
+                            color: c.foreground,
                             fontFamily: "Inter_600SemiBold",
+                            fontSize: 13,
                           }}
                         >
-                          Reply
+                          {item.author.displayName}
                         </Text>
+                        <MentionText
+                          content={item.content}
+                          style={{ color: c.foreground, fontSize: 14, marginTop: 2 }}
+                        />
                       </Pressable>
-                      {item.reactionCount > 0 && (
+                      <View style={styles.commentFooter}>
                         <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
-                          {item.viewerReaction
-                            ? reactionConfig[item.viewerReaction].emoji
-                            : "👍"}{" "}
-                          {item.reactionCount}
+                          {timeAgo(item.createdAt)}
                         </Text>
+                        <ReactionBar
+                          size="sm"
+                          viewerReaction={item.viewerReaction ?? null}
+                          onReact={(t) => reactToComment(item, t)}
+                        />
+                        <Pressable onPress={() => startReply(item)} hitSlop={6}>
+                          <Text
+                            style={{
+                              color: c.mutedForeground,
+                              fontSize: 11,
+                              fontFamily: "Inter_600SemiBold",
+                            }}
+                          >
+                            Reply
+                          </Text>
+                        </Pressable>
+                        {item.reactionCount > 0 && (
+                          <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
+                            {item.viewerReaction
+                              ? reactionConfig[item.viewerReaction].emoji
+                              : "👍"}{" "}
+                            {item.reactionCount}
+                          </Text>
+                        )}
+                      </View>
+                      {replies.length > 0 && !expanded && (
+                        <Pressable
+                          onPress={() => toggleReplies(item.id)}
+                          hitSlop={6}
+                          style={{ marginTop: 8, marginLeft: 6 }}
+                        >
+                          <Text
+                            style={{
+                              color: c.mutedForeground,
+                              fontSize: 12,
+                              fontFamily: "Inter_600SemiBold",
+                            }}
+                          >
+                            View {replies.length}{" "}
+                            {replies.length === 1 ? "reply" : "replies"}
+                          </Text>
+                        </Pressable>
                       )}
-                    </View>
-                    {(repliesByParent.get(item.id) ?? []).length > 0 && (
-                      <View style={[styles.replies, { borderLeftColor: c.border }]}>
-                        {(repliesByParent.get(item.id) ?? []).map((r) => (
-                          <View key={r.id} style={{ flexDirection: "row", gap: 8 }}>
-                            <Avatar
-                              uri={r.author.avatarUrl}
-                              name={r.author.displayName}
-                              size={28}
-                            />
-                            <View style={{ flex: 1 }}>
-                              <View style={[styles.bubble, { backgroundColor: c.secondary }]}>
-                                <Text
-                                  style={{
-                                    color: c.foreground,
-                                    fontFamily: "Inter_600SemiBold",
-                                    fontSize: 13,
-                                  }}
+                      {replies.length > 0 && expanded && (
+                        <View style={[styles.replies, { borderLeftColor: c.border }]}>
+                          {replies.map((r) => (
+                            <View key={r.id} style={{ flexDirection: "row", gap: 8 }}>
+                              <Pressable onPress={() => openProfile(r.author)} hitSlop={4}>
+                                <Avatar
+                                  uri={r.author.avatarUrl}
+                                  name={r.author.displayName}
+                                  size={28}
+                                />
+                              </Pressable>
+                              <View style={{ flex: 1 }}>
+                                <Pressable
+                                  onLongPress={() => setActionsFor(r)}
+                                  delayLongPress={300}
+                                  style={[styles.bubble, { backgroundColor: c.secondary }]}
                                 >
-                                  {r.author.displayName}
-                                </Text>
-                                <MentionText
-                                  content={r.content}
-                                  style={{ color: c.foreground, fontSize: 14, marginTop: 2 }}
-                                />
-                              </View>
-                              <View style={styles.commentFooter}>
-                                <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
-                                  {timeAgo(r.createdAt)}
-                                </Text>
-                                <ReactionBar
-                                  size="sm"
-                                  viewerReaction={r.viewerReaction ?? null}
-                                  onReact={(t) => reactToComment(r, t)}
-                                />
-                                <Pressable onPress={() => startReply(r)} hitSlop={6}>
                                   <Text
+                                    onPress={() => openProfile(r.author)}
                                     style={{
-                                      color: c.mutedForeground,
-                                      fontSize: 11,
+                                      color: c.foreground,
                                       fontFamily: "Inter_600SemiBold",
+                                      fontSize: 13,
                                     }}
                                   >
-                                    Reply
+                                    {r.author.displayName}
                                   </Text>
+                                  <MentionText
+                                    content={r.content}
+                                    style={{ color: c.foreground, fontSize: 14, marginTop: 2 }}
+                                  />
                                 </Pressable>
-                                {r.reactionCount > 0 && (
+                                <View style={styles.commentFooter}>
                                   <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
-                                    {r.viewerReaction
-                                      ? reactionConfig[r.viewerReaction].emoji
-                                      : "👍"}{" "}
-                                    {r.reactionCount}
+                                    {timeAgo(r.createdAt)}
                                   </Text>
-                                )}
+                                  <ReactionBar
+                                    size="sm"
+                                    viewerReaction={r.viewerReaction ?? null}
+                                    onReact={(t) => reactToComment(r, t)}
+                                  />
+                                  <Pressable onPress={() => startReply(r)} hitSlop={6}>
+                                    <Text
+                                      style={{
+                                        color: c.mutedForeground,
+                                        fontSize: 11,
+                                        fontFamily: "Inter_600SemiBold",
+                                      }}
+                                    >
+                                      Reply
+                                    </Text>
+                                  </Pressable>
+                                  {r.reactionCount > 0 && (
+                                    <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
+                                      {r.viewerReaction
+                                        ? reactionConfig[r.viewerReaction].emoji
+                                        : "👍"}{" "}
+                                      {r.reactionCount}
+                                    </Text>
+                                  )}
+                                </View>
                               </View>
                             </View>
-                          </View>
-                        ))}
-                      </View>
-                    )}
+                          ))}
+                          <Pressable
+                            onPress={() => toggleReplies(item.id)}
+                            hitSlop={6}
+                          >
+                            <Text
+                              style={{
+                                color: c.mutedForeground,
+                                fontSize: 12,
+                                fontFamily: "Inter_600SemiBold",
+                              }}
+                            >
+                              Hide replies
+                            </Text>
+                          </Pressable>
+                        </View>
+                      )}
+                    </View>
                   </View>
                 </View>
-              </View>
-            )}
+              );
+            }}
             ListEmptyComponent={
               !commentsLoading ? (
                 <Text
@@ -349,7 +460,23 @@ export default function PostDetailScreen() {
                 onSelect={(p) => setText((prev) => insertMention(prev, p))}
               />
             )}
-            {replyTo && (
+            {editing && (
+              <View style={styles.replyBanner}>
+                <Text style={{ color: c.mutedForeground, fontSize: 12 }}>
+                  Editing comment
+                </Text>
+                <Pressable
+                  onPress={() => {
+                    setEditing(null);
+                    setText("");
+                  }}
+                  hitSlop={8}
+                >
+                  <Ionicons name="close" size={16} color={c.mutedForeground} />
+                </Pressable>
+              </View>
+            )}
+            {!editing && replyTo && (
               <View style={styles.replyBanner}>
                 <Text style={{ color: c.mutedForeground, fontSize: 12 }}>
                   Replying to{" "}
@@ -401,6 +528,16 @@ export default function PostDetailScreen() {
         postId={Number.isFinite(postId) ? postId : null}
         visible={shareOpen}
         onClose={() => setShareOpen(false)}
+      />
+
+      <CommentActionsSheet
+        comment={actionsFor}
+        visible={actionsFor != null}
+        canModify={!!user && actionsFor?.author.id === user.id}
+        onClose={() => setActionsFor(null)}
+        onReply={startReply}
+        onEdit={startEdit}
+        onDelete={confirmDelete}
       />
     </SafeAreaView>
   );

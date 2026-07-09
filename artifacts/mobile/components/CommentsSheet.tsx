@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Modal,
   Pressable,
@@ -9,6 +10,7 @@ import {
   View,
   StyleSheet,
 } from "react-native";
+import { router } from "expo-router";
 import { KeyboardAvoidingView, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,6 +18,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   useListComments,
   useCreateComment,
+  useUpdateComment,
+  useDeleteComment,
   useSetCommentReaction,
   useRemoveCommentReaction,
   getListCommentsQueryKey,
@@ -26,6 +30,7 @@ import {
   type ReactionType,
 } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
+import { CommentActionsSheet } from "@/components/CommentActions";
 import { EmojiPickerSheet } from "@/components/EmojiPickerSheet";
 import { ReactionBar } from "@/components/ReactionBar";
 import {
@@ -37,6 +42,7 @@ import {
 } from "@/components/Mention";
 import { reactionConfig } from "@/constants/reactions";
 import { useColors } from "@/hooks/useColors";
+import { useAuth } from "@/lib/auth";
 import { timeAgo } from "@/lib/format";
 
 interface CommentsSheetProps {
@@ -57,6 +63,12 @@ export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) 
   const [text, setText] = useState("");
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [replyTo, setReplyTo] = useState<ReplyTarget | null>(null);
+  const [actionsFor, setActionsFor] = useState<Comment | null>(null);
+  const [editing, setEditing] = useState<Comment | null>(null);
+  const [expandedReplies, setExpandedReplies] = useState<Set<number>>(
+    () => new Set(),
+  );
+  const { user } = useAuth();
 
   const { data, isLoading } = useListComments(postId ?? 0, undefined, {
     query: {
@@ -66,8 +78,53 @@ export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) 
   });
   const comments = (data ?? []) as Comment[];
   const createComment = useCreateComment();
+  const updateComment = useUpdateComment();
+  const deleteComment = useDeleteComment();
   const setReaction = useSetCommentReaction();
   const removeReaction = useRemoveCommentReaction();
+
+  const invalidateComments = () => {
+    if (postId != null) {
+      qc.invalidateQueries({ queryKey: getListCommentsQueryKey(postId) });
+      qc.invalidateQueries({ queryKey: getGetPostQueryKey(postId) });
+      qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
+    }
+  };
+
+  const startEdit = (item: Comment) => {
+    setReplyTo(null);
+    setEditing(item);
+    setText(item.content);
+  };
+
+  const confirmDelete = (item: Comment) => {
+    Alert.alert("Delete comment?", "This comment will be removed.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () =>
+          deleteComment.mutate(
+            { id: item.id },
+            { onSuccess: invalidateComments },
+          ),
+      },
+    ]);
+  };
+
+  const openProfile = (authorId: string) => {
+    onClose();
+    router.push(`/profile/${authorId}`);
+  };
+
+  const toggleReplies = (parentId: number) => {
+    setExpandedReplies((prev) => {
+      const next = new Set(prev);
+      if (next.has(parentId)) next.delete(parentId);
+      else next.add(parentId);
+      return next;
+    });
+  };
 
   const mentionQuery = activeMentionQuery(text);
 
@@ -100,49 +157,64 @@ export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) 
   };
 
   const startReply = (item: Comment) => {
+    const wasEditing = editing != null;
+    setEditing(null);
     setReplyTo({ parentId: item.parentId ?? item.id, author: item.author });
     setText((prev) =>
-      prev.trim().length === 0 ? `${mentionToken(item.author)} ` : prev,
+      wasEditing || prev.trim().length === 0
+        ? `${mentionToken(item.author)} `
+        : prev,
     );
   };
 
   const send = () => {
     const content = text.trim();
     if (!content || postId == null) return;
+    if (editing) {
+      const id = editing.id;
+      setText("");
+      setEditing(null);
+      updateComment.mutate(
+        { id, data: { content } },
+        { onSuccess: invalidateComments },
+      );
+      return;
+    }
     const parentId = replyTo?.parentId;
     setText("");
     setReplyTo(null);
     createComment.mutate(
       { id: postId, data: { content, ...(parentId != null ? { parentId } : {}) } },
-      {
-        onSuccess: () => {
-          if (postId != null) {
-            qc.invalidateQueries({ queryKey: getListCommentsQueryKey(postId) });
-            qc.invalidateQueries({ queryKey: getGetPostQueryKey(postId) });
-            qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
-          }
-        },
-      },
+      { onSuccess: invalidateComments },
     );
   };
 
   const renderComment = (item: Comment, isReply: boolean) => (
     <View style={{ flexDirection: "row", gap: 8 }}>
-      <Avatar
-        uri={item.author.avatarUrl}
-        name={item.author.displayName}
-        size={isReply ? 28 : 34}
-      />
+      <Pressable onPress={() => openProfile(item.author.id)} hitSlop={4}>
+        <Avatar
+          uri={item.author.avatarUrl}
+          name={item.author.displayName}
+          size={isReply ? 28 : 34}
+        />
+      </Pressable>
       <View style={{ flex: 1 }}>
-        <View style={[styles.bubble, { backgroundColor: c.secondary }]}>
-          <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 13 }}>
+        <Pressable
+          onLongPress={() => setActionsFor(item)}
+          delayLongPress={300}
+          style={[styles.bubble, { backgroundColor: c.secondary }]}
+        >
+          <Text
+            onPress={() => openProfile(item.author.id)}
+            style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 13 }}
+          >
             {item.author.displayName}
           </Text>
           <MentionText
             content={item.content}
             style={{ color: c.foreground, fontSize: 14, marginTop: 2 }}
           />
-        </View>
+        </Pressable>
         <View style={styles.commentFooter}>
           <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
             {timeAgo(item.createdAt)}
@@ -192,20 +264,53 @@ export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) 
                   No comments yet. Be the first!
                 </Text>
               }
-              renderItem={({ item }) => (
-                <View>
-                  {renderComment(item, false)}
-                  {(repliesByParent.get(item.id) ?? []).length > 0 && (
-                    <View
-                      style={[styles.replies, { borderLeftColor: c.border }]}
-                    >
-                      {(repliesByParent.get(item.id) ?? []).map((r) => (
-                        <View key={r.id}>{renderComment(r, true)}</View>
-                      ))}
-                    </View>
-                  )}
-                </View>
-              )}
+              renderItem={({ item }) => {
+                const replies = repliesByParent.get(item.id) ?? [];
+                const expanded = expandedReplies.has(item.id);
+                return (
+                  <View>
+                    {renderComment(item, false)}
+                    {replies.length > 0 && !expanded && (
+                      <Pressable
+                        onPress={() => toggleReplies(item.id)}
+                        hitSlop={6}
+                        style={{ marginTop: 8, marginLeft: 48 }}
+                      >
+                        <Text
+                          style={{
+                            color: c.mutedForeground,
+                            fontSize: 12,
+                            fontFamily: "Inter_600SemiBold",
+                          }}
+                        >
+                          View {replies.length}{" "}
+                          {replies.length === 1 ? "reply" : "replies"}
+                        </Text>
+                      </Pressable>
+                    )}
+                    {replies.length > 0 && expanded && (
+                      <View
+                        style={[styles.replies, { borderLeftColor: c.border }]}
+                      >
+                        {replies.map((r) => (
+                          <View key={r.id}>{renderComment(r, true)}</View>
+                        ))}
+                        <Pressable onPress={() => toggleReplies(item.id)} hitSlop={6}>
+                          <Text
+                            style={{
+                              color: c.mutedForeground,
+                              fontSize: 12,
+                              fontFamily: "Inter_600SemiBold",
+                            }}
+                          >
+                            Hide replies
+                          </Text>
+                        </Pressable>
+                      </View>
+                    )}
+                  </View>
+                );
+              }}
             />
           )}
 
@@ -219,7 +324,23 @@ export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) 
                 onSelect={(p) => setText((prev) => insertMention(prev, p))}
               />
             )}
-            {replyTo && (
+            {editing && (
+              <View style={styles.replyBanner}>
+                <Text style={{ color: c.mutedForeground, fontSize: 12 }}>
+                  Editing comment
+                </Text>
+                <Pressable
+                  onPress={() => {
+                    setEditing(null);
+                    setText("");
+                  }}
+                  hitSlop={8}
+                >
+                  <Ionicons name="close" size={16} color={c.mutedForeground} />
+                </Pressable>
+              </View>
+            )}
+            {!editing && replyTo && (
               <View style={styles.replyBanner}>
                 <Text style={{ color: c.mutedForeground, fontSize: 12 }}>
                   Replying to{" "}
@@ -265,6 +386,16 @@ export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) 
         visible={emojiOpen}
         onClose={() => setEmojiOpen(false)}
         onSelect={(e) => setText((t) => t + e)}
+      />
+
+      <CommentActionsSheet
+        comment={actionsFor}
+        visible={actionsFor != null}
+        canModify={!!user && actionsFor?.author.id === user.id}
+        onClose={() => setActionsFor(null)}
+        onReply={startReply}
+        onEdit={startEdit}
+        onDelete={confirmDelete}
       />
     </Modal>
   );
