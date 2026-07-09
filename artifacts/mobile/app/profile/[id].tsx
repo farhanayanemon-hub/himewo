@@ -36,11 +36,20 @@ import { useColors } from "@/hooks/useColors";
 import { formatCount } from "@/lib/format";
 
 export default function ProfileScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  return <ProfileBody userId={id ?? ""} />;
+}
+
+export function ProfileBody({
+  userId,
+  hideBackButton = false,
+}: {
+  userId: string;
+  hideBackButton?: boolean;
+}) {
   const c = useColors();
   const qc = useQueryClient();
   const { user } = useAuth();
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const userId = id ?? "";
   const isOwn = user?.id === userId;
 
   const [activePost, setActivePost] = useState<number | null>(null);
@@ -165,9 +174,13 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top"]}>
       <View style={[styles.header, { backgroundColor: c.card, borderBottomColor: c.border }]}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={c.foreground} />
-        </Pressable>
+        {hideBackButton ? (
+          <View style={styles.backBtn} />
+        ) : (
+          <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={24} color={c.foreground} />
+          </Pressable>
+        )}
         <Text style={[styles.headerTitle, { color: c.foreground }]} numberOfLines={1}>
           {profile?.displayName ?? "Profile"}
         </Text>

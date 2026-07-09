@@ -36,6 +36,7 @@ import EventsPage, { EventDetailPage } from "@/pages/events";
 import LivePage, { LiveStreamPage } from "@/pages/live";
 import UsernameProfilePage from "@/pages/username-profile";
 import WatchPage from "@/pages/watch";
+import HashtagPage from "@/pages/hashtag";
 import MarketplacePage, {
   MarketplaceListingPage,
   MarketplaceCreatePage,
@@ -99,6 +100,7 @@ function AppRoutes() {
       <Route path="/events" component={EventsPage} />
       <Route path="/events/:id" component={EventDetailPage} />
       <Route path="/watch" component={WatchPage} />
+      <Route path="/hashtag/:tag" component={HashtagPage} />
       <Route path="/live" component={LivePage} />
       <Route path="/live/:id" component={LiveStreamPage} />
       {/* himewo.com/<username> → profile. Must stay last before NotFound. */}

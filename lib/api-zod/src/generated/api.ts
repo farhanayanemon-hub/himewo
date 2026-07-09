@@ -717,6 +717,102 @@ export const GetWatchFeedResponseItem = zod.object({
 export const GetWatchFeedResponse = zod.array(GetWatchFeedResponseItem)
 
 
+/**
+ * @summary Posts containing a hashtag (visibility-filtered)
+ */
+export const GetHashtagPostsParams = zod.object({
+  "tag": zod.coerce.string()
+})
+
+export const getHashtagPostsQueryLimitDefault = 20;
+
+export const GetHashtagPostsQueryParams = zod.object({
+  "cursor": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().default(getHashtagPostsQueryLimitDefault)
+})
+
+export const GetHashtagPostsResponseItem = zod.object({
+  "id": zod.number(),
+  "author": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "content": zod.string(),
+  "feelingVerb": zod.string().nullish(),
+  "feeling": zod.string().nullish(),
+  "feelingEmoji": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "privacy": zod.enum(['public', 'friends', 'private']),
+  "commentsEnabled": zod.boolean(),
+  "reactionsEnabled": zod.boolean(),
+  "groupId": zod.number().nullish(),
+  "pageId": zod.number().nullish(),
+  "media": zod.array(zod.object({
+  "id": zod.number(),
+  "url": zod.string(),
+  "type": zod.enum(['image', 'video']),
+  "thumbnailUrl": zod.string().nullish(),
+  "width": zod.number().nullish(),
+  "height": zod.number().nullish(),
+  "durationMs": zod.number().nullish(),
+  "position": zod.number().optional()
+})),
+  "reactions": zod.object({
+  "total": zod.number(),
+  "byType": zod.record(zod.string(), zod.number()),
+  "viewerReaction": zod.union([zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry']),zod.null()]).optional()
+}),
+  "commentCount": zod.number(),
+  "shareCount": zod.number(),
+  "viewerHasSaved": zod.boolean().optional(),
+  "poll": zod.union([zod.object({
+  "id": zod.number(),
+  "question": zod.string(),
+  "totalVotes": zod.number(),
+  "viewerVotedOptionId": zod.number().nullable(),
+  "options": zod.array(zod.object({
+  "id": zod.number(),
+  "text": zod.string(),
+  "voteCount": zod.number()
+}))
+}),zod.null()]).optional(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+export const GetHashtagPostsResponse = zod.array(GetHashtagPostsResponseItem)
+
+
 export const createPostBodyPollOptionsMin = 2;
 
 
@@ -3734,6 +3830,7 @@ export const GetUserAlbumsResponseItem = zod.object({
   "ownerId": zod.string(),
   "name": zod.string(),
   "description": zod.string().nullish(),
+  "kind": zod.enum(['custom', 'profile', 'cover']).optional(),
   "coverUrl": zod.string().nullish(),
   "photoCount": zod.number(),
   "createdAt": zod.coerce.date()
@@ -3760,6 +3857,7 @@ export const CreateAlbumResponse = zod.object({
   "ownerId": zod.string(),
   "name": zod.string(),
   "description": zod.string().nullish(),
+  "kind": zod.enum(['custom', 'profile', 'cover']).optional(),
   "coverUrl": zod.string().nullish(),
   "photoCount": zod.number(),
   "createdAt": zod.coerce.date()
@@ -3779,6 +3877,7 @@ export const GetAlbumResponse = zod.object({
   "ownerId": zod.string(),
   "name": zod.string(),
   "description": zod.string().nullish(),
+  "kind": zod.enum(['custom', 'profile', 'cover']).optional(),
   "coverUrl": zod.string().nullish(),
   "photoCount": zod.number(),
   "createdAt": zod.coerce.date()

@@ -19,6 +19,9 @@ export const albumsTable = pgTable(
       .references(() => profilesTable.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     description: text("description"),
+    // "custom" = user-created; "profile" / "cover" = FB-style auto-albums that
+    // collect every profile picture / cover photo change automatically.
+    kind: text("kind").notNull().default("custom"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

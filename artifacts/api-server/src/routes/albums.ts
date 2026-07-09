@@ -56,6 +56,7 @@ async function buildAlbums(rows: AlbumRow[]) {
     ownerId: a.ownerId,
     name: a.name,
     description: a.description,
+    kind: a.kind === "profile" || a.kind === "cover" ? a.kind : "custom",
     coverUrl: coverByAlbum.get(a.id) ?? null,
     photoCount: countByAlbum.get(a.id) ?? 0,
     createdAt: a.createdAt.toISOString(),
@@ -208,6 +209,11 @@ router.delete(
     if (!album) return;
     if (album.ownerId !== req.userId!) {
       res.status(404).json({ error: "Album not found" });
+      return;
+    }
+    // FB-style auto-albums (Profile pictures / Cover photos) can't be deleted.
+    if (album.kind !== "custom") {
+      res.status(403).json({ error: "This album cannot be deleted." });
       return;
     }
     await db.delete(albumsTable).where(eq(albumsTable.id, album.id));

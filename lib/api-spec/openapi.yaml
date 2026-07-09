@@ -236,6 +236,25 @@ paths:
                 items: { $ref: "#/components/schemas/Post" }
         "401":
           $ref: "#/components/responses/Unauthorized"
+  /hashtags/{tag}/posts:
+    get:
+      operationId: getHashtagPosts
+      tags: [posts]
+      summary: Posts containing a hashtag (visibility-filtered)
+      parameters:
+        - { name: tag, in: path, required: true, schema: { type: string } }
+        - { name: cursor, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer, default: 20 } }
+      responses:
+        "200":
+          description: Posts with this hashtag
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Post" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /posts:
     post:
       operationId: createPost
@@ -4640,6 +4659,7 @@ components:
         ownerId: { type: string }
         name: { type: string }
         description: { type: ["string", "null"] }
+        kind: { type: string, enum: [custom, profile, cover] }
         coverUrl: { type: ["string", "null"] }
         photoCount: { type: integer }
         createdAt: { type: string, format: date-time }

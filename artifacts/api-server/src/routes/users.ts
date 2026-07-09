@@ -5,6 +5,8 @@ import {
   postsTable,
   friendshipsTable,
   friendRequestsTable,
+  albumsTable,
+  albumPhotosTable,
 } from "@workspace/db";
 import {
   and,
@@ -265,6 +267,24 @@ router.patch("/users/me", requireAuth, async (req, res): Promise<void> => {
     }
   }
 
+  // FB-style auto-albums: every new profile picture / cover photo also lands
+  // in the user's "Profile pictures" / "Cover photos" album automatically.
+  const autoAlbumAdds: { kind: "profile" | "cover"; url: string }[] = [];
+  if (
+    typeof updates.avatarUrl === "string" &&
+    updates.avatarUrl.trim() &&
+    updates.avatarUrl !== me.avatarUrl
+  ) {
+    autoAlbumAdds.push({ kind: "profile", url: updates.avatarUrl.trim() });
+  }
+  if (
+    typeof updates.coverUrl === "string" &&
+    updates.coverUrl.trim() &&
+    updates.coverUrl !== me.coverUrl
+  ) {
+    autoAlbumAdds.push({ kind: "cover", url: updates.coverUrl.trim() });
+  }
+
   if (Object.keys(updates).length > 0) {
     try {
       await db
@@ -280,6 +300,31 @@ router.patch("/users/me", requireAuth, async (req, res): Promise<void> => {
       throw err;
     }
   }
+
+  for (const add of autoAlbumAdds) {
+    const name = add.kind === "profile" ? "Profile pictures" : "Cover photos";
+    let [album] = await db
+      .select({ id: albumsTable.id })
+      .from(albumsTable)
+      .where(
+        and(
+          eq(albumsTable.ownerId, req.userId!),
+          eq(albumsTable.kind, add.kind),
+        ),
+      );
+    if (!album) {
+      [album] = await db
+        .insert(albumsTable)
+        .values({ ownerId: req.userId!, name, kind: add.kind })
+        .returning({ id: albumsTable.id });
+    }
+    if (album) {
+      await db
+        .insert(albumPhotosTable)
+        .values({ albumId: album.id, url: add.url });
+    }
+  }
+
   const profile = await buildProfileDetail(req.userId!, req.userId);
   res.json(UpdateMyProfileResponse.parse(profile));
 });

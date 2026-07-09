@@ -28,6 +28,7 @@ import {
   type PostUpdatePrivacy,
 } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
+import { MentionText } from "@/components/Mention";
 import { MediaGrid } from "@/components/MediaGrid";
 import { BoostSheet } from "@/components/BoostSheet";
 import { ReactionBar } from "@/components/ReactionBar";
@@ -232,7 +233,10 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
 
       {post.content.length > 0 && (
         <Pressable onPress={() => router.push(`/post/${post.id}`)}>
-          <Text style={[styles.content, { color: c.foreground }]}>{post.content}</Text>
+          <MentionText
+            content={post.content}
+            style={[styles.content, { color: c.foreground }]}
+          />
         </Pressable>
       )}
 

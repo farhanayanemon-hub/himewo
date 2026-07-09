@@ -15,6 +15,7 @@ import { PostCard } from "@/components/post-card";
 import { VerifiedBadge } from "@/components/verified-badge";
 import { PostComposer } from "@/components/post-composer";
 import { CreateAlbumDialog } from "@/components/create-album-dialog";
+import { MediaLightbox } from "@/components/media-grid";
 import {
   Loader2,
   Briefcase,
@@ -56,6 +57,7 @@ export function ProfileView({
 }) {
   const queryClient = useQueryClient();
   const [createAlbumOpen, setCreateAlbumOpen] = useState(false);
+  const [photoOpen, setPhotoOpen] = useState<number | null>(null);
   const isLocked = Boolean(profile.isLocked);
   const showLocked = isLocked && !isOwnProfile && !profile.viewerIsFriend;
 
@@ -212,16 +214,25 @@ export function ProfileView({
             {photoUrls.length > 0 ? (
               <div className="grid grid-cols-3 gap-2">
                 {photoUrls.map((url, i) => (
-                  <img
-                    key={i}
-                    src={url}
-                    className="w-full aspect-square rounded-lg object-cover bg-muted"
-                    alt="Photo"
-                  />
+                  <button key={i} onClick={() => setPhotoOpen(i)}>
+                    <img
+                      src={url}
+                      className="w-full aspect-square rounded-lg object-cover bg-muted hover:opacity-90 transition-opacity"
+                      alt="Photo"
+                    />
+                  </button>
                 ))}
               </div>
             ) : (
               <p className="text-muted-foreground text-sm">No photos yet.</p>
+            )}
+            {photoOpen != null && (
+              <MediaLightbox
+                items={photoUrls.map((url) => ({ url, type: "image" }))}
+                index={photoOpen}
+                onClose={() => setPhotoOpen(null)}
+                onIndexChange={setPhotoOpen}
+              />
             )}
           </div>
 

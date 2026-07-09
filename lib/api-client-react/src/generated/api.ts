@@ -83,6 +83,7 @@ import type {
   GetEarningsHistoryParams,
   GetFeedParams,
   GetGroupPostsParams,
+  GetHashtagPostsParams,
   GetPagePostsParams,
   GetUserFriendsParams,
   GetUserPostsParams,
@@ -1203,6 +1204,95 @@ export function useGetWatchFeed<TData = Awaited<ReturnType<typeof getWatchFeed>>
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetWatchFeedQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetHashtagPostsUrl = (tag: string,
+    params?: GetHashtagPostsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/hashtags/${tag}/posts?${stringifiedParams}` : `/api/hashtags/${tag}/posts`
+}
+
+/**
+ * @summary Posts containing a hashtag (visibility-filtered)
+ */
+export const getHashtagPosts = async (tag: string,
+    params?: GetHashtagPostsParams, options?: RequestInit): Promise<Post[]> => {
+
+  return customFetch<Post[]>(getGetHashtagPostsUrl(tag,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetHashtagPostsQueryKey = (tag: string,
+    params?: GetHashtagPostsParams,) => {
+    return [
+    `/api/hashtags/${tag}/posts`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetHashtagPostsQueryOptions = <TData = Awaited<ReturnType<typeof getHashtagPosts>>, TError = ErrorType<UnauthorizedResponse>>(tag: string,
+    params?: GetHashtagPostsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getHashtagPosts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetHashtagPostsQueryKey(tag,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getHashtagPosts>>> = ({ signal }) => getHashtagPosts(tag,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: tag !== null && tag !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getHashtagPosts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetHashtagPostsQueryResult = NonNullable<Awaited<ReturnType<typeof getHashtagPosts>>>
+export type GetHashtagPostsQueryError = ErrorType<UnauthorizedResponse>
+
+
+/**
+ * @summary Posts containing a hashtag (visibility-filtered)
+ */
+
+export function useGetHashtagPosts<TData = Awaited<ReturnType<typeof getHashtagPosts>>, TError = ErrorType<UnauthorizedResponse>>(
+ tag: string,
+    params?: GetHashtagPostsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getHashtagPosts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetHashtagPostsQueryOptions(tag,params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

@@ -5,6 +5,7 @@
  * HiMewo social platform + Messenger API
  * OpenAPI spec version: 0.1.0
  */
+import type { AlbumKind } from './albumKind';
 
 export interface Album {
   id: number;
@@ -12,6 +13,7 @@ export interface Album {
   name: string;
   /** @nullable */
   description?: string | null;
+  kind?: AlbumKind;
   /** @nullable */
   coverUrl?: string | null;
   photoCount: number;

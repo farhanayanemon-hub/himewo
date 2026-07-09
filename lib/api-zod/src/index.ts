@@ -14,4 +14,6 @@ export {
   GetAdAccountInsightsQueryParams,
   ListAdAccountConversionsParams,
   ListAdAccountConversionsQueryParams,
+  GetHashtagPostsParams,
+  GetHashtagPostsQueryParams,
 } from "./generated/api";

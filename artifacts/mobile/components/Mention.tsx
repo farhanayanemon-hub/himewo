@@ -12,6 +12,10 @@ import { useColors } from "@/hooks/useColors";
 //   @[Display Name](user:<uuid>)
 export const MENTION_RE = /@\[([^\]]+)\]\(user:([^)]+)\)/g;
 
+// Facebook-style hashtags: "#word" becomes a link to the hashtag feed.
+// Shared shape with the web app.
+export const HASHTAG_RE = /#(\w{1,64})/g;
+
 export function activeMentionQuery(text: string): string | null {
   const m = /(?:^|\s)@([^\s@[\]()]{1,30})$/.exec(text);
   return m ? m[1] : null;
@@ -39,9 +43,29 @@ export function MentionText({
   const parts: React.ReactNode[] = [];
   let last = 0;
   let i = 0;
+  const pushPlain = (text: string) => {
+    let plainLast = 0;
+    for (const h of text.matchAll(HASHTAG_RE)) {
+      if (h.index! > plainLast) {
+        parts.push(text.slice(plainLast, h.index));
+      }
+      const tag = h[1];
+      parts.push(
+        <Text
+          key={`h-${i++}`}
+          style={{ color: c.primary, fontFamily: "Inter_600SemiBold" }}
+          onPress={() => router.push(`/hashtag/${tag}` as never)}
+        >
+          #{tag}
+        </Text>,
+      );
+      plainLast = h.index! + h[0].length;
+    }
+    if (plainLast < text.length) parts.push(text.slice(plainLast));
+  };
   for (const m of content.matchAll(MENTION_RE)) {
     if (m.index! > last) {
-      parts.push(content.slice(last, m.index));
+      pushPlain(content.slice(last, m.index));
     }
     const userId = m[2];
     if (userId === "highlight") {
@@ -67,7 +91,7 @@ export function MentionText({
     }
     last = m.index! + m[0].length;
   }
-  if (last < content.length) parts.push(content.slice(last));
+  if (last < content.length) pushPlain(content.slice(last));
   return <Text style={style}>{parts}</Text>;
 }
 
