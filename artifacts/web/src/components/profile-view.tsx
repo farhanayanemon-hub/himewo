@@ -7,10 +7,14 @@ import {
   getGetUserPostsQueryKey,
   useGetUserAlbums,
   getGetUserAlbumsQueryKey,
+  useUpdateMyProfile,
+  getGetUserQueryKey,
   type Profile,
   type Post,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth";
+import { PhotoActionMenu, usePhotoEditor } from "@/components/photo-editor";
 import { PostCard } from "@/components/post-card";
 import { VerifiedBadge } from "@/components/verified-badge";
 import { PostComposer } from "@/components/post-composer";
@@ -56,8 +60,27 @@ export function ProfileView({
   headerActions: React.ReactNode;
 }) {
   const queryClient = useQueryClient();
+  const { refreshUser } = useAuth();
+  const updateProfile = useUpdateMyProfile();
   const [createAlbumOpen, setCreateAlbumOpen] = useState(false);
   const [photoOpen, setPhotoOpen] = useState<number | null>(null);
+
+  const afterPhotoSave = async (data: { avatarUrl?: string; coverUrl?: string }) => {
+    await updateProfile.mutateAsync({ data });
+    await refreshUser();
+    queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(userId) });
+  };
+
+  const avatarEditor = usePhotoEditor({
+    kind: "avatar",
+    photoUrl: profile.avatarUrl,
+    onSaved: (url) => afterPhotoSave({ avatarUrl: url }),
+  });
+  const coverEditor = usePhotoEditor({
+    kind: "cover",
+    photoUrl: profile.coverUrl,
+    onSaved: (url) => afterPhotoSave({ coverUrl: url }),
+  });
   const isLocked = Boolean(profile.isLocked);
   const showLocked = isLocked && !isOwnProfile && !profile.viewerIsFriend;
 
@@ -101,20 +124,38 @@ export function ProfileView({
     <>
       {/* Cover + header */}
       <div className="aurora-glass-card rounded-2xl overflow-hidden mb-4">
-        <div className="h-48 md:h-64 bg-muted relative">
-          {profile.coverUrl ? (
-            <img src={profile.coverUrl} className="w-full h-full object-cover" alt="Cover" />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-r from-teal-400/50 via-purple-400/50 to-pink-400/50" />
-          )}
-        </div>
+        <PhotoActionMenu
+          photoUrl={profile.coverUrl}
+          kind="cover"
+          canChange={isOwnProfile}
+          onView={coverEditor.onView}
+          onPickFile={coverEditor.onPickFile}
+        >
+          <div className="h-48 md:h-64 bg-muted relative">
+            {profile.coverUrl ? (
+              <img src={profile.coverUrl} className="w-full h-full object-cover" alt="Cover" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-r from-teal-400/50 via-purple-400/50 to-pink-400/50" />
+            )}
+          </div>
+        </PhotoActionMenu>
         <div className="px-6 pb-4 relative">
           <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-16">
-            <img
-              src={avatarSrc(profile.avatarUrl)}
-              className="w-32 h-32 rounded-full border-4 border-card object-cover bg-muted relative z-10"
-              alt="Avatar"
-            />
+            <div className="relative z-10 w-32 shrink-0">
+              <PhotoActionMenu
+                photoUrl={profile.avatarUrl}
+                kind="avatar"
+                canChange={isOwnProfile}
+                onView={avatarEditor.onView}
+                onPickFile={avatarEditor.onPickFile}
+              >
+                <img
+                  src={avatarSrc(profile.avatarUrl)}
+                  className="w-32 h-32 rounded-full border-4 border-card object-cover bg-muted"
+                  alt="Avatar"
+                />
+              </PhotoActionMenu>
+            </div>
             <div className="flex-1 sm:pb-2">
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 {profile.displayName}
@@ -314,6 +355,8 @@ export function ProfileView({
         </div>
       </div>
       )}
+      {avatarEditor.dialogs}
+      {coverEditor.dialogs}
     </>
   );
 }
