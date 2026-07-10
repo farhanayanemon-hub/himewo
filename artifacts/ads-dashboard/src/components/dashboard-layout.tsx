@@ -27,6 +27,7 @@ import {
   Users2,
   Images,
   UserCog,
+  Flag,
   Wallet,
   Settings,
   Plus,
@@ -39,6 +40,7 @@ const NAV = [
   { href: "/audiences", label: "Audiences", icon: Users2 },
   { href: "/creatives", label: "Creatives", icon: Images },
   { href: "/team", label: "Team", icon: UserCog },
+  { href: "/pages", label: "Pages", icon: Flag },
   { href: "/wallet", label: "Wallet", icon: Wallet },
   { href: "/settings", label: "Settings", icon: Settings },
 ];

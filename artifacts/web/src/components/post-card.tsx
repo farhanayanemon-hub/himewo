@@ -94,7 +94,7 @@ export function PostCard({ post }: { post: Post }) {
   }, [post.reactions]);
 
   const isOwner = !!user && user.id === post.author.id;
-  const canBoost = isOwner && post.privacy === "public";
+  const canBoost = isOwner && post.privacy === "public" && post.pageId != null;
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: getGetFeedQueryKey() });

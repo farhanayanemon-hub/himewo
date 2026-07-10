@@ -18,8 +18,6 @@ import {
   getListPagesQueryKey,
   getGetPageQueryKey,
 } from "@workspace/api-client-react";
-import { useState } from "react";
-import { BoostSheet } from "@/components/BoostSheet";
 import { useColors } from "@/hooks/useColors";
 
 export default function PageDetailScreen() {
@@ -29,7 +27,6 @@ export default function PageDetailScreen() {
   const id = Number(idParam);
 
   const { data: page, isLoading } = useGetPage(id);
-  const [boostOpen, setBoostOpen] = useState(false);
   const followPage = useFollowPage();
   const unfollowPage = useUnfollowPage();
 
@@ -86,15 +83,6 @@ export default function PageDetailScreen() {
               )}
             </View>
             <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-end" }}>
-              {page.viewerCanPost && (
-                <Pressable
-                  style={[styles.followBtn, { backgroundColor: c.secondary, flexDirection: "row", alignItems: "center", gap: 6 }]}
-                  onPress={() => setBoostOpen(true)}
-                >
-                  <Ionicons name="rocket" size={16} color={c.foreground} />
-                  <Text style={{ color: c.foreground, fontFamily: "Inter_700Bold" }}>Boost</Text>
-                </Pressable>
-              )}
               <Pressable
                 style={[
                   styles.followBtn,
@@ -131,15 +119,6 @@ export default function PageDetailScreen() {
         </View>
       </ScrollView>
 
-      {page.viewerCanPost && (
-        <BoostSheet
-          type="page"
-          id={id}
-          visible={boostOpen}
-          onClose={() => setBoostOpen(false)}
-          onDone={invalidate}
-        />
-      )}
     </SafeAreaView>
   );
 }

@@ -57,6 +57,9 @@ import {
   UpdateAdAccountParams,
   UpdateAdAccountBody,
   UpdateAdAccountResponse,
+  TransferAdAccountParams,
+  TransferAdAccountBody,
+  TransferAdAccountResponse,
   ListAdAccountMembersParams,
   ListAdAccountMembersResponse,
   AddAdAccountMemberParams,
@@ -342,6 +345,82 @@ router.patch("/ad-accounts/:id", requireAuth, async (req, res): Promise<void> =>
     .where(eq(adAccountsTable.id, params.data.id));
   res.json(UpdateAdAccountResponse.parse({ ...account, viewerRole: role }));
 });
+
+// Transfer account ownership (Facebook-style). Only the CURRENT owner can do
+// this. The old owner stays on as an admin member so they don't lose access.
+router.post(
+  "/ad-accounts/:id/transfer",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = TransferAdAccountParams.safeParse(req.params);
+    const body = TransferAdAccountBody.safeParse(req.body);
+    if (!params.success || !body.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    const [account] = await db
+      .select()
+      .from(adAccountsTable)
+      .where(eq(adAccountsTable.id, params.data.id));
+    if (!account) {
+      res.status(404).json({ error: "Ad account not found" });
+      return;
+    }
+    if (account.ownerId !== req.userId) {
+      res.status(403).json({ error: "Only the account owner can transfer ownership" });
+      return;
+    }
+    if (body.data.userId === req.userId) {
+      res.status(400).json({ error: "You already own this account" });
+      return;
+    }
+    const [target] = await db
+      .select({ id: profilesTable.id })
+      .from(profilesTable)
+      .where(eq(profilesTable.id, body.data.userId));
+    if (!target) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+    await db.transaction(async (tx) => {
+      await tx
+        .update(adAccountsTable)
+        .set({ ownerId: body.data.userId })
+        .where(eq(adAccountsTable.id, params.data.id));
+      // New owner no longer needs a member row.
+      await tx
+        .delete(adAccountMembersTable)
+        .where(
+          and(
+            eq(adAccountMembersTable.accountId, params.data.id),
+            eq(adAccountMembersTable.userId, body.data.userId),
+          ),
+        );
+      // Keep the old owner on the account as an admin member.
+      await tx
+        .insert(adAccountMembersTable)
+        .values({
+          accountId: params.data.id,
+          userId: req.userId!,
+          role: "admin",
+        })
+        .onConflictDoUpdate({
+          target: [
+            adAccountMembersTable.accountId,
+            adAccountMembersTable.userId,
+          ],
+          set: { role: "admin" },
+        });
+    });
+    const [updated] = await db
+      .select()
+      .from(adAccountsTable)
+      .where(eq(adAccountsTable.id, params.data.id));
+    res.json(
+      TransferAdAccountResponse.parse({ ...updated, viewerRole: "admin" }),
+    );
+  },
+);
 
 // ---------------------------------------------------------------------------
 // Members

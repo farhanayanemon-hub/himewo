@@ -3,14 +3,28 @@ import {
   db,
   pagesTable,
   pageFollowersTable,
+  pageMembersTable,
   pageReviewsTable,
+  profilesTable,
   postsTable,
 } from "@workspace/db";
-import { and, eq, lt, desc } from "drizzle-orm";
+import { and, eq, lt, desc, or, inArray } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
-import { buildPage, buildPageReviews, buildPosts } from "../lib/serialize";
+import {
+  buildPage,
+  buildPageReviews,
+  buildPageMembers,
+  buildPosts,
+} from "../lib/serialize";
 import {
   ListPagesResponse,
+  ListPagesQueryParams,
+  ListPageMembersParams,
+  ListPageMembersResponse,
+  AddPageMemberParams,
+  AddPageMemberBody,
+  AddPageMemberResponse,
+  RemovePageMemberParams,
   CreatePageBody,
   CreatePageResponse,
   GetPageParams,
@@ -44,9 +58,27 @@ function isSafeHttpUrl(url: string | null | undefined): boolean {
 }
 
 router.get("/pages", requireAuth, async (req, res): Promise<void> => {
+  const query = ListPagesQueryParams.safeParse(req.query);
+  if (!query.success) {
+    res.status(400).json({ error: query.error.message });
+    return;
+  }
+  let where;
+  if (query.data.mine) {
+    const memberRows = await db
+      .select({ pageId: pageMembersTable.pageId })
+      .from(pageMembersTable)
+      .where(eq(pageMembersTable.userId, req.userId!));
+    const memberPageIds = memberRows.map((r) => r.pageId);
+    where = or(
+      eq(pagesTable.createdBy, req.userId!),
+      memberPageIds.length > 0 ? inArray(pagesTable.id, memberPageIds) : undefined,
+    );
+  }
   const rows = await db
     .select()
     .from(pagesTable)
+    .where(where)
     .orderBy(desc(pagesTable.id))
     .limit(50);
   const built = await Promise.all(rows.map((p) => buildPage(p, req.userId)));
@@ -132,8 +164,19 @@ router.patch("/pages/:id", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   if (page.createdBy !== req.userId) {
-    res.status(403).json({ error: "Forbidden" });
-    return;
+    const [member] = await db
+      .select({ id: pageMembersTable.id })
+      .from(pageMembersTable)
+      .where(
+        and(
+          eq(pageMembersTable.pageId, params.data.id),
+          eq(pageMembersTable.userId, req.userId!),
+        ),
+      );
+    if (!member) {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
   }
   const [updated] = await db
     .update(pagesTable)
@@ -142,6 +185,109 @@ router.patch("/pages/:id", requireAuth, async (req, res): Promise<void> => {
     .returning();
   res.json(UpdatePageResponse.parse(await buildPage(updated, req.userId)));
 });
+
+// ---------------- Page access (members) ----------------
+// Only the page OWNER may view/manage the Page access list.
+async function requirePageOwner(
+  res: Parameters<Parameters<IRouter["get"]>[1]>[1],
+  userId: string,
+  pageId: number,
+): Promise<boolean> {
+  const [page] = await db
+    .select({ createdBy: pagesTable.createdBy })
+    .from(pagesTable)
+    .where(eq(pagesTable.id, pageId));
+  if (!page) {
+    res.status(404).json({ error: "Page not found" });
+    return false;
+  }
+  if (page.createdBy !== userId) {
+    res.status(403).json({ error: "Only the page owner can manage Page access" });
+    return false;
+  }
+  return true;
+}
+
+router.get(
+  "/pages/:id/members",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = ListPageMembersParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    if (!(await requirePageOwner(res, req.userId!, params.data.id))) return;
+    const rows = await db
+      .select()
+      .from(pageMembersTable)
+      .where(eq(pageMembersTable.pageId, params.data.id))
+      .orderBy(desc(pageMembersTable.id));
+    res.json(ListPageMembersResponse.parse(await buildPageMembers(rows)));
+  },
+);
+
+router.post(
+  "/pages/:id/members",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = AddPageMemberParams.safeParse(req.params);
+    const body = AddPageMemberBody.safeParse(req.body);
+    if (!params.success || !body.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    if (!(await requirePageOwner(res, req.userId!, params.data.id))) return;
+    if (body.data.userId === req.userId) {
+      res.status(400).json({ error: "You already own this page" });
+      return;
+    }
+    const [profile] = await db
+      .select({ id: profilesTable.id })
+      .from(profilesTable)
+      .where(eq(profilesTable.id, body.data.userId));
+    if (!profile) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+    const [row] = await db
+      .insert(pageMembersTable)
+      .values({
+        pageId: params.data.id,
+        userId: body.data.userId,
+        role: body.data.role ?? "editor",
+      })
+      .onConflictDoUpdate({
+        target: [pageMembersTable.pageId, pageMembersTable.userId],
+        set: { role: body.data.role ?? "editor" },
+      })
+      .returning();
+    const [built] = await buildPageMembers([row]);
+    res.status(201).json(AddPageMemberResponse.parse(built));
+  },
+);
+
+router.delete(
+  "/pages/:id/members/:userId",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = RemovePageMemberParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    if (!(await requirePageOwner(res, req.userId!, params.data.id))) return;
+    await db
+      .delete(pageMembersTable)
+      .where(
+        and(
+          eq(pageMembersTable.pageId, params.data.id),
+          eq(pageMembersTable.userId, params.data.userId),
+        ),
+      );
+    res.sendStatus(204);
+  },
+);
 
 router.get(
   "/pages/:id/reviews",

@@ -1671,6 +1671,29 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+  /ad-accounts/{id}/transfer:
+    post:
+      operationId: transferAdAccount
+      tags: [ads]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdAccountTransferInput" }
+      responses:
+        "200":
+          description: Ownership transferred
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdAccount" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   # ---------------- Ads: campaigns ----------------
   /ad-accounts/{id}/campaigns:
@@ -2632,6 +2655,13 @@ paths:
     get:
       operationId: listPages
       tags: [pages]
+      parameters:
+        - {
+            name: mine,
+            in: query,
+            schema: { type: boolean },
+            description: "Only pages the viewer owns or has access to",
+          }
       responses:
         "200":
           description: Pages
@@ -2684,6 +2714,57 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Page" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /pages/{id}/members:
+    get:
+      operationId: listPageMembers
+      tags: [pages]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Page members
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PageMember" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: addPageMember
+      tags: [pages]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PageMemberInput" }
+      responses:
+        "201":
+          description: Member added
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PageMember" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /pages/{id}/members/{userId}:
+    delete:
+      operationId: removePageMember
+      tags: [pages]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: userId, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Removed }
         "403":
           $ref: "#/components/responses/Forbidden"
         "404":
@@ -3888,6 +3969,20 @@ components:
         hours: { type: ["string", "null"] }
         ctaType: { type: string, enum: [none, message, call, shop, signup] }
         ctaUrl: { type: ["string", "null"] }
+    PageMember:
+      type: object
+      required: [id, user, role, createdAt]
+      properties:
+        id: { type: integer }
+        user: { $ref: "#/components/schemas/Profile" }
+        role: { type: string, enum: [editor] }
+        createdAt: { type: string, format: date-time }
+    PageMemberInput:
+      type: object
+      required: [userId]
+      properties:
+        userId: { type: string }
+        role: { type: string, enum: [editor], default: editor }
     PageReview:
       type: object
       required: [id, user, rating, createdAt]
@@ -4111,6 +4206,11 @@ components:
       required: [role]
       properties:
         role: { type: string, enum: [admin, advertiser, analyst] }
+    AdAccountTransferInput:
+      type: object
+      required: [userId]
+      properties:
+        userId: { type: string, minLength: 1 }
     AdCampaign:
       type: object
       required: [id, accountId, name, objective, status, createdAt]

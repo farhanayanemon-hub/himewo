@@ -28,8 +28,10 @@ import {
   Wallet,
   Moon,
   Sun,
+  Megaphone,
   type LucideIcon,
 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { MobileNav, MobileMenuButton } from "./mobile-nav";
 
@@ -77,6 +79,28 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
   const { data: unreadCount } = useGetUnreadNotificationCount();
   const { data: earnings } = useGetEarningsSummary();
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Open the Ads Manager with an SSO token handoff so the user doesn't have
+  // to log in again (session is passed in the URL hash, never sent to a server).
+  const openAdsManager = async () => {
+    let url = "https://ads.himewo.com/";
+    try {
+      if (supabase) {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          const p = new URLSearchParams({
+            sso: "1",
+            at: data.session.access_token,
+            rt: data.session.refresh_token,
+          });
+          url += `#${p.toString()}`;
+        }
+      }
+    } catch {
+      // fall through — open without SSO
+    }
+    window.open(url, "_blank", "noopener");
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -202,6 +226,13 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
               );
             })}
             <div className="my-4 border-t border-border" />
+            <button
+              onClick={openAdsManager}
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
+            >
+              <NavIcon icon={Megaphone} color="text-blue-500" size="sm" />
+              <span className="font-medium">Ads Manager</span>
+            </button>
             <Link href="/settings" className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
               <NavIcon icon={Settings} color="text-slate-500" size="sm" />
               <span className="font-medium">Settings</span>
