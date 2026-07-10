@@ -57,6 +57,35 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+export const PAGE_CATEGORIES = [
+  "Business",
+  "Brand",
+  "Community",
+  "Public Figure",
+  "Entertainment",
+  "Shop & Retail",
+  "Restaurant & Cafe",
+  "Education",
+  "Health & Beauty",
+  "Sports",
+  "Technology",
+  "News & Media",
+  "Nonprofit Organization",
+  "Travel",
+  "Art",
+  "Music",
+  "Gaming",
+  "Personal Blog",
+  "Other",
+];
 
 function safeHttpUrl(url: string | null | undefined): string | null {
   if (!url) return null;
@@ -83,19 +112,32 @@ function PageList() {
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
   const [open, setOpen] = useState(false);
+  const [step, setStep] = useState(1);
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
 
   const createPage = useCreatePage();
 
+  const resetWizard = () => {
+    setStep(1);
+    setName("");
+    setCategory("");
+    setDescription("");
+  };
+
+  const handleOpenChange = (v: boolean) => {
+    setOpen(v);
+    if (!v) resetWizard();
+  };
+
   const handleCreate = () => {
-    if (!name.trim()) return;
+    if (!name.trim() || !category) return;
     createPage.mutate(
       {
         data: {
           name: name.trim(),
-          category: category.trim() || undefined,
+          category,
           description: description.trim() || undefined,
         },
       },
@@ -103,9 +145,7 @@ function PageList() {
         onSuccess: (page) => {
           queryClient.invalidateQueries({ queryKey: getListPagesQueryKey() });
           setOpen(false);
-          setName("");
-          setCategory("");
-          setDescription("");
+          resetWizard();
           navigate(`/pages/${page.id}`);
         },
       }
@@ -158,46 +198,92 @@ function PageList() {
         )}
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create Page</DialogTitle>
+            <p className="text-sm text-muted-foreground">Step {step} of 3</p>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="flex gap-1.5 mb-2">
+            {[1, 2, 3].map((s) => (
+              <div
+                key={s}
+                className={`h-1.5 flex-1 rounded-full transition-colors ${s <= step ? "bg-primary" : "bg-muted"}`}
+              />
+            ))}
+          </div>
+          {step === 1 && (
             <div className="space-y-2">
-              <Label htmlFor="page-name">Name</Label>
+              <Label htmlFor="page-name">Page name</Label>
               <Input
                 id="page-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Page name"
+                autoFocus
               />
+              <p className="text-xs text-muted-foreground">
+                Use the name of your business, brand or organization.
+              </p>
             </div>
+          )}
+          {step === 2 && (
             <div className="space-y-2">
-              <Label htmlFor="page-category">Category</Label>
-              <Input
-                id="page-category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                placeholder="e.g. Business, Community"
-              />
+              <Label>Category</Label>
+              <p className="text-xs text-muted-foreground">
+                Choose the category that best describes your Page.
+              </p>
+              <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1">
+                {PAGE_CATEGORIES.map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setCategory(cat)}
+                    className={`text-left text-sm px-3 py-2.5 rounded-lg border transition-colors ${
+                      category === cat
+                        ? "border-primary bg-primary/10 text-primary font-semibold"
+                        : "border-border hover:bg-muted/50"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
             </div>
+          )}
+          {step === 3 && (
             <div className="space-y-2">
-              <Label htmlFor="page-description">Description</Label>
+              <Label htmlFor="page-description">Bio (optional)</Label>
               <Textarea
                 id="page-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="What's this page about?"
+                autoFocus
               />
+              <p className="text-xs text-muted-foreground">
+                Tell people a little about what your Page does.
+              </p>
             </div>
-          </div>
+          )}
           <DialogFooter>
-            <Button variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={handleCreate} disabled={!name.trim() || createPage.isPending}>
-              {createPage.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-              Create
-            </Button>
+            {step > 1 ? (
+              <Button variant="secondary" onClick={() => setStep(step - 1)}>Back</Button>
+            ) : (
+              <Button variant="secondary" onClick={() => handleOpenChange(false)}>Cancel</Button>
+            )}
+            {step === 1 && (
+              <Button onClick={() => setStep(2)} disabled={!name.trim()}>Next</Button>
+            )}
+            {step === 2 && (
+              <Button onClick={() => setStep(3)} disabled={!category}>Next</Button>
+            )}
+            {step === 3 && (
+              <Button onClick={handleCreate} disabled={!name.trim() || !category || createPage.isPending}>
+                {createPage.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                Create Page
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -457,8 +543,6 @@ function EditPageDialog({
   const [name, setName] = useState(page.name);
   const [category, setCategory] = useState(page.category ?? "");
   const [description, setDescription] = useState(page.description ?? "");
-  const [avatarUrl, setAvatarUrl] = useState(page.avatarUrl ?? "");
-  const [coverUrl, setCoverUrl] = useState(page.coverUrl ?? "");
   const [contactPhone, setContactPhone] = useState(page.contactPhone ?? "");
   const [contactEmail, setContactEmail] = useState(page.contactEmail ?? "");
   const [website, setWebsite] = useState(page.website ?? "");
@@ -474,10 +558,8 @@ function EditPageDialog({
         id: page.id,
         data: {
           name: name.trim(),
-          category: category.trim() || null,
+          category: category || null,
           description: description.trim() || null,
-          avatarUrl: avatarUrl.trim() || null,
-          coverUrl: coverUrl.trim() || null,
           contactPhone: contactPhone.trim() || null,
           contactEmail: contactEmail.trim() || null,
           website: website.trim() || null,
@@ -512,19 +594,23 @@ function EditPageDialog({
           </div>
           <div className="space-y-2">
             <Label>Category</Label>
-            <Input value={category} onChange={(e) => setCategory(e.target.value)} />
+            <Select value={category || undefined} onValueChange={(v) => setCategory(v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a category" />
+              </SelectTrigger>
+              <SelectContent>
+                {!PAGE_CATEGORIES.includes(category) && category ? (
+                  <SelectItem value={category}>{category}</SelectItem>
+                ) : null}
+                {PAGE_CATEGORIES.map((cat) => (
+                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label>Description</Label>
             <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>Avatar URL</Label>
-            <Input value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>Cover URL</Label>
-            <Input value={coverUrl} onChange={(e) => setCoverUrl(e.target.value)} />
           </div>
           <div className="space-y-2">
             <Label>Phone</Label>
