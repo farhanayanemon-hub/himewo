@@ -1,3 +1,4 @@
+- [Page access/members](himewo-page-access.md) — page_members editor model (owner-only manages), boost only page posts, ad-account transfer, web→ads SSO hash handoff (accepted risk).
 - [Page about/CTA/reviews](himewo-page-features.md) — pages contact/CTA(none|message|call|shop|signup)/one-per-user reviews; user-supplied URL fields (website/ctaUrl) MUST be http(s)-allowlisted both sides (stored XSS guard).
 - [Settings system](himewo-settings-system.md) — per-user settings live in a SEPARATE schema/contract/route; notification prefs enforced in createNotification, not per-route.
 - [Home placeholders](himewo-home-placeholders.md) — home Birthdays card + /saved + /memories are intentional empty states (no DOB/saved data yet), not bugs.
