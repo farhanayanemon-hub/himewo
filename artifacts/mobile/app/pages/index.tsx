@@ -4,6 +4,7 @@ import {
   FlatList,
   Modal,
   Pressable,
+  ScrollView,
   Text,
   TextInput,
   View,
@@ -21,6 +22,28 @@ import {
 } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 
+export const PAGE_CATEGORIES = [
+  "Business",
+  "Brand",
+  "Community",
+  "Public Figure",
+  "Entertainment",
+  "Shop & Retail",
+  "Restaurant & Cafe",
+  "Education",
+  "Health & Beauty",
+  "Sports",
+  "Technology",
+  "News & Media",
+  "Nonprofit Organization",
+  "Travel",
+  "Art",
+  "Music",
+  "Gaming",
+  "Personal Blog",
+  "Other",
+];
+
 export default function PagesScreen() {
   const c = useColors();
   const qc = useQueryClient();
@@ -32,13 +55,20 @@ export default function PagesScreen() {
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
 
+  const closeModal = () => {
+    setOpen(false);
+    setName("");
+    setCategory("");
+    setDescription("");
+  };
+
   const handleCreate = () => {
-    if (!name.trim()) return;
+    if (!name.trim() || !category) return;
     createPage.mutate(
       {
         data: {
           name: name.trim(),
-          category: category.trim() || undefined,
+          category,
           description: description.trim() || undefined,
         },
       },
@@ -108,7 +138,7 @@ export default function PagesScreen() {
         />
       )}
 
-      <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
+      <Modal visible={open} transparent animationType="slide" onRequestClose={closeModal}>
         <View style={styles.modalBackdrop}>
           <View style={[styles.modalCard, { backgroundColor: c.card }]}>
             <Text style={[styles.modalTitle, { color: c.foreground }]}>Create Page</Text>
@@ -119,13 +149,39 @@ export default function PagesScreen() {
               placeholderTextColor={c.mutedForeground}
               style={[styles.input, { color: c.foreground, borderColor: c.border, backgroundColor: c.secondary }]}
             />
-            <TextInput
-              value={category}
-              onChangeText={setCategory}
-              placeholder="e.g. Business, Community"
-              placeholderTextColor={c.mutedForeground}
-              style={[styles.input, { color: c.foreground, borderColor: c.border, backgroundColor: c.secondary }]}
-            />
+            <Text style={{ color: c.mutedForeground, fontFamily: "Inter_600SemiBold", fontSize: 13 }}>
+              Category
+            </Text>
+            <ScrollView style={{ maxHeight: 160 }}>
+              <View style={styles.chipWrap}>
+                {PAGE_CATEGORIES.map((cat) => {
+                  const selected = category === cat;
+                  return (
+                    <Pressable
+                      key={cat}
+                      onPress={() => setCategory(cat)}
+                      style={[
+                        styles.chip,
+                        {
+                          backgroundColor: selected ? c.primary : c.secondary,
+                          borderColor: selected ? c.primary : c.border,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={{
+                          color: selected ? "#fff" : c.foreground,
+                          fontFamily: selected ? "Inter_600SemiBold" : "Inter_400Regular",
+                          fontSize: 13,
+                        }}
+                      >
+                        {cat}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </ScrollView>
             <TextInput
               value={description}
               onChangeText={setDescription}
@@ -135,18 +191,18 @@ export default function PagesScreen() {
               style={[styles.input, styles.textarea, { color: c.foreground, borderColor: c.border, backgroundColor: c.secondary }]}
             />
             <View style={styles.modalActions}>
-              <Pressable style={[styles.btn, { backgroundColor: c.secondary }]} onPress={() => setOpen(false)}>
+              <Pressable style={[styles.btn, { backgroundColor: c.secondary }]} onPress={closeModal}>
                 <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold" }}>Cancel</Text>
               </Pressable>
               <Pressable
-                style={[styles.btn, { backgroundColor: name.trim() ? c.primary : c.secondary }]}
+                style={[styles.btn, { backgroundColor: name.trim() && category ? c.primary : c.secondary }]}
                 onPress={handleCreate}
-                disabled={!name.trim() || createPage.isPending}
+                disabled={!name.trim() || !category || createPage.isPending}
               >
                 {createPage.isPending ? (
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
-                  <Text style={{ color: name.trim() ? "#fff" : c.mutedForeground, fontFamily: "Inter_700Bold" }}>
+                  <Text style={{ color: name.trim() && category ? "#fff" : c.mutedForeground, fontFamily: "Inter_700Bold" }}>
                     Create
                   </Text>
                 )}
@@ -194,6 +250,13 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
   },
   textarea: { minHeight: 80, textAlignVertical: "top" },
+  chipWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  chip: {
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
   modalActions: { flexDirection: "row", gap: 10, marginTop: 4 },
   btn: { flex: 1, borderRadius: 10, paddingVertical: 12, alignItems: "center" },
 });
