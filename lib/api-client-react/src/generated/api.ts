@@ -74,6 +74,7 @@ import type {
   EventDetail,
   EventInput,
   EventRsvpInput,
+  FollowPageParams,
   ForbiddenResponse,
   FriendRequest,
   FriendRequestInput,
@@ -85,6 +86,7 @@ import type {
   GetFeedParams,
   GetGroupPostsParams,
   GetHashtagPostsParams,
+  GetPageParams,
   GetPagePostsParams,
   GetUserFriendsParams,
   GetUserPostsParams,
@@ -103,6 +105,7 @@ import type {
   ListMessagesParams,
   ListMusicTracksParams,
   ListNotificationsParams,
+  ListPageMediaParams,
   ListPagesParams,
   ListReelsParams,
   LiveStream,
@@ -122,6 +125,7 @@ import type {
   Notification,
   Page,
   PageInput,
+  PageMediaItem,
   PageMember,
   PageMemberInput,
   PageReview,
@@ -171,6 +175,7 @@ import type {
   StoryGroup,
   StoryInput,
   UnauthorizedResponse,
+  UnfollowPageParams,
   UnreadCount,
   UploadUrlInput,
   UploadUrlResponse,
@@ -11354,17 +11359,26 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getCreatePageMutationOptions(options));
     }
 
-export const getGetPageUrl = (id: number,) => {
+export const getGetPageUrl = (id: number,
+    params?: GetPageParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/pages/${id}`
+  return stringifiedParams.length > 0 ? `/api/pages/${id}?${stringifiedParams}` : `/api/pages/${id}`
 }
 
-export const getPage = async (id: number, options?: RequestInit): Promise<Page> => {
+export const getPage = async (id: number,
+    params?: GetPageParams, options?: RequestInit): Promise<Page> => {
 
-  return customFetch<Page>(getGetPageUrl(id),
+  return customFetch<Page>(getGetPageUrl(id,params),
   {
     ...options,
     method: 'GET'
@@ -11377,23 +11391,25 @@ export const getPage = async (id: number, options?: RequestInit): Promise<Page> 
 
 
 
-export const getGetPageQueryKey = (id: number,) => {
+export const getGetPageQueryKey = (id: number,
+    params?: GetPageParams,) => {
     return [
-    `/api/pages/${id}`
+    `/api/pages/${id}`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetPageQueryOptions = <TData = Awaited<ReturnType<typeof getPage>>, TError = ErrorType<NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetPageQueryOptions = <TData = Awaited<ReturnType<typeof getPage>>, TError = ErrorType<NotFoundResponse>>(id: number,
+    params?: GetPageParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetPageQueryKey(id);
+  const queryKey =  queryOptions?.queryKey ?? getGetPageQueryKey(id,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPage>>> = ({ signal }) => getPage(id, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPage>>> = ({ signal }) => getPage(id,params, { signal, ...requestOptions });
 
 
 
@@ -11408,11 +11424,12 @@ export type GetPageQueryError = ErrorType<NotFoundResponse>
 
 
 export function useGetPage<TData = Awaited<ReturnType<typeof getPage>>, TError = ErrorType<NotFoundResponse>>(
- id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ id: number,
+    params?: GetPageParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetPageQueryOptions(id,options)
+  const queryOptions = getGetPageQueryOptions(id,params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -11786,7 +11803,7 @@ export const reviewPage = async (id: number,
 
 
 
-export const getReviewPageMutationOptions = <TError = ErrorType<unknown>,
+export const getReviewPageMutationOptions = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewPage>>, TError,{id: number;data: BodyType<PageReviewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof reviewPage>>, TError,{id: number;data: BodyType<PageReviewInput>}, TContext> => {
 
@@ -11815,9 +11832,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type ReviewPageMutationResult = NonNullable<Awaited<ReturnType<typeof reviewPage>>>
     export type ReviewPageMutationBody = BodyType<PageReviewInput>
-    export type ReviewPageMutationError = ErrorType<unknown>
+    export type ReviewPageMutationError = ErrorType<ForbiddenResponse | NotFoundResponse>
 
-    export const useReviewPage = <TError = ErrorType<unknown>,
+    export const useReviewPage = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewPage>>, TError,{id: number;data: BodyType<PageReviewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof reviewPage>>,
@@ -11975,17 +11992,115 @@ export function useGetPagePosts<TData = Awaited<ReturnType<typeof getPagePosts>>
 
 
 
-export const getFollowPageUrl = (id: number,) => {
+export const getListPageMediaUrl = (id: number,
+    params?: ListPageMediaParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/pages/${id}/follow`
+  return stringifiedParams.length > 0 ? `/api/pages/${id}/media?${stringifiedParams}` : `/api/pages/${id}/media`
 }
 
-export const followPage = async (id: number, options?: RequestInit): Promise<void> => {
+/**
+ * @summary Photos and videos from the page's posts
+ */
+export const listPageMedia = async (id: number,
+    params?: ListPageMediaParams, options?: RequestInit): Promise<PageMediaItem[]> => {
 
-  return customFetch<void>(getFollowPageUrl(id),
+  return customFetch<PageMediaItem[]>(getListPageMediaUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPageMediaQueryKey = (id: number,
+    params?: ListPageMediaParams,) => {
+    return [
+    `/api/pages/${id}/media`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListPageMediaQueryOptions = <TData = Awaited<ReturnType<typeof listPageMedia>>, TError = ErrorType<unknown>>(id: number,
+    params?: ListPageMediaParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPageMedia>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPageMediaQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPageMedia>>> = ({ signal }) => listPageMedia(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPageMedia>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPageMediaQueryResult = NonNullable<Awaited<ReturnType<typeof listPageMedia>>>
+export type ListPageMediaQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Photos and videos from the page's posts
+ */
+
+export function useListPageMedia<TData = Awaited<ReturnType<typeof listPageMedia>>, TError = ErrorType<unknown>>(
+ id: number,
+    params?: ListPageMediaParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPageMedia>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPageMediaQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getFollowPageUrl = (id: number,
+    params?: FollowPageParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/pages/${id}/follow?${stringifiedParams}` : `/api/pages/${id}/follow`
+}
+
+export const followPage = async (id: number,
+    params?: FollowPageParams, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getFollowPageUrl(id,params),
   {
     ...options,
     method: 'POST'
@@ -11997,9 +12112,9 @@ export const followPage = async (id: number, options?: RequestInit): Promise<voi
 
 
 
-export const getFollowPageMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof followPage>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof followPage>>, TError,{id: number}, TContext> => {
+export const getFollowPageMutationOptions = <TError = ErrorType<ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof followPage>>, TError,{id: number;params?: FollowPageParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof followPage>>, TError,{id: number;params?: FollowPageParams}, TContext> => {
 
 const mutationKey = ['followPage'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -12011,10 +12126,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof followPage>>, {id: number}> = (props) => {
-          const {id} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof followPage>>, {id: number;params?: FollowPageParams}> = (props) => {
+          const {id,params} = props ?? {};
 
-          return  followPage(id,requestOptions)
+          return  followPage(id,params,requestOptions)
         }
 
 
@@ -12026,30 +12141,39 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type FollowPageMutationResult = NonNullable<Awaited<ReturnType<typeof followPage>>>
 
-    export type FollowPageMutationError = ErrorType<unknown>
+    export type FollowPageMutationError = ErrorType<ForbiddenResponse>
 
-    export const useFollowPage = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof followPage>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+    export const useFollowPage = <TError = ErrorType<ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof followPage>>, TError,{id: number;params?: FollowPageParams}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof followPage>>,
         TError,
-        {id: number},
+        {id: number;params?: FollowPageParams},
         TContext
       > => {
       return useMutation(getFollowPageMutationOptions(options));
     }
 
-export const getUnfollowPageUrl = (id: number,) => {
+export const getUnfollowPageUrl = (id: number,
+    params?: UnfollowPageParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/pages/${id}/follow`
+  return stringifiedParams.length > 0 ? `/api/pages/${id}/follow?${stringifiedParams}` : `/api/pages/${id}/follow`
 }
 
-export const unfollowPage = async (id: number, options?: RequestInit): Promise<void> => {
+export const unfollowPage = async (id: number,
+    params?: UnfollowPageParams, options?: RequestInit): Promise<void> => {
 
-  return customFetch<void>(getUnfollowPageUrl(id),
+  return customFetch<void>(getUnfollowPageUrl(id,params),
   {
     ...options,
     method: 'DELETE'
@@ -12061,9 +12185,9 @@ export const unfollowPage = async (id: number, options?: RequestInit): Promise<v
 
 
 
-export const getUnfollowPageMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unfollowPage>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof unfollowPage>>, TError,{id: number}, TContext> => {
+export const getUnfollowPageMutationOptions = <TError = ErrorType<ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unfollowPage>>, TError,{id: number;params?: UnfollowPageParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof unfollowPage>>, TError,{id: number;params?: UnfollowPageParams}, TContext> => {
 
 const mutationKey = ['unfollowPage'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -12075,10 +12199,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unfollowPage>>, {id: number}> = (props) => {
-          const {id} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unfollowPage>>, {id: number;params?: UnfollowPageParams}> = (props) => {
+          const {id,params} = props ?? {};
 
-          return  unfollowPage(id,requestOptions)
+          return  unfollowPage(id,params,requestOptions)
         }
 
 
@@ -12090,14 +12214,14 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type UnfollowPageMutationResult = NonNullable<Awaited<ReturnType<typeof unfollowPage>>>
 
-    export type UnfollowPageMutationError = ErrorType<unknown>
+    export type UnfollowPageMutationError = ErrorType<ForbiddenResponse>
 
-    export const useUnfollowPage = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unfollowPage>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+    export const useUnfollowPage = <TError = ErrorType<ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unfollowPage>>, TError,{id: number;params?: UnfollowPageParams}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof unfollowPage>>,
         TError,
-        {id: number},
+        {id: number;params?: UnfollowPageParams},
         TContext
       > => {
       return useMutation(getUnfollowPageMutationOptions(options));

@@ -22,6 +22,7 @@ import {
   groupMembersTable,
   pagesTable,
   pageFollowersTable,
+  pageFollowingTable,
   pageMembersTable,
   pageReviewsTable,
   storiesTable,
@@ -792,12 +793,30 @@ export async function buildGroupMembers(
 }
 
 // ---------------- Pages ----------------
-export async function buildPage(row: PageRow, viewerId?: string) {
-  const [[followers], viewerRow, [stats], viewerReviewRows, memberRow] = await Promise.all([
+export async function buildPage(
+  row: PageRow,
+  viewerId?: string,
+  // When the viewer is acting AS a page, viewerFollows reflects whether that
+  // acting page (not the user) follows this page.
+  actingPageId?: number,
+) {
+  const [
+    [followers],
+    [followingRow],
+    viewerRow,
+    [stats],
+    viewerReviewRows,
+    memberRow,
+    actingFollowRow,
+  ] = await Promise.all([
     db
       .select({ value: count() })
       .from(pageFollowersTable)
       .where(eq(pageFollowersTable.pageId, row.id)),
+    db
+      .select({ value: count() })
+      .from(pageFollowingTable)
+      .where(eq(pageFollowingTable.pageId, row.id)),
     viewerId
       ? db
           .select()
@@ -835,9 +854,29 @@ export async function buildPage(row: PageRow, viewerId?: string) {
             ),
           )
       : Promise.resolve([]),
+    actingPageId
+      ? db
+          .select()
+          .from(pageFollowingTable)
+          .where(
+            and(
+              eq(pageFollowingTable.pageId, actingPageId),
+              eq(pageFollowingTable.targetPageId, row.id),
+            ),
+          )
+      : Promise.resolve([]),
   ]);
   const vr = Array.isArray(viewerReviewRows) ? viewerReviewRows[0] : undefined;
   const viewerReview = vr ? ((await buildPageReviews([vr]))[0] ?? null) : null;
+  // The page owner and anyone granted Page access may manage/post as the page.
+  const viewerCanPost = Boolean(
+    viewerId && (viewerId === row.createdBy || memberRow.length > 0),
+  );
+  const viewerFollows = actingPageId
+    ? Array.isArray(actingFollowRow) && actingFollowRow.length > 0
+    : Array.isArray(viewerRow)
+      ? viewerRow.length > 0
+      : false;
   return {
     id: row.id,
     name: row.name,
@@ -854,13 +893,15 @@ export async function buildPage(row: PageRow, viewerId?: string) {
     ctaUrl: row.ctaUrl,
     ownerId: row.createdBy,
     followerCount: followers?.value ?? 0,
+    followingCount: followingRow?.value ?? 0,
     reviewCount: stats?.cnt ?? 0,
     averageRating: stats?.average != null ? Number(stats.average) : null,
-    viewerFollows: Array.isArray(viewerRow) ? viewerRow.length > 0 : false,
-    // The page owner and anyone granted Page access may manage/post as the page.
-    viewerCanPost: Boolean(
-      viewerId && (viewerId === row.createdBy || memberRow.length > 0),
-    ),
+    reviewsEnabled: row.reviewsEnabled,
+    viewerFollows,
+    viewerCanPost,
+    // Anyone signed in who does NOT manage the page may leave a review, but
+    // only while reviews are enabled. Owners/editors can't review their own page.
+    viewerCanReview: Boolean(viewerId && !viewerCanPost && row.reviewsEnabled),
     viewerReview,
     createdAt: row.createdAt,
   };
