@@ -100,6 +100,7 @@ import type {
   ListCommentsParams,
   ListMarketplaceListingsParams,
   ListMessagesParams,
+  ListMusicTracksParams,
   ListNotificationsParams,
   ListReelsParams,
   LiveStream,
@@ -111,6 +112,8 @@ import type {
   Message,
   MessageInput,
   MessageReactionInput,
+  MusicTrack,
+  MusicTrackInput,
   MuteMemberInput,
   NotFoundResponse,
   Notification,
@@ -11831,6 +11834,160 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getCreateStoryMutationOptions(options));
+    }
+
+export const getListMusicTracksUrl = (params?: ListMusicTracksParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/music/tracks?${stringifiedParams}` : `/api/music/tracks`
+}
+
+/**
+ * @summary Royalty-free music library plus viewer uploads
+ */
+export const listMusicTracks = async (params?: ListMusicTracksParams, options?: RequestInit): Promise<MusicTrack[]> => {
+
+  return customFetch<MusicTrack[]>(getListMusicTracksUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMusicTracksQueryKey = (params?: ListMusicTracksParams,) => {
+    return [
+    `/api/music/tracks`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListMusicTracksQueryOptions = <TData = Awaited<ReturnType<typeof listMusicTracks>>, TError = ErrorType<unknown>>(params?: ListMusicTracksParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMusicTracks>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMusicTracksQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMusicTracks>>> = ({ signal }) => listMusicTracks(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMusicTracks>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMusicTracksQueryResult = NonNullable<Awaited<ReturnType<typeof listMusicTracks>>>
+export type ListMusicTracksQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Royalty-free music library plus viewer uploads
+ */
+
+export function useListMusicTracks<TData = Awaited<ReturnType<typeof listMusicTracks>>, TError = ErrorType<unknown>>(
+ params?: ListMusicTracksParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMusicTracks>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMusicTracksQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUploadMusicTrackUrl = () => {
+
+
+
+
+  return `/api/music/tracks`
+}
+
+/**
+ * @summary Add a user-uploaded audio track
+ */
+export const uploadMusicTrack = async (musicTrackInput: MusicTrackInput, options?: RequestInit): Promise<MusicTrack> => {
+
+  return customFetch<MusicTrack>(getUploadMusicTrackUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(musicTrackInput)
+  }
+);}
+
+
+
+
+export const getUploadMusicTrackMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadMusicTrack>>, TError,{data: BodyType<MusicTrackInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof uploadMusicTrack>>, TError,{data: BodyType<MusicTrackInput>}, TContext> => {
+
+const mutationKey = ['uploadMusicTrack'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof uploadMusicTrack>>, {data: BodyType<MusicTrackInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  uploadMusicTrack(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UploadMusicTrackMutationResult = NonNullable<Awaited<ReturnType<typeof uploadMusicTrack>>>
+    export type UploadMusicTrackMutationBody = BodyType<MusicTrackInput>
+    export type UploadMusicTrackMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Add a user-uploaded audio track
+ */
+export const useUploadMusicTrack = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadMusicTrack>>, TError,{data: BodyType<MusicTrackInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof uploadMusicTrack>>,
+        TError,
+        {data: BodyType<MusicTrackInput>},
+        TContext
+      > => {
+      return useMutation(getUploadMusicTrackMutationOptions(options));
     }
 
 export const getViewStoryUrl = (id: number,) => {

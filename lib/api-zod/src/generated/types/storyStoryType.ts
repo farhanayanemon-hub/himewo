@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type StoryMediaType = typeof StoryMediaType[keyof typeof StoryMediaType] | null;
+export type StoryStoryType = typeof StoryStoryType[keyof typeof StoryStoryType];
 
 
-export const StoryMediaType = {
-  image: 'image',
-  video: 'video',
+export const StoryStoryType = {
+  media: 'media',
+  text: 'text',
 } as const;

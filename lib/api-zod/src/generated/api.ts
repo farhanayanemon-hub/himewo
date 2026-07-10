@@ -7187,9 +7187,15 @@ export const ListStoriesResponseItem = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
 }),
-  "mediaUrl": zod.string(),
-  "mediaType": zod.enum(['image', 'video']),
+  "storyType": zod.enum(['media', 'text']),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.union([zod.enum(['image', 'video']),zod.null()]).optional(),
   "caption": zod.string().nullish(),
+  "textContent": zod.string().nullish(),
+  "backgroundStyle": zod.string().nullish(),
+  "musicUrl": zod.string().nullish(),
+  "musicTitle": zod.string().nullish(),
+  "musicArtist": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "expiresAt": zod.coerce.date(),
   "viewCount": zod.number(),
@@ -7200,10 +7206,18 @@ export const ListStoriesResponseItem = zod.object({
 export const ListStoriesResponse = zod.array(ListStoriesResponseItem)
 
 
+export const createStoryBodyStoryTypeDefault = `media`;
+
 export const CreateStoryBody = zod.object({
-  "mediaUrl": zod.string(),
-  "mediaType": zod.enum(['image', 'video']),
+  "storyType": zod.enum(['media', 'text']).default(createStoryBodyStoryTypeDefault),
+  "mediaUrl": zod.string().optional(),
+  "mediaType": zod.enum(['image', 'video']).optional(),
   "caption": zod.string().optional(),
+  "textContent": zod.string().optional(),
+  "backgroundStyle": zod.string().optional(),
+  "musicUrl": zod.string().optional(),
+  "musicTitle": zod.string().optional(),
+  "musicArtist": zod.string().optional(),
   "expiresInHours": zod.number().optional()
 })
 
@@ -7244,13 +7258,56 @@ export const CreateStoryResponse = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
 }),
-  "mediaUrl": zod.string(),
-  "mediaType": zod.enum(['image', 'video']),
+  "storyType": zod.enum(['media', 'text']),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.union([zod.enum(['image', 'video']),zod.null()]).optional(),
   "caption": zod.string().nullish(),
+  "textContent": zod.string().nullish(),
+  "backgroundStyle": zod.string().nullish(),
+  "musicUrl": zod.string().nullish(),
+  "musicTitle": zod.string().nullish(),
+  "musicArtist": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "expiresAt": zod.coerce.date(),
   "viewCount": zod.number(),
   "viewerHasViewed": zod.boolean()
+})
+
+
+/**
+ * @summary Royalty-free music library plus viewer uploads
+ */
+export const ListMusicTracksQueryParams = zod.object({
+  "q": zod.coerce.string().optional()
+})
+
+export const ListMusicTracksResponseItem = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "artist": zod.string().nullish(),
+  "url": zod.string(),
+  "mood": zod.string().nullish(),
+  "source": zod.enum(['library', 'upload'])
+})
+export const ListMusicTracksResponse = zod.array(ListMusicTracksResponseItem)
+
+
+/**
+ * @summary Add a user-uploaded audio track
+ */
+export const UploadMusicTrackBody = zod.object({
+  "title": zod.string(),
+  "artist": zod.string().optional(),
+  "url": zod.string()
+})
+
+export const UploadMusicTrackResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "artist": zod.string().nullish(),
+  "url": zod.string(),
+  "mood": zod.string().nullish(),
+  "source": zod.enum(['library', 'upload'])
 })
 
 
