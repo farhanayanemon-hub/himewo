@@ -15,6 +15,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { useVideoPlayer, VideoView } from "expo-video";
+import { LinearGradient } from "expo-linear-gradient";
+import { createAudioPlayer, type AudioPlayer } from "expo-audio";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -26,6 +28,7 @@ import {
 import { Avatar } from "@/components/Avatar";
 import { useColors } from "@/hooks/useColors";
 import { timeAgo } from "@/lib/format";
+import { storyBackground } from "@/lib/storyBackgrounds";
 
 const STORY_DURATION = 5000;
 const { width, height } = Dimensions.get("window");
@@ -74,6 +77,50 @@ export default function StoryViewerScreen() {
   }, [stories, storyId]);
 
   const current = stories[index];
+
+  // Story music: play while its story is on screen, pause with long-press.
+  const musicRef = useRef<AudioPlayer | null>(null);
+  useEffect(() => {
+    try {
+      musicRef.current?.pause();
+      musicRef.current?.release();
+    } catch {
+      // already released
+    }
+    musicRef.current = null;
+    if (current?.musicUrl) {
+      try {
+        const p = createAudioPlayer({ uri: current.musicUrl });
+        p.loop = true;
+        p.play();
+        musicRef.current = p;
+      } catch {
+        musicRef.current = null;
+      }
+    }
+    return () => {
+      try {
+        musicRef.current?.pause();
+        musicRef.current?.release();
+      } catch {
+        // already released
+      }
+      musicRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current?.id, current?.musicUrl]);
+
+  useEffect(() => {
+    if (paused) {
+      musicRef.current?.pause();
+    } else {
+      try {
+        musicRef.current?.play();
+      } catch {
+        // released
+      }
+    }
+  }, [paused]);
 
   useEffect(() => {
     if (!current) return;
@@ -222,9 +269,18 @@ export default function StoryViewerScreen() {
         <View style={styles.headerRow}>
           <View style={styles.authorRow}>
             <Avatar uri={current.author?.avatarUrl} name={current.author?.displayName} size={36} />
-            <View>
+            <View style={{ flexShrink: 1 }}>
               <Text style={styles.authorName}>{current.author?.displayName}</Text>
               <Text style={styles.timeText}>{timeAgo(current.createdAt)}</Text>
+              {!!current.musicUrl && (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                  <Ionicons name="musical-notes" size={11} color="#fff" />
+                  <Text style={styles.timeText} numberOfLines={1}>
+                    {current.musicTitle ?? "Music"}
+                    {current.musicArtist ? ` · ${current.musicArtist}` : ""}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
           <Touchable onPress={() => router.back()} hitSlop={10}>
@@ -233,7 +289,7 @@ export default function StoryViewerScreen() {
         </View>
       </SafeAreaView>
 
-      {!!current.caption && (
+      {current.storyType !== "text" && !!current.caption && (
         <SafeAreaView style={styles.captionWrap} pointerEvents="none">
           <Text style={styles.captionText}>{current.caption}</Text>
         </SafeAreaView>
@@ -281,12 +337,24 @@ function CubePage({
 }
 
 function StoryMedia({ story, active }: { story: Story; active: boolean }) {
+  if (story.storyType === "text") {
+    return (
+      <LinearGradient
+        colors={storyBackground(story.backgroundStyle)}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[StyleSheet.absoluteFill, styles.center, { padding: 28 }]}
+      >
+        <Text style={styles.textStoryText}>{story.textContent ?? ""}</Text>
+      </LinearGradient>
+    );
+  }
   if (story.mediaType === "video") {
-    return <StoryVideo uri={story.mediaUrl} paused={!active} />;
+    return <StoryVideo uri={story.mediaUrl ?? ""} paused={!active} />;
   }
   return (
     <Image
-      source={{ uri: story.mediaUrl }}
+      source={{ uri: story.mediaUrl ?? undefined }}
       style={StyleSheet.absoluteFill}
       contentFit="contain"
       transition={150}
@@ -356,6 +424,15 @@ const styles = StyleSheet.create({
     fontSize: fs(12),
     textShadowColor: "#0008",
     textShadowRadius: 4,
+  },
+  textStoryText: {
+    color: "#fff",
+    fontFamily: "Inter_700Bold",
+    fontSize: fs(26),
+    textAlign: "center",
+    textShadowColor: "#0008",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
   },
   captionWrap: { position: "absolute", left: 0, right: 0, bottom: 0, padding: 24 },
   captionText: {

@@ -7,14 +7,27 @@
  */
 import type { Profile } from './profile';
 import type { StoryMediaType } from './storyMediaType';
+import type { StoryStoryType } from './storyStoryType';
 
 export interface Story {
   id: number;
   author: Profile;
-  mediaUrl: string;
-  mediaType: StoryMediaType;
+  storyType: StoryStoryType;
+  /** @nullable */
+  mediaUrl?: string | null;
+  mediaType?: StoryMediaType;
   /** @nullable */
   caption?: string | null;
+  /** @nullable */
+  textContent?: string | null;
+  /** @nullable */
+  backgroundStyle?: string | null;
+  /** @nullable */
+  musicUrl?: string | null;
+  /** @nullable */
+  musicTitle?: string | null;
+  /** @nullable */
+  musicArtist?: string | null;
   createdAt: Date;
   expiresAt: Date;
   viewCount: number;

@@ -17,15 +17,40 @@ export const storiesTable = pgTable("stories", {
   authorId: uuid("author_id")
     .notNull()
     .references(() => profilesTable.id, { onDelete: "cascade" }),
-  mediaUrl: text("media_url").notNull(),
-  mediaType: mediaTypeEnum("media_type").notNull(),
+  // "media" (photo/video/GIF) or "text" (colored-background text story).
+  storyType: text("story_type").notNull().default("media"),
+  mediaUrl: text("media_url"),
+  mediaType: mediaTypeEnum("media_type"),
   caption: text("caption"),
+  // Text story fields.
+  textContent: text("text_content"),
+  backgroundStyle: text("background_style"),
+  // Optional music attached to the story.
+  musicUrl: text("music_url"),
+  musicTitle: text("music_title"),
+  musicArtist: text("music_artist"),
   // Moderation flag (managed from the admin panel).
   hidden: boolean("hidden").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+});
+
+export const musicTracksTable = pgTable("music_tracks", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  artist: text("artist"),
+  url: text("url").notNull(),
+  mood: text("mood"),
+  // "library" = curated royalty-free track, "upload" = user-uploaded audio.
+  source: text("source").notNull().default("library"),
+  uploadedBy: uuid("uploaded_by").references(() => profilesTable.id, {
+    onDelete: "set null",
+  }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 
 export const storyViewsTable = pgTable(
@@ -115,6 +140,7 @@ export const notificationsTable = pgTable(
 );
 
 export type Story = typeof storiesTable.$inferSelect;
+export type MusicTrack = typeof musicTracksTable.$inferSelect;
 export type StoryView = typeof storyViewsTable.$inferSelect;
 export type Reel = typeof reelsTable.$inferSelect;
 export type ReelLike = typeof reelLikesTable.$inferSelect;

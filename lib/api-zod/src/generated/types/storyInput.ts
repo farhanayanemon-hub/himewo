@@ -6,10 +6,17 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { StoryInputMediaType } from './storyInputMediaType';
+import type { StoryInputStoryType } from './storyInputStoryType';
 
 export interface StoryInput {
-  mediaUrl: string;
-  mediaType: StoryInputMediaType;
+  storyType?: StoryInputStoryType;
+  mediaUrl?: string;
+  mediaType?: StoryInputMediaType;
   caption?: string;
+  textContent?: string;
+  backgroundStyle?: string;
+  musicUrl?: string;
+  musicTitle?: string;
+  musicArtist?: string;
   expiresInHours?: number;
 }

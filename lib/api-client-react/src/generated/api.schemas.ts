@@ -2084,7 +2084,15 @@ export interface LiveStreamInput {
   title: string;
 }
 
-export type StoryMediaType = typeof StoryMediaType[keyof typeof StoryMediaType];
+export type StoryStoryType = typeof StoryStoryType[keyof typeof StoryStoryType];
+
+
+export const StoryStoryType = {
+  media: 'media',
+  text: 'text',
+} as const;
+
+export type StoryMediaType = typeof StoryMediaType[keyof typeof StoryMediaType] | null;
 
 
 export const StoryMediaType = {
@@ -2095,15 +2103,35 @@ export const StoryMediaType = {
 export interface Story {
   id: number;
   author: Profile;
-  mediaUrl: string;
-  mediaType: StoryMediaType;
+  storyType: StoryStoryType;
+  /** @nullable */
+  mediaUrl?: string | null;
+  mediaType?: StoryMediaType;
   /** @nullable */
   caption?: string | null;
+  /** @nullable */
+  textContent?: string | null;
+  /** @nullable */
+  backgroundStyle?: string | null;
+  /** @nullable */
+  musicUrl?: string | null;
+  /** @nullable */
+  musicTitle?: string | null;
+  /** @nullable */
+  musicArtist?: string | null;
   createdAt: string;
   expiresAt: string;
   viewCount: number;
   viewerHasViewed: boolean;
 }
+
+export type StoryInputStoryType = typeof StoryInputStoryType[keyof typeof StoryInputStoryType];
+
+
+export const StoryInputStoryType = {
+  media: 'media',
+  text: 'text',
+} as const;
 
 export type StoryInputMediaType = typeof StoryInputMediaType[keyof typeof StoryInputMediaType];
 
@@ -2114,10 +2142,41 @@ export const StoryInputMediaType = {
 } as const;
 
 export interface StoryInput {
-  mediaUrl: string;
-  mediaType: StoryInputMediaType;
+  storyType?: StoryInputStoryType;
+  mediaUrl?: string;
+  mediaType?: StoryInputMediaType;
   caption?: string;
+  textContent?: string;
+  backgroundStyle?: string;
+  musicUrl?: string;
+  musicTitle?: string;
+  musicArtist?: string;
   expiresInHours?: number;
+}
+
+export type MusicTrackSource = typeof MusicTrackSource[keyof typeof MusicTrackSource];
+
+
+export const MusicTrackSource = {
+  library: 'library',
+  upload: 'upload',
+} as const;
+
+export interface MusicTrack {
+  id: number;
+  title: string;
+  /** @nullable */
+  artist?: string | null;
+  url: string;
+  /** @nullable */
+  mood?: string | null;
+  source: MusicTrackSource;
+}
+
+export interface MusicTrackInput {
+  title: string;
+  artist?: string;
+  url: string;
 }
 
 export interface StoryGroup {
@@ -2540,6 +2599,10 @@ limit?: number;
 export type GetPagePostsParams = {
 cursor?: number;
 limit?: number;
+};
+
+export type ListMusicTracksParams = {
+q?: string;
 };
 
 export type ListReelsParams = {

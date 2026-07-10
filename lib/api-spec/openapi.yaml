@@ -2759,6 +2759,36 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Story" }
+  /music/tracks:
+    get:
+      operationId: listMusicTracks
+      tags: [stories]
+      summary: Royalty-free music library plus viewer uploads
+      parameters:
+        - { name: q, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Tracks
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/MusicTrack" }
+    post:
+      operationId: uploadMusicTrack
+      tags: [stories]
+      summary: Add a user-uploaded audio track
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MusicTrackInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MusicTrack" }
   /stories/{id}/view:
     post:
       operationId: viewStory
@@ -4778,25 +4808,56 @@ components:
 
     Story:
       type: object
-      required: [id, author, mediaUrl, mediaType, createdAt, expiresAt, viewCount, viewerHasViewed]
+      required: [id, author, storyType, createdAt, expiresAt, viewCount, viewerHasViewed]
       properties:
         id: { type: integer }
         author: { $ref: "#/components/schemas/Profile" }
-        mediaUrl: { type: string }
-        mediaType: { type: string, enum: [image, video] }
+        storyType: { type: string, enum: [media, text] }
+        mediaUrl: { type: ["string", "null"] }
+        mediaType:
+          oneOf:
+            - { type: string, enum: [image, video] }
+            - { type: "null" }
         caption: { type: ["string", "null"] }
+        textContent: { type: ["string", "null"] }
+        backgroundStyle: { type: ["string", "null"] }
+        musicUrl: { type: ["string", "null"] }
+        musicTitle: { type: ["string", "null"] }
+        musicArtist: { type: ["string", "null"] }
         createdAt: { type: string, format: date-time }
         expiresAt: { type: string, format: date-time }
         viewCount: { type: integer }
         viewerHasViewed: { type: boolean }
     StoryInput:
       type: object
-      required: [mediaUrl, mediaType]
       properties:
+        storyType: { type: string, enum: [media, text], default: media }
         mediaUrl: { type: string }
         mediaType: { type: string, enum: [image, video] }
         caption: { type: string }
+        textContent: { type: string }
+        backgroundStyle: { type: string }
+        musicUrl: { type: string }
+        musicTitle: { type: string }
+        musicArtist: { type: string }
         expiresInHours: { type: integer }
+    MusicTrack:
+      type: object
+      required: [id, title, url, source]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        artist: { type: ["string", "null"] }
+        url: { type: string }
+        mood: { type: ["string", "null"] }
+        source: { type: string, enum: [library, upload] }
+    MusicTrackInput:
+      type: object
+      required: [title, url]
+      properties:
+        title: { type: string }
+        artist: { type: string }
+        url: { type: string }
     StoryGroup:
       type: object
       required: [author, stories, hasUnseen]

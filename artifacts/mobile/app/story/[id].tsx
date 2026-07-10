@@ -11,6 +11,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { useVideoPlayer, VideoView } from "expo-video";
+import { LinearGradient } from "expo-linear-gradient";
+import { createAudioPlayer, type AudioPlayer } from "expo-audio";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -20,8 +22,10 @@ import {
   type StoryGroup,
 } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
+import { MentionText } from "@/components/Mention";
 import { useColors } from "@/hooks/useColors";
 import { timeAgo } from "@/lib/format";
+import { storyBackground } from "@/lib/storyBackgrounds";
 
 const STORY_DURATION = 5000;
 const { width } = Dimensions.get("window");
@@ -55,6 +59,50 @@ export default function StoryViewerScreen() {
   }, [stories, storyId]);
 
   const current = stories[index];
+
+  // Story music: play while its story is on screen, pause with long-press.
+  const musicRef = useRef<AudioPlayer | null>(null);
+  useEffect(() => {
+    try {
+      musicRef.current?.pause();
+      musicRef.current?.release();
+    } catch {
+      // already released
+    }
+    musicRef.current = null;
+    if (current?.musicUrl) {
+      try {
+        const p = createAudioPlayer({ uri: current.musicUrl });
+        p.loop = true;
+        p.play();
+        musicRef.current = p;
+      } catch {
+        musicRef.current = null;
+      }
+    }
+    return () => {
+      try {
+        musicRef.current?.pause();
+        musicRef.current?.release();
+      } catch {
+        // already released
+      }
+      musicRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current?.id, current?.musicUrl]);
+
+  useEffect(() => {
+    if (paused) {
+      musicRef.current?.pause();
+    } else {
+      try {
+        musicRef.current?.play();
+      } catch {
+        // released
+      }
+    }
+  }, [paused]);
 
   useEffect(() => {
     if (!current) return;
@@ -138,11 +186,23 @@ export default function StoryViewerScreen() {
 
   return (
     <View style={[styles.fill, { backgroundColor: "#000" }]}>
-      {isVideo ? (
-        <StoryVideo uri={current.mediaUrl} paused={paused} />
+      {current.storyType === "text" ? (
+        <LinearGradient
+          colors={storyBackground(current.backgroundStyle)}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[StyleSheet.absoluteFill, styles.center, { padding: 28 }]}
+        >
+          <MentionText
+            content={current.textContent ?? ""}
+            style={styles.textStoryText}
+          />
+        </LinearGradient>
+      ) : isVideo ? (
+        <StoryVideo uri={current.mediaUrl ?? ""} paused={paused} />
       ) : (
         <Image
-          source={{ uri: current.mediaUrl }}
+          source={{ uri: current.mediaUrl ?? undefined }}
           style={StyleSheet.absoluteFill}
           contentFit="contain"
           transition={150}
@@ -194,9 +254,18 @@ export default function StoryViewerScreen() {
             onPress={() => current.author?.id && router.push(`/profile/${current.author.id}`)}
           >
             <Avatar uri={current.author?.avatarUrl} name={current.author?.displayName} size={36} />
-            <View>
+            <View style={{ flexShrink: 1 }}>
               <Text style={styles.authorName}>{current.author?.displayName}</Text>
               <Text style={styles.timeText}>{timeAgo(current.createdAt)}</Text>
+              {!!current.musicUrl && (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                  <Ionicons name="musical-notes" size={11} color="#fff" />
+                  <Text style={styles.timeText} numberOfLines={1}>
+                    {current.musicTitle ?? "Music"}
+                    {current.musicArtist ? ` · ${current.musicArtist}` : ""}
+                  </Text>
+                </View>
+              )}
             </View>
           </Pressable>
           <Pressable onPress={() => router.back()} hitSlop={10}>
@@ -205,9 +274,9 @@ export default function StoryViewerScreen() {
         </View>
       </SafeAreaView>
 
-      {!!current.caption && (
+      {current.storyType !== "text" && !!current.caption && (
         <SafeAreaView style={styles.captionWrap} pointerEvents="none">
-          <Text style={styles.captionText}>{current.caption}</Text>
+          <MentionText content={current.caption} style={styles.captionText} />
         </SafeAreaView>
       )}
     </View>
@@ -276,6 +345,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textShadowColor: "#0008",
     textShadowRadius: 4,
+  },
+  textStoryText: {
+    color: "#fff",
+    fontFamily: "Inter_700Bold",
+    fontSize: 26,
+    textAlign: "center",
+    textShadowColor: "#0008",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
   },
   captionWrap: { position: "absolute", left: 0, right: 0, bottom: 0, padding: 24 },
   captionText: {
