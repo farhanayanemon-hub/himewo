@@ -24,6 +24,7 @@ import {
 } from "@workspace/api-client-react";
 import type { Page, PageReview, Profile } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
+import { PhotoActionMenu, usePhotoEditor } from "@/components/photo-editor";
 import { useParams, Link, useLocation } from "wouter";
 import { PostCard } from "@/components/post-card";
 import { PostComposer } from "@/components/post-composer";
@@ -825,11 +826,28 @@ function PageDetail({ id }: { id: number }) {
 
   const followPage = useFollowPage();
   const unfollowPage = useUnfollowPage();
+  const updatePage = useUpdatePage();
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: getListPagesQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetPageQueryKey(id) });
   };
+
+  const savePagePhoto = async (data: { avatarUrl?: string; coverUrl?: string }) => {
+    await updatePage.mutateAsync({ id, data });
+    invalidate();
+  };
+
+  const avatarEditor = usePhotoEditor({
+    kind: "avatar",
+    photoUrl: page?.avatarUrl,
+    onSaved: (url) => savePagePhoto({ avatarUrl: url }),
+  });
+  const coverEditor = usePhotoEditor({
+    kind: "cover",
+    photoUrl: page?.coverUrl,
+    onSaved: (url) => savePagePhoto({ coverUrl: url }),
+  });
 
   if (isLoading) {
     return <MainLayout><div className="py-10 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></MainLayout>;
@@ -850,20 +868,38 @@ function PageDetail({ id }: { id: number }) {
   return (
     <MainLayout>
       <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm mb-6 animate-in fade-in">
-        <div className="h-48 bg-muted relative">
-          {page.coverUrl ? (
-            <img src={page.coverUrl} className="w-full h-full object-cover" alt="Cover" />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-r from-primary/20 to-primary/40" />
-          )}
-        </div>
+        <PhotoActionMenu
+          photoUrl={page.coverUrl}
+          kind="cover"
+          canChange={!!page.viewerCanPost}
+          onView={coverEditor.onView}
+          onPickFile={coverEditor.onPickFile}
+        >
+          <div className="h-48 bg-muted relative">
+            {page.coverUrl ? (
+              <img src={page.coverUrl} className="w-full h-full object-cover" alt="Cover" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-r from-primary/20 to-primary/40" />
+            )}
+          </div>
+        </PhotoActionMenu>
         <div className="px-6 pb-6 relative">
           <div className="flex justify-between items-end mb-4">
-            <img 
-              src={avatarSrc(page.avatarUrl)} 
-              className="w-32 h-32 rounded-full border-4 border-card object-cover -mt-16 bg-muted relative z-10" 
-              alt="Avatar" 
-            />
+            <div className="-mt-16 relative z-10 w-32 shrink-0">
+              <PhotoActionMenu
+                photoUrl={page.avatarUrl}
+                kind="avatar"
+                canChange={!!page.viewerCanPost}
+                onView={avatarEditor.onView}
+                onPickFile={avatarEditor.onPickFile}
+              >
+                <img
+                  src={avatarSrc(page.avatarUrl)}
+                  className="w-32 h-32 rounded-full border-4 border-card object-cover bg-muted"
+                  alt="Avatar"
+                />
+              </PhotoActionMenu>
+            </div>
             <div className="flex gap-2">
               <Button
                 variant={page.viewerFollows ? "secondary" : "default"}
@@ -926,6 +962,8 @@ function PageDetail({ id }: { id: number }) {
       {user?.id === page.ownerId && (
         <PageAccessDialog page={page} open={accessOpen} onOpenChange={setAccessOpen} />
       )}
+      {avatarEditor.dialogs}
+      {coverEditor.dialogs}
     </MainLayout>
   );
 }
