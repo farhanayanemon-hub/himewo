@@ -162,10 +162,17 @@ function PageSwitcher() {
 
 export function MainLayout({ children, rightSidebar }: { children: ReactNode; rightSidebar?: ReactNode }) {
   const { user, signOut } = useAuth();
+  const { actingPage } = useActingPage();
   const [location, navigate] = useLocation();
   const { data: unreadCount } = useGetUnreadNotificationCount();
   const { data: earnings } = useGetEarningsSummary();
   const [searchQuery, setSearchQuery] = useState("");
+
+  // When acting as a page, "your profile" everywhere points to the page's
+  // profile and shows the page's identity (Facebook-style full switch).
+  const profileHref = actingPage ? `/pages/${actingPage.id}` : "/me";
+  const profileAvatar = actingPage ? actingPage.avatarUrl : user?.avatarUrl;
+  const profileName = actingPage ? actingPage.name : user?.displayName;
 
   // Open the Ads Manager with an SSO token handoff so the user doesn't have
   // to log in again (session is passed in the URL hash, never sent to a server).
@@ -279,8 +286,8 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
                 ) : null}
               </Button>
             </Link>
-            <Link href="/me" className="hidden md:block">
-              <img src={avatarSrc(user?.avatarUrl)} alt="" className="w-10 h-10 rounded-full border border-border cursor-pointer object-cover hover:ring-2 ring-primary transition-all" />
+            <Link href={profileHref} className="hidden md:block">
+              <img src={avatarSrc(profileAvatar)} alt="" className="w-10 h-10 rounded-full border border-border cursor-pointer object-cover hover:ring-2 ring-primary transition-all" />
             </Link>
             <PageSwitcher />
           </div>
@@ -291,9 +298,9 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
         {/* Left Sidebar */}
         <aside className="hidden lg:block w-[280px] shrink-0 sticky top-[88px] h-[calc(100vh-88px)] overflow-y-auto pb-6">
           <nav className="space-y-1">
-            <Link href="/me" className="flex items-center gap-3 p-3 mb-2 rounded-2xl aurora-glass-card hover:bg-muted/40 transition-colors">
-              <img src={avatarSrc(user?.avatarUrl)} alt="" className="w-8 h-8 rounded-full object-cover" />
-              <span className="font-medium">{user?.displayName}</span>
+            <Link href={profileHref} className="flex items-center gap-3 p-3 mb-2 rounded-2xl aurora-glass-card hover:bg-muted/40 transition-colors">
+              <img src={avatarSrc(profileAvatar)} alt="" className="w-8 h-8 rounded-full object-cover" />
+              <span className="font-medium">{profileName}</span>
             </Link>
             {navItems.map(item => {
               const Icon = item.icon;

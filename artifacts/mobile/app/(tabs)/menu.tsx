@@ -66,15 +66,22 @@ export default function MenuScreen() {
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
         <Pressable
           style={[styles.userCard, { backgroundColor: c.card, borderColor: c.border }]}
-          onPress={() => user && router.push(`/profile/${user.id}`)}
+          onPress={() => {
+            if (actingPage) router.push(`/pages/${actingPage.id}`);
+            else if (user) router.push(`/profile/${user.id}`);
+          }}
         >
-          <Avatar uri={user?.avatarUrl} name={user?.displayName} size={56} />
+          <Avatar
+            uri={actingPage ? actingPage.avatarUrl : user?.avatarUrl}
+            name={actingPage ? actingPage.name : user?.displayName}
+            size={56}
+          />
           <View style={{ flex: 1 }}>
             <Text style={[styles.userName, { color: c.foreground }]} numberOfLines={1}>
-              {user?.displayName ?? "Guest"}
+              {actingPage ? actingPage.name : user?.displayName ?? "Guest"}
             </Text>
             <Text style={{ color: c.mutedForeground, fontSize: 13 }}>
-              View your profile
+              {actingPage ? "View page profile" : "View your profile"}
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={c.mutedForeground} />
