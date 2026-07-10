@@ -1,5 +1,6 @@
 import { useState, type ComponentType } from "react";
 import { avatarSrc } from "@/lib/avatar";
+import { useActingPage } from "@/lib/acting-page";
 import { Link, useLocation } from "wouter";
 import {
   Home,
@@ -40,6 +41,10 @@ export function MobileMenuButton({
   onSignOut: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { actingPage } = useActingPage();
+  const profileHref = actingPage ? `/pages/${actingPage.id}` : "/me";
+  const profileAvatar = actingPage ? actingPage.avatarUrl : user?.avatarUrl;
+  const profileName = actingPage ? actingPage.name : user?.displayName;
 
   return (
     <>
@@ -60,16 +65,16 @@ export function MobileMenuButton({
           </SheetHeader>
           <div className="px-2 pb-6">
             <Link
-              href="/me"
+              href={profileHref}
               onClick={() => setMenuOpen(false)}
               className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors"
             >
               <img
-                src={avatarSrc(user?.avatarUrl)}
+                src={avatarSrc(profileAvatar)}
                 alt=""
                 className="w-9 h-9 rounded-full object-cover"
               />
-              <span className="font-semibold">{user?.displayName}</span>
+              <span className="font-semibold">{profileName}</span>
             </Link>
 
             <div className="my-2 border-t border-border" />
@@ -138,6 +143,9 @@ export function MobileNav({
   user: { displayName?: string | null; avatarUrl?: string | null } | null;
 }) {
   const [location] = useLocation();
+  const { actingPage } = useActingPage();
+  const profileHref = actingPage ? `/pages/${actingPage.id}` : "/me";
+  const profileAvatar = actingPage ? actingPage.avatarUrl : user?.avatarUrl;
 
   const bottomItems: (MobileNavItem & { color: string })[] = [
     { href: "/", icon: Home, label: "Home", color: "text-teal-500" },
@@ -146,7 +154,10 @@ export function MobileNav({
     { href: "/marketplace", icon: Store, label: "Market", color: "text-amber-500" },
   ];
 
-  const profileActive = location === "/me" || location.startsWith("/profile/");
+  const profileActive =
+    location === profileHref ||
+    location === "/me" ||
+    location.startsWith("/profile/");
 
   return (
     <nav
@@ -184,7 +195,7 @@ export function MobileNav({
           );
         })}
         <Link
-          href="/me"
+          href={profileHref}
           className="flex flex-1 flex-col items-center justify-center gap-1 press"
         >
           <span
@@ -195,7 +206,7 @@ export function MobileNav({
             }`}
           >
             <img
-              src={avatarSrc(user?.avatarUrl)}
+              src={avatarSrc(profileAvatar)}
               alt=""
               className={`w-[24px] h-[24px] rounded-full object-cover ${
                 profileActive ? "ring-2 ring-primary" : ""
