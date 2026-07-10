@@ -43,6 +43,7 @@ import {
 import { reactionConfig } from "@/constants/reactions";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/lib/auth";
+import { useActingPage } from "@/lib/acting-page";
 import { timeAgo } from "@/lib/format";
 
 interface CommentsSheetProps {
@@ -69,6 +70,7 @@ export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) 
     () => new Set(),
   );
   const { user } = useAuth();
+  const { actingPage } = useActingPage();
 
   const { data, isLoading } = useListComments(postId ?? 0, undefined, {
     query: {
@@ -117,6 +119,15 @@ export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) 
     router.push(`/profile/${authorId}`);
   };
 
+  const openCommentAuthor = (comment: Comment) => {
+    if (comment.authorPage) {
+      onClose();
+      router.push(`/pages/${comment.authorPage.id}`);
+    } else {
+      openProfile(comment.author.id);
+    }
+  };
+
   const toggleReplies = (parentId: number) => {
     setExpandedReplies((prev) => {
       const next = new Set(prev);
@@ -152,7 +163,7 @@ export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) 
     if (item.viewerReaction === type) {
       removeReaction.mutate({ id: item.id }, { onSuccess: invalidate });
     } else {
-      setReaction.mutate({ id: item.id, data: { type } }, { onSuccess: invalidate });
+      setReaction.mutate({ id: item.id, data: { type, pageId: actingPage?.id } }, { onSuccess: invalidate });
     }
   };
 
@@ -184,17 +195,17 @@ export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) 
     setText("");
     setReplyTo(null);
     createComment.mutate(
-      { id: postId, data: { content, ...(parentId != null ? { parentId } : {}) } },
+      { id: postId, data: { content, ...(parentId != null ? { parentId } : {}), ...(actingPage ? { pageId: actingPage.id } : {}) } },
       { onSuccess: invalidateComments },
     );
   };
 
   const renderComment = (item: Comment, isReply: boolean) => (
     <View style={{ flexDirection: "row", gap: 8 }}>
-      <Pressable onPress={() => openProfile(item.author.id)} hitSlop={4}>
+      <Pressable onPress={() => openCommentAuthor(item)} hitSlop={4}>
         <Avatar
-          uri={item.author.avatarUrl}
-          name={item.author.displayName}
+          uri={item.authorPage ? item.authorPage.avatarUrl : item.author.avatarUrl}
+          name={item.authorPage ? item.authorPage.name : item.author.displayName}
           size={isReply ? 28 : 34}
         />
       </Pressable>
@@ -205,10 +216,10 @@ export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) 
           style={[styles.bubble, { backgroundColor: c.secondary }]}
         >
           <Text
-            onPress={() => openProfile(item.author.id)}
+            onPress={() => openCommentAuthor(item)}
             style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 13 }}
           >
-            {item.author.displayName}
+            {item.authorPage ? item.authorPage.name : item.author.displayName}
           </Text>
           <MentionText
             content={item.content}

@@ -4,7 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import { buildCommentById } from "../lib/serialize";
 import { createNotification } from "../lib/notify";
-import { canViewComment } from "../lib/authz";
+import { canViewComment, canManagePage } from "../lib/authz";
 import {
   UpdateCommentParams,
   UpdateCommentBody,
@@ -92,16 +92,29 @@ router.put(
       res.status(404).json({ error: "Comment not found" });
       return;
     }
+    // Optionally react AS a page the user owns/edits. userId stays the acting
+    // user (moderation + one-reaction-per-user); pageId only changes identity.
+    const reactPageId = parsed.data.pageId ?? null;
+    if (
+      reactPageId != null &&
+      !(await canManagePage(req.userId!, reactPageId))
+    ) {
+      res
+        .status(403)
+        .json({ error: "You don't have access to react as this page." });
+      return;
+    }
     await db
       .insert(commentReactionsTable)
       .values({
         commentId: params.data.id,
         userId: req.userId!,
+        pageId: reactPageId,
         type: parsed.data.type,
       })
       .onConflictDoUpdate({
         target: [commentReactionsTable.commentId, commentReactionsTable.userId],
-        set: { type: parsed.data.type },
+        set: { type: parsed.data.type, pageId: reactPageId },
       });
     await createNotification({
       userId: comment.authorId,

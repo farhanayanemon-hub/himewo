@@ -2,10 +2,21 @@ import { ReactNode, useState, useCallback } from "react";
 import { avatarSrc } from "@/lib/avatar";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
+import { useActingPage } from "@/lib/acting-page";
 import {
   useGetUnreadNotificationCount,
   useGetEarningsSummary,
+  useListPages,
 } from "@workspace/api-client-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Check, ChevronDown } from "lucide-react";
 import { 
   Home, 
   Users, 
@@ -71,6 +82,82 @@ function NavIcon({
 }) {
   const ic = size === "sm" ? "w-5 h-5" : "w-[22px] h-[22px]";
   return <Icon className={`${ic} ${color ?? "text-muted-foreground"}`} />;
+}
+
+// Lets the user post/react/comment as a page they manage, Facebook-style.
+// Only shown when the user actually owns or edits at least one page.
+function PageSwitcher() {
+  const { user } = useAuth();
+  const { actingPage, switchTo } = useActingPage();
+  const { data: pages } = useListPages({ mine: true });
+
+  if (!pages || pages.length === 0) return null;
+
+  const activeName = actingPage ? actingPage.name : user?.displayName;
+  const activeAvatar = actingPage ? actingPage.avatarUrl : user?.avatarUrl;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          className="rounded-full aurora-glass hover:bg-muted/60 gap-2 pl-1 pr-2 h-10"
+          aria-label="Switch acting identity"
+        >
+          <img
+            src={avatarSrc(activeAvatar)}
+            alt=""
+            className="w-8 h-8 rounded-full object-cover border border-border"
+          />
+          <span className="hidden md:inline max-w-[120px] truncate text-sm font-medium">
+            {activeName}
+          </span>
+          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64">
+        <DropdownMenuLabel>Acting as</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={() => actingPage && switchTo(null)}
+          className="gap-3 py-2"
+        >
+          <img
+            src={avatarSrc(user?.avatarUrl)}
+            alt=""
+            className="w-8 h-8 rounded-full object-cover border border-border"
+          />
+          <span className="flex-1 truncate">{user?.displayName}</span>
+          {!actingPage && <Check className="w-4 h-4 text-primary" />}
+        </DropdownMenuItem>
+        {pages.map((p) => {
+          const isActive = actingPage?.id === p.id;
+          return (
+            <DropdownMenuItem
+              key={p.id}
+              onClick={() =>
+                !isActive &&
+                switchTo({
+                  id: p.id,
+                  name: p.name,
+                  avatarUrl: p.avatarUrl ?? null,
+                })
+              }
+              className="gap-3 py-2"
+            >
+              <img
+                src={avatarSrc(p.avatarUrl)}
+                alt=""
+                className="w-8 h-8 rounded-full object-cover border border-border"
+              />
+              <span className="flex-1 truncate">{p.name}</span>
+              {isActive && <Check className="w-4 h-4 text-primary" />}
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
 export function MainLayout({ children, rightSidebar }: { children: ReactNode; rightSidebar?: ReactNode }) {
@@ -192,6 +279,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
                 ) : null}
               </Button>
             </Link>
+            <PageSwitcher />
             <Link href="/me" className="hidden md:block">
               <img src={avatarSrc(user?.avatarUrl)} alt="" className="w-10 h-10 rounded-full border border-border cursor-pointer object-cover hover:ring-2 ring-primary transition-all" />
             </Link>

@@ -9,4 +9,6 @@ import type { ReactionType } from './reactionType';
 
 export interface ReactionInput {
   type: ReactionType;
+  /** When set, react as this Page (must be owner/editor of the page). */
+  pageId?: number;
 }

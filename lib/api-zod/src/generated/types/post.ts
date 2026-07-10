@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { MediaItem } from './mediaItem';
+import type { PageRef } from './pageRef';
 import type { Poll } from './poll';
 import type { PostPrivacy } from './postPrivacy';
 import type { Profile } from './profile';
@@ -14,6 +15,7 @@ import type { ReactionSummary } from './reactionSummary';
 export interface Post {
   id: number;
   author: Profile;
+  authorPage?: PageRef | null;
   content: string;
   /** @nullable */
   feelingVerb?: string | null;

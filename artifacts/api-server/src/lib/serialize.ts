@@ -107,6 +107,26 @@ async function loadProfileMap(ids: string[]) {
   return new Map(rows.map((r) => [r.id, toProfile(r)]));
 }
 
+export type PageRefDto = { id: number; name: string; avatarUrl: string | null };
+
+/**
+ * Lightweight page identity used when a post/comment/reaction is authored AS a
+ * page. Loads only the fields needed to render the page's name + avatar.
+ */
+async function loadPageRefMap(ids: (number | null)[]) {
+  const unique = [...new Set(ids.filter((id): id is number => id != null))];
+  if (unique.length === 0) return new Map<number, PageRefDto>();
+  const rows = await db
+    .select({
+      id: pagesTable.id,
+      name: pagesTable.name,
+      avatarUrl: pagesTable.avatarUrl,
+    })
+    .from(pagesTable)
+    .where(inArray(pagesTable.id, unique));
+  return new Map(rows.map((r) => [r.id, r]));
+}
+
 /**
  * Serialize a list of profiles (search, suggestions, friends lists). Intro
  * details are already excluded by `toProfile`; this only attaches `isLocked`
@@ -259,6 +279,7 @@ export async function buildPosts(rows: PostRow[], viewerId?: string) {
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);
   const authorMap = await loadProfileMap(rows.map((r) => r.authorId));
+  const pageMap = await loadPageRefMap(rows.map((r) => r.pageId));
 
   const [
     mediaRows,
@@ -408,6 +429,7 @@ export async function buildPosts(rows: PostRow[], viewerId?: string) {
     return {
       id: row.id,
       author: authorMap.get(row.authorId)!,
+      authorPage: row.pageId != null ? (pageMap.get(row.pageId) ?? null) : null,
       content: row.content,
       feelingVerb: row.feelingVerb,
       feeling: row.feeling,
@@ -491,6 +513,7 @@ export async function buildComments(rows: CommentRow[], viewerId?: string) {
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);
   const authorMap = await loadProfileMap(rows.map((r) => r.authorId));
+  const pageMap = await loadPageRefMap(rows.map((r) => r.pageId));
   const [reactCounts, viewerReacts, replyCounts] = await Promise.all([
     db
       .select({ commentId: commentReactionsTable.commentId, value: count() })
@@ -525,6 +548,7 @@ export async function buildComments(rows: CommentRow[], viewerId?: string) {
     id: row.id,
     postId: row.postId,
     author: authorMap.get(row.authorId)!,
+    authorPage: row.pageId != null ? (pageMap.get(row.pageId) ?? null) : null,
     parentId: row.parentId,
     content: row.content,
     mediaUrl: row.mediaUrl,

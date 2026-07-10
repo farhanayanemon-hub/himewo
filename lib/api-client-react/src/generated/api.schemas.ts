@@ -181,13 +181,26 @@ export interface ReactionSummary {
   viewerReaction?: ReactionType | null;
 }
 
+/**
+ * Lightweight page identity used when a post/comment/reaction is made as a Page.
+ */
+export interface PageRef {
+  id: number;
+  name: string;
+  /** @nullable */
+  avatarUrl?: string | null;
+}
+
 export interface ReactionInput {
   type: ReactionType;
+  /** When set, react as this Page (must be owner/editor of the page). */
+  pageId?: number;
 }
 
 export interface ReactionUser {
   user: Profile;
   type: ReactionType;
+  page?: PageRef | null;
 }
 
 export type PostPrivacy = typeof PostPrivacy[keyof typeof PostPrivacy];
@@ -217,6 +230,7 @@ export interface Poll {
 export interface Post {
   id: number;
   author: Profile;
+  authorPage?: PageRef | null;
   content: string;
   /** @nullable */
   feelingVerb?: string | null;
@@ -295,6 +309,7 @@ export interface Comment {
   id: number;
   postId: number;
   author: Profile;
+  authorPage?: PageRef | null;
   /** @nullable */
   parentId?: number | null;
   content: string;
@@ -310,6 +325,8 @@ export interface CommentInput {
   content: string;
   parentId?: number;
   mediaUrl?: string;
+  /** When set, comment as this Page (must be owner/editor of the page). */
+  pageId?: number;
 }
 
 export interface CommentUpdate {

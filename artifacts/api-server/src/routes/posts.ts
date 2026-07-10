@@ -30,7 +30,7 @@ import {
 } from "../lib/serialize";
 import { createNotification } from "../lib/notify";
 import { awardPoints } from "../lib/earnings";
-import { canViewPost, filterVisiblePosts } from "../lib/authz";
+import { canViewPost, filterVisiblePosts, canManagePage } from "../lib/authz";
 import {
   GetFeedQueryParams,
   GetFeedResponse,
@@ -446,16 +446,30 @@ router.put(
       res.status(403).json({ error: "Reactions are turned off for this post" });
       return;
     }
+    // Optionally react AS a page the user owns/edits. The acting user stays in
+    // userId (for moderation + one-reaction-per-user); pageId only changes the
+    // displayed identity. Reject a page the user can't manage.
+    const reactPageId = parsed.data.pageId ?? null;
+    if (
+      reactPageId != null &&
+      !(await canManagePage(req.userId!, reactPageId))
+    ) {
+      res
+        .status(403)
+        .json({ error: "You don't have access to react as this page." });
+      return;
+    }
     await db
       .insert(postReactionsTable)
       .values({
         postId: params.data.id,
         userId: req.userId!,
+        pageId: reactPageId,
         type: parsed.data.type,
       })
       .onConflictDoUpdate({
         target: [postReactionsTable.postId, postReactionsTable.userId],
-        set: { type: parsed.data.type },
+        set: { type: parsed.data.type, pageId: reactPageId },
       });
     await createNotification({
       userId: post.authorId,
@@ -611,9 +625,33 @@ router.get(
         eq(postReactionsTable.userId, profilesTable.id),
       )
       .where(eq(postReactionsTable.postId, params.data.id));
+    // Reactions made as a page carry a pageId — load those pages so the list
+    // can show the page identity instead of the acting user.
+    const reactionPageIds = [
+      ...new Set(
+        rows
+          .map((r) => r.post_reactions.pageId)
+          .filter((id): id is number => id != null),
+      ),
+    ];
+    const pageRows = reactionPageIds.length
+      ? await db
+          .select({
+            id: pagesTable.id,
+            name: pagesTable.name,
+            avatarUrl: pagesTable.avatarUrl,
+          })
+          .from(pagesTable)
+          .where(inArray(pagesTable.id, reactionPageIds))
+      : [];
+    const pageById = new Map(pageRows.map((p) => [p.id, p]));
     const result = rows.map((r) => ({
       user: toProfile(r.profiles),
       type: r.post_reactions.type,
+      page:
+        r.post_reactions.pageId != null
+          ? (pageById.get(r.post_reactions.pageId) ?? null)
+          : null,
     }));
     res.json(ListPostReactionsResponse.parse(result));
   },
@@ -744,11 +782,24 @@ router.post(
       }
       parentId = parent.parentId ?? parent.id;
     }
+    // Optionally comment AS a page the user owns/edits. authorId stays the acting
+    // user (moderation/edit rights); pageId only changes the shown identity.
+    const commentPageId = parsed.data.pageId ?? null;
+    if (
+      commentPageId != null &&
+      !(await canManagePage(req.userId!, commentPageId))
+    ) {
+      res
+        .status(403)
+        .json({ error: "You don't have access to comment as this page." });
+      return;
+    }
     const [comment] = await db
       .insert(commentsTable)
       .values({
         postId: params.data.id,
         authorId: req.userId!,
+        pageId: commentPageId,
         parentId,
         content: parsed.data.content,
         mediaUrl: parsed.data.mediaUrl ?? null,

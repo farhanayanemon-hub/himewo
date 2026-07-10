@@ -184,6 +184,7 @@ export * from './pageMember';
 export * from './pageMemberInput';
 export * from './pageMemberInputRole';
 export * from './pageMemberRole';
+export * from './pageRef';
 export * from './pageReview';
 export * from './pageReviewInput';
 export * from './pageUpdateInput';

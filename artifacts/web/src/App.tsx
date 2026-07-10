@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { RealtimeProvider } from "@/lib/realtime";
+import { ActingPageProvider } from "@/lib/acting-page";
 import { CallProvider } from "@/components/call-provider";
 import NotFound from "@/pages/not-found";
 
@@ -115,14 +116,16 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <RealtimeProvider>
-          <CallProvider>
-            <TooltipProvider>
+          <ActingPageProvider>
+            <CallProvider>
+              <TooltipProvider>
               <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
                 <AppRoutes />
               </WouterRouter>
               <Toaster />
-            </TooltipProvider>
-          </CallProvider>
+              </TooltipProvider>
+            </CallProvider>
+          </ActingPageProvider>
         </RealtimeProvider>
       </AuthProvider>
     </QueryClientProvider>

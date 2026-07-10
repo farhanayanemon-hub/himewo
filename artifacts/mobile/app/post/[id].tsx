@@ -46,6 +46,7 @@ import {
 import { reactionConfig } from "@/constants/reactions";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/lib/auth";
+import { useActingPage } from "@/lib/acting-page";
 import { timeAgo } from "@/lib/format";
 
 export default function PostDetailScreen() {
@@ -68,6 +69,7 @@ export default function PostDetailScreen() {
     () => new Set(),
   );
   const { user } = useAuth();
+  const { actingPage } = useActingPage();
 
   const {
     data: post,
@@ -145,6 +147,14 @@ export default function PostDetailScreen() {
     router.push(`/profile/${author.id}`);
   };
 
+  const openCommentAuthor = (comment: Comment) => {
+    if (comment.authorPage) {
+      router.push(`/pages/${comment.authorPage.id}`);
+    } else {
+      openProfile(comment.author);
+    }
+  };
+
   const toggleReplies = (parentId: number) => {
     setExpandedReplies((prev) => {
       const next = new Set(prev);
@@ -162,7 +172,7 @@ export default function PostDetailScreen() {
       removeCommentReaction.mutate({ id: item.id }, { onSuccess: invalidate });
     } else {
       setCommentReaction.mutate(
-        { id: item.id, data: { type } },
+        { id: item.id, data: { type, pageId: actingPage?.id } },
         { onSuccess: invalidate },
       );
     }
@@ -203,7 +213,11 @@ export default function PostDetailScreen() {
     createComment.mutate(
       {
         id: postId,
-        data: { content, ...(parentId != null ? { parentId } : {}) },
+        data: {
+          content,
+          ...(parentId != null ? { parentId } : {}),
+          ...(actingPage ? { pageId: actingPage.id } : {}),
+        },
       },
       { onSuccess: invalidateComments },
     );
@@ -273,8 +287,8 @@ export default function PostDetailScreen() {
               return (
                 <View style={styles.commentRow}>
                   <View style={{ flexDirection: "row", gap: 8 }}>
-                    <Pressable onPress={() => openProfile(item.author)} hitSlop={4}>
-                      <Avatar uri={item.author.avatarUrl} name={item.author.displayName} size={34} />
+                    <Pressable onPress={() => openCommentAuthor(item)} hitSlop={4}>
+                      <Avatar uri={item.authorPage ? item.authorPage.avatarUrl : item.author.avatarUrl} name={item.authorPage ? item.authorPage.name : item.author.displayName} size={34} />
                     </Pressable>
                     <View style={{ flex: 1 }}>
                       <Pressable
@@ -283,14 +297,14 @@ export default function PostDetailScreen() {
                         style={[styles.bubble, { backgroundColor: c.secondary }]}
                       >
                         <Text
-                          onPress={() => openProfile(item.author)}
+                          onPress={() => openCommentAuthor(item)}
                           style={{
                             color: c.foreground,
                             fontFamily: "Inter_600SemiBold",
                             fontSize: 13,
                           }}
                         >
-                          {item.author.displayName}
+                          {item.authorPage ? item.authorPage.name : item.author.displayName}
                         </Text>
                         <MentionText
                           content={item.content}
@@ -348,10 +362,10 @@ export default function PostDetailScreen() {
                         <View style={[styles.replies, { borderLeftColor: c.border }]}>
                           {replies.map((r) => (
                             <View key={r.id} style={{ flexDirection: "row", gap: 8 }}>
-                              <Pressable onPress={() => openProfile(r.author)} hitSlop={4}>
+                              <Pressable onPress={() => openCommentAuthor(r)} hitSlop={4}>
                                 <Avatar
-                                  uri={r.author.avatarUrl}
-                                  name={r.author.displayName}
+                                  uri={r.authorPage ? r.authorPage.avatarUrl : r.author.avatarUrl}
+                                  name={r.authorPage ? r.authorPage.name : r.author.displayName}
                                   size={28}
                                 />
                               </Pressable>
@@ -362,14 +376,14 @@ export default function PostDetailScreen() {
                                   style={[styles.bubble, { backgroundColor: c.secondary }]}
                                 >
                                   <Text
-                                    onPress={() => openProfile(r.author)}
+                                    onPress={() => openCommentAuthor(r)}
                                     style={{
                                       color: c.foreground,
                                       fontFamily: "Inter_600SemiBold",
                                       fontSize: 13,
                                     }}
                                   >
-                                    {r.author.displayName}
+                                    {r.authorPage ? r.authorPage.name : r.author.displayName}
                                   </Text>
                                   <MentionText
                                     content={r.content}

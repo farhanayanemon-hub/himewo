@@ -10,4 +10,6 @@ export interface CommentInput {
   content: string;
   parentId?: number;
   mediaUrl?: string;
+  /** When set, comment as this Page (must be owner/editor of the page). */
+  pageId?: number;
 }
