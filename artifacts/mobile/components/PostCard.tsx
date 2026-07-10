@@ -81,7 +81,7 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
   const deletePost = useDeletePost();
 
   const isOwner = !!user && user.id === post.author.id;
-  const canBoost = isOwner && privacy === "public";
+  const canBoost = isOwner && privacy === "public" && post.pageId != null;
   const viewerReaction = summary.viewerReaction ?? null;
 
   const syncServer = () => {

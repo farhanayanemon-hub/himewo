@@ -26,6 +26,7 @@ import type {
   AdAccountMember,
   AdAccountMemberInput,
   AdAccountMemberUpdate,
+  AdAccountTransferInput,
   AdAccountUpdate,
   AdCampaign,
   AdCampaignInput,
@@ -102,6 +103,7 @@ import type {
   ListMessagesParams,
   ListMusicTracksParams,
   ListNotificationsParams,
+  ListPagesParams,
   ListReelsParams,
   LiveStream,
   LiveStreamInput,
@@ -120,6 +122,8 @@ import type {
   Notification,
   Page,
   PageInput,
+  PageMember,
+  PageMemberInput,
   PageReview,
   PageReviewInput,
   PageUpdateInput,
@@ -7772,6 +7776,71 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getRemoveAdAccountMemberMutationOptions(options));
     }
 
+export const getTransferAdAccountUrl = (id: number,) => {
+
+
+
+
+  return `/api/ad-accounts/${id}/transfer`
+}
+
+export const transferAdAccount = async (id: number,
+    adAccountTransferInput: AdAccountTransferInput, options?: RequestInit): Promise<AdAccount> => {
+
+  return customFetch<AdAccount>(getTransferAdAccountUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adAccountTransferInput)
+  }
+);}
+
+
+
+
+export const getTransferAdAccountMutationOptions = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof transferAdAccount>>, TError,{id: number;data: BodyType<AdAccountTransferInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof transferAdAccount>>, TError,{id: number;data: BodyType<AdAccountTransferInput>}, TContext> => {
+
+const mutationKey = ['transferAdAccount'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof transferAdAccount>>, {id: number;data: BodyType<AdAccountTransferInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  transferAdAccount(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TransferAdAccountMutationResult = NonNullable<Awaited<ReturnType<typeof transferAdAccount>>>
+    export type TransferAdAccountMutationBody = BodyType<AdAccountTransferInput>
+    export type TransferAdAccountMutationError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>
+
+    export const useTransferAdAccount = <TError = ErrorType<BadRequestResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof transferAdAccount>>, TError,{id: number;data: BodyType<AdAccountTransferInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof transferAdAccount>>,
+        TError,
+        {id: number;data: BodyType<AdAccountTransferInput>},
+        TContext
+      > => {
+      return useMutation(getTransferAdAccountMutationOptions(options));
+    }
+
 export const getListAdCampaignsUrl = (id: number,) => {
 
 
@@ -11143,17 +11212,24 @@ export const useCapturePixelEvent = <TError = ErrorType<BadRequestResponse>,
       return useMutation(getCapturePixelEventMutationOptions(options));
     }
 
-export const getListPagesUrl = () => {
+export const getListPagesUrl = (params?: ListPagesParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/pages`
+  return stringifiedParams.length > 0 ? `/api/pages?${stringifiedParams}` : `/api/pages`
 }
 
-export const listPages = async ( options?: RequestInit): Promise<Page[]> => {
+export const listPages = async (params?: ListPagesParams, options?: RequestInit): Promise<Page[]> => {
 
-  return customFetch<Page[]>(getListPagesUrl(),
+  return customFetch<Page[]>(getListPagesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -11166,23 +11242,23 @@ export const listPages = async ( options?: RequestInit): Promise<Page[]> => {
 
 
 
-export const getListPagesQueryKey = () => {
+export const getListPagesQueryKey = (params?: ListPagesParams,) => {
     return [
-    `/api/pages`
+    `/api/pages`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getListPagesQueryOptions = <TData = Awaited<ReturnType<typeof listPages>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListPagesQueryOptions = <TData = Awaited<ReturnType<typeof listPages>>, TError = ErrorType<unknown>>(params?: ListPagesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getListPagesQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getListPagesQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPages>>> = ({ signal }) => listPages({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPages>>> = ({ signal }) => listPages(params, { signal, ...requestOptions });
 
 
 
@@ -11197,11 +11273,11 @@ export type ListPagesQueryError = ErrorType<unknown>
 
 
 export function useListPages<TData = Awaited<ReturnType<typeof listPages>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: ListPagesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getListPagesQueryOptions(options)
+  const queryOptions = getListPagesQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -11412,6 +11488,208 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getUpdatePageMutationOptions(options));
+    }
+
+export const getListPageMembersUrl = (id: number,) => {
+
+
+
+
+  return `/api/pages/${id}/members`
+}
+
+export const listPageMembers = async (id: number, options?: RequestInit): Promise<PageMember[]> => {
+
+  return customFetch<PageMember[]>(getListPageMembersUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPageMembersQueryKey = (id: number,) => {
+    return [
+    `/api/pages/${id}/members`
+    ] as const;
+    }
+
+
+export const getListPageMembersQueryOptions = <TData = Awaited<ReturnType<typeof listPageMembers>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPageMembers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPageMembersQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPageMembers>>> = ({ signal }) => listPageMembers(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPageMembers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPageMembersQueryResult = NonNullable<Awaited<ReturnType<typeof listPageMembers>>>
+export type ListPageMembersQueryError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+
+
+export function useListPageMembers<TData = Awaited<ReturnType<typeof listPageMembers>>, TError = ErrorType<ForbiddenResponse | NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPageMembers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPageMembersQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAddPageMemberUrl = (id: number,) => {
+
+
+
+
+  return `/api/pages/${id}/members`
+}
+
+export const addPageMember = async (id: number,
+    pageMemberInput: PageMemberInput, options?: RequestInit): Promise<PageMember> => {
+
+  return customFetch<PageMember>(getAddPageMemberUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(pageMemberInput)
+  }
+);}
+
+
+
+
+export const getAddPageMemberMutationOptions = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addPageMember>>, TError,{id: number;data: BodyType<PageMemberInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addPageMember>>, TError,{id: number;data: BodyType<PageMemberInput>}, TContext> => {
+
+const mutationKey = ['addPageMember'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addPageMember>>, {id: number;data: BodyType<PageMemberInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  addPageMember(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddPageMemberMutationResult = NonNullable<Awaited<ReturnType<typeof addPageMember>>>
+    export type AddPageMemberMutationBody = BodyType<PageMemberInput>
+    export type AddPageMemberMutationError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+    export const useAddPageMember = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addPageMember>>, TError,{id: number;data: BodyType<PageMemberInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addPageMember>>,
+        TError,
+        {id: number;data: BodyType<PageMemberInput>},
+        TContext
+      > => {
+      return useMutation(getAddPageMemberMutationOptions(options));
+    }
+
+export const getRemovePageMemberUrl = (id: number,
+    userId: string,) => {
+
+
+
+
+  return `/api/pages/${id}/members/${userId}`
+}
+
+export const removePageMember = async (id: number,
+    userId: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getRemovePageMemberUrl(id,userId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getRemovePageMemberMutationOptions = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removePageMember>>, TError,{id: number;userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removePageMember>>, TError,{id: number;userId: string}, TContext> => {
+
+const mutationKey = ['removePageMember'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removePageMember>>, {id: number;userId: string}> = (props) => {
+          const {id,userId} = props ?? {};
+
+          return  removePageMember(id,userId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemovePageMemberMutationResult = NonNullable<Awaited<ReturnType<typeof removePageMember>>>
+
+    export type RemovePageMemberMutationError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+    export const useRemovePageMember = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removePageMember>>, TError,{id: number;userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removePageMember>>,
+        TError,
+        {id: number;userId: string},
+        TContext
+      > => {
+      return useMutation(getRemovePageMemberMutationOptions(options));
     }
 
 export const getListPageReviewsUrl = (id: number,) => {

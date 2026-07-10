@@ -16,6 +16,7 @@ import AudiencesPage from "@/pages/audiences";
 import CreativesPage from "@/pages/creatives";
 import InsightsPage from "@/pages/insights";
 import TeamPage from "@/pages/team";
+import PagesPage from "@/pages/pages";
 import WalletPage from "@/pages/wallet";
 import SettingsPage from "@/pages/settings";
 
@@ -53,6 +54,7 @@ function AppRoutes() {
           <Route path="/audiences" component={AudiencesPage} />
           <Route path="/creatives" component={CreativesPage} />
           <Route path="/team" component={TeamPage} />
+          <Route path="/pages" component={PagesPage} />
           <Route path="/wallet" component={WalletPage} />
           <Route path="/settings" component={SettingsPage} />
           <Route component={NotFound} />

@@ -96,6 +96,26 @@ export const pagesTable = pgTable("pages", {
     .defaultNow(),
 });
 
+// People (besides the owner) who can manage a page — Facebook-style "Page access".
+export const pageMembersTable = pgTable(
+  "page_members",
+  {
+    id: serial("id").primaryKey(),
+    pageId: integer("page_id")
+      .notNull()
+      .references(() => pagesTable.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => profilesTable.id, { onDelete: "cascade" }),
+    // editor: can post/edit as the page. (Owner stays pages.created_by.)
+    role: text("role").notNull().default("editor"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [uniqueIndex("page_members_uniq").on(t.pageId, t.userId)],
+);
+
 export const pageFollowersTable = pgTable(
   "page_followers",
   {

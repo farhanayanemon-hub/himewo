@@ -5280,6 +5280,37 @@ export const RemoveAdAccountMemberParams = zod.object({
 export const RemoveAdAccountMemberResponse = zod.void()
 
 
+export const TransferAdAccountParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const TransferAdAccountBody = zod.object({
+  "userId": zod.string().min(1)
+})
+
+export const TransferAdAccountResponse = zod.object({
+  "id": zod.number(),
+  "ownerId": zod.string(),
+  "name": zod.string(),
+  "currency": zod.string(),
+  "timezone": zod.string(),
+  "balanceCents": zod.number(),
+  "creditBalanceCents": zod.number(),
+  "spentCents": zod.number(),
+  "spendLimitCents": zod.number().nullish(),
+  "autoRechargeEnabled": zod.boolean(),
+  "autoRechargeThresholdCents": zod.number().nullish(),
+  "autoRechargeAmountCents": zod.number().nullish(),
+  "status": zod.enum(['active', 'suspended', 'closed']),
+  "viewerRole": zod.union([zod.literal('admin'),zod.literal('advertiser'),zod.literal('analyst'),zod.literal(null)]).nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
 export const ListAdCampaignsParams = zod.object({
   "id": zod.coerce.number()
 })
@@ -6646,6 +6677,10 @@ export const CapturePixelEventResponse = zod.object({
 })
 
 
+export const ListPagesQueryParams = zod.object({
+  "mine": zod.coerce.boolean().optional().describe('Only pages the viewer owns or has access to')
+})
+
 export const listPagesResponseViewerReviewOneRatingMax = 5;
 
 
@@ -6965,6 +7000,114 @@ export const UpdatePageResponse = zod.object({
 }),zod.null()]).optional(),
   "createdAt": zod.coerce.date()
 })
+
+
+export const ListPageMembersParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListPageMembersResponseItem = zod.object({
+  "id": zod.number(),
+  "user": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "role": zod.enum(['editor']),
+  "createdAt": zod.coerce.date()
+})
+export const ListPageMembersResponse = zod.array(ListPageMembersResponseItem)
+
+
+export const AddPageMemberParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const addPageMemberBodyRoleDefault = `editor`;
+
+export const AddPageMemberBody = zod.object({
+  "userId": zod.string(),
+  "role": zod.enum(['editor']).default(addPageMemberBodyRoleDefault)
+})
+
+export const AddPageMemberResponse = zod.object({
+  "id": zod.number(),
+  "user": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "role": zod.enum(['editor']),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const RemovePageMemberParams = zod.object({
+  "id": zod.coerce.number(),
+  "userId": zod.coerce.string()
+})
+
+export const RemovePageMemberResponse = zod.void()
 
 
 export const ListPageReviewsParams = zod.object({

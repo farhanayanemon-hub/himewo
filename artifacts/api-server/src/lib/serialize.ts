@@ -22,6 +22,7 @@ import {
   groupMembersTable,
   pagesTable,
   pageFollowersTable,
+  pageMembersTable,
   pageReviewsTable,
   storiesTable,
   storyViewsTable,
@@ -768,7 +769,7 @@ export async function buildGroupMembers(
 
 // ---------------- Pages ----------------
 export async function buildPage(row: PageRow, viewerId?: string) {
-  const [[followers], viewerRow, [stats], viewerReviewRows] = await Promise.all([
+  const [[followers], viewerRow, [stats], viewerReviewRows, memberRow] = await Promise.all([
     db
       .select({ value: count() })
       .from(pageFollowersTable)
@@ -799,6 +800,17 @@ export async function buildPage(row: PageRow, viewerId?: string) {
             ),
           )
       : Promise.resolve([]),
+    viewerId
+      ? db
+          .select()
+          .from(pageMembersTable)
+          .where(
+            and(
+              eq(pageMembersTable.pageId, row.id),
+              eq(pageMembersTable.userId, viewerId),
+            ),
+          )
+      : Promise.resolve([]),
   ]);
   const vr = Array.isArray(viewerReviewRows) ? viewerReviewRows[0] : undefined;
   const viewerReview = vr ? ((await buildPageReviews([vr]))[0] ?? null) : null;
@@ -821,11 +833,33 @@ export async function buildPage(row: PageRow, viewerId?: string) {
     reviewCount: stats?.cnt ?? 0,
     averageRating: stats?.average != null ? Number(stats.average) : null,
     viewerFollows: Array.isArray(viewerRow) ? viewerRow.length > 0 : false,
-    // Only the page owner may publish posts as the page.
-    viewerCanPost: Boolean(viewerId && viewerId === row.createdBy),
+    // The page owner and anyone granted Page access may manage/post as the page.
+    viewerCanPost: Boolean(
+      viewerId && (viewerId === row.createdBy || memberRow.length > 0),
+    ),
     viewerReview,
     createdAt: row.createdAt,
   };
+}
+
+// Serialize page_members rows (Page access list) with the member's profile.
+export async function buildPageMembers(
+  rows: (typeof pageMembersTable.$inferSelect)[],
+) {
+  if (rows.length === 0) return [];
+  const map = await loadProfileMap(rows.map((r) => r.userId));
+  return rows.flatMap((r) => {
+    const user = map.get(r.userId);
+    if (!user) return [];
+    return [
+      {
+        id: r.id,
+        user,
+        role: r.role,
+        createdAt: r.createdAt,
+      },
+    ];
+  });
 }
 
 export async function buildPageReviews(

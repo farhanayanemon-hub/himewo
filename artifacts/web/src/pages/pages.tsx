@@ -12,11 +12,18 @@ import {
   useReviewPage,
   useDeletePageReview,
   useCreateConversation,
+  useListPageMembers,
+  useAddPageMember,
+  useRemovePageMember,
+  useSearchUsers,
   getListPagesQueryKey,
   getGetPageQueryKey,
   getListPageReviewsQueryKey,
+  getListPageMembersQueryKey,
+  getSearchUsersQueryKey,
 } from "@workspace/api-client-react";
-import type { Page, PageReview } from "@workspace/api-client-react";
+import type { Page, PageReview, Profile } from "@workspace/api-client-react";
+import { useAuth } from "@/lib/auth";
 import { useParams, Link, useLocation } from "wouter";
 import { PostCard } from "@/components/post-card";
 import { PostComposer } from "@/components/post-composer";
@@ -45,9 +52,9 @@ import {
   UserPlus,
   Pencil,
   Trash2,
-  Rocket,
+  Settings,
+  X,
 } from "lucide-react";
-import { BoostDialog } from "@/components/boost-dialog";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -574,12 +581,161 @@ function EditPageDialog({
   );
 }
 
+function PageAccessDialog({
+  page,
+  open,
+  onOpenChange,
+}: {
+  page: Page;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const queryClient = useQueryClient();
+  const [query, setQuery] = useState("");
+
+  const { data: members, isLoading } = useListPageMembers(page.id, {
+    query: {
+      enabled: open,
+      queryKey: getListPageMembersQueryKey(page.id),
+    },
+  });
+  const addMember = useAddPageMember();
+  const removeMember = useRemovePageMember();
+
+  const q = query.trim();
+  const { data: results } = useSearchUsers(
+    { q, limit: 6 },
+    {
+      query: {
+        enabled: open && q.length >= 2,
+        queryKey: getSearchUsersQueryKey({ q, limit: 6 }),
+      },
+    },
+  );
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({
+      queryKey: getListPageMembersQueryKey(page.id),
+    });
+
+  const memberIds = new Set((members ?? []).map((m) => m.user.id));
+  const candidates = (results ?? []).filter(
+    (p: Profile) => p.id !== page.ownerId && !memberIds.has(p.id),
+  );
+
+  const handleAdd = (userId: string) => {
+    addMember.mutate(
+      { id: page.id, data: { userId } },
+      {
+        onSuccess: () => {
+          invalidate();
+          setQuery("");
+        },
+      },
+    );
+  };
+
+  const handleRemove = (userId: string) => {
+    removeMember.mutate({ id: page.id, userId }, { onSuccess: invalidate });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Page access</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            People with access can post and edit this Page. Only you (the
+            owner) can manage access.
+          </p>
+          <div className="space-y-2">
+            <Label>Add people</Label>
+            <Input
+              placeholder="Search by name or username..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              data-testid="page-access-search"
+            />
+            {q.length >= 2 && candidates.length > 0 && (
+              <div className="border border-border rounded-lg divide-y divide-border">
+                {candidates.map((p: Profile) => (
+                  <div key={p.id} className="flex items-center gap-2 p-2">
+                    <img
+                      src={avatarSrc(p.avatarUrl)}
+                      className="w-8 h-8 rounded-full object-cover bg-muted"
+                      alt=""
+                    />
+                    <div className="flex-1 min-w-0 text-sm">
+                      <div className="font-medium truncate">{p.displayName}</div>
+                      <div className="text-xs text-muted-foreground">@{p.username}</div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      disabled={addMember.isPending}
+                      onClick={() => handleAdd(p.id)}
+                    >
+                      <UserPlus className="w-4 h-4 mr-1" /> Add
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label>People with access</Label>
+            {isLoading ? (
+              <div className="py-4 flex justify-center">
+                <Loader2 className="w-5 h-5 animate-spin text-primary" />
+              </div>
+            ) : !members || members.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-2">
+                Only you have access to this Page.
+              </p>
+            ) : (
+              <div className="border border-border rounded-lg divide-y divide-border">
+                {members.map((m) => (
+                  <div key={m.id} className="flex items-center gap-2 p-2">
+                    <img
+                      src={avatarSrc(m.user.avatarUrl)}
+                      className="w-8 h-8 rounded-full object-cover bg-muted"
+                      alt=""
+                    />
+                    <div className="flex-1 min-w-0 text-sm">
+                      <div className="font-medium truncate">{m.user.displayName}</div>
+                      <div className="text-xs text-muted-foreground">
+                        @{m.user.username} · Editor
+                      </div>
+                    </div>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label="Remove access"
+                      disabled={removeMember.isPending}
+                      onClick={() => handleRemove(m.user.id)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function PageDetail({ id }: { id: number }) {
   const { data: page, isLoading } = useGetPage(id);
   const { data: posts, isLoading: postsLoading } = useGetPagePosts(id);
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [editOpen, setEditOpen] = useState(false);
-  const [boostOpen, setBoostOpen] = useState(false);
+  const [accessOpen, setAccessOpen] = useState(false);
 
   const followPage = useFollowPage();
   const unfollowPage = useUnfollowPage();
@@ -633,15 +789,14 @@ function PageDetail({ id }: { id: number }) {
               </Button>
               <PageCTA page={page} />
               {page.viewerCanPost && (
-                <>
-                  <Button variant="secondary" onClick={() => setBoostOpen(true)}>
-                    <Rocket className="w-4 h-4 mr-2" />
-                    Boost
-                  </Button>
-                  <Button variant="secondary" size="icon" onClick={() => setEditOpen(true)} aria-label="Edit page">
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                </>
+                <Button variant="secondary" size="icon" onClick={() => setEditOpen(true)} aria-label="Edit page">
+                  <Pencil className="w-4 h-4" />
+                </Button>
+              )}
+              {user?.id === page.ownerId && (
+                <Button variant="secondary" size="icon" onClick={() => setAccessOpen(true)} aria-label="Page settings" data-testid="page-settings-button">
+                  <Settings className="w-4 h-4" />
+                </Button>
               )}
             </div>
           </div>
@@ -680,8 +835,10 @@ function PageDetail({ id }: { id: number }) {
       {page.viewerCanPost && (
         <>
           <EditPageDialog page={page} open={editOpen} onOpenChange={setEditOpen} />
-          <BoostDialog type="page" id={id} open={boostOpen} onOpenChange={setBoostOpen} onDone={invalidate} />
         </>
+      )}
+      {user?.id === page.ownerId && (
+        <PageAccessDialog page={page} open={accessOpen} onOpenChange={setAccessOpen} />
       )}
     </MainLayout>
   );

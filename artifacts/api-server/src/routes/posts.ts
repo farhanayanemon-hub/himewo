@@ -15,6 +15,7 @@ import {
   groupMembersTable,
   groupsTable,
   pagesTable,
+  pageMembersTable,
 } from "@workspace/db";
 import { and, or, eq, ne, lt, asc, desc, inArray, isNull } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
@@ -180,10 +181,21 @@ router.post("/posts", requireAuth, async (req, res): Promise<void> => {
       return;
     }
     if (page.createdBy !== req.userId) {
-      res
-        .status(403)
-        .json({ error: "Only the page owner can post as this page." });
-      return;
+      const [member] = await db
+        .select({ id: pageMembersTable.id })
+        .from(pageMembersTable)
+        .where(
+          and(
+            eq(pageMembersTable.pageId, pageId),
+            eq(pageMembersTable.userId, req.userId!),
+          ),
+        );
+      if (!member) {
+        res
+          .status(403)
+          .json({ error: "Only people with Page access can post as this page." });
+        return;
+      }
     }
   }
   // Resolve the audience for a new timeline post. An explicit `privacy` wins;

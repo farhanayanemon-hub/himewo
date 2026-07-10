@@ -74,6 +74,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function bootstrap() {
       if (isSupabaseConfigured && supabase) {
+        // SSO handoff from the main HiMewo site: tokens arrive in the URL
+        // hash (#sso=1&at=...&rt=...) so the user doesn't log in twice.
+        const hash = window.location.hash;
+        if (hash.includes("sso=1")) {
+          const p = new URLSearchParams(hash.slice(1));
+          const at = p.get("at");
+          const rt = p.get("rt");
+          window.history.replaceState(
+            null,
+            "",
+            window.location.pathname + window.location.search,
+          );
+          if (at && rt) {
+            try {
+              await supabase.auth.setSession({
+                access_token: at,
+                refresh_token: rt,
+              });
+            } catch {
+              // invalid/expired tokens — fall back to normal login
+            }
+          }
+        }
         const { data } = await supabase.auth.getSession();
         if (data.session) {
           await loadUser();

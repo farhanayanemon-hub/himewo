@@ -801,6 +801,32 @@ export interface PageUpdateInput {
   ctaUrl?: string | null;
 }
 
+export type PageMemberRole = typeof PageMemberRole[keyof typeof PageMemberRole];
+
+
+export const PageMemberRole = {
+  editor: 'editor',
+} as const;
+
+export interface PageMember {
+  id: number;
+  user: Profile;
+  role: PageMemberRole;
+  createdAt: string;
+}
+
+export type PageMemberInputRole = typeof PageMemberInputRole[keyof typeof PageMemberInputRole];
+
+
+export const PageMemberInputRole = {
+  editor: 'editor',
+} as const;
+
+export interface PageMemberInput {
+  userId: string;
+  role?: PageMemberInputRole;
+}
+
 export interface PageReviewInput {
   /**
      * @minimum 1
@@ -1106,6 +1132,11 @@ export const AdAccountMemberUpdateRole = {
 
 export interface AdAccountMemberUpdate {
   role: AdAccountMemberUpdateRole;
+}
+
+export interface AdAccountTransferInput {
+  /** @minLength 1 */
+  userId: string;
 }
 
 export interface AdCampaign {
@@ -2602,6 +2633,13 @@ export const GetAdAccountInsightsLevel = {
 
 export type ListAdAccountConversionsParams = {
 limit?: number;
+};
+
+export type ListPagesParams = {
+/**
+ * Only pages the viewer owns or has access to
+ */
+mine?: boolean;
 };
 
 export type GetPagePostsParams = {
