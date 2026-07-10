@@ -279,10 +279,10 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
                 ) : null}
               </Button>
             </Link>
-            <PageSwitcher />
             <Link href="/me" className="hidden md:block">
               <img src={avatarSrc(user?.avatarUrl)} alt="" className="w-10 h-10 rounded-full border border-border cursor-pointer object-cover hover:ring-2 ring-primary transition-all" />
             </Link>
+            <PageSwitcher />
           </div>
         </div>
       </header>
