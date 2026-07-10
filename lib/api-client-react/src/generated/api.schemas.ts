@@ -745,11 +745,14 @@ export interface Page {
   ctaUrl?: string | null;
   ownerId: string;
   followerCount: number;
+  followingCount: number;
   reviewCount: number;
   /** @nullable */
   averageRating: number | null;
+  reviewsEnabled: boolean;
   viewerFollows?: boolean;
   viewerCanPost?: boolean;
+  viewerCanReview?: boolean;
   viewerReview?: PageReview | null;
   createdAt: string;
 }
@@ -816,6 +819,28 @@ export interface PageUpdateInput {
   ctaType?: PageUpdateInputCtaType;
   /** @nullable */
   ctaUrl?: string | null;
+  reviewsEnabled?: boolean;
+}
+
+export type PageMediaItemType = typeof PageMediaItemType[keyof typeof PageMediaItemType];
+
+
+export const PageMediaItemType = {
+  image: 'image',
+  video: 'video',
+} as const;
+
+export interface PageMediaItem {
+  id: number;
+  postId: number;
+  url: string;
+  type: PageMediaItemType;
+  /** @nullable */
+  thumbnailUrl?: string | null;
+  /** @nullable */
+  width?: number | null;
+  /** @nullable */
+  height?: number | null;
 }
 
 export type PageMemberRole = typeof PageMemberRole[keyof typeof PageMemberRole];
@@ -2659,9 +2684,35 @@ export type ListPagesParams = {
 mine?: boolean;
 };
 
+export type GetPageParams = {
+/**
+ * When viewing while acting as a page you manage, resolve viewerFollows against that page's page-to-page follow instead of the current user.
+ */
+asPageId?: number;
+};
+
 export type GetPagePostsParams = {
 cursor?: number;
 limit?: number;
+};
+
+export type ListPageMediaParams = {
+cursor?: number;
+limit?: number;
+};
+
+export type FollowPageParams = {
+/**
+ * Follow this page AS a page you manage (page-to-page follow) instead of as the current user.
+ */
+asPageId?: number;
+};
+
+export type UnfollowPageParams = {
+/**
+ * Unfollow this page AS a page you manage (page-to-page).
+ */
+asPageId?: number;
 };
 
 export type ListMusicTracksParams = {

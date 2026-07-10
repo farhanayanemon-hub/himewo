@@ -6028,10 +6028,13 @@ export const ServeAdsResponseItem = zod.object({
   "ctaUrl": zod.string().nullish(),
   "ownerId": zod.string(),
   "followerCount": zod.number(),
+  "followingCount": zod.number(),
   "reviewCount": zod.number(),
   "averageRating": zod.number().nullable(),
+  "reviewsEnabled": zod.boolean(),
   "viewerFollows": zod.boolean().optional(),
   "viewerCanPost": zod.boolean().optional(),
+  "viewerCanReview": zod.boolean().optional(),
   "viewerReview": zod.union([zod.object({
   "id": zod.number(),
   "user": zod.object({
@@ -6799,10 +6802,13 @@ export const ListPagesResponseItem = zod.object({
   "ctaUrl": zod.string().nullish(),
   "ownerId": zod.string(),
   "followerCount": zod.number(),
+  "followingCount": zod.number(),
   "reviewCount": zod.number(),
   "averageRating": zod.number().nullable(),
+  "reviewsEnabled": zod.boolean(),
   "viewerFollows": zod.boolean().optional(),
   "viewerCanPost": zod.boolean().optional(),
+  "viewerCanReview": zod.boolean().optional(),
   "viewerReview": zod.union([zod.object({
   "id": zod.number(),
   "user": zod.object({
@@ -6887,10 +6893,13 @@ export const CreatePageResponse = zod.object({
   "ctaUrl": zod.string().nullish(),
   "ownerId": zod.string(),
   "followerCount": zod.number(),
+  "followingCount": zod.number(),
   "reviewCount": zod.number(),
   "averageRating": zod.number().nullable(),
+  "reviewsEnabled": zod.boolean(),
   "viewerFollows": zod.boolean().optional(),
   "viewerCanPost": zod.boolean().optional(),
+  "viewerCanReview": zod.boolean().optional(),
   "viewerReview": zod.union([zod.object({
   "id": zod.number(),
   "user": zod.object({
@@ -6940,6 +6949,10 @@ export const GetPageParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const GetPageQueryParams = zod.object({
+  "asPageId": zod.coerce.number().optional().describe('When viewing while acting as a page you manage, resolve viewerFollows against that page\'s page-to-page follow instead of the current user.')
+})
+
 export const getPageResponseViewerReviewOneRatingMax = 5;
 
 
@@ -6960,10 +6973,13 @@ export const GetPageResponse = zod.object({
   "ctaUrl": zod.string().nullish(),
   "ownerId": zod.string(),
   "followerCount": zod.number(),
+  "followingCount": zod.number(),
   "reviewCount": zod.number(),
   "averageRating": zod.number().nullable(),
+  "reviewsEnabled": zod.boolean(),
   "viewerFollows": zod.boolean().optional(),
   "viewerCanPost": zod.boolean().optional(),
+  "viewerCanReview": zod.boolean().optional(),
   "viewerReview": zod.union([zod.object({
   "id": zod.number(),
   "user": zod.object({
@@ -7028,7 +7044,8 @@ export const UpdatePageBody = zod.object({
   "address": zod.string().nullish(),
   "hours": zod.string().nullish(),
   "ctaType": zod.enum(['none', 'message', 'call', 'shop', 'signup']).optional(),
-  "ctaUrl": zod.string().nullish()
+  "ctaUrl": zod.string().nullish(),
+  "reviewsEnabled": zod.boolean().optional()
 })
 
 export const updatePageResponseViewerReviewOneRatingMax = 5;
@@ -7051,10 +7068,13 @@ export const UpdatePageResponse = zod.object({
   "ctaUrl": zod.string().nullish(),
   "ownerId": zod.string(),
   "followerCount": zod.number(),
+  "followingCount": zod.number(),
   "reviewCount": zod.number(),
   "averageRating": zod.number().nullable(),
+  "reviewsEnabled": zod.boolean(),
   "viewerFollows": zod.boolean().optional(),
   "viewerCanPost": zod.boolean().optional(),
+  "viewerCanReview": zod.boolean().optional(),
   "viewerReview": zod.union([zod.object({
   "id": zod.number(),
   "user": zod.object({
@@ -7425,8 +7445,38 @@ export const GetPagePostsResponseItem = zod.object({
 export const GetPagePostsResponse = zod.array(GetPagePostsResponseItem)
 
 
+/**
+ * @summary Photos and videos from the page's posts
+ */
+export const ListPageMediaParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const listPageMediaQueryLimitDefault = 24;
+
+export const ListPageMediaQueryParams = zod.object({
+  "cursor": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().default(listPageMediaQueryLimitDefault)
+})
+
+export const ListPageMediaResponseItem = zod.object({
+  "id": zod.number(),
+  "postId": zod.number(),
+  "url": zod.string(),
+  "type": zod.enum(['image', 'video']),
+  "thumbnailUrl": zod.string().nullish(),
+  "width": zod.number().nullish(),
+  "height": zod.number().nullish()
+})
+export const ListPageMediaResponse = zod.array(ListPageMediaResponseItem)
+
+
 export const FollowPageParams = zod.object({
   "id": zod.coerce.number()
+})
+
+export const FollowPageQueryParams = zod.object({
+  "asPageId": zod.coerce.number().optional().describe('Follow this page AS a page you manage (page-to-page follow) instead of as the current user.')
 })
 
 export const FollowPageResponse = zod.void()
@@ -7434,6 +7484,10 @@ export const FollowPageResponse = zod.void()
 
 export const UnfollowPageParams = zod.object({
   "id": zod.coerce.number()
+})
+
+export const UnfollowPageQueryParams = zod.object({
+  "asPageId": zod.coerce.number().optional().describe('Unfollow this page AS a page you manage (page-to-page).')
 })
 
 export const UnfollowPageResponse = zod.void()

@@ -85,6 +85,8 @@ export const pagesTable = pgTable("pages", {
   // target from the owner / contactPhone).
   ctaType: text("cta_type").notNull().default("none"),
   ctaUrl: text("cta_url"),
+  // When false, the page hides its Reviews section and blocks new reviews.
+  reviewsEnabled: boolean("reviews_enabled").notNull().default(true),
   // Admin curation/governance flags.
   featured: boolean("featured").notNull().default(false),
   isApproved: boolean("is_approved").notNull().default(true),
@@ -95,6 +97,28 @@ export const pagesTable = pgTable("pages", {
     .notNull()
     .defaultNow(),
 });
+
+// Pages this page follows (page-to-page). Followers of a page live in
+// page_followers (user -> page); this table is the outgoing direction
+// (page -> page) and powers the page's "Following" count.
+export const pageFollowingTable = pgTable(
+  "page_following",
+  {
+    id: serial("id").primaryKey(),
+    // The page doing the following.
+    pageId: integer("page_id")
+      .notNull()
+      .references(() => pagesTable.id, { onDelete: "cascade" }),
+    // The page being followed.
+    targetPageId: integer("target_page_id")
+      .notNull()
+      .references(() => pagesTable.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [uniqueIndex("page_following_uniq").on(t.pageId, t.targetPageId)],
+);
 
 // People (besides the owner) who can manage a page — Facebook-style "Page access".
 export const pageMembersTable = pgTable(
@@ -158,4 +182,5 @@ export type Group = typeof groupsTable.$inferSelect;
 export type GroupMember = typeof groupMembersTable.$inferSelect;
 export type Page = typeof pagesTable.$inferSelect;
 export type PageFollower = typeof pageFollowersTable.$inferSelect;
+export type PageFollowing = typeof pageFollowingTable.$inferSelect;
 export type PageReview = typeof pageReviewsTable.$inferSelect;

@@ -2690,6 +2690,12 @@ paths:
       tags: [pages]
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
+        - name: asPageId
+          in: query
+          description: >-
+            When viewing while acting as a page you manage, resolve viewerFollows
+            against that page's page-to-page follow instead of the current user.
+          schema: { type: integer }
       responses:
         "200":
           description: Page
@@ -2799,6 +2805,10 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/PageReview" }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
     delete:
       operationId: deletePageReview
       tags: [pages]
@@ -2822,21 +2832,52 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/Post" }
+  /pages/{id}/media:
+    get:
+      operationId: listPageMedia
+      tags: [pages]
+      summary: Photos and videos from the page's posts
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: cursor, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer, default: 24 } }
+      responses:
+        "200":
+          description: Media items
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PageMediaItem" }
   /pages/{id}/follow:
     post:
       operationId: followPage
       tags: [pages]
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
+        - name: asPageId
+          in: query
+          description: >-
+            Follow this page AS a page you manage (page-to-page follow) instead
+            of as the current user.
+          schema: { type: integer }
       responses:
         "204": { description: Followed }
+        "403":
+          $ref: "#/components/responses/Forbidden"
     delete:
       operationId: unfollowPage
       tags: [pages]
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
+        - name: asPageId
+          in: query
+          description: Unfollow this page AS a page you manage (page-to-page).
+          schema: { type: integer }
       responses:
         "204": { description: Unfollowed }
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   # ---------------- Stories ----------------
   /stories:
@@ -3933,8 +3974,10 @@ components:
           ownerId,
           ctaType,
           followerCount,
+          followingCount,
           reviewCount,
           averageRating,
+          reviewsEnabled,
           createdAt,
         ]
       properties:
@@ -3955,10 +3998,13 @@ components:
         ctaUrl: { type: ["string", "null"] }
         ownerId: { type: string }
         followerCount: { type: integer }
+        followingCount: { type: integer }
         reviewCount: { type: integer }
         averageRating: { type: ["number", "null"] }
+        reviewsEnabled: { type: boolean }
         viewerFollows: { type: boolean }
         viewerCanPost: { type: boolean }
+        viewerCanReview: { type: boolean }
         viewerReview:
           oneOf:
             - $ref: "#/components/schemas/PageReview"
@@ -3995,6 +4041,18 @@ components:
         hours: { type: ["string", "null"] }
         ctaType: { type: string, enum: [none, message, call, shop, signup] }
         ctaUrl: { type: ["string", "null"] }
+        reviewsEnabled: { type: boolean }
+    PageMediaItem:
+      type: object
+      required: [id, postId, url, type]
+      properties:
+        id: { type: integer }
+        postId: { type: integer }
+        url: { type: string }
+        type: { type: string, enum: [image, video] }
+        thumbnailUrl: { type: ["string", "null"] }
+        width: { type: ["integer", "null"] }
+        height: { type: ["integer", "null"] }
     PageMember:
       type: object
       required: [id, user, role, createdAt]

@@ -34,11 +34,14 @@ export interface Page {
   ctaUrl?: string | null;
   ownerId: string;
   followerCount: number;
+  followingCount: number;
   reviewCount: number;
   /** @nullable */
   averageRating: number | null;
+  reviewsEnabled: boolean;
   viewerFollows?: boolean;
   viewerCanPost?: boolean;
+  viewerCanReview?: boolean;
   viewerReview?: PageReview | null;
   createdAt: Date;
 }

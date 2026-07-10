@@ -16,6 +16,7 @@ import {
   useAddPageMember,
   useRemovePageMember,
   useSearchUsers,
+  useListPageMedia,
   getListPagesQueryKey,
   getGetPageQueryKey,
   getListPageReviewsQueryKey,
@@ -24,6 +25,8 @@ import {
 } from "@workspace/api-client-react";
 import type { Page, PageReview, Profile } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
+import { useActingPage } from "@/lib/acting-page";
+import { Switch } from "@/components/ui/switch";
 import { PhotoActionMenu, usePhotoEditor } from "@/components/photo-editor";
 import { useParams, Link, useLocation } from "wouter";
 import { PostCard } from "@/components/post-card";
@@ -472,34 +475,36 @@ function ReviewsSection({ page }: { page: Page }) {
         )}
       </div>
 
-      <div className="border border-border rounded-lg p-3 mb-4 space-y-3">
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-medium">Your rating:</span>
-          <StarRating value={rating} onChange={setRating} />
-        </div>
-        <Textarea
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          placeholder="Share your experience (optional)"
-          rows={2}
-        />
-        <div className="flex gap-2">
-          <Button onClick={handleSubmit} disabled={rating < 1 || reviewPage.isPending}>
-            {reviewPage.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-            {page.viewerReview ? "Update Review" : "Submit Review"}
-          </Button>
-          {page.viewerReview && (
-            <Button variant="secondary" onClick={handleDelete} disabled={deleteReview.isPending}>
-              {deleteReview.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : (
-                <Trash2 className="w-4 h-4 mr-2" />
-              )}
-              Delete
+      {page.viewerCanReview && (
+        <div className="border border-border rounded-lg p-3 mb-4 space-y-3">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium">Your rating:</span>
+            <StarRating value={rating} onChange={setRating} />
+          </div>
+          <Textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder="Share your experience (optional)"
+            rows={2}
+          />
+          <div className="flex gap-2">
+            <Button onClick={handleSubmit} disabled={rating < 1 || reviewPage.isPending}>
+              {reviewPage.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              {page.viewerReview ? "Update Review" : "Submit Review"}
             </Button>
-          )}
+            {page.viewerReview && (
+              <Button variant="secondary" onClick={handleDelete} disabled={deleteReview.isPending}>
+                {deleteReview.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <Trash2 className="w-4 h-4 mr-2" />
+                )}
+                Delete
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {isLoading ? (
         <div className="py-6 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
@@ -551,6 +556,7 @@ function EditPageDialog({
   const [hours, setHours] = useState(page.hours ?? "");
   const [ctaType, setCtaType] = useState(page.ctaType);
   const [ctaUrl, setCtaUrl] = useState(page.ctaUrl ?? "");
+  const [reviewsEnabled, setReviewsEnabled] = useState(page.reviewsEnabled);
 
   const handleSave = () => {
     if (!name.trim()) return;
@@ -568,6 +574,7 @@ function EditPageDialog({
           hours: hours.trim() || null,
           ctaType,
           ctaUrl: ctaUrl.trim() || null,
+          reviewsEnabled,
         },
       },
       {
@@ -655,6 +662,13 @@ function EditPageDialog({
               <Input value={ctaUrl} onChange={(e) => setCtaUrl(e.target.value)} placeholder="https://..." />
             </div>
           )}
+          <div className="flex items-center justify-between border border-border rounded-lg p-3">
+            <div>
+              <Label>Reviews</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">Let people rate and review this Page.</p>
+            </div>
+            <Switch checked={reviewsEnabled} onCheckedChange={setReviewsEnabled} />
+          </div>
         </div>
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)}>Cancel</Button>
@@ -816,13 +830,49 @@ function PageAccessDialog({
   );
 }
 
+function PageMediaGrid({ pageId }: { pageId: number }) {
+  const { data: media, isLoading } = useListPageMedia(pageId);
+
+  if (isLoading) {
+    return <div className="py-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
+  }
+  if (!media || media.length === 0) {
+    return <div className="py-10 text-center bg-card border border-border rounded-xl text-muted-foreground">No photos or videos yet.</div>;
+  }
+  return (
+    <div className="grid grid-cols-3 gap-1 bg-card border border-border rounded-xl p-1 overflow-hidden">
+      {media.map((item) => (
+        <div key={item.id} className="relative aspect-square bg-muted overflow-hidden">
+          {item.type === "video" ? (
+            <video
+              src={item.url}
+              poster={item.thumbnailUrl ?? undefined}
+              className="w-full h-full object-cover"
+              muted
+              playsInline
+              controls
+            />
+          ) : (
+            <img src={item.url} className="w-full h-full object-cover" alt="" loading="lazy" />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function PageDetail({ id }: { id: number }) {
-  const { data: page, isLoading } = useGetPage(id);
+  const { actingPage } = useActingPage();
+  const { data: page, isLoading } = useGetPage(
+    id,
+    actingPage ? { asPageId: actingPage.id } : undefined,
+  );
   const { data: posts, isLoading: postsLoading } = useGetPagePosts(id);
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [editOpen, setEditOpen] = useState(false);
   const [accessOpen, setAccessOpen] = useState(false);
+  const [tab, setTab] = useState<"posts" | "media">("posts");
 
   const followPage = useFollowPage();
   const unfollowPage = useUnfollowPage();
@@ -857,11 +907,12 @@ function PageDetail({ id }: { id: number }) {
     return <MainLayout><div className="py-10 text-center text-muted-foreground">Page not found</div></MainLayout>;
   }
 
+  const followParams = actingPage ? { asPageId: actingPage.id } : undefined;
   const handleFollow = () => {
     if (page.viewerFollows) {
-      unfollowPage.mutate({ id }, { onSuccess: invalidate });
+      unfollowPage.mutate({ id, params: followParams }, { onSuccess: invalidate });
     } else {
-      followPage.mutate({ id }, { onSuccess: invalidate });
+      followPage.mutate({ id, params: followParams }, { onSuccess: invalidate });
     }
   };
 
@@ -928,6 +979,7 @@ function PageDetail({ id }: { id: number }) {
             {page.description && <p className="text-[15px] mb-4">{page.description}</p>}
             <div className="text-sm text-muted-foreground font-medium flex items-center gap-3">
               <span>{page.followerCount} Followers</span>
+              <span>{page.followingCount} Following</span>
               {page.reviewCount > 0 && (
                 <span className="flex items-center gap-1">
                   <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
@@ -941,16 +993,38 @@ function PageDetail({ id }: { id: number }) {
 
       <div className="space-y-4">
         <AboutCard page={page} />
-        <ReviewsSection page={page} />
+        {page.reviewsEnabled && <ReviewsSection page={page} />}
 
-        <h2 className="font-bold text-lg px-2">Posts</h2>
-        {page.viewerCanPost && <PostComposer pageId={id} />}
-        {postsLoading ? (
-          <div className="py-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
-        ) : posts?.length === 0 ? (
-          <div className="py-10 text-center bg-card border border-border rounded-xl text-muted-foreground">No posts yet.</div>
+        <div className="flex gap-1 border-b border-border px-2">
+          <button
+            type="button"
+            onClick={() => setTab("posts")}
+            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${tab === "posts" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+          >
+            Posts
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("media")}
+            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${tab === "media" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+          >
+            Photos & Videos
+          </button>
+        </div>
+
+        {tab === "posts" ? (
+          <>
+            {page.viewerCanPost && <PostComposer pageId={id} />}
+            {postsLoading ? (
+              <div className="py-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+            ) : posts?.length === 0 ? (
+              <div className="py-10 text-center bg-card border border-border rounded-xl text-muted-foreground">No posts yet.</div>
+            ) : (
+              posts?.map(post => <PostCard key={post.id} post={post} />)
+            )}
+          </>
         ) : (
-          posts?.map(post => <PostCard key={post.id} post={post} />)
+          <PageMediaGrid pageId={id} />
         )}
       </div>
 

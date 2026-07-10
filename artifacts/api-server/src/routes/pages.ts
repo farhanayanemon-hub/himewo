@@ -3,13 +3,16 @@ import {
   db,
   pagesTable,
   pageFollowersTable,
+  pageFollowingTable,
   pageMembersTable,
   pageReviewsTable,
   profilesTable,
   postsTable,
+  postMediaTable,
 } from "@workspace/db";
 import { and, eq, lt, desc, or, inArray } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
+import { canManagePage } from "../lib/authz";
 import {
   buildPage,
   buildPageReviews,
@@ -28,6 +31,7 @@ import {
   CreatePageBody,
   CreatePageResponse,
   GetPageParams,
+  GetPageQueryParams,
   GetPageResponse,
   UpdatePageParams,
   UpdatePageBody,
@@ -35,8 +39,13 @@ import {
   GetPagePostsParams,
   GetPagePostsQueryParams,
   GetPagePostsResponse,
+  ListPageMediaParams,
+  ListPageMediaQueryParams,
+  ListPageMediaResponse,
   FollowPageParams,
+  FollowPageQueryParams,
   UnfollowPageParams,
+  UnfollowPageQueryParams,
   ListPageReviewsParams,
   ListPageReviewsResponse,
   ReviewPageParams,
@@ -126,8 +135,9 @@ router.post("/pages", requireAuth, async (req, res): Promise<void> => {
 
 router.get("/pages/:id", requireAuth, async (req, res): Promise<void> => {
   const params = GetPageParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
+  const query = GetPageQueryParams.safeParse(req.query);
+  if (!params.success || !query.success) {
+    res.status(400).json({ error: "Invalid request" });
     return;
   }
   const [page] = await db
@@ -138,7 +148,15 @@ router.get("/pages/:id", requireAuth, async (req, res): Promise<void> => {
     res.status(404).json({ error: "Page not found" });
     return;
   }
-  res.json(GetPageResponse.parse(await buildPage(page, req.userId)));
+  // Only honour asPageId when the viewer actually manages that page, so the
+  // "Following" state can't be spoofed for a page you don't control.
+  let actingPageId: number | undefined;
+  if (query.data.asPageId && (await canManagePage(req.userId!, query.data.asPageId))) {
+    actingPageId = query.data.asPageId;
+  }
+  res.json(
+    GetPageResponse.parse(await buildPage(page, req.userId, actingPageId)),
+  );
 });
 
 router.patch("/pages/:id", requireAuth, async (req, res): Promise<void> => {
@@ -326,6 +344,16 @@ router.post(
       res.status(404).json({ error: "Page not found" });
       return;
     }
+    if (!page.reviewsEnabled) {
+      res.status(403).json({ error: "Reviews are turned off for this page" });
+      return;
+    }
+    // A page's owner/editors can't review their own page — reviews may only
+    // come from other people.
+    if (await canManagePage(req.userId!, params.data.id)) {
+      res.status(403).json({ error: "You can't review a page you manage" });
+      return;
+    }
     const [row] = await db
       .insert(pageReviewsTable)
       .values({
@@ -392,10 +420,65 @@ router.get(
   },
 );
 
+router.get(
+  "/pages/:id/media",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = ListPageMediaParams.safeParse(req.params);
+    const query = ListPageMediaQueryParams.safeParse(req.query);
+    if (!params.success || !query.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    const { cursor, limit } = query.data;
+    // Media items from the page's own posts, newest first. Paginate on the
+    // media row id so successive pages don't skip/duplicate items.
+    const rows = await db
+      .select({
+        id: postMediaTable.id,
+        postId: postMediaTable.postId,
+        url: postMediaTable.url,
+        type: postMediaTable.type,
+        thumbnailUrl: postMediaTable.thumbnailUrl,
+        width: postMediaTable.width,
+        height: postMediaTable.height,
+      })
+      .from(postMediaTable)
+      .innerJoin(postsTable, eq(postMediaTable.postId, postsTable.id))
+      .where(
+        and(
+          eq(postsTable.pageId, params.data.id),
+          cursor ? lt(postMediaTable.id, cursor) : undefined,
+        ),
+      )
+      .orderBy(desc(postMediaTable.id))
+      .limit(limit ?? 24);
+    res.json(ListPageMediaResponse.parse(rows));
+  },
+);
+
 router.post("/pages/:id/follow", requireAuth, async (req, res): Promise<void> => {
   const params = FollowPageParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
+  const query = FollowPageQueryParams.safeParse(req.query);
+  if (!params.success || !query.success) {
+    res.status(400).json({ error: "Invalid request" });
+    return;
+  }
+  // Following AS a page (page-to-page).
+  if (query.data.asPageId) {
+    if (query.data.asPageId === params.data.id) {
+      res.status(400).json({ error: "A page can't follow itself" });
+      return;
+    }
+    if (!(await canManagePage(req.userId!, query.data.asPageId))) {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+    await db
+      .insert(pageFollowingTable)
+      .values({ pageId: query.data.asPageId, targetPageId: params.data.id })
+      .onConflictDoNothing();
+    res.sendStatus(204);
     return;
   }
   await db
@@ -410,8 +493,25 @@ router.delete(
   requireAuth,
   async (req, res): Promise<void> => {
     const params = UnfollowPageParams.safeParse(req.params);
-    if (!params.success) {
-      res.status(400).json({ error: params.error.message });
+    const query = UnfollowPageQueryParams.safeParse(req.query);
+    if (!params.success || !query.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    if (query.data.asPageId) {
+      if (!(await canManagePage(req.userId!, query.data.asPageId))) {
+        res.status(403).json({ error: "Forbidden" });
+        return;
+      }
+      await db
+        .delete(pageFollowingTable)
+        .where(
+          and(
+            eq(pageFollowingTable.pageId, query.data.asPageId),
+            eq(pageFollowingTable.targetPageId, params.data.id),
+          ),
+        );
+      res.sendStatus(204);
       return;
     }
     await db

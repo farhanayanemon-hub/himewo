@@ -31,4 +31,5 @@ export interface PageUpdateInput {
   ctaType?: PageUpdateInputCtaType;
   /** @nullable */
   ctaUrl?: string | null;
+  reviewsEnabled?: boolean;
 }
