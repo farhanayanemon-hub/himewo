@@ -7,6 +7,7 @@ import {
   Alert,
   FlatList,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   Text,
@@ -25,6 +26,9 @@ import {
   useGetConversation,
   useListMessages,
   useSendMessage,
+  useEditMessage,
+  useDeleteMessage,
+  useHideMessage,
   useMarkConversationRead,
   getListMessagesQueryKey,
   getListConversationsQueryKey,
@@ -86,12 +90,24 @@ export default function ChatThreadScreen() {
   }, [msgData]);
 
   const sendMessage = useSendMessage();
+  const editMessage = useEditMessage();
+  const deleteMessage = useDeleteMessage();
+  const hideMessage = useHideMessage();
   const markRead = useMarkConversationRead();
 
   const [text, setText] = useState("");
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [peerTyping, setPeerTyping] = useState(false);
+  const [actionsFor, setActionsFor] = useState<Message | null>(null);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const [editing, setEditing] = useState<Message | null>(null);
+
+  const messageById = useMemo(() => {
+    const map = new Map<number, Message>();
+    for (const m of messages) map.set(m.id, m);
+    return map;
+  }, [messages]);
 
   const typingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const peerTypingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -120,7 +136,11 @@ export default function ChatThreadScreen() {
 
   useEffect(() => {
     const unsub = subscribe((event: RealtimeEvent) => {
-      if (event.type === "message") {
+      if (
+        event.type === "message" ||
+        event.type === "message_updated" ||
+        event.type === "message_deleted"
+      ) {
         const e = event as { conversationId: number };
         if (e.conversationId === convId) {
           qc.invalidateQueries({ queryKey: getListMessagesQueryKey(convId) });
@@ -182,10 +202,22 @@ export default function ChatThreadScreen() {
     stopTyping();
     setSending(true);
     try {
-      await sendMessage.mutateAsync({
-        id: convId,
-        data: { content, type: MessageInputType.text },
-      });
+      if (editing) {
+        const target = editing;
+        setEditing(null);
+        await editMessage.mutateAsync({ id: target.id, data: { content } });
+      } else {
+        const reply = replyTo;
+        setReplyTo(null);
+        await sendMessage.mutateAsync({
+          id: convId,
+          data: {
+            content,
+            type: MessageInputType.text,
+            ...(reply ? { replyToId: reply.id } : {}),
+          },
+        });
+      }
       afterSend();
     } catch {
       setText(content);
@@ -194,6 +226,34 @@ export default function ChatThreadScreen() {
       setSending(false);
     }
   };
+
+  const startEdit = (m: Message) => {
+    setReplyTo(null);
+    setEditing(m);
+    setText(m.content);
+  };
+
+  const unsendMessage = (m: Message) => {
+    Alert.alert("Unsend message?", "This will remove the message for everyone.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Unsend",
+        style: "destructive",
+        onPress: () => deleteMessage.mutate({ id: m.id }, { onSuccess: afterSend }),
+      },
+    ]);
+  };
+
+  const deleteForMe = (m: Message) => {
+    hideMessage.mutate({ id: m.id }, { onSuccess: afterSend });
+  };
+
+  const canEdit = (m: Message) =>
+    m.sender.id === user?.id &&
+    !m.deletedAt &&
+    m.content.length > 0 &&
+    m.attachments.length === 0 &&
+    Date.now() - new Date(m.createdAt).getTime() <= 15 * 60 * 1000;
 
   const attach = async () => {
     const res = await ImagePicker.launchImageLibraryAsync({
@@ -374,8 +434,19 @@ export default function ChatThreadScreen() {
             contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 12 }}
             keyboardShouldPersistTaps="handled"
             renderItem={({ item }) => (
-              <MessageBubble message={item} mine={item.sender.id === user?.id} showAvatar={isGroup} />
+              <MessageBubble
+                message={item}
+                mine={item.sender.id === user?.id}
+                showAvatar={isGroup}
+                replySource={
+                  item.replyToId ? messageById.get(item.replyToId) : undefined
+                }
+                onLongPress={() => {
+                  if (!item.deletedAt) setActionsFor(item);
+                }}
+              />
             )}
+            ListHeaderComponent={peerTyping ? <TypingBubble /> : null}
             ListEmptyComponent={
               <View style={{ alignItems: "center", marginTop: 60, transform: [{ scaleY: -1 }] }}>
                 <Text style={{ color: c.mutedForeground }}>
@@ -393,6 +464,47 @@ export default function ChatThreadScreen() {
               Recording… {formatDur(recSeconds * 1000)}
             </Text>
             <Text style={{ color: c.mutedForeground, fontSize: fs(12) }}>release to send</Text>
+          </View>
+        )}
+
+        {(replyTo || editing) && (
+          <View
+            style={[
+              styles.contextBar,
+              { backgroundColor: c.card, borderTopColor: c.border },
+            ]}
+          >
+            <Ionicons
+              name={editing ? "create-outline" : "arrow-undo-outline"}
+              size={18}
+              color={c.primary}
+            />
+            <View style={{ flex: 1, marginHorizontal: 10 }}>
+              <Text style={{ color: c.primary, fontSize: fs(12), fontFamily: "Inter_600SemiBold" }}>
+                {editing
+                  ? "Editing message"
+                  : `Replying to ${
+                      replyTo?.sender.id === user?.id
+                        ? "yourself"
+                        : replyTo?.sender.displayName
+                    }`}
+              </Text>
+              {!editing && (
+                <Text numberOfLines={1} style={{ color: c.mutedForeground, fontSize: fs(12) }}>
+                  {replyTo?.content || "Attachment"}
+                </Text>
+              )}
+            </View>
+            <Touchable
+              onPress={() => {
+                if (editing) setText("");
+                setEditing(null);
+                setReplyTo(null);
+              }}
+              hitSlop={8}
+            >
+              <Ionicons name="close" size={20} color={c.mutedForeground} />
+            </Touchable>
           </View>
         )}
 
@@ -469,7 +581,135 @@ export default function ChatThreadScreen() {
         onClose={() => setEmojiOpen(false)}
         onSelect={(e) => setText((t) => t + e)}
       />
+
+      <MessageActionsSheet
+        message={actionsFor}
+        mine={actionsFor?.sender.id === user?.id}
+        canEdit={actionsFor ? canEdit(actionsFor) : false}
+        onClose={() => setActionsFor(null)}
+        onReply={(m) => {
+          setEditing(null);
+          setReplyTo(m);
+        }}
+        onEdit={startEdit}
+        onUnsend={unsendMessage}
+        onDeleteForMe={deleteForMe}
+      />
     </SafeAreaView>
+  );
+}
+
+function MessageActionsSheet({
+  message,
+  mine,
+  canEdit,
+  onClose,
+  onReply,
+  onEdit,
+  onUnsend,
+  onDeleteForMe,
+}: {
+  message: Message | null;
+  mine: boolean;
+  canEdit: boolean;
+  onClose: () => void;
+  onReply: (m: Message) => void;
+  onEdit: (m: Message) => void;
+  onUnsend: (m: Message) => void;
+  onDeleteForMe: (m: Message) => void;
+}) {
+  const c = useColors();
+
+  if (!message) return null;
+
+  const row = (
+    icon: keyof typeof Ionicons.glyphMap,
+    label: string,
+    onPress: () => void,
+    destructive = false,
+  ) => (
+    <Pressable
+      key={label}
+      onPress={() => {
+        onClose();
+        onPress();
+      }}
+      style={({ pressed }) => [
+        styles.actionRow,
+        { backgroundColor: pressed ? c.secondary : "transparent" },
+      ]}
+    >
+      <Ionicons
+        name={icon}
+        size={22}
+        color={destructive ? "#e11d48" : c.foreground}
+      />
+      <Text
+        style={[
+          styles.actionLabel,
+          { color: destructive ? "#e11d48" : c.foreground },
+        ]}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.actionBackdrop}>
+        <Pressable style={{ flex: 1 }} onPress={onClose} />
+        <View style={[styles.actionSheet, { backgroundColor: c.card }]}>
+          <View style={[styles.actionHandle, { backgroundColor: c.border }]} />
+          {row("arrow-undo-outline", "Reply", () => onReply(message))}
+          {mine && canEdit && row("create-outline", "Edit", () => onEdit(message))}
+          {mine &&
+            row("refresh-outline", "Unsend", () => onUnsend(message), true)}
+          {row(
+            "trash-outline",
+            "Delete for me",
+            () => onDeleteForMe(message),
+            true,
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function TypingBubble() {
+  const c = useColors();
+  return (
+    <View style={[styles.bubbleRow, { justifyContent: "flex-start" }]}>
+      <View
+        style={[
+          styles.bubble,
+          shadow("sm"),
+          {
+            backgroundColor: c.secondary,
+            borderWidth: 1,
+            borderColor: c.border,
+            borderBottomLeftRadius: 4,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 4,
+          },
+        ]}
+      >
+        {[0, 1, 2].map((i) => (
+          <View
+            key={i}
+            style={{
+              width: 7,
+              height: 7,
+              borderRadius: 4,
+              backgroundColor: c.mutedForeground,
+              opacity: 0.4 + i * 0.25,
+            }}
+          />
+        ))}
+      </View>
+    </View>
   );
 }
 
@@ -477,16 +717,54 @@ function MessageBubble({
   message,
   mine,
   showAvatar,
+  replySource,
+  onLongPress,
 }: {
   message: Message;
   mine: boolean;
   showAvatar: boolean;
+  replySource?: Message;
+  onLongPress?: () => void;
 }) {
   const c = useColors();
   const hasAttachments = message.attachments.length > 0;
 
+  if (message.deletedAt) {
+    return (
+      <View
+        style={[
+          styles.bubbleRow,
+          { justifyContent: mine ? "flex-end" : "flex-start" },
+        ]}
+      >
+        <View
+          style={[
+            styles.bubble,
+            {
+              backgroundColor: "transparent",
+              borderWidth: 1,
+              borderColor: c.border,
+            },
+          ]}
+        >
+          <Text
+            style={{
+              color: c.mutedForeground,
+              fontSize: fs(13),
+              fontStyle: "italic",
+            }}
+          >
+            {mine ? "You unsent a message" : "Message unsent"}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
-    <View
+    <Pressable
+      onLongPress={onLongPress}
+      delayLongPress={300}
       style={[
         styles.bubbleRow,
         { justifyContent: mine ? "flex-end" : "flex-start" },
@@ -500,6 +778,29 @@ function MessageBubble({
           <Text style={{ color: c.mutedForeground, fontSize: fs(11), marginBottom: 2, marginLeft: 4 }}>
             {message.sender.displayName}
           </Text>
+        )}
+        {message.replyToId != null && (
+          <View
+            style={[
+              styles.replyQuote,
+              {
+                backgroundColor: c.secondary,
+                borderLeftColor: c.primary,
+                alignSelf: mine ? "flex-end" : "flex-start",
+              },
+            ]}
+          >
+            <Text style={{ color: c.mutedForeground, fontSize: fs(11), fontFamily: "Inter_600SemiBold" }}>
+              {replySource?.sender.displayName ?? "Replied message"}
+            </Text>
+            <Text numberOfLines={1} style={{ color: c.mutedForeground, fontSize: fs(12) }}>
+              {replySource
+                ? replySource.deletedAt
+                  ? "Message unsent"
+                  : replySource.content || "Attachment"
+                : "Unavailable"}
+            </Text>
+          </View>
         )}
         {hasAttachments &&
           message.attachments.map((att) =>
@@ -563,9 +864,10 @@ function MessageBubble({
           ]}
         >
           {formatClock(message.createdAt)}
+          {message.editedAt ? " · Edited" : ""}
         </Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -655,6 +957,47 @@ const styles = StyleSheet.create({
     backgroundColor: "#0003",
   },
   time: { fontSize: fs(10), marginTop: 2, marginHorizontal: 4 },
+  replyQuote: {
+    borderLeftWidth: 3,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginBottom: -6,
+    paddingBottom: 12,
+    maxWidth: "100%",
+    opacity: 0.85,
+  },
+  contextBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  actionBackdrop: { flex: 1, backgroundColor: "#0006" },
+  actionSheet: {
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    paddingTop: 8,
+    paddingHorizontal: 8,
+    paddingBottom: 24,
+  },
+  actionHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: 8,
+  },
+  actionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingVertical: 13,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+  },
+  actionLabel: { fontSize: fs(15), fontFamily: "Inter_600SemiBold" },
   composer: {
     flexDirection: "row",
     alignItems: "flex-end",

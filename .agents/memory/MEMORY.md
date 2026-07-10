@@ -41,6 +41,7 @@
 - [Username system](himewo-username-system.md) — 30d/60d rename cooldowns (null=first change free); ALL username writes must go through lib/username.ts; lower(username) unique index on dev+live; new top-level web route ⇒ add to reserved list.
 - [Ads Insights index perf](ads-insights-index-perf.md) — event tables have (account_id,created_at[,campaign/adset]) composite indexes; date filter MUST stay sargable (compare bare created_at, no `::date` cast on the column) or indexes go unused.
 - [Ads Insights live DB](ads-insights-live-db.md) — Insights reads LIVE prod DB via Railway-resolved URL (not a stored secret); live events NOT denormalized → join ads→ad_sets; dev push stays safe.
+- [Chat message actions](himewo-chat-messages.md) — 15-min edit window (server-enforced, msgs+comments), message_hides delete-for-me, unsent tombstone, message_updated realtime; dev-DB seq/profile gotchas.
 - [ads live false-blank](ads-live-false-blank.md) — screenshot tool showed ads.himewo.com blank but it renders fine (jsdom + user confirmed); cross-check before "fixing", chromium wont launch here (missing libglib).
 - [Ads map + preview](himewo-ads-map-preview.md) — location targeting is NAME-only (no geo/radius — would break matching); Leaflet CircleMarker needs bubblingMouseEvents:false or map-click double-toggles.
 - [Live users wipe + profiles table](himewo-live-users-wipe.md) — live DB user table is `profiles` (not `users`); wipe = Supabase admin delete + TRUNCATE profiles CASCADE; ads preview moved to /ads-manager (root conflict).

@@ -38,6 +38,12 @@ router.patch("/comments/:id", requireAuth, async (req, res): Promise<void> => {
     res.status(403).json({ error: "Not your comment" });
     return;
   }
+  // Comments can only be edited within 15 minutes of posting.
+  const EDIT_WINDOW_MS = 15 * 60 * 1000;
+  if (Date.now() - new Date(existing.createdAt).getTime() > EDIT_WINDOW_MS) {
+    res.status(403).json({ error: "Edit window expired" });
+    return;
+  }
   await db
     .update(commentsTable)
     .set({ content: parsed.data.content })

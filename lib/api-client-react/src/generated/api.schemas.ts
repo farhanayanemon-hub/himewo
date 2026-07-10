@@ -507,6 +507,14 @@ export interface MessageReactionInput {
   emoji: string;
 }
 
+export interface MessageEdit {
+  /**
+     * @minLength 1
+     * @maxLength 5000
+     */
+  content: string;
+}
+
 export interface ReadInput {
   messageId: number;
 }

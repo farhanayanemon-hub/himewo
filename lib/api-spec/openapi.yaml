@@ -725,6 +725,24 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Message" }
   /messages/{id}:
+    patch:
+      operationId: editMessage
+      tags: [messaging]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MessageEdit" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+        "403":
+          description: Not allowed (not sender or edit window expired)
     delete:
       operationId: deleteMessage
       tags: [messaging]
@@ -732,6 +750,14 @@ paths:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
         "204": { description: Deleted }
+  /messages/{id}/hide:
+    post:
+      operationId: hideMessage
+      tags: [messaging]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Hidden for the current user }
 
   # ---------------- Groups ----------------
   /groups:
@@ -3679,6 +3705,11 @@ components:
       required: [emoji]
       properties:
         emoji: { type: string }
+    MessageEdit:
+      type: object
+      required: [content]
+      properties:
+        content: { type: string, minLength: 1, maxLength: 5000 }
     ReadInput:
       type: object
       required: [messageId]
