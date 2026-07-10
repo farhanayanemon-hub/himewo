@@ -110,6 +110,7 @@ import type {
   MarketplaceListingUpdate,
   MembersInput,
   Message,
+  MessageEdit,
   MessageInput,
   MessageReactionInput,
   MusicTrack,
@@ -3642,6 +3643,71 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getRemoveMessageReactionMutationOptions(options));
     }
 
+export const getEditMessageUrl = (id: number,) => {
+
+
+
+
+  return `/api/messages/${id}`
+}
+
+export const editMessage = async (id: number,
+    messageEdit: MessageEdit, options?: RequestInit): Promise<Message> => {
+
+  return customFetch<Message>(getEditMessageUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(messageEdit)
+  }
+);}
+
+
+
+
+export const getEditMessageMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof editMessage>>, TError,{id: number;data: BodyType<MessageEdit>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof editMessage>>, TError,{id: number;data: BodyType<MessageEdit>}, TContext> => {
+
+const mutationKey = ['editMessage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof editMessage>>, {id: number;data: BodyType<MessageEdit>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  editMessage(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EditMessageMutationResult = NonNullable<Awaited<ReturnType<typeof editMessage>>>
+    export type EditMessageMutationBody = BodyType<MessageEdit>
+    export type EditMessageMutationError = ErrorType<void>
+
+    export const useEditMessage = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof editMessage>>, TError,{id: number;data: BodyType<MessageEdit>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof editMessage>>,
+        TError,
+        {id: number;data: BodyType<MessageEdit>},
+        TContext
+      > => {
+      return useMutation(getEditMessageMutationOptions(options));
+    }
+
 export const getDeleteMessageUrl = (id: number,) => {
 
 
@@ -3704,6 +3770,70 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getDeleteMessageMutationOptions(options));
+    }
+
+export const getHideMessageUrl = (id: number,) => {
+
+
+
+
+  return `/api/messages/${id}/hide`
+}
+
+export const hideMessage = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getHideMessageUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getHideMessageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof hideMessage>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof hideMessage>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['hideMessage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof hideMessage>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  hideMessage(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type HideMessageMutationResult = NonNullable<Awaited<ReturnType<typeof hideMessage>>>
+
+    export type HideMessageMutationError = ErrorType<unknown>
+
+    export const useHideMessage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof hideMessage>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof hideMessage>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getHideMessageMutationOptions(options));
     }
 
 export const getListGroupsUrl = () => {

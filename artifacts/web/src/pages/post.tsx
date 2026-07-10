@@ -198,9 +198,11 @@ function CommentItem({
                 Reply
               </DropdownMenuItem>
               <DropdownMenuItem onClick={copyComment}>Copy text</DropdownMenuItem>
-              {isOwn && (
-                <DropdownMenuItem onClick={startEdit}>Edit</DropdownMenuItem>
-              )}
+              {isOwn &&
+                Date.now() - new Date(comment.createdAt).getTime() <=
+                  15 * 60 * 1000 && (
+                  <DropdownMenuItem onClick={startEdit}>Edit</DropdownMenuItem>
+                )}
               {isOwn && (
                 <DropdownMenuItem
                   onClick={handleDelete}

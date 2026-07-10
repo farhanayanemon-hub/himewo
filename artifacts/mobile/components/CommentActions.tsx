@@ -18,6 +18,13 @@ export function plainCommentText(content: string): string {
   return content.replace(MENTION_RE, "@$1");
 }
 
+// Comments can only be edited within 15 minutes of posting.
+export const COMMENT_EDIT_WINDOW_MS = 15 * 60 * 1000;
+
+export function canEditComment(createdAt: string): boolean {
+  return Date.now() - new Date(createdAt).getTime() <= COMMENT_EDIT_WINDOW_MS;
+}
+
 interface CommentActionsProps {
   comment: Comment | null;
   visible: boolean;
@@ -102,6 +109,7 @@ export function CommentActionsSheet({
               setSelectVisible(true);
             })}
             {canModify &&
+              canEditComment(comment.createdAt) &&
               row("create-outline", "Edit", () => {
                 onClose();
                 onEdit(comment);

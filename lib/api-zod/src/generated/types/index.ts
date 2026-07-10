@@ -161,6 +161,7 @@ export * from './mediaItemInputType';
 export * from './mediaItemType';
 export * from './membersInput';
 export * from './message';
+export * from './messageEdit';
 export * from './messageInput';
 export * from './messageInputType';
 export * from './messageReaction';

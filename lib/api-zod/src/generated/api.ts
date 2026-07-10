@@ -2876,11 +2876,93 @@ export const RemoveMessageReactionResponse = zod.object({
 })
 
 
+export const EditMessageParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const editMessageBodyContentMax = 5000;
+
+
+
+export const EditMessageBody = zod.object({
+  "content": zod.string().min(1).max(editMessageBodyContentMax)
+})
+
+export const EditMessageResponse = zod.object({
+  "id": zod.number(),
+  "conversationId": zod.number(),
+  "sender": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "content": zod.string(),
+  "type": zod.enum(['text', 'image', 'video', 'file', 'audio', 'sticker', 'call']),
+  "replyToId": zod.number().nullish(),
+  "attachments": zod.array(zod.object({
+  "id": zod.number(),
+  "url": zod.string(),
+  "type": zod.enum(['image', 'video', 'file', 'audio']),
+  "name": zod.string().nullish(),
+  "thumbnailUrl": zod.string().nullish(),
+  "sizeBytes": zod.number().nullish(),
+  "width": zod.number().nullish(),
+  "height": zod.number().nullish(),
+  "durationMs": zod.number().nullish()
+})),
+  "reactions": zod.array(zod.object({
+  "emoji": zod.string(),
+  "count": zod.number(),
+  "viewerReacted": zod.boolean().optional()
+})),
+  "createdAt": zod.coerce.date(),
+  "editedAt": zod.coerce.date().nullish(),
+  "deletedAt": zod.coerce.date().nullish()
+})
+
+
 export const DeleteMessageParams = zod.object({
   "id": zod.coerce.number()
 })
 
 export const DeleteMessageResponse = zod.void()
+
+
+export const HideMessageParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const HideMessageResponse = zod.void()
 
 
 export const ListGroupsResponseItem = zod.object({

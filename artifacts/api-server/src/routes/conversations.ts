@@ -6,8 +6,9 @@ import {
   messagesTable,
   messageAttachmentsTable,
   messageReactionsTable,
+  messageHidesTable,
 } from "@workspace/db";
-import { and, eq, lt, desc, inArray } from "drizzle-orm";
+import { and, eq, lt, desc, inArray, notInArray } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import {
   buildConversations,
@@ -38,6 +39,9 @@ import {
   AddConversationMembersBody,
   AddConversationMembersResponse,
   RemoveConversationMemberParams,
+  EditMessageParams,
+  EditMessageBody,
+  EditMessageResponse,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -205,6 +209,12 @@ router.get(
       return;
     }
     const { cursor, limit } = query.data;
+    // Exclude messages the viewer deleted "for me".
+    const hiddenRows = await db
+      .select({ messageId: messageHidesTable.messageId })
+      .from(messageHidesTable)
+      .where(eq(messageHidesTable.userId, req.userId!));
+    const hiddenIds = hiddenRows.map((h) => h.messageId);
     const rows = await db
       .select()
       .from(messagesTable)
@@ -212,6 +222,9 @@ router.get(
         and(
           eq(messagesTable.conversationId, params.data.id),
           cursor ? lt(messagesTable.id, cursor) : undefined,
+          hiddenIds.length > 0
+            ? notInArray(messagesTable.id, hiddenIds)
+            : undefined,
         ),
       )
       .orderBy(desc(messagesTable.id))
@@ -464,6 +477,77 @@ router.delete(
       return;
     }
     res.json(built);
+  },
+);
+
+const EDIT_WINDOW_MS = 15 * 60 * 1000;
+
+router.patch("/messages/:id", requireAuth, async (req, res): Promise<void> => {
+  const params = EditMessageParams.safeParse(req.params);
+  const parsed = EditMessageBody.safeParse(req.body);
+  if (!params.success || !parsed.success) {
+    res.status(400).json({ error: "Invalid request" });
+    return;
+  }
+  const [message] = await db
+    .select()
+    .from(messagesTable)
+    .where(eq(messagesTable.id, params.data.id));
+  if (!message) {
+    res.status(404).json({ error: "Message not found" });
+    return;
+  }
+  if (message.senderId !== req.userId) {
+    res.status(403).json({ error: "Not your message" });
+    return;
+  }
+  if (message.deletedAt) {
+    res.status(403).json({ error: "Message was unsent" });
+    return;
+  }
+  if (Date.now() - new Date(message.createdAt).getTime() > EDIT_WINDOW_MS) {
+    res.status(403).json({ error: "Edit window expired" });
+    return;
+  }
+  await db
+    .update(messagesTable)
+    .set({ content: parsed.data.content, editedAt: new Date() })
+    .where(eq(messagesTable.id, params.data.id));
+  const built = await buildMessageById(params.data.id, req.userId!);
+  await realtime.toConversation(message.conversationId, {
+    type: "message_updated",
+    conversationId: message.conversationId,
+    message: built,
+  });
+  res.json(EditMessageResponse.parse(built));
+});
+
+router.post(
+  "/messages/:id/hide",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const id = Number(req.params.id);
+    if (!id) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    const [message] = await db
+      .select({ conversationId: messagesTable.conversationId })
+      .from(messagesTable)
+      .where(eq(messagesTable.id, id));
+    if (!message) {
+      res.status(404).json({ error: "Message not found" });
+      return;
+    }
+    if (!(await isMember(message.conversationId, req.userId!))) {
+      res.status(403).json({ error: "Not a member" });
+      return;
+    }
+    await db
+      .insert(messageHidesTable)
+      .values({ messageId: id, userId: req.userId! })
+      .onConflictDoNothing();
+    res.sendStatus(204);
   },
 );
 

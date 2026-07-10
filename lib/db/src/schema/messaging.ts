@@ -114,6 +114,24 @@ export const messageReactionsTable = pgTable(
   (t) => [uniqueIndex("message_reactions_uniq").on(t.messageId, t.userId)],
 );
 
+// "Delete for me": hides a message for one user only (the message stays for others).
+export const messageHidesTable = pgTable(
+  "message_hides",
+  {
+    id: serial("id").primaryKey(),
+    messageId: integer("message_id")
+      .notNull()
+      .references(() => messagesTable.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => profilesTable.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [uniqueIndex("message_hides_uniq").on(t.messageId, t.userId)],
+);
+
 export const presenceTable = pgTable("presence", {
   userId: uuid("user_id")
     .primaryKey()
@@ -129,4 +147,5 @@ export type ConversationMember = typeof conversationMembersTable.$inferSelect;
 export type Message = typeof messagesTable.$inferSelect;
 export type MessageAttachment = typeof messageAttachmentsTable.$inferSelect;
 export type MessageReaction = typeof messageReactionsTable.$inferSelect;
+export type MessageHide = typeof messageHidesTable.$inferSelect;
 export type Presence = typeof presenceTable.$inferSelect;
