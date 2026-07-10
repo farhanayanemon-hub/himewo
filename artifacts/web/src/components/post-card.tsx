@@ -63,6 +63,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { getGetFeedQueryKey, getGetPostQueryKey, getGetUserPostsQueryKey, getListSavedItemsQueryKey } from "@workspace/api-client-react";
 import { ReactionControl, reactionConfig } from "@/components/reaction-picker";
 import { useAuth } from "@/lib/auth";
+import { useActingPage } from "@/lib/acting-page";
 
 const privacyMeta: Record<string, { icon: typeof Globe; label: string }> = {
   public: { icon: Globe, label: "Public" },
@@ -73,6 +74,8 @@ const privacyMeta: Record<string, { icon: typeof Globe; label: string }> = {
 export function PostCard({ post }: { post: Post }) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { actingPage } = useActingPage();
+  const actingPageId = actingPage?.id;
   const setReaction = useSetPostReaction();
   const removeReaction = useRemovePostReaction();
   const sharePost = useSharePost();
@@ -152,7 +155,7 @@ export function PostCard({ post }: { post: Post }) {
           viewerReaction: type,
         };
       });
-      setReaction.mutate({ id: post.id, data: { type } }, { onSettled: invalidate });
+      setReaction.mutate({ id: post.id, data: { type, pageId: actingPageId } }, { onSettled: invalidate });
     }
   };
 
@@ -225,12 +228,12 @@ export function PostCard({ post }: { post: Post }) {
   return (
     <div className="aurora-glass-card rounded-2xl p-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div className="flex items-center justify-between mb-3">
-        <Link href={`/profile/${post.author.id}`} className="flex items-center gap-3 group">
-          <img src={avatarSrc(post.author.avatarUrl)} className="w-10 h-10 rounded-full object-cover group-hover:ring-2 ring-primary transition-all" alt="" />
+        <Link href={post.authorPage ? `/pages/${post.authorPage.id}` : `/profile/${post.author.id}`} className="flex items-center gap-3 group">
+          <img src={avatarSrc(post.authorPage ? post.authorPage.avatarUrl : post.author.avatarUrl)} className="w-10 h-10 rounded-full object-cover group-hover:ring-2 ring-primary transition-all" alt="" />
           <div>
             <div className="font-semibold">
-              <span className="group-hover:underline">{post.author.displayName}</span>
-              {post.author.isVerified && <VerifiedBadge className="w-4 h-4 ml-1 align-text-bottom" />}
+              <span className="group-hover:underline">{post.authorPage ? post.authorPage.name : post.author.displayName}</span>
+              {!post.authorPage && post.author.isVerified && <VerifiedBadge className="w-4 h-4 ml-1 align-text-bottom" />}
               {(post.feelingVerb || post.feeling || post.location) && (
                 <span className="font-normal text-muted-foreground">
                   {(post.feelingVerb || post.feeling) && (

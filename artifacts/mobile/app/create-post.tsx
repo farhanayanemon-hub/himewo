@@ -24,6 +24,7 @@ import {
 import { Avatar } from "@/components/Avatar";
 import { EmojiPickerSheet } from "@/components/EmojiPickerSheet";
 import { useAuth } from "@/lib/auth";
+import { useActingPage } from "@/lib/acting-page";
 import { useColors } from "@/hooks/useColors";
 import { uploadMedia, UploadUnavailableError, captureWithCamera, type PickedAsset } from "@/lib/upload";
 
@@ -37,6 +38,7 @@ export default function CreatePostScreen() {
   const c = useColors();
   const qc = useQueryClient();
   const { user } = useAuth();
+  const { actingPage } = useActingPage();
   const createPost = useCreatePost();
 
   const [content, setContent] = useState("");
@@ -91,7 +93,12 @@ export default function CreatePostScreen() {
         }
       }
       await createPost.mutateAsync({
-        data: { content: content.trim(), privacy, media },
+        data: {
+          content: content.trim(),
+          privacy,
+          media,
+          ...(actingPage ? { pageId: actingPage.id } : {}),
+        },
       });
       qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
       router.back();

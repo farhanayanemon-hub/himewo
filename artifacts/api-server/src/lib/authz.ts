@@ -4,9 +4,38 @@ import {
   groupMembersTable,
   commentsTable,
   postsTable,
+  pagesTable,
+  pageMembersTable,
   userSettingsTable,
 } from "@workspace/db";
 import { and, eq, or, inArray } from "drizzle-orm";
+
+/**
+ * True when the user may act AS the given page (create posts, react, comment
+ * under the page's identity). Mirrors the "Page access" model: the page owner
+ * (pages.createdBy) always can; anyone in page_members is an editor and can too.
+ */
+export async function canManagePage(
+  userId: string,
+  pageId: number,
+): Promise<boolean> {
+  const [page] = await db
+    .select({ createdBy: pagesTable.createdBy })
+    .from(pagesTable)
+    .where(eq(pagesTable.id, pageId));
+  if (!page) return false;
+  if (page.createdBy === userId) return true;
+  const [member] = await db
+    .select({ id: pageMembersTable.id })
+    .from(pageMembersTable)
+    .where(
+      and(
+        eq(pageMembersTable.pageId, pageId),
+        eq(pageMembersTable.userId, userId),
+      ),
+    );
+  return Boolean(member);
+}
 
 /**
  * True when the user has enabled Facebook-style "Lock Profile". A missing

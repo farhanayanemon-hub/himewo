@@ -19,6 +19,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { CallProvider } from "@/components/CallProvider";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { RealtimeProvider } from "@/lib/realtime";
+import { ActingPageProvider } from "@/lib/acting-page";
 import { useColors } from "@/hooks/useColors";
 
 SplashScreen.preventAutoHideAsync();
@@ -116,9 +117,11 @@ function ThemedRoot() {
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
       <AuthProvider>
         <RealtimeProvider>
-          <CallProvider>
-            <RootNavigator />
-          </CallProvider>
+          <ActingPageProvider>
+            <CallProvider>
+              <RootNavigator />
+            </CallProvider>
+          </ActingPageProvider>
         </RealtimeProvider>
       </AuthProvider>
     </>

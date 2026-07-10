@@ -3533,17 +3533,32 @@ components:
           oneOf:
             - { $ref: "#/components/schemas/ReactionType" }
             - { type: "null" }
+    PageRef:
+      type: object
+      description: Lightweight page identity used when a post/comment/reaction is made as a Page.
+      required: [id, name]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        avatarUrl: { type: ["string", "null"] }
     ReactionInput:
       type: object
       required: [type]
       properties:
         type: { $ref: "#/components/schemas/ReactionType" }
+        pageId:
+          type: integer
+          description: When set, react as this Page (must be owner/editor of the page).
     ReactionUser:
       type: object
       required: [user, type]
       properties:
         user: { $ref: "#/components/schemas/Profile" }
         type: { $ref: "#/components/schemas/ReactionType" }
+        page:
+          oneOf:
+            - { $ref: "#/components/schemas/PageRef" }
+            - { type: "null" }
 
     Post:
       type: object
@@ -3551,6 +3566,10 @@ components:
       properties:
         id: { type: integer }
         author: { $ref: "#/components/schemas/Profile" }
+        authorPage:
+          oneOf:
+            - { $ref: "#/components/schemas/PageRef" }
+            - { type: "null" }
         content: { type: string }
         feelingVerb: { type: ["string", "null"] }
         feeling: { type: ["string", "null"] }
@@ -3637,6 +3656,10 @@ components:
         id: { type: integer }
         postId: { type: integer }
         author: { $ref: "#/components/schemas/Profile" }
+        authorPage:
+          oneOf:
+            - { $ref: "#/components/schemas/PageRef" }
+            - { type: "null" }
         parentId: { type: ["integer", "null"] }
         content: { type: string }
         mediaUrl: { type: ["string", "null"] }
@@ -3654,6 +3677,9 @@ components:
         content: { type: string }
         parentId: { type: integer }
         mediaUrl: { type: string }
+        pageId:
+          type: integer
+          description: When set, comment as this Page (must be owner/editor of the page).
     CommentUpdate:
       type: object
       required: [content]

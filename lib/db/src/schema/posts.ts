@@ -77,6 +77,10 @@ export const postReactionsTable = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => profilesTable.id, { onDelete: "cascade" }),
+    // When set, the reaction is made as this page (userId stays the acting
+    // owner/editor for moderation). One reaction per user per post regardless
+    // of identity, so switching identity overwrites the previous reaction.
+    pageId: integer("page_id"),
     type: reactionTypeEnum("type").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -95,6 +99,9 @@ export const commentsTable = pgTable(
     authorId: uuid("author_id")
       .notNull()
       .references(() => profilesTable.id, { onDelete: "cascade" }),
+    // When set, the comment is authored as this page (authorId stays the acting
+    // owner/editor for moderation/edit rights).
+    pageId: integer("page_id"),
     parentId: integer("parent_id"),
     content: text("content").notNull().default(""),
     mediaUrl: text("media_url"),
@@ -121,6 +128,8 @@ export const commentReactionsTable = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => profilesTable.id, { onDelete: "cascade" }),
+    // When set, the reaction is made as this page (userId stays the acting owner/editor).
+    pageId: integer("page_id"),
     type: reactionTypeEnum("type").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

@@ -35,6 +35,7 @@ import { ReactionBar } from "@/components/ReactionBar";
 import { reactionConfig } from "@/constants/reactions";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/lib/auth";
+import { useActingPage } from "@/lib/acting-page";
 import { timeAgo, formatCount } from "@/lib/format";
 
 interface PostCardProps {
@@ -63,6 +64,7 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
   const c = useColors();
   const qc = useQueryClient();
   const { user } = useAuth();
+  const { actingPage } = useActingPage();
   const [summary, setSummary] = useState<ReactionSummary>(post.reactions);
   const [saved, setSaved] = useState<boolean>(post.viewerHasSaved ?? false);
   const [commentsEnabled, setCommentsEnabled] = useState<boolean>(post.commentsEnabled);
@@ -130,7 +132,7 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
         byType,
       };
     });
-    setReaction.mutate({ id: post.id, data: { type } }, { onSettled: syncServer });
+    setReaction.mutate({ id: post.id, data: { type, pageId: actingPage?.id } }, { onSettled: syncServer });
   };
 
   const saveCaption = () => {
@@ -195,17 +197,27 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
     <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
       <Pressable
         style={styles.header}
-        onPress={() => router.push(`/profile/${post.author.id}`)}
+        onPress={() =>
+          router.push(
+            post.authorPage
+              ? `/pages/${post.authorPage.id}`
+              : `/profile/${post.author.id}`,
+          )
+        }
       >
-        <Avatar uri={post.author.avatarUrl} name={post.author.displayName} size={42} />
+        <Avatar
+          uri={post.authorPage ? post.authorPage.avatarUrl : post.author.avatarUrl}
+          name={post.authorPage ? post.authorPage.name : post.author.displayName}
+          size={42}
+        />
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
             <Text
               style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}
             >
-              {post.author.displayName}
+              {post.authorPage ? post.authorPage.name : post.author.displayName}
             </Text>
-            {post.author.isVerified && (
+            {!post.authorPage && post.author.isVerified && (
               <Ionicons name="checkmark-circle" size={14} color={c.primary} />
             )}
           </View>

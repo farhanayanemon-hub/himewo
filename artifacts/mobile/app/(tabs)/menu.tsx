@@ -8,10 +8,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { useAuth } from "@/lib/auth";
+import { useActingPage } from "@/lib/acting-page";
 import { useColors } from "@/hooks/useColors";
-import { useGetEarningsSummary } from "@workspace/api-client-react";
+import { useGetEarningsSummary, useListPages } from "@workspace/api-client-react";
 
 interface Shortcut {
   label: string;
@@ -42,11 +44,16 @@ const EARNINGS_SHORTCUT: Shortcut = {
 export default function MenuScreen() {
   const c = useColors();
   const { user, signOut } = useAuth();
+  const { actingPage, switchTo } = useActingPage();
+  const { data: pages } = useListPages({ mine: true });
+  const [switcherOpen, setSwitcherOpen] = useState(false);
   const { data: earnings } = useGetEarningsSummary();
 
   const shortcuts = earnings?.enabled
     ? [...SHORTCUTS, EARNINGS_SHORTCUT]
     : SHORTCUTS;
+
+  const hasPages = !!pages && pages.length > 0;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top"]}>
@@ -72,6 +79,93 @@ export default function MenuScreen() {
           </View>
           <Ionicons name="chevron-forward" size={20} color={c.mutedForeground} />
         </Pressable>
+
+        {hasPages && (
+          <View
+            style={[
+              styles.switcher,
+              { backgroundColor: c.card, borderColor: c.border },
+            ]}
+          >
+            <Pressable
+              style={styles.switcherHeader}
+              onPress={() => setSwitcherOpen((o) => !o)}
+            >
+              <Avatar
+                uri={actingPage ? actingPage.avatarUrl : user?.avatarUrl}
+                name={actingPage ? actingPage.name : user?.displayName}
+                size={36}
+              />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: c.mutedForeground, fontSize: 12 }}>
+                  Acting as
+                </Text>
+                <Text
+                  style={[styles.switcherName, { color: c.foreground }]}
+                  numberOfLines={1}
+                >
+                  {actingPage ? actingPage.name : user?.displayName}
+                </Text>
+              </View>
+              <Ionicons
+                name={switcherOpen ? "chevron-up" : "chevron-down"}
+                size={20}
+                color={c.mutedForeground}
+              />
+            </Pressable>
+            {switcherOpen && (
+              <View style={{ marginTop: 8, gap: 4 }}>
+                <Pressable
+                  style={styles.switcherRow}
+                  onPress={() => {
+                    setSwitcherOpen(false);
+                    if (actingPage) switchTo(null);
+                  }}
+                >
+                  <Avatar uri={user?.avatarUrl} name={user?.displayName} size={32} />
+                  <Text
+                    style={[styles.switcherRowName, { color: c.foreground }]}
+                    numberOfLines={1}
+                  >
+                    {user?.displayName}
+                  </Text>
+                  {!actingPage && (
+                    <Ionicons name="checkmark" size={18} color="#6366f1" />
+                  )}
+                </Pressable>
+                {pages!.map((p) => {
+                  const isActive = actingPage?.id === p.id;
+                  return (
+                    <Pressable
+                      key={p.id}
+                      style={styles.switcherRow}
+                      onPress={() => {
+                        setSwitcherOpen(false);
+                        if (!isActive)
+                          switchTo({
+                            id: p.id,
+                            name: p.name,
+                            avatarUrl: p.avatarUrl ?? null,
+                          });
+                      }}
+                    >
+                      <Avatar uri={p.avatarUrl} name={p.name} size={32} />
+                      <Text
+                        style={[styles.switcherRowName, { color: c.foreground }]}
+                        numberOfLines={1}
+                      >
+                        {p.name}
+                      </Text>
+                      {isActive && (
+                        <Ionicons name="checkmark" size={18} color="#6366f1" />
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </View>
+            )}
+          </View>
+        )}
 
         <View style={styles.grid}>
           {shortcuts.map((item) => (
@@ -122,6 +216,26 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   userName: { fontFamily: "Inter_700Bold", fontSize: 17 },
+  switcher: {
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 12,
+    marginBottom: 16,
+  },
+  switcherHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  switcherName: { fontFamily: "Inter_600SemiBold", fontSize: 15 },
+  switcherRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  switcherRowName: { flex: 1, fontFamily: "Inter_500Medium", fontSize: 14 },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",

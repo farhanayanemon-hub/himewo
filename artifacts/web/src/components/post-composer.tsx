@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { avatarSrc } from "@/lib/avatar";
+import { useActingPage } from "@/lib/acting-page";
 import {
   useGetCurrentUser,
   useCreatePost,
@@ -88,6 +89,11 @@ export function PostComposer({
   // Group/page posts get their reach from membership / page ownership, not the
   // author's default audience — so we hide the privacy picker in that context.
   const inCommunity = groupId != null || pageId != null;
+  const { actingPage } = useActingPage();
+  // On the normal feed, honor the acting-page identity so posts appear from the
+  // page. An explicit page/group timeline (pageId/groupId) always wins.
+  const composePageId =
+    pageId ?? (groupId == null ? (actingPage?.id ?? undefined) : undefined);
   const { data: user } = useGetCurrentUser();
   const { data: settings } = useGetMySettings();
   const createPost = useCreatePost();
@@ -205,7 +211,7 @@ export function PostComposer({
           // Community posts don't carry an author-chosen audience.
           privacy: inCommunity ? undefined : privacyReady ? privacy : undefined,
           groupId,
-          pageId,
+          pageId: composePageId,
           media: mediaInput.length ? mediaInput : undefined,
           poll: pollValid
             ? { question: pollQuestion.trim(), options: filledOptions }

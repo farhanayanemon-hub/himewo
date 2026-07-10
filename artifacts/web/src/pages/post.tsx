@@ -16,6 +16,7 @@ import {
 } from "@workspace/api-client-react";
 import { useParams, Link } from "wouter";
 import { useAuth } from "@/lib/auth";
+import { useActingPage } from "@/lib/acting-page";
 import { PostCard } from "@/components/post-card";
 import { VerifiedBadge } from "@/components/verified-badge";
 import { Loader2 } from "lucide-react";
@@ -65,6 +66,7 @@ function CommentItem({
   const updateComment = useUpdateComment();
   const deleteComment = useDeleteComment();
   const { user } = useAuth();
+  const { actingPage } = useActingPage();
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState("");
   const [showReplies, setShowReplies] = useState(false);
@@ -113,7 +115,7 @@ function CommentItem({
       removeReaction.mutate({ id: comment.id }, { onSuccess: invalidate });
     } else {
       setReaction.mutate(
-        { id: comment.id, data: { type } },
+        { id: comment.id, data: { type, pageId: actingPage?.id } },
         { onSuccess: invalidate },
       );
     }
@@ -125,9 +127,9 @@ function CommentItem({
 
   return (
     <div className="flex gap-3 group/comment">
-      <Link href={`/profile/${comment.author.id}`} className="shrink-0">
+      <Link href={comment.authorPage ? `/pages/${comment.authorPage.id}` : `/profile/${comment.author.id}`} className="shrink-0">
         <img
-          src={avatarSrc(comment.author.avatarUrl)}
+          src={avatarSrc(comment.authorPage ? comment.authorPage.avatarUrl : comment.author.avatarUrl)}
           className={`${isReply ? "w-7 h-7" : "w-8 h-8"} rounded-full object-cover shrink-0`}
           alt=""
         />
@@ -136,11 +138,11 @@ function CommentItem({
         <div className="flex items-start gap-1">
           <div className="bg-muted/50 rounded-2xl px-4 py-2 inline-block max-w-full min-w-0">
             <Link
-              href={`/profile/${comment.author.id}`}
+              href={comment.authorPage ? `/pages/${comment.authorPage.id}` : `/profile/${comment.author.id}`}
               className="font-semibold text-sm hover:underline"
             >
-              {comment.author.displayName}
-              {comment.author.isVerified && <VerifiedBadge className="w-3.5 h-3.5 ml-1 align-text-bottom" />}
+              {comment.authorPage ? comment.authorPage.name : comment.author.displayName}
+              {!comment.authorPage && comment.author.isVerified && <VerifiedBadge className="w-3.5 h-3.5 ml-1 align-text-bottom" />}
             </Link>
             {editing ? (
               <div className="mt-1">
@@ -262,6 +264,7 @@ export default function PostPage() {
   const { data: comments, isLoading: commentsLoading } = useListComments(postId, {}, { query: { enabled: !!postId, queryKey: getListCommentsQueryKey(postId) } });
   
   const createComment = useCreateComment();
+  const { actingPage } = useActingPage();
   const queryClient = useQueryClient();
   const [content, setContent] = useState("");
   const [mentionTargets, setMentionTargets] = useState<MentionTarget[]>([]);
@@ -313,6 +316,7 @@ export default function PostPage() {
           content: applyMentionTokens(content, mentionTargets),
           ...(gifUrl ? { mediaUrl: gifUrl } : {}),
           ...(replyTo ? { parentId: replyTo.parentId } : {}),
+          ...(actingPage ? { pageId: actingPage.id } : {}),
         },
       },
       {

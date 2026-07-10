@@ -437,6 +437,11 @@ export const GetUserPostsResponseItem = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
 }),
+  "authorPage": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
   "content": zod.string(),
   "feelingVerb": zod.string().nullish(),
   "feeling": zod.string().nullish(),
@@ -580,6 +585,11 @@ export const GetFeedResponseItem = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
 }),
+  "authorPage": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
   "content": zod.string(),
   "feelingVerb": zod.string().nullish(),
   "feeling": zod.string().nullish(),
@@ -672,6 +682,11 @@ export const GetWatchFeedResponseItem = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
 }),
+  "authorPage": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
   "content": zod.string(),
   "feelingVerb": zod.string().nullish(),
   "feeling": zod.string().nullish(),
@@ -768,6 +783,11 @@ export const GetHashtagPostsResponseItem = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
 }),
+  "authorPage": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
   "content": zod.string(),
   "feelingVerb": zod.string().nullish(),
   "feeling": zod.string().nullish(),
@@ -878,6 +898,11 @@ export const CreatePostResponse = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
 }),
+  "authorPage": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
   "content": zod.string(),
   "feelingVerb": zod.string().nullish(),
   "feeling": zod.string().nullish(),
@@ -963,6 +988,11 @@ export const GetPostResponse = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
 }),
+  "authorPage": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
   "content": zod.string(),
   "feelingVerb": zod.string().nullish(),
   "feeling": zod.string().nullish(),
@@ -1055,6 +1085,11 @@ export const UpdatePostResponse = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
 }),
+  "authorPage": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
   "content": zod.string(),
   "feelingVerb": zod.string().nullish(),
   "feeling": zod.string().nullish(),
@@ -1111,7 +1146,8 @@ export const SetPostReactionParams = zod.object({
 })
 
 export const SetPostReactionBody = zod.object({
-  "type": zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry'])
+  "type": zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry']),
+  "pageId": zod.number().optional().describe('When set, react as this Page (must be owner\/editor of the page).')
 })
 
 export const SetPostReactionResponse = zod.object({
@@ -1210,7 +1246,12 @@ export const ListPostReactionsResponseItem = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
 }),
-  "type": zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry'])
+  "type": zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry']),
+  "page": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional()
 })
 export const ListPostReactionsResponse = zod.array(ListPostReactionsResponseItem)
 
@@ -1260,6 +1301,11 @@ export const SharePostResponse = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
 }),
+  "authorPage": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
   "content": zod.string(),
   "feelingVerb": zod.string().nullish(),
   "feeling": zod.string().nullish(),
@@ -1353,6 +1399,11 @@ export const ListCommentsResponseItem = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
 }),
+  "authorPage": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
   "parentId": zod.number().nullish(),
   "content": zod.string(),
   "mediaUrl": zod.string().nullish(),
@@ -1371,7 +1422,8 @@ export const CreateCommentParams = zod.object({
 export const CreateCommentBody = zod.object({
   "content": zod.string(),
   "parentId": zod.number().optional(),
-  "mediaUrl": zod.string().optional()
+  "mediaUrl": zod.string().optional(),
+  "pageId": zod.number().optional().describe('When set, comment as this Page (must be owner\/editor of the page).')
 })
 
 export const CreateCommentResponse = zod.object({
@@ -1412,6 +1464,11 @@ export const CreateCommentResponse = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
 }),
+  "authorPage": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
   "parentId": zod.number().nullish(),
   "content": zod.string(),
   "mediaUrl": zod.string().nullish(),
@@ -1468,6 +1525,11 @@ export const UpdateCommentResponse = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
 }),
+  "authorPage": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
   "parentId": zod.number().nullish(),
   "content": zod.string(),
   "mediaUrl": zod.string().nullish(),
@@ -1490,7 +1552,8 @@ export const SetCommentReactionParams = zod.object({
 })
 
 export const SetCommentReactionBody = zod.object({
-  "type": zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry'])
+  "type": zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry']),
+  "pageId": zod.number().optional().describe('When set, react as this Page (must be owner\/editor of the page).')
 })
 
 export const SetCommentReactionResponse = zod.object({
@@ -1531,6 +1594,11 @@ export const SetCommentReactionResponse = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
 }),
+  "authorPage": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
   "parentId": zod.number().nullish(),
   "content": zod.string(),
   "mediaUrl": zod.string().nullish(),
@@ -1583,6 +1651,11 @@ export const RemoveCommentReactionResponse = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
 }),
+  "authorPage": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
   "parentId": zod.number().nullish(),
   "content": zod.string(),
   "mediaUrl": zod.string().nullish(),
@@ -3296,6 +3369,11 @@ export const ListPendingGroupPostsResponseItem = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
 }),
+  "authorPage": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
   "content": zod.string(),
   "feelingVerb": zod.string().nullish(),
   "feeling": zod.string().nullish(),
@@ -3405,6 +3483,11 @@ export const GetGroupPostsResponseItem = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
 }),
+  "authorPage": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
   "content": zod.string(),
   "feelingVerb": zod.string().nullish(),
   "feeling": zod.string().nullish(),
@@ -3547,6 +3630,11 @@ export const ListSavedItemsResponseItem = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
 }),
+  "authorPage": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
   "content": zod.string(),
   "feelingVerb": zod.string().nullish(),
   "feeling": zod.string().nullish(),
@@ -3743,6 +3831,11 @@ export const SaveItemResponse = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
 }),
+  "authorPage": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
   "content": zod.string(),
   "feelingVerb": zod.string().nullish(),
   "feeling": zod.string().nullish(),
@@ -5872,6 +5965,11 @@ export const ServeAdsResponseItem = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
 }),
+  "authorPage": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
   "content": zod.string(),
   "feelingVerb": zod.string().nullish(),
   "feeling": zod.string().nullish(),
@@ -7277,6 +7375,11 @@ export const GetPagePostsResponseItem = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
 }),
+  "authorPage": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
   "content": zod.string(),
   "feelingVerb": zod.string().nullish(),
   "feeling": zod.string().nullish(),
@@ -7861,7 +7964,8 @@ export const SetReelReactionParams = zod.object({
 })
 
 export const SetReelReactionBody = zod.object({
-  "type": zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry'])
+  "type": zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry']),
+  "pageId": zod.number().optional().describe('When set, react as this Page (must be owner\/editor of the page).')
 })
 
 export const SetReelReactionResponse = zod.object({

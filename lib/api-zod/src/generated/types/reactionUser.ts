@@ -5,10 +5,12 @@
  * HiMewo social platform + Messenger API
  * OpenAPI spec version: 0.1.0
  */
+import type { PageRef } from './pageRef';
 import type { Profile } from './profile';
 import type { ReactionType } from './reactionType';
 
 export interface ReactionUser {
   user: Profile;
   type: ReactionType;
+  page?: PageRef | null;
 }
