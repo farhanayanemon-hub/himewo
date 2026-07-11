@@ -24,6 +24,7 @@ import {
   type Profile,
 } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
+import { useAuth } from "@/lib/auth";
 import { useActingPage } from "@/lib/acting-page";
 import { uploadMedia, UploadUnavailableError, captureWithCamera, type PickedAsset } from "@/lib/upload";
 import { GifPickerModal } from "@/components/GifPicker";
@@ -36,8 +37,11 @@ export default function CreateStoryScreen() {
   const c = useColors();
   const qc = useQueryClient();
   const createStory = useCreateStory();
+  const { user } = useAuth();
   const { actingPage } = useActingPage();
   const pageFields = actingPage ? { pageId: actingPage.id } : {};
+  const identityName = actingPage?.name ?? user?.displayName ?? "";
+  const identityAvatar = actingPage?.avatarUrl ?? user?.avatarUrl ?? null;
 
   const [mode, setMode] = useState<"media" | "text">("media");
   const [audience, setAudience] = useState<StoryInputAudience>(
@@ -191,6 +195,22 @@ export default function CreateStoryScreen() {
             <Text style={{ color: "#fff", fontFamily: "Inter_700Bold" }}>Share</Text>
           )}
         </Pressable>
+      </View>
+
+      {/* Who this story is posted as */}
+      <View style={styles.identityRow}>
+        {identityAvatar ? (
+          <Image source={{ uri: identityAvatar }} style={styles.identityAvatar} />
+        ) : (
+          <View style={[styles.identityAvatar, styles.identityAvatarFallback]}>
+            <Text style={styles.identityAvatarInitial}>
+              {identityName ? identityName[0]?.toUpperCase() : "?"}
+            </Text>
+          </View>
+        )}
+        <Text style={styles.identityName} numberOfLines={1}>
+          {identityName}
+        </Text>
       </View>
 
       {/* Mode tabs */}
@@ -445,6 +465,30 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     minWidth: 72,
     alignItems: "center",
+  },
+  identityRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+  },
+  identityAvatar: { width: 32, height: 32, borderRadius: 16 },
+  identityAvatarFallback: {
+    backgroundColor: "#ffffff33",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  identityAvatarInitial: {
+    color: "#fff",
+    fontFamily: "Inter_700Bold",
+    fontSize: 14,
+  },
+  identityName: {
+    color: "#fff",
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 14,
+    flexShrink: 1,
   },
   tabs: {
     flexDirection: "row",

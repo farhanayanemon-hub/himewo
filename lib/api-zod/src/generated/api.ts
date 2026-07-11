@@ -545,7 +545,8 @@ export const getFeedQueryLimitDefault = 20;
 
 export const GetFeedQueryParams = zod.object({
   "cursor": zod.coerce.number().optional(),
-  "limit": zod.coerce.number().default(getFeedQueryLimitDefault)
+  "limit": zod.coerce.number().default(getFeedQueryLimitDefault),
+  "pageId": zod.coerce.number().optional().describe('When acting as a page the caller owns\/manages, return the page-mode feed (all public posts) instead of the personal feed.')
 })
 
 export const GetFeedResponseItem = zod.object({

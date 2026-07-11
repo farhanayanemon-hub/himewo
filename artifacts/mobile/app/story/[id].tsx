@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Animated,
   Dimensions,
   KeyboardAvoidingView,
+  PanResponder,
   Platform,
   Pressable,
   ScrollView,
@@ -43,8 +44,19 @@ import { useColors } from "@/hooks/useColors";
 import { timeAgo } from "@/lib/format";
 import { storyBackground } from "@/lib/storyBackgrounds";
 
-const STORY_DURATION = 5000;
+// Facebook-style per-media durations: photos/text show for 15s, videos up to 30s
+// (a shorter clip advances early when it finishes playing).
+const IMAGE_DURATION = 15000;
+const VIDEO_MAX_DURATION = 30000;
 const { width } = Dimensions.get("window");
+
+// Where to start inside an author's tray: the first UNSEEN story, so reopening
+// a person who added a new story jumps straight to the new one. Tapping left
+// still walks back through the already-seen ones. Falls back to the start.
+function firstUnseenIndex(stories: { viewerHasViewed?: boolean }[]): number {
+  const i = stories.findIndex((s) => !s.viewerHasViewed);
+  return i >= 0 ? i : 0;
+}
 
 const QUICK_CHIPS: { key: string; label: string; text: string }[] = [
   { key: "toocute", label: "too cute", text: "too cute 🥺" },
@@ -74,8 +86,9 @@ export default function StoryViewerScreen() {
   // and position exactly once so background refetches never snap the viewer back.
   const [pos, setPos] = useState(() => {
     for (let g = 0; g < groups.length; g++) {
-      const s = groups[g].stories.findIndex((st) => st.id === storyId);
-      if (s >= 0) return { g, s };
+      if (groups[g].stories.some((st) => st.id === storyId)) {
+        return { g, s: firstUnseenIndex(groups[g].stories) };
+      }
     }
     return { g: 0, s: 0 };
   });
@@ -83,9 +96,8 @@ export default function StoryViewerScreen() {
   useEffect(() => {
     if (positionedRef.current || groups.length === 0) return;
     for (let g = 0; g < groups.length; g++) {
-      const s = groups[g].stories.findIndex((st) => st.id === storyId);
-      if (s >= 0) {
-        setPos({ g, s });
+      if (groups[g].stories.some((st) => st.id === storyId)) {
+        setPos({ g, s: firstUnseenIndex(groups[g].stories) });
         positionedRef.current = true;
         return;
       }
@@ -285,8 +297,50 @@ export default function StoryViewerScreen() {
     }
   };
 
+  // Swiping horizontally jumps to a DIFFERENT person's stories (whereas tapping
+  // moves within the current person). Each jump lands on that person's first
+  // unseen story, mirroring Facebook.
+  const nextAuthor = () => {
+    if (pos.g < groups.length - 1) {
+      const ng = pos.g + 1;
+      setPos({ g: ng, s: firstUnseenIndex(groups[ng].stories) });
+    } else {
+      router.back();
+    }
+  };
+  const prevAuthor = () => {
+    if (pos.g > 0) {
+      const pg = pos.g - 1;
+      setPos({ g: pg, s: firstUnseenIndex(groups[pg].stories) });
+    }
+  };
+
+  // Keep the latest navigation closures in a ref so the PanResponder (created
+  // once) always calls the current handlers without re-subscribing.
+  const navRef = useRef({ nextAuthor, prevAuthor });
+  navRef.current.nextAuthor = nextAuthor;
+  navRef.current.prevAuthor = prevAuthor;
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        // Only claim the gesture on a clear horizontal drag, so vertical taps
+        // still reach the tap zones and the reply box below.
+        onMoveShouldSetPanResponder: (_e, g) =>
+          Math.abs(g.dx) > 24 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6,
+        onPanResponderRelease: (_e, g) => {
+          if (g.dx < -50) navRef.current.nextAuthor();
+          else if (g.dx > 50) navRef.current.prevAuthor();
+        },
+      }),
+    [],
+  );
+
   // Freeze auto-advance while long-pressing or composing a reply.
   const frozen = paused || composing;
+
+  // Facebook-style timing: photos/text 15s, video up to 30s.
+  const storyDuration =
+    current?.mediaType === "video" ? VIDEO_MAX_DURATION : IMAGE_DURATION;
 
   // Single source of truth for the auto-advance timer so we never run two
   // competing animations (which caused stories to skip / double-advance).
@@ -296,7 +350,7 @@ export default function StoryViewerScreen() {
     progress.setValue(0);
     const anim = Animated.timing(progress, {
       toValue: 1,
-      duration: STORY_DURATION,
+      duration: storyDuration,
       useNativeDriver: false,
     });
     animRef.current = anim;
@@ -305,7 +359,7 @@ export default function StoryViewerScreen() {
     });
     return () => anim.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pos.g, pos.s, current?.id, frozen]);
+  }, [pos.g, pos.s, current?.id, frozen, storyDuration]);
 
   if (isLoading) {
     return (
@@ -346,7 +400,7 @@ export default function StoryViewerScreen() {
           />
         </LinearGradient>
       ) : isVideo ? (
-        <StoryVideo uri={current.mediaUrl ?? ""} paused={frozen} />
+        <StoryVideo uri={current.mediaUrl ?? ""} paused={frozen} onEnded={goNext} />
       ) : (
         <Image
           source={{ uri: current.mediaUrl ?? undefined }}
@@ -357,21 +411,24 @@ export default function StoryViewerScreen() {
       )}
 
       {/* Tap zones sit above the media but stop short of the bottom bar so they
-          never swallow reaction / reply taps. */}
-      <Pressable
-        style={styles.tapLeft}
-        onPress={goPrev}
-        onLongPress={() => setPaused(true)}
-        onPressOut={() => setPaused(false)}
-        delayLongPress={200}
-      />
-      <Pressable
-        style={styles.tapRight}
-        onPress={goNext}
-        onLongPress={() => setPaused(true)}
-        onPressOut={() => setPaused(false)}
-        delayLongPress={200}
-      />
+          never swallow reaction / reply taps. The wrapper owns the horizontal
+          swipe gesture (change person) while the Pressables handle taps. */}
+      <View style={styles.navArea} {...panResponder.panHandlers}>
+        <Pressable
+          style={styles.tapHalfLeft}
+          onPress={goPrev}
+          onLongPress={() => setPaused(true)}
+          onPressOut={() => setPaused(false)}
+          delayLongPress={200}
+        />
+        <Pressable
+          style={styles.tapHalfRight}
+          onPress={goNext}
+          onLongPress={() => setPaused(true)}
+          onPressOut={() => setPaused(false)}
+          delayLongPress={200}
+        />
+      </View>
 
       <SafeAreaView style={styles.topOverlay} pointerEvents="box-none">
         <View style={styles.progressRow}>
@@ -555,12 +612,30 @@ export default function StoryViewerScreen() {
   );
 }
 
-function StoryVideo({ uri, paused }: { uri: string; paused: boolean }) {
+function StoryVideo({
+  uri,
+  paused,
+  onEnded,
+}: {
+  uri: string;
+  paused: boolean;
+  onEnded: () => void;
+}) {
   const player = useVideoPlayer(uri, (p) => {
-    p.loop = true;
+    // Play once, don't loop — a clip shorter than the 30s cap should advance
+    // to the next story as soon as it finishes.
+    p.loop = false;
     p.muted = false;
     p.play();
   });
+
+  // Keep the latest onEnded in a ref so we only subscribe once.
+  const onEndedRef = useRef(onEnded);
+  onEndedRef.current = onEnded;
+  useEffect(() => {
+    const sub = player.addListener("playToEnd", () => onEndedRef.current());
+    return () => sub.remove();
+  }, [player]);
 
   useEffect(() => {
     if (paused) {
@@ -584,8 +659,9 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   center: { alignItems: "center", justifyContent: "center" },
   backLink: { marginTop: 16 },
-  tapLeft: { position: "absolute", left: 0, top: 0, bottom: 190, width: width * 0.35 },
-  tapRight: { position: "absolute", right: 0, top: 0, bottom: 190, width: width * 0.65 },
+  navArea: { position: "absolute", left: 0, right: 0, top: 0, bottom: 190, flexDirection: "row" },
+  tapHalfLeft: { width: width * 0.35, height: "100%" },
+  tapHalfRight: { flex: 1, height: "100%" },
   topOverlay: { position: "absolute", top: 0, left: 0, right: 0, paddingHorizontal: 8 },
   progressRow: { flexDirection: "row", gap: 4, paddingHorizontal: 4, paddingTop: 8 },
   progressTrack: {

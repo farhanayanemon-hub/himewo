@@ -156,10 +156,14 @@ export default function CreatePostScreen() {
 
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 }}>
-          <Avatar uri={user?.avatarUrl} name={user?.displayName} size={44} />
+          <Avatar
+            uri={actingPage?.avatarUrl ?? user?.avatarUrl}
+            name={actingPage?.name ?? user?.displayName}
+            size={44}
+          />
           <View>
             <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}>
-              {user?.displayName}
+              {actingPage?.name ?? user?.displayName}
             </Text>
             <View style={styles.privacyRow}>
               {privacyOptions.map((opt) => (

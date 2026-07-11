@@ -53,9 +53,13 @@ export default function HomeScreen() {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery({
-    queryKey: [...getGetFeedQueryKey(), "infinite"],
+    queryKey: [...getGetFeedQueryKey(), "infinite", actingPage?.id ?? null],
     queryFn: ({ pageParam }) =>
-      getFeed({ cursor: pageParam as number | undefined, limit: FEED_LIMIT }),
+      getFeed({
+        cursor: pageParam as number | undefined,
+        limit: FEED_LIMIT,
+        ...(actingPage ? { pageId: actingPage.id } : {}),
+      }),
     initialPageParam: undefined as number | undefined,
     getNextPageParam: (lastPage: Post[]) =>
       lastPage.length === FEED_LIMIT ? lastPage[lastPage.length - 1].id : undefined,

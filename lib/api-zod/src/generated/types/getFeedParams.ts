@@ -9,4 +9,8 @@
 export type GetFeedParams = {
 cursor?: number;
 limit?: number;
+/**
+ * When acting as a page the caller owns/manages, return the page-mode feed (all public posts) instead of the personal feed.
+ */
+pageId?: number;
 };
