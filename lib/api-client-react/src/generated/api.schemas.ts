@@ -2184,6 +2184,9 @@ export const StoryMediaType = {
 export interface Story {
   id: number;
   author: Profile;
+  authorPage?: PageRef | null;
+  /** @nullable */
+  pageId?: number | null;
   storyType: StoryStoryType;
   /** @nullable */
   mediaUrl?: string | null;
@@ -2233,6 +2236,7 @@ export interface StoryInput {
   musicTitle?: string;
   musicArtist?: string;
   expiresInHours?: number;
+  pageId?: number;
 }
 
 export type MusicTrackSource = typeof MusicTrackSource[keyof typeof MusicTrackSource];
@@ -2262,6 +2266,7 @@ export interface MusicTrackInput {
 
 export interface StoryGroup {
   author: Profile;
+  authorPage?: PageRef | null;
   stories: Story[];
   hasUnseen: boolean;
 }

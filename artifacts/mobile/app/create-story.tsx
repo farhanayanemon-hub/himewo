@@ -23,6 +23,7 @@ import {
   type Profile,
 } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
+import { useActingPage } from "@/lib/acting-page";
 import { uploadMedia, UploadUnavailableError, captureWithCamera, type PickedAsset } from "@/lib/upload";
 import { GifPickerModal } from "@/components/GifPicker";
 import { MusicPickerModal, type SelectedMusic } from "@/components/MusicPicker";
@@ -33,6 +34,8 @@ export default function CreateStoryScreen() {
   const c = useColors();
   const qc = useQueryClient();
   const createStory = useCreateStory();
+  const { actingPage } = useActingPage();
+  const pageFields = actingPage ? { pageId: actingPage.id } : {};
 
   const [mode, setMode] = useState<"media" | "text">("media");
   const [asset, setAsset] = useState<PickedAsset | null>(null);
@@ -94,6 +97,7 @@ export default function CreateStoryScreen() {
             textContent: textContent.trim(),
             backgroundStyle: background,
             ...musicFields,
+            ...pageFields,
           },
         });
       } else if (gifUrl) {
@@ -104,6 +108,7 @@ export default function CreateStoryScreen() {
             mediaType: StoryInputMediaType.image,
             caption: caption.trim() || undefined,
             ...musicFields,
+            ...pageFields,
           },
         });
       } else {
@@ -130,6 +135,7 @@ export default function CreateStoryScreen() {
                 : StoryInputMediaType.image,
             caption: caption.trim() || undefined,
             ...musicFields,
+            ...pageFields,
           },
         });
       }

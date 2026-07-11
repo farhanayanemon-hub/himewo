@@ -17,6 +17,8 @@ export const storiesTable = pgTable("stories", {
   authorId: uuid("author_id")
     .notNull()
     .references(() => profilesTable.id, { onDelete: "cascade" }),
+  // When set, the story is posted AS this page (Facebook-style "acting as page").
+  pageId: integer("page_id"),
   // "media" (photo/video/GIF) or "text" (colored-background text story).
   storyType: text("story_type").notNull().default("media"),
   mediaUrl: text("media_url"),

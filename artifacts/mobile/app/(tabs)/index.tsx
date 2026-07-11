@@ -29,6 +29,7 @@ import { StoryBar } from "@/components/StoryBar";
 import { CommentsSheet } from "@/components/CommentsSheet";
 import { ShareSheet } from "@/components/ShareSheet";
 import { useAuth } from "@/lib/auth";
+import { useActingPage } from "@/lib/acting-page";
 import { useColors } from "@/hooks/useColors";
 
 const FEED_LIMIT = 10;
@@ -39,6 +40,7 @@ export default function HomeScreen() {
   const c = useColors();
   const qc = useQueryClient();
   const { user } = useAuth();
+  const { actingPage } = useActingPage();
   const [activePost, setActivePost] = useState<number | null>(null);
   const [sharePostId, setSharePostId] = useState<number | null>(null);
 
@@ -161,9 +163,15 @@ export default function HomeScreen() {
                 style={[styles.composer, { backgroundColor: c.card }]}
                 onPress={() => router.push("/create-post")}
               >
-                <Avatar uri={user?.avatarUrl} name={user?.displayName} size={40} />
+                <Avatar
+                  uri={actingPage?.avatarUrl ?? user?.avatarUrl}
+                  name={actingPage?.name ?? user?.displayName}
+                  size={40}
+                />
                 <View style={[styles.composerInput, { backgroundColor: c.secondary }]}>
-                  <Text style={{ color: c.mutedForeground }}>What's on your mind?</Text>
+                  <Text style={{ color: c.mutedForeground }}>
+                    {actingPage ? `What's on your mind, ${actingPage.name}?` : "What's on your mind?"}
+                  </Text>
                 </View>
                 <Ionicons name="images" size={24} color="#31a24c" />
               </Pressable>

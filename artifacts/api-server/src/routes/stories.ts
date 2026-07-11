@@ -5,6 +5,8 @@ import {
   storiesTable,
   storyViewsTable,
   musicTracksTable,
+  pagesTable,
+  pageMembersTable,
 } from "@workspace/db";
 import { eq, inArray, or, and, ilike, desc } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
@@ -78,12 +80,49 @@ router.post("/stories", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: "musicUrl must be an http(s) URL" });
     return;
   }
+  // When posting AS a page, the requester must own or have access to it.
+  let pageRef: { id: number; name: string; avatarUrl: string | null } | null =
+    null;
+  if (data.pageId != null) {
+    const [page] = await db
+      .select({
+        id: pagesTable.id,
+        name: pagesTable.name,
+        avatarUrl: pagesTable.avatarUrl,
+        createdBy: pagesTable.createdBy,
+      })
+      .from(pagesTable)
+      .where(eq(pagesTable.id, data.pageId));
+    if (!page) {
+      res.status(404).json({ error: "Page not found" });
+      return;
+    }
+    if (page.createdBy !== req.userId) {
+      const [member] = await db
+        .select({ id: pageMembersTable.id })
+        .from(pageMembersTable)
+        .where(
+          and(
+            eq(pageMembersTable.pageId, data.pageId),
+            eq(pageMembersTable.userId, req.userId!),
+          ),
+        );
+      if (!member) {
+        res.status(403).json({
+          error: "Only people with Page access can post as this page.",
+        });
+        return;
+      }
+    }
+    pageRef = { id: page.id, name: page.name, avatarUrl: page.avatarUrl };
+  }
   const hours = data.expiresInHours ?? 24;
   const expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000);
   const [story] = await db
     .insert(storiesTable)
     .values({
       authorId: req.userId!,
+      pageId: data.pageId ?? null,
       storyType,
       mediaUrl: storyType === "media" ? data.mediaUrl! : null,
       mediaType: storyType === "media" ? data.mediaType! : null,
@@ -130,7 +169,11 @@ router.post("/stories", requireAuth, async (req, res): Promise<void> => {
     .where(eq(profilesTable.id, req.userId!));
   res
     .status(201)
-    .json(CreateStoryResponse.parse(toStory(story, toProfile(author), 0, false)));
+    .json(
+      CreateStoryResponse.parse(
+        toStory(story, toProfile(author), 0, false, pageRef),
+      ),
+    );
 });
 
 // ---------------- Music library ----------------

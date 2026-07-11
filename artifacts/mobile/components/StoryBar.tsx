@@ -6,11 +6,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useListStories, type StoryGroup } from "@workspace/api-client-react";
 import colorTokens from "@/constants/colors";
 import { useAuth } from "@/lib/auth";
+import { useActingPage } from "@/lib/acting-page";
 import { useColors } from "@/hooks/useColors";
 
 export function StoryBar() {
   const c = useColors();
   const { user } = useAuth();
+  const { actingPage } = useActingPage();
   const { data } = useListStories();
   const groups = (data ?? []) as StoryGroup[];
 
@@ -26,7 +28,7 @@ export function StoryBar() {
           onPress={() => router.push("/create-story")}
         >
           <View style={styles.createTop}>
-            <Avatar uri={user?.avatarUrl} />
+            <Avatar uri={actingPage?.avatarUrl ?? user?.avatarUrl} />
           </View>
           <View style={[styles.createBottom, { backgroundColor: c.card }]}>
             <View style={[styles.plus, { backgroundColor: c.primary, borderColor: c.card }]}>
@@ -46,7 +48,7 @@ export function StoryBar() {
           if (!cover) return null;
           return (
             <Pressable
-              key={group.author.id}
+              key={group.authorPage ? `p${group.authorPage.id}` : group.author.id}
               style={styles.tile}
               onPress={() => router.push(`/story/${cover.id}`)}
             >
@@ -68,7 +70,7 @@ export function StoryBar() {
                     style={[styles.storyRing, { borderWidth: 0 }]}
                   >
                     <Image
-                      source={{ uri: group.author?.avatarUrl ?? undefined }}
+                      source={{ uri: group.authorPage?.avatarUrl ?? group.author?.avatarUrl ?? undefined }}
                       style={[styles.storyAvatar, { borderColor: c.background, borderWidth: 2 }]}
                       contentFit="cover"
                     />
@@ -76,7 +78,7 @@ export function StoryBar() {
                 ) : (
                   <View style={[styles.storyRing, { borderColor: c.border }]}>
                     <Image
-                      source={{ uri: group.author?.avatarUrl ?? undefined }}
+                      source={{ uri: group.authorPage?.avatarUrl ?? group.author?.avatarUrl ?? undefined }}
                       style={styles.storyAvatar}
                       contentFit="cover"
                     />
@@ -84,7 +86,7 @@ export function StoryBar() {
                 )}
               </View>
               <Text numberOfLines={1} style={styles.storyName}>
-                {group.author?.displayName ?? "Story"}
+                {group.authorPage?.name ?? group.author?.displayName ?? "Story"}
               </Text>
             </Pressable>
           );

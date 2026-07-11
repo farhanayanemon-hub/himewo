@@ -19,4 +19,5 @@ export interface StoryInput {
   musicTitle?: string;
   musicArtist?: string;
   expiresInHours?: number;
+  pageId?: number;
 }
