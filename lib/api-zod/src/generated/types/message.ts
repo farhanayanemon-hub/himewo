@@ -9,6 +9,7 @@ import type { Attachment } from './attachment';
 import type { MessageReaction } from './messageReaction';
 import type { MessageType } from './messageType';
 import type { Profile } from './profile';
+import type { StoryEmbed } from './storyEmbed';
 
 export interface Message {
   id: number;
@@ -20,6 +21,7 @@ export interface Message {
   replyToId?: number | null;
   attachments: Attachment[];
   reactions: MessageReaction[];
+  story?: StoryEmbed | null;
   createdAt: Date;
   /** @nullable */
   editedAt?: Date | null;

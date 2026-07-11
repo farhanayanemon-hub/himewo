@@ -3045,6 +3045,52 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/Profile" }
+  /stories/{id}/reaction:
+    put:
+      operationId: setStoryReaction
+      tags: [stories]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReactionInput" }
+      responses:
+        "200":
+          description: Updated story
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Story" }
+    delete:
+      operationId: removeStoryReaction
+      tags: [stories]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Updated story
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Story" }
+  /stories/{id}/reply:
+    post:
+      operationId: replyToStory
+      tags: [stories]
+      summary: Send a direct message replying to a story (shows story preview above the message)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StoryReplyInput" }
+      responses:
+        "201":
+          description: Reply sent
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoryReplyResponse" }
 
   # ---------------- Reels ----------------
   /reels:
@@ -3922,6 +3968,10 @@ components:
         reactions:
           type: array
           items: { $ref: "#/components/schemas/MessageReaction" }
+        story:
+          oneOf:
+            - { $ref: "#/components/schemas/StoryEmbed" }
+            - { type: "null" }
         createdAt: { type: string, format: date-time }
         editedAt: { type: ["string", "null"], format: date-time }
         deletedAt: { type: ["string", "null"], format: date-time }
@@ -5116,7 +5166,7 @@ components:
 
     Story:
       type: object
-      required: [id, author, storyType, createdAt, expiresAt, viewCount, viewerHasViewed]
+      required: [id, author, storyType, createdAt, expiresAt, viewCount, viewerHasViewed, reactionCount]
       properties:
         id: { type: integer }
         author: { $ref: "#/components/schemas/Profile" }
@@ -5141,6 +5191,11 @@ components:
         expiresAt: { type: string, format: date-time }
         viewCount: { type: integer }
         viewerHasViewed: { type: boolean }
+        reactionCount: { type: integer }
+        viewerReaction:
+          oneOf:
+            - $ref: "#/components/schemas/ReactionType"
+            - type: "null"
     StoryInput:
       type: object
       properties:
@@ -5185,6 +5240,29 @@ components:
           type: array
           items: { $ref: "#/components/schemas/Story" }
         hasUnseen: { type: boolean }
+    StoryEmbed:
+      type: object
+      required: [id, storyType]
+      properties:
+        id: { type: integer }
+        storyType: { type: string, enum: [media, text] }
+        mediaUrl: { type: ["string", "null"] }
+        mediaType: { type: ["string", "null"] }
+        textContent: { type: ["string", "null"] }
+        backgroundStyle: { type: ["string", "null"] }
+        authorName: { type: ["string", "null"] }
+        expired: { type: boolean }
+    StoryReplyInput:
+      type: object
+      required: [text]
+      properties:
+        text: { type: string, minLength: 1, maxLength: 5000 }
+    StoryReplyResponse:
+      type: object
+      required: [conversationId, message]
+      properties:
+        conversationId: { type: integer }
+        message: { $ref: "#/components/schemas/Message" }
 
     Reel:
       type: object
@@ -5195,6 +5273,9 @@ components:
         videoUrl: { type: string }
         thumbnailUrl: { type: ["string", "null"] }
         caption: { type: ["string", "null"] }
+        musicUrl: { type: ["string", "null"] }
+        musicTitle: { type: ["string", "null"] }
+        musicArtist: { type: ["string", "null"] }
         createdAt: { type: string, format: date-time }
         likeCount: { type: integer }
         commentCount: { type: integer }
@@ -5211,6 +5292,9 @@ components:
         videoUrl: { type: string }
         thumbnailUrl: { type: string }
         caption: { type: string }
+        musicUrl: { type: string }
+        musicTitle: { type: string }
+        musicArtist: { type: string }
     ReelComment:
       type: object
       required: [id, reelId, author, content, createdAt]

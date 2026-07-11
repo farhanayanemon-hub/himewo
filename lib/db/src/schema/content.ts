@@ -72,6 +72,25 @@ export const storyViewsTable = pgTable(
   (t) => [uniqueIndex("story_views_uniq").on(t.storyId, t.viewerId)],
 );
 
+// Facebook-style reactions on a story (heart/like/haha etc). One per viewer.
+export const storyReactionsTable = pgTable(
+  "story_reactions",
+  {
+    id: serial("id").primaryKey(),
+    storyId: integer("story_id")
+      .notNull()
+      .references(() => storiesTable.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => profilesTable.id, { onDelete: "cascade" }),
+    type: reactionTypeEnum("type").notNull().default("love"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [uniqueIndex("story_reactions_uniq").on(t.storyId, t.userId)],
+);
+
 export const reelsTable = pgTable("reels", {
   id: serial("id").primaryKey(),
   authorId: uuid("author_id")
@@ -80,6 +99,10 @@ export const reelsTable = pgTable("reels", {
   videoUrl: text("video_url").notNull(),
   thumbnailUrl: text("thumbnail_url"),
   caption: text("caption"),
+  // Optional music attached to the reel.
+  musicUrl: text("music_url"),
+  musicTitle: text("music_title"),
+  musicArtist: text("music_artist"),
   // Moderation / curation flags (managed from the admin panel).
   hidden: boolean("hidden").notNull().default(false),
   featured: boolean("featured").notNull().default(false),
@@ -144,6 +167,7 @@ export const notificationsTable = pgTable(
 export type Story = typeof storiesTable.$inferSelect;
 export type MusicTrack = typeof musicTracksTable.$inferSelect;
 export type StoryView = typeof storyViewsTable.$inferSelect;
+export type StoryReaction = typeof storyReactionsTable.$inferSelect;
 export type Reel = typeof reelsTable.$inferSelect;
 export type ReelLike = typeof reelLikesTable.$inferSelect;
 export type ReelComment = typeof reelCommentsTable.$inferSelect;

@@ -17,6 +17,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCreateReel, getListReelsQueryKey } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { uploadMedia, UploadUnavailableError, captureWithCamera, type PickedAsset } from "@/lib/upload";
+import { MusicPickerModal, type SelectedMusic } from "@/components/MusicPicker";
 
 export default function CreateReelScreen() {
   const c = useColors();
@@ -25,6 +26,8 @@ export default function CreateReelScreen() {
 
   const [asset, setAsset] = useState<PickedAsset | null>(null);
   const [caption, setCaption] = useState("");
+  const [music, setMusic] = useState<SelectedMusic | null>(null);
+  const [musicOpen, setMusicOpen] = useState(false);
   const [posting, setPosting] = useState(false);
 
   const pick = async () => {
@@ -66,6 +69,13 @@ export default function CreateReelScreen() {
         data: {
           videoUrl: uploaded.url,
           caption: caption.trim() || undefined,
+          ...(music
+            ? {
+                musicUrl: music.url,
+                musicTitle: music.title,
+                musicArtist: music.artist ?? undefined,
+              }
+            : {}),
         },
       });
       qc.invalidateQueries({ queryKey: getListReelsQueryKey() });
@@ -103,6 +113,19 @@ export default function CreateReelScreen() {
         <View style={styles.preview}>
           <ReelPreview uri={asset.uri} />
 
+          {music && (
+            <View style={styles.musicChip}>
+              <Ionicons name="musical-notes" size={14} color="#fff" />
+              <Text style={styles.musicChipText} numberOfLines={1}>
+                {music.title}
+                {music.artist ? ` · ${music.artist}` : ""}
+              </Text>
+              <Pressable onPress={() => setMusic(null)} hitSlop={8}>
+                <Ionicons name="close" size={16} color="#fff" />
+              </Pressable>
+            </View>
+          )}
+
           <View style={styles.bottomBar}>
             <TextInput
               value={caption}
@@ -112,7 +135,7 @@ export default function CreateReelScreen() {
               style={styles.captionInput}
               multiline
             />
-            <View style={{ flexDirection: "row", gap: 10 }}>
+            <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
               <Pressable style={styles.changeBtn} onPress={pick}>
                 <Ionicons name="film" size={18} color="#fff" />
                 <Text style={{ color: "#fff", fontFamily: "Inter_500Medium", fontSize: 13 }}>
@@ -123,6 +146,12 @@ export default function CreateReelScreen() {
                 <Ionicons name="videocam" size={18} color="#fff" />
                 <Text style={{ color: "#fff", fontFamily: "Inter_500Medium", fontSize: 13 }}>
                   Record
+                </Text>
+              </Pressable>
+              <Pressable style={styles.changeBtn} onPress={() => setMusicOpen(true)}>
+                <Ionicons name="musical-notes" size={18} color="#fff" />
+                <Text style={{ color: "#fff", fontFamily: "Inter_500Medium", fontSize: 13 }}>
+                  Music
                 </Text>
               </Pressable>
             </View>
@@ -148,11 +177,26 @@ export default function CreateReelScreen() {
               Record a video
             </Text>
           </Pressable>
+          <Pressable
+            style={[styles.pickBtn, { backgroundColor: "#ffffff22" }]}
+            onPress={() => setMusicOpen(true)}
+          >
+            <Ionicons name="musical-notes" size={28} color="#fff" />
+            <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: 16 }}>
+              {music ? `Music: ${music.title}` : "Add music"}
+            </Text>
+          </Pressable>
           <Text style={{ color: "#ffffff99", fontFamily: "Inter_400Regular", fontSize: 13 }}>
             Share a short looping video with your friends
           </Text>
         </View>
       )}
+
+      <MusicPickerModal
+        visible={musicOpen}
+        onClose={() => setMusicOpen(false)}
+        onSelect={setMusic}
+      />
     </SafeAreaView>
   );
 }
@@ -188,6 +232,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   preview: { flex: 1, position: "relative" },
+  musicChip: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#0009",
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    maxWidth: "80%",
+  },
+  musicChipText: {
+    color: "#fff",
+    fontFamily: "Inter_500Medium",
+    fontSize: 12,
+    flexShrink: 1,
+  },
   bottomBar: {
     position: "absolute",
     left: 0,

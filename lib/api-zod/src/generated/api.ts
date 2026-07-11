@@ -2148,6 +2148,16 @@ export const ListConversationsResponseItem = zod.object({
   "count": zod.number(),
   "viewerReacted": zod.boolean().optional()
 })),
+  "story": zod.union([zod.object({
+  "id": zod.number(),
+  "storyType": zod.enum(['media', 'text']),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.string().nullish(),
+  "textContent": zod.string().nullish(),
+  "backgroundStyle": zod.string().nullish(),
+  "authorName": zod.string().nullish(),
+  "expired": zod.boolean().optional()
+}),zod.null()]).optional(),
   "createdAt": zod.coerce.date(),
   "editedAt": zod.coerce.date().nullish(),
   "deletedAt": zod.coerce.date().nullish()
@@ -2267,6 +2277,16 @@ export const CreateConversationResponse = zod.object({
   "count": zod.number(),
   "viewerReacted": zod.boolean().optional()
 })),
+  "story": zod.union([zod.object({
+  "id": zod.number(),
+  "storyType": zod.enum(['media', 'text']),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.string().nullish(),
+  "textContent": zod.string().nullish(),
+  "backgroundStyle": zod.string().nullish(),
+  "authorName": zod.string().nullish(),
+  "expired": zod.boolean().optional()
+}),zod.null()]).optional(),
   "createdAt": zod.coerce.date(),
   "editedAt": zod.coerce.date().nullish(),
   "deletedAt": zod.coerce.date().nullish()
@@ -2383,6 +2403,16 @@ export const GetConversationResponse = zod.object({
   "count": zod.number(),
   "viewerReacted": zod.boolean().optional()
 })),
+  "story": zod.union([zod.object({
+  "id": zod.number(),
+  "storyType": zod.enum(['media', 'text']),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.string().nullish(),
+  "textContent": zod.string().nullish(),
+  "backgroundStyle": zod.string().nullish(),
+  "authorName": zod.string().nullish(),
+  "expired": zod.boolean().optional()
+}),zod.null()]).optional(),
   "createdAt": zod.coerce.date(),
   "editedAt": zod.coerce.date().nullish(),
   "deletedAt": zod.coerce.date().nullish()
@@ -2504,6 +2534,16 @@ export const UpdateConversationResponse = zod.object({
   "count": zod.number(),
   "viewerReacted": zod.boolean().optional()
 })),
+  "story": zod.union([zod.object({
+  "id": zod.number(),
+  "storyType": zod.enum(['media', 'text']),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.string().nullish(),
+  "textContent": zod.string().nullish(),
+  "backgroundStyle": zod.string().nullish(),
+  "authorName": zod.string().nullish(),
+  "expired": zod.boolean().optional()
+}),zod.null()]).optional(),
   "createdAt": zod.coerce.date(),
   "editedAt": zod.coerce.date().nullish(),
   "deletedAt": zod.coerce.date().nullish()
@@ -2582,6 +2622,16 @@ export const ListMessagesResponseItem = zod.object({
   "count": zod.number(),
   "viewerReacted": zod.boolean().optional()
 })),
+  "story": zod.union([zod.object({
+  "id": zod.number(),
+  "storyType": zod.enum(['media', 'text']),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.string().nullish(),
+  "textContent": zod.string().nullish(),
+  "backgroundStyle": zod.string().nullish(),
+  "authorName": zod.string().nullish(),
+  "expired": zod.boolean().optional()
+}),zod.null()]).optional(),
   "createdAt": zod.coerce.date(),
   "editedAt": zod.coerce.date().nullish(),
   "deletedAt": zod.coerce.date().nullish()
@@ -2666,6 +2716,16 @@ export const SendMessageResponse = zod.object({
   "count": zod.number(),
   "viewerReacted": zod.boolean().optional()
 })),
+  "story": zod.union([zod.object({
+  "id": zod.number(),
+  "storyType": zod.enum(['media', 'text']),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.string().nullish(),
+  "textContent": zod.string().nullish(),
+  "backgroundStyle": zod.string().nullish(),
+  "authorName": zod.string().nullish(),
+  "expired": zod.boolean().optional()
+}),zod.null()]).optional(),
   "createdAt": zod.coerce.date(),
   "editedAt": zod.coerce.date().nullish(),
   "deletedAt": zod.coerce.date().nullish()
@@ -2793,6 +2853,16 @@ export const AddConversationMembersResponse = zod.object({
   "count": zod.number(),
   "viewerReacted": zod.boolean().optional()
 })),
+  "story": zod.union([zod.object({
+  "id": zod.number(),
+  "storyType": zod.enum(['media', 'text']),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.string().nullish(),
+  "textContent": zod.string().nullish(),
+  "backgroundStyle": zod.string().nullish(),
+  "authorName": zod.string().nullish(),
+  "expired": zod.boolean().optional()
+}),zod.null()]).optional(),
   "createdAt": zod.coerce.date(),
   "editedAt": zod.coerce.date().nullish(),
   "deletedAt": zod.coerce.date().nullish()
@@ -2876,6 +2946,16 @@ export const SetMessageReactionResponse = zod.object({
   "count": zod.number(),
   "viewerReacted": zod.boolean().optional()
 })),
+  "story": zod.union([zod.object({
+  "id": zod.number(),
+  "storyType": zod.enum(['media', 'text']),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.string().nullish(),
+  "textContent": zod.string().nullish(),
+  "backgroundStyle": zod.string().nullish(),
+  "authorName": zod.string().nullish(),
+  "expired": zod.boolean().optional()
+}),zod.null()]).optional(),
   "createdAt": zod.coerce.date(),
   "editedAt": zod.coerce.date().nullish(),
   "deletedAt": zod.coerce.date().nullish()
@@ -2943,6 +3023,16 @@ export const RemoveMessageReactionResponse = zod.object({
   "count": zod.number(),
   "viewerReacted": zod.boolean().optional()
 })),
+  "story": zod.union([zod.object({
+  "id": zod.number(),
+  "storyType": zod.enum(['media', 'text']),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.string().nullish(),
+  "textContent": zod.string().nullish(),
+  "backgroundStyle": zod.string().nullish(),
+  "authorName": zod.string().nullish(),
+  "expired": zod.boolean().optional()
+}),zod.null()]).optional(),
   "createdAt": zod.coerce.date(),
   "editedAt": zod.coerce.date().nullish(),
   "deletedAt": zod.coerce.date().nullish()
@@ -3018,6 +3108,16 @@ export const EditMessageResponse = zod.object({
   "count": zod.number(),
   "viewerReacted": zod.boolean().optional()
 })),
+  "story": zod.union([zod.object({
+  "id": zod.number(),
+  "storyType": zod.enum(['media', 'text']),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.string().nullish(),
+  "textContent": zod.string().nullish(),
+  "backgroundStyle": zod.string().nullish(),
+  "authorName": zod.string().nullish(),
+  "expired": zod.boolean().optional()
+}),zod.null()]).optional(),
   "createdAt": zod.coerce.date(),
   "editedAt": zod.coerce.date().nullish(),
   "deletedAt": zod.coerce.date().nullish()
@@ -3818,6 +3918,9 @@ export const ListSavedItemsResponseItem = zod.object({
   "videoUrl": zod.string(),
   "thumbnailUrl": zod.string().nullish(),
   "caption": zod.string().nullish(),
+  "musicUrl": zod.string().nullish(),
+  "musicTitle": zod.string().nullish(),
+  "musicArtist": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "likeCount": zod.number(),
   "commentCount": zod.number(),
@@ -4019,6 +4122,9 @@ export const SaveItemResponse = zod.object({
   "videoUrl": zod.string(),
   "thumbnailUrl": zod.string().nullish(),
   "caption": zod.string().nullish(),
+  "musicUrl": zod.string().nullish(),
+  "musicTitle": zod.string().nullish(),
+  "musicArtist": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "likeCount": zod.number(),
   "commentCount": zod.number(),
@@ -7779,7 +7885,9 @@ export const ListStoriesResponseItem = zod.object({
   "createdAt": zod.coerce.date(),
   "expiresAt": zod.coerce.date(),
   "viewCount": zod.number(),
-  "viewerHasViewed": zod.boolean()
+  "viewerHasViewed": zod.boolean(),
+  "reactionCount": zod.number(),
+  "viewerReaction": zod.union([zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry']),zod.null()]).optional()
 })),
   "hasUnseen": zod.boolean()
 })
@@ -7857,7 +7965,9 @@ export const CreateStoryResponse = zod.object({
   "createdAt": zod.coerce.date(),
   "expiresAt": zod.coerce.date(),
   "viewCount": zod.number(),
-  "viewerHasViewed": zod.boolean()
+  "viewerHasViewed": zod.boolean(),
+  "reactionCount": zod.number(),
+  "viewerReaction": zod.union([zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry']),zod.null()]).optional()
 })
 
 
@@ -7947,6 +8057,232 @@ export const ListStoryViewsResponseItem = zod.object({
 export const ListStoryViewsResponse = zod.array(ListStoryViewsResponseItem)
 
 
+export const SetStoryReactionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const SetStoryReactionBody = zod.object({
+  "type": zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry']),
+  "pageId": zod.number().optional().describe('When set, react as this Page (must be owner\/editor of the page).')
+})
+
+export const SetStoryReactionResponse = zod.object({
+  "id": zod.number(),
+  "author": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "authorPage": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
+  "pageId": zod.number().nullish(),
+  "storyType": zod.enum(['media', 'text']),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.union([zod.enum(['image', 'video']),zod.null()]).optional(),
+  "caption": zod.string().nullish(),
+  "textContent": zod.string().nullish(),
+  "backgroundStyle": zod.string().nullish(),
+  "musicUrl": zod.string().nullish(),
+  "musicTitle": zod.string().nullish(),
+  "musicArtist": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "expiresAt": zod.coerce.date(),
+  "viewCount": zod.number(),
+  "viewerHasViewed": zod.boolean(),
+  "reactionCount": zod.number(),
+  "viewerReaction": zod.union([zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry']),zod.null()]).optional()
+})
+
+
+export const RemoveStoryReactionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RemoveStoryReactionResponse = zod.object({
+  "id": zod.number(),
+  "author": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "authorPage": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
+  "pageId": zod.number().nullish(),
+  "storyType": zod.enum(['media', 'text']),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.union([zod.enum(['image', 'video']),zod.null()]).optional(),
+  "caption": zod.string().nullish(),
+  "textContent": zod.string().nullish(),
+  "backgroundStyle": zod.string().nullish(),
+  "musicUrl": zod.string().nullish(),
+  "musicTitle": zod.string().nullish(),
+  "musicArtist": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "expiresAt": zod.coerce.date(),
+  "viewCount": zod.number(),
+  "viewerHasViewed": zod.boolean(),
+  "reactionCount": zod.number(),
+  "viewerReaction": zod.union([zod.enum(['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry']),zod.null()]).optional()
+})
+
+
+/**
+ * @summary Send a direct message replying to a story (shows story preview above the message)
+ */
+export const ReplyToStoryParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const replyToStoryBodyTextMax = 5000;
+
+
+
+export const ReplyToStoryBody = zod.object({
+  "text": zod.string().min(1).max(replyToStoryBodyTextMax)
+})
+
+export const ReplyToStoryResponse = zod.object({
+  "conversationId": zod.number(),
+  "message": zod.object({
+  "id": zod.number(),
+  "conversationId": zod.number(),
+  "sender": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "content": zod.string(),
+  "type": zod.enum(['text', 'image', 'video', 'file', 'audio', 'sticker', 'call']),
+  "replyToId": zod.number().nullish(),
+  "attachments": zod.array(zod.object({
+  "id": zod.number(),
+  "url": zod.string(),
+  "type": zod.enum(['image', 'video', 'file', 'audio']),
+  "name": zod.string().nullish(),
+  "thumbnailUrl": zod.string().nullish(),
+  "sizeBytes": zod.number().nullish(),
+  "width": zod.number().nullish(),
+  "height": zod.number().nullish(),
+  "durationMs": zod.number().nullish()
+})),
+  "reactions": zod.array(zod.object({
+  "emoji": zod.string(),
+  "count": zod.number(),
+  "viewerReacted": zod.boolean().optional()
+})),
+  "story": zod.union([zod.object({
+  "id": zod.number(),
+  "storyType": zod.enum(['media', 'text']),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.string().nullish(),
+  "textContent": zod.string().nullish(),
+  "backgroundStyle": zod.string().nullish(),
+  "authorName": zod.string().nullish(),
+  "expired": zod.boolean().optional()
+}),zod.null()]).optional(),
+  "createdAt": zod.coerce.date(),
+  "editedAt": zod.coerce.date().nullish(),
+  "deletedAt": zod.coerce.date().nullish()
+})
+})
+
+
 export const listReelsQueryLimitDefault = 10;
 
 export const ListReelsQueryParams = zod.object({
@@ -7994,6 +8330,9 @@ export const ListReelsResponseItem = zod.object({
   "videoUrl": zod.string(),
   "thumbnailUrl": zod.string().nullish(),
   "caption": zod.string().nullish(),
+  "musicUrl": zod.string().nullish(),
+  "musicTitle": zod.string().nullish(),
+  "musicArtist": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "likeCount": zod.number(),
   "commentCount": zod.number(),
@@ -8007,7 +8346,10 @@ export const ListReelsResponse = zod.array(ListReelsResponseItem)
 export const CreateReelBody = zod.object({
   "videoUrl": zod.string(),
   "thumbnailUrl": zod.string().optional(),
-  "caption": zod.string().optional()
+  "caption": zod.string().optional(),
+  "musicUrl": zod.string().optional(),
+  "musicTitle": zod.string().optional(),
+  "musicArtist": zod.string().optional()
 })
 
 export const CreateReelResponse = zod.object({
@@ -8050,6 +8392,9 @@ export const CreateReelResponse = zod.object({
   "videoUrl": zod.string(),
   "thumbnailUrl": zod.string().nullish(),
   "caption": zod.string().nullish(),
+  "musicUrl": zod.string().nullish(),
+  "musicTitle": zod.string().nullish(),
+  "musicArtist": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "likeCount": zod.number(),
   "commentCount": zod.number(),
@@ -8103,6 +8448,9 @@ export const GetReelResponse = zod.object({
   "videoUrl": zod.string(),
   "thumbnailUrl": zod.string().nullish(),
   "caption": zod.string().nullish(),
+  "musicUrl": zod.string().nullish(),
+  "musicTitle": zod.string().nullish(),
+  "musicArtist": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "likeCount": zod.number(),
   "commentCount": zod.number(),
@@ -8156,6 +8504,9 @@ export const LikeReelResponse = zod.object({
   "videoUrl": zod.string(),
   "thumbnailUrl": zod.string().nullish(),
   "caption": zod.string().nullish(),
+  "musicUrl": zod.string().nullish(),
+  "musicTitle": zod.string().nullish(),
+  "musicArtist": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "likeCount": zod.number(),
   "commentCount": zod.number(),
@@ -8209,6 +8560,9 @@ export const UnlikeReelResponse = zod.object({
   "videoUrl": zod.string(),
   "thumbnailUrl": zod.string().nullish(),
   "caption": zod.string().nullish(),
+  "musicUrl": zod.string().nullish(),
+  "musicTitle": zod.string().nullish(),
+  "musicArtist": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "likeCount": zod.number(),
   "commentCount": zod.number(),
@@ -8267,6 +8621,9 @@ export const SetReelReactionResponse = zod.object({
   "videoUrl": zod.string(),
   "thumbnailUrl": zod.string().nullish(),
   "caption": zod.string().nullish(),
+  "musicUrl": zod.string().nullish(),
+  "musicTitle": zod.string().nullish(),
+  "musicArtist": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "likeCount": zod.number(),
   "commentCount": zod.number(),
@@ -8320,6 +8677,9 @@ export const RemoveReelReactionResponse = zod.object({
   "videoUrl": zod.string(),
   "thumbnailUrl": zod.string().nullish(),
   "caption": zod.string().nullish(),
+  "musicUrl": zod.string().nullish(),
+  "musicTitle": zod.string().nullish(),
+  "musicArtist": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "likeCount": zod.number(),
   "commentCount": zod.number(),

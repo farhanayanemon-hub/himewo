@@ -7,6 +7,7 @@
  */
 import type { PageRef } from './pageRef';
 import type { Profile } from './profile';
+import type { ReactionType } from './reactionType';
 import type { StoryMediaType } from './storyMediaType';
 import type { StoryStoryType } from './storyStoryType';
 
@@ -36,4 +37,6 @@ export interface Story {
   expiresAt: Date;
   viewCount: number;
   viewerHasViewed: boolean;
+  reactionCount: number;
+  viewerReaction?: ReactionType | null;
 }

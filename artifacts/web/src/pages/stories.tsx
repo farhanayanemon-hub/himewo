@@ -4,10 +4,14 @@ import { useActingPage } from "@/lib/acting-page";
 import {
   useListStories,
   useCreateStory,
+  useSetStoryReaction,
+  useRemoveStoryReaction,
+  useReplyToStory,
   getListStoriesQueryKey,
   type StoryInputMediaType,
+  type ReactionType,
 } from "@workspace/api-client-react";
-import { Image as ImageIcon, Loader2, Music, Plus, Type, X } from "lucide-react";
+import { Heart, Image as ImageIcon, Laugh, Loader2, Music, Plus, Send, ThumbsUp, Type, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -307,14 +311,48 @@ function CreateStoryDialog() {
   );
 }
 
+const REPLY_CHIPS = ["too cute", "👏", "🔥🔥", "😍", "haha"];
+
 export default function StoriesPage() {
   const { data: storyGroups, isLoading } = useListStories();
+  const queryClient = useQueryClient();
   const [activeIndex, setActiveIndex] = useState(0);
   const [storyIndex, setStoryIndex] = useState(0);
+  const [replyText, setReplyText] = useState("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const setReaction = useSetStoryReaction();
+  const removeReaction = useRemoveStoryReaction();
+  const replyStory = useReplyToStory();
 
   const activeGroup = storyGroups?.[activeIndex];
   const activeStory = activeGroup?.stories[Math.min(storyIndex, (activeGroup?.stories.length ?? 1) - 1)];
+
+  const react = (type: ReactionType) => {
+    if (!activeStory) return;
+    const onSuccess = () =>
+      queryClient.invalidateQueries({ queryKey: getListStoriesQueryKey() });
+    if (activeStory.viewerReaction === type) {
+      removeReaction.mutate({ id: activeStory.id }, { onSuccess });
+    } else {
+      setReaction.mutate({ id: activeStory.id, data: { type } }, { onSuccess });
+    }
+  };
+
+  const sendReply = (text: string) => {
+    const trimmed = text.trim();
+    if (!activeStory || !trimmed) return;
+    replyStory.mutate(
+      { id: activeStory.id, data: { text: trimmed } },
+      {
+        onSuccess: () => {
+          setReplyText("");
+          toast({ title: "Sent", description: "Your reply was sent as a message." });
+        },
+        onError: () => toast({ title: "Could not send", description: "Please try again." }),
+      },
+    );
+  };
 
   const goPrev = () => {
     if (storyIndex > 0) {
@@ -424,7 +462,7 @@ export default function StoriesPage() {
 
           {/* Caption */}
           {activeStory.storyType !== "text" && activeStory.caption && (
-            <div className="absolute bottom-6 left-4 right-4 text-white font-medium drop-shadow-md z-20 text-center bg-black/30 backdrop-blur-sm p-3 rounded-xl">
+            <div className="absolute bottom-36 left-4 right-4 text-white font-medium drop-shadow-md z-20 text-center bg-black/30 backdrop-blur-sm p-3 rounded-xl">
               <RenderWithMentions content={activeStory.caption} />
             </div>
           )}
@@ -433,6 +471,96 @@ export default function StoriesPage() {
           <div className="absolute inset-0 flex z-10">
             <div className="w-1/2 h-full cursor-pointer" onClick={goPrev} />
             <div className="w-1/2 h-full cursor-pointer" onClick={goNext} />
+          </div>
+
+          {/* Reactions + reply footer (Facebook-style) */}
+          <div className="absolute bottom-0 left-0 right-0 z-30 p-3 space-y-2 bg-gradient-to-t from-black/70 via-black/30 to-transparent">
+            {/* Quick reply chips */}
+            <div className="flex flex-wrap justify-center gap-2">
+              {REPLY_CHIPS.map((chip) => (
+                <button
+                  key={chip}
+                  type="button"
+                  onClick={() => sendReply(chip)}
+                  disabled={replyStory.isPending}
+                  className="px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-md text-white text-sm font-medium hover:bg-white/25 transition-colors disabled:opacity-50"
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
+
+            {/* Reply box + reactions */}
+            <div className="flex items-center gap-2">
+              <form
+                className="flex-1"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  sendReply(replyText);
+                }}
+              >
+                <div className="flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-md border border-white/30 px-3 py-1.5">
+                  <input
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    placeholder="Send message..."
+                    maxLength={5000}
+                    className="flex-1 bg-transparent text-white text-sm placeholder:text-white/70 focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!replyText.trim() || replyStory.isPending}
+                    aria-label="Send reply"
+                    className="text-white disabled:opacity-40"
+                  >
+                    {replyStory.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </form>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => react("love")}
+                  aria-label="React love"
+                  className="w-10 h-10 rounded-full bg-white flex items-center justify-center hover:scale-110 transition-transform"
+                >
+                  <Heart
+                    className={`w-5 h-5 ${activeStory.viewerReaction === "love" ? "fill-red-500 text-red-500" : "fill-red-500/90 text-red-500"}`}
+                  />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => react("like")}
+                  aria-label="React like"
+                  className={`w-10 h-10 rounded-full flex items-center justify-center hover:scale-110 transition-transform ${activeStory.viewerReaction === "like" ? "bg-blue-500" : "bg-blue-500"}`}
+                >
+                  <ThumbsUp
+                    className={`w-5 h-5 ${activeStory.viewerReaction === "like" ? "fill-white text-white" : "text-white"}`}
+                  />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => react("haha")}
+                  aria-label="React haha"
+                  className="w-10 h-10 rounded-full bg-yellow-400 flex items-center justify-center hover:scale-110 transition-transform"
+                >
+                  <Laugh
+                    className={`w-5 h-5 ${activeStory.viewerReaction === "haha" ? "text-black" : "text-black/80"}`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {activeStory.reactionCount > 0 && (
+              <div className="text-center text-white/80 text-xs">
+                {activeStory.reactionCount} reaction{activeStory.reactionCount > 1 ? "s" : ""}
+              </div>
+            )}
           </div>
         </div>
       </div>

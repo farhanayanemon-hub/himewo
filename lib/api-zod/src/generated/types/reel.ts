@@ -16,6 +16,12 @@ export interface Reel {
   thumbnailUrl?: string | null;
   /** @nullable */
   caption?: string | null;
+  /** @nullable */
+  musicUrl?: string | null;
+  /** @nullable */
+  musicTitle?: string | null;
+  /** @nullable */
+  musicArtist?: string | null;
   createdAt: Date;
   likeCount: number;
   commentCount: number;

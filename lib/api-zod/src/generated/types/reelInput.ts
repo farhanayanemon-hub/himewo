@@ -10,4 +10,7 @@ export interface ReelInput {
   videoUrl: string;
   thumbnailUrl?: string;
   caption?: string;
+  musicUrl?: string;
+  musicTitle?: string;
+  musicArtist?: string;
 }
