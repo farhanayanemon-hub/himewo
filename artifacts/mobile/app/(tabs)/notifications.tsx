@@ -42,6 +42,8 @@ function notificationText(n: Notification): string {
       return `${actor} sent you a message.`;
     case NotificationType.group_invite:
       return `${actor} invited you to a group.`;
+    case NotificationType.page_invite:
+      return `${actor} invited you to follow a page.`;
     case NotificationType.page_follow:
       return `${actor} followed your page.`;
     case NotificationType.mention:
@@ -71,6 +73,7 @@ function notificationIcon(type: NotificationType): keyof typeof Ionicons.glyphMa
     case NotificationType.message:
       return "mail";
     case NotificationType.group_invite:
+    case NotificationType.page_invite:
       return "people";
     case NotificationType.share:
       return "arrow-redo";
@@ -110,6 +113,10 @@ export default function NotificationsScreen() {
   const navigateTarget = (n: Notification) => {
     if (n.entityType === "post" && n.entityId != null) {
       router.push(`/post/${n.entityId}`);
+    } else if (n.entityType === "page" && n.entityId != null) {
+      router.push(`/pages/${n.entityId}`);
+    } else if (n.entityType === "group" && n.entityId != null) {
+      router.push(`/groups/${n.entityId}`);
     } else if (n.type === NotificationType.message) {
       router.push("/messages");
     } else if (n.actor?.id) {

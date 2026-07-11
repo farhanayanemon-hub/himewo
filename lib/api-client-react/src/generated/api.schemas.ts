@@ -679,6 +679,10 @@ export interface GroupMember {
   joinedAt: string;
 }
 
+export interface InviteInput {
+  userIds: string[];
+}
+
 export type SetMemberRoleInputRole = typeof SetMemberRoleInputRole[keyof typeof SetMemberRoleInputRole];
 
 
@@ -2301,9 +2305,12 @@ export const NotificationType = {
   message: 'message',
   group_invite: 'group_invite',
   page_follow: 'page_follow',
+  page_invite: 'page_invite',
   mention: 'mention',
   share: 'share',
   story_view: 'story_view',
+  announcement: 'announcement',
+  verification: 'verification',
 } as const;
 
 export interface Notification {

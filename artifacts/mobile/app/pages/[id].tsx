@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -33,11 +33,18 @@ import {
   useAddPageMember,
   useRemovePageMember,
   useSearchUsers,
+  useListPageFollowers,
+  useListPageFollowing,
+  useInviteToPage,
+  useListFriends,
   getListPagesQueryKey,
   getGetPageQueryKey,
   getListPageReviewsQueryKey,
   getListPageMembersQueryKey,
   getSearchUsersQueryKey,
+  getListPageFollowersQueryKey,
+  getListPageFollowingQueryKey,
+  getListFriendsQueryKey,
   type Page,
   type PageReview,
   type Profile,
@@ -551,6 +558,227 @@ function PageAccessModal({
   );
 }
 
+type PeopleRow = {
+  key: string;
+  title: string;
+  subtitle?: string;
+  avatarUrl?: string | null;
+  icon: keyof typeof Ionicons.glyphMap;
+  onPress: () => void;
+};
+
+function PeopleListModal({
+  visible,
+  onClose,
+  title,
+  loading,
+  rows,
+  emptyText,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  title: string;
+  loading: boolean;
+  rows: PeopleRow[];
+  emptyText: string;
+}) {
+  const c = useColors();
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.modalBackdrop}>
+        <View style={[styles.modalCard, { backgroundColor: c.card }]}>
+          <Text style={[styles.modalTitle, { color: c.foreground }]}>{title}</Text>
+          {loading ? (
+            <ActivityIndicator color={c.primary} style={{ marginVertical: 24 }} />
+          ) : rows.length === 0 ? (
+            <Text style={{ color: c.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 13, paddingVertical: 16 }}>
+              {emptyText}
+            </Text>
+          ) : (
+            <ScrollView style={{ maxHeight: 380 }} contentContainerStyle={{ gap: 8 }}>
+              {rows.map((row) => (
+                <Pressable
+                  key={row.key}
+                  style={[styles.memberRow, { borderColor: c.border }]}
+                  onPress={row.onPress}
+                >
+                  <View style={[styles.reviewAvatar, { backgroundColor: c.secondary, width: 40, height: 40, borderRadius: 20 }]}>
+                    {row.avatarUrl ? (
+                      <Image source={{ uri: row.avatarUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
+                    ) : (
+                      <Ionicons name={row.icon} size={18} color={c.mutedForeground} />
+                    )}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 14 }} numberOfLines={1}>
+                      {row.title}
+                    </Text>
+                    {row.subtitle ? (
+                      <Text style={{ color: c.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 12 }} numberOfLines={1}>
+                        {row.subtitle}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
+                </Pressable>
+              ))}
+            </ScrollView>
+          )}
+          <View style={[styles.modalActions, { marginTop: 12 }]}>
+            <Pressable style={[styles.btn, { backgroundColor: c.primary, flex: 1 }]} onPress={onClose}>
+              <Text style={{ color: "#fff", fontFamily: "Inter_700Bold" }}>Done</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function InviteFriendsModal({
+  visible,
+  onClose,
+  onInvite,
+  isPending,
+  title,
+  subtitle,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onInvite: (userIds: string[]) => void;
+  isPending: boolean;
+  title: string;
+  subtitle: string;
+}) {
+  const c = useColors();
+  const { data: friends, isLoading } = useListFriends({
+    query: { enabled: visible, queryKey: getListFriendsQueryKey() },
+  });
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!visible) setSelected(new Set());
+  }, [visible]);
+
+  const toggle = (fid: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(fid)) next.delete(fid);
+      else next.add(fid);
+      return next;
+    });
+  };
+
+  const submit = () => {
+    if (selected.size === 0) return;
+    onInvite(Array.from(selected));
+  };
+
+  const list = (friends ?? []) as Profile[];
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.modalBackdrop}>
+        <View style={[styles.modalCard, { backgroundColor: c.card }]}>
+          <Text style={[styles.modalTitle, { color: c.foreground }]}>{title}</Text>
+          <Text style={{ color: c.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 13, marginBottom: 10 }}>
+            {subtitle}
+          </Text>
+          {isLoading ? (
+            <ActivityIndicator color={c.primary} style={{ marginVertical: 24 }} />
+          ) : list.length === 0 ? (
+            <Text style={{ color: c.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 13, paddingVertical: 16 }}>
+              You have no friends to invite yet.
+            </Text>
+          ) : (
+            <ScrollView style={{ maxHeight: 360 }} contentContainerStyle={{ gap: 8 }}>
+              {list.map((f) => {
+                const checked = selected.has(f.id);
+                return (
+                  <Pressable
+                    key={f.id}
+                    style={[styles.memberRow, { borderColor: c.border }]}
+                    onPress={() => toggle(f.id)}
+                  >
+                    <View style={[styles.reviewAvatar, { backgroundColor: c.secondary, width: 40, height: 40, borderRadius: 20 }]}>
+                      {f.avatarUrl ? (
+                        <Image source={{ uri: f.avatarUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
+                      ) : (
+                        <Ionicons name="person" size={18} color={c.mutedForeground} />
+                      )}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 14 }} numberOfLines={1}>
+                        {f.displayName}
+                      </Text>
+                      <Text style={{ color: c.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 12 }} numberOfLines={1}>
+                        @{f.username}
+                      </Text>
+                    </View>
+                    <Ionicons
+                      name={checked ? "checkbox" : "square-outline"}
+                      size={22}
+                      color={checked ? c.primary : c.mutedForeground}
+                    />
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          )}
+          <View style={[styles.modalActions, { marginTop: 12 }]}>
+            <Pressable style={[styles.btn, { backgroundColor: c.secondary }]} onPress={onClose}>
+              <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold" }}>Cancel</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.btn, { backgroundColor: selected.size > 0 ? c.primary : c.secondary }]}
+              onPress={submit}
+              disabled={selected.size === 0 || isPending}
+            >
+              {isPending ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={{ color: selected.size > 0 ? "#fff" : c.mutedForeground, fontFamily: "Inter_700Bold" }}>
+                  {selected.size > 0 ? `Invite (${selected.size})` : "Invite"}
+                </Text>
+              )}
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function PageMenuModal({
+  visible,
+  onClose,
+  onInvite,
+  onCreateGroup,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onInvite: () => void;
+  onCreateGroup: () => void;
+}) {
+  const c = useColors();
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={styles.modalBackdrop} onPress={onClose}>
+        <View style={[styles.modalCard, { backgroundColor: c.card }]}>
+          <Pressable style={styles.menuRow} onPress={onInvite}>
+            <Ionicons name="person-add-outline" size={20} color={c.foreground} />
+            <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}>Invite friends</Text>
+          </Pressable>
+          <Pressable style={styles.menuRow} onPress={onCreateGroup}>
+            <Ionicons name="people-outline" size={20} color={c.foreground} />
+            <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}>Create group</Text>
+          </Pressable>
+        </View>
+      </Pressable>
+    </Modal>
+  );
+}
+
 export default function PageDetailScreen() {
   const c = useColors();
   const qc = useQueryClient();
@@ -573,6 +801,32 @@ export default function PageDetailScreen() {
   const [editOpen, setEditOpen] = useState(false);
   const [accessOpen, setAccessOpen] = useState(false);
   const [photoBusy, setPhotoBusy] = useState<null | "avatar" | "cover">(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [followersOpen, setFollowersOpen] = useState(false);
+  const [followingOpen, setFollowingOpen] = useState(false);
+
+  const { data: followers, isLoading: followersLoading } = useListPageFollowers(id, {
+    query: { enabled: followersOpen, queryKey: getListPageFollowersQueryKey(id) },
+  });
+  const { data: following, isLoading: followingLoading } = useListPageFollowing(id, {
+    query: { enabled: followingOpen, queryKey: getListPageFollowingQueryKey(id) },
+  });
+  const inviteToPage = useInviteToPage();
+
+  const handleInvite = (userIds: string[]) => {
+    inviteToPage.mutate(
+      { id, data: { userIds } },
+      {
+        onSuccess: () => {
+          setInviteOpen(false);
+          qc.invalidateQueries({ queryKey: getListPageFollowersQueryKey(id) });
+          Alert.alert("Invites sent", "Your friends have been invited to follow this page.");
+        },
+        onError: () => Alert.alert("Could not send invites", "Please try again."),
+      },
+    );
+  };
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: getListPagesQueryKey() });
@@ -755,6 +1009,9 @@ export default function PageDetailScreen() {
                   <Ionicons name="people-outline" size={18} color={c.foreground} />
                 </Pressable>
               ) : null}
+              <Pressable style={[styles.squareBtn, { backgroundColor: c.secondary }]} onPress={() => setMenuOpen(true)}>
+                <Ionicons name="ellipsis-horizontal" size={18} color={c.foreground} />
+              </Pressable>
             </View>
           </View>
           <Text style={[styles.name, { color: c.foreground }]}>{page.name}</Text>
@@ -765,8 +1022,12 @@ export default function PageDetailScreen() {
             <Text style={[styles.desc, { color: c.foreground }]}>{page.description}</Text>
           ) : null}
           <View style={styles.statsRow}>
-            <Text style={[styles.stat, { color: c.mutedForeground }]}>{page.followerCount} Followers</Text>
-            <Text style={[styles.stat, { color: c.mutedForeground }]}>{page.followingCount} Following</Text>
+            <Pressable onPress={() => setFollowersOpen(true)} hitSlop={6}>
+              <Text style={[styles.stat, { color: c.mutedForeground }]}>{page.followerCount} Followers</Text>
+            </Pressable>
+            <Pressable onPress={() => setFollowingOpen(true)} hitSlop={6}>
+              <Text style={[styles.stat, { color: c.mutedForeground }]}>{page.followingCount} Following</Text>
+            </Pressable>
             {page.reviewCount > 0 ? (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                 <Ionicons name="star" size={14} color="#facc15" />
@@ -836,6 +1097,63 @@ export default function PageDetailScreen() {
 
       {isManager ? <EditPageModal page={page} visible={editOpen} onClose={() => setEditOpen(false)} /> : null}
       {isOwner ? <PageAccessModal page={page} visible={accessOpen} onClose={() => setAccessOpen(false)} /> : null}
+
+      <PageMenuModal
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onInvite={() => {
+          setMenuOpen(false);
+          setInviteOpen(true);
+        }}
+        onCreateGroup={() => {
+          setMenuOpen(false);
+          router.push("/groups?create=1");
+        }}
+      />
+      <InviteFriendsModal
+        visible={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        onInvite={handleInvite}
+        isPending={inviteToPage.isPending}
+        title="Invite friends"
+        subtitle={`Invite friends to follow ${page.name}.`}
+      />
+      <PeopleListModal
+        visible={followersOpen}
+        onClose={() => setFollowersOpen(false)}
+        title="Followers"
+        loading={followersLoading}
+        emptyText="No followers yet."
+        rows={(followers ?? []).map((p) => ({
+          key: p.id,
+          title: p.displayName || p.username,
+          subtitle: `@${p.username}`,
+          avatarUrl: p.avatarUrl,
+          icon: "person",
+          onPress: () => {
+            setFollowersOpen(false);
+            router.push(`/profile/${p.id}`);
+          },
+        }))}
+      />
+      <PeopleListModal
+        visible={followingOpen}
+        onClose={() => setFollowingOpen(false)}
+        title="Following"
+        loading={followingLoading}
+        emptyText="Not following any pages yet."
+        rows={(following ?? []).map((pg) => ({
+          key: String(pg.id),
+          title: pg.name,
+          subtitle: pg.category ?? undefined,
+          avatarUrl: pg.avatarUrl,
+          icon: "document-text",
+          onPress: () => {
+            setFollowingOpen(false);
+            router.push(`/pages/${pg.id}`);
+          },
+        }))}
+      />
     </SafeAreaView>
   );
 }
@@ -965,5 +1283,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 10,
     padding: 8,
+  },
+  menuRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 4,
   },
 });

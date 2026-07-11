@@ -19,12 +19,18 @@ import {
   useListPendingGroupPosts,
   useApproveGroupPost,
   useRejectGroupPost,
+  useInviteToGroup,
+  useListGroupInvites,
+  useDeclineGroupInvite,
+  useListFriends,
   getListGroupsQueryKey,
   getGetGroupQueryKey,
   getListGroupMembersQueryKey,
   getListGroupRequestsQueryKey,
   getListPendingGroupPostsQueryKey,
   getGetGroupPostsQueryKey,
+  getListGroupInvitesQueryKey,
+  getListFriendsQueryKey,
 } from "@workspace/api-client-react";
 import { useParams, Link, useLocation } from "wouter";
 import { PostCard } from "@/components/post-card";
@@ -51,8 +57,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, Users, Lock, EyeOff, Globe, Pin, Shield } from "lucide-react";
-import { useState } from "react";
+import { Loader2, Users, Lock, EyeOff, Globe, Pin, Shield, UserPlus } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 
@@ -71,11 +78,167 @@ export default function GroupsPage() {
   return <GroupList />;
 }
 
+function GroupInviteRow({
+  group,
+}: {
+  group: {
+    id: number;
+    name: string;
+    avatarUrl?: string | null;
+    memberCount: number;
+    privacy: string;
+  };
+}) {
+  const queryClient = useQueryClient();
+  const joinGroup = useJoinGroup();
+  const declineInvite = useDeclineGroupInvite();
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: getListGroupInvitesQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getListGroupsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetGroupQueryKey(group.id) });
+  };
+
+  return (
+    <div className="flex items-center gap-3 border border-border rounded-xl p-3">
+      <Link href={`/groups/${group.id}`} className="shrink-0">
+        <div className="w-14 h-14 rounded-xl bg-muted overflow-hidden">
+          {group.avatarUrl ? (
+            <img src={avatarSrc(group.avatarUrl)} className="w-full h-full object-cover" alt="" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary">
+              <Users className="w-6 h-6" />
+            </div>
+          )}
+        </div>
+      </Link>
+      <div className="flex-1 min-w-0">
+        <Link href={`/groups/${group.id}`} className="font-semibold truncate hover:underline block">
+          {group.name}
+        </Link>
+        <div className="text-xs text-muted-foreground flex items-center gap-2 capitalize">
+          {privacyIcon(group.privacy)} {group.privacy} • {group.memberCount} members
+        </div>
+      </div>
+      <div className="flex gap-2 shrink-0">
+        <Button
+          size="sm"
+          onClick={() => joinGroup.mutate({ id: group.id, data: {} }, { onSuccess: invalidate })}
+          disabled={joinGroup.isPending || declineInvite.isPending}
+        >
+          {joinGroup.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+          Join
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => declineInvite.mutate({ id: group.id }, { onSuccess: invalidate })}
+          disabled={joinGroup.isPending || declineInvite.isPending}
+        >
+          Decline
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function InviteGroupFriendsDialog({
+  groupId,
+  open,
+  onOpenChange,
+}: {
+  groupId: number;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const { data: friends, isLoading } = useListFriends({
+    query: { enabled: open, queryKey: getListFriendsQueryKey() },
+  });
+  const inviteToGroup = useInviteToGroup();
+  const [selected, setSelected] = useState<string[]>([]);
+
+  const toggle = (id: string) => {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
+
+  const handleInvite = () => {
+    if (selected.length === 0) return;
+    inviteToGroup.mutate(
+      { id: groupId, data: { userIds: selected } },
+      {
+        onSuccess: () => {
+          setSelected([]);
+          onOpenChange(false);
+        },
+      },
+    );
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        onOpenChange(v);
+        if (!v) setSelected([]);
+      }}
+    >
+      <DialogContent className="max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Invite friends</DialogTitle>
+        </DialogHeader>
+        <div className="flex-1 overflow-y-auto -mx-1 px-1">
+          {isLoading ? (
+            <div className="py-6 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+          ) : friends?.length === 0 ? (
+            <div className="py-6 text-center text-muted-foreground text-sm">No friends to invite.</div>
+          ) : (
+            <div className="space-y-1">
+              {friends?.map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => toggle(f.id)}
+                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors text-left"
+                >
+                  <Checkbox checked={selected.includes(f.id)} className="pointer-events-none" />
+                  <img src={avatarSrc(f.avatarUrl)} className="w-10 h-10 rounded-full object-cover bg-muted shrink-0" alt="" />
+                  <div className="min-w-0">
+                    <div className="font-medium truncate">{f.displayName || f.username}</div>
+                    {f.username && <div className="text-xs text-muted-foreground truncate">@{f.username}</div>}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="secondary" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={handleInvite} disabled={selected.length === 0 || inviteToGroup.isPending}>
+            {inviteToGroup.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+            Send{selected.length > 0 ? ` (${selected.length})` : ""}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function GroupList() {
   const { data: groups, isLoading } = useListGroups();
+  const { data: invites } = useListGroupInvites();
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("create") === "1") {
+      setOpen(true);
+      window.history.replaceState({}, "", "/groups");
+    }
+  }, []);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [privacy, setPrivacy] = useState<Privacy>("public");
@@ -120,6 +283,16 @@ function GroupList() {
 
   return (
     <MainLayout>
+      {invites && invites.length > 0 && (
+        <div className="bg-card border border-border rounded-xl p-4 shadow-sm mb-4 animate-in fade-in">
+          <h2 className="text-lg font-bold mb-3">Group invites</h2>
+          <div className="space-y-3">
+            {invites.map((invite) => (
+              <GroupInviteRow key={invite.id} group={invite} />
+            ))}
+          </div>
+        </div>
+      )}
       <div className="bg-card border border-border rounded-xl p-4 shadow-sm animate-in fade-in">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-xl font-bold">Groups</h1>
@@ -279,6 +452,7 @@ function GroupDetail({ id }: { id: number }) {
 
   const [joinOpen, setJoinOpen] = useState(false);
   const [answers, setAnswers] = useState<string[]>([]);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   const isMod = group?.viewerRole === "admin" || group?.viewerRole === "moderator";
   const isAdmin = group?.viewerRole === "admin";
@@ -404,7 +578,15 @@ function GroupDetail({ id }: { id: number }) {
                 )}
               </div>
             </div>
-            {membershipButton()}
+            <div className="flex gap-2 shrink-0">
+              {group.viewerIsMember && (
+                <Button variant="secondary" onClick={() => setInviteOpen(true)}>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Invite
+                </Button>
+              )}
+              {membershipButton()}
+            </div>
           </div>
           {group.description && (
             <p className="text-[15px]">{group.description}</p>
@@ -557,6 +739,8 @@ function GroupDetail({ id }: { id: number }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <InviteGroupFriendsDialog groupId={id} open={inviteOpen} onOpenChange={setInviteOpen} />
     </MainLayout>
   );
 }

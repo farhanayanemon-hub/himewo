@@ -11,6 +11,26 @@ import {
 import { and, eq, or, inArray } from "drizzle-orm";
 
 /**
+ * The set of user IDs that are accepted friends of the given user.
+ * Friendships are stored as a canonical (userAId, userBId) pair, so we look at
+ * both sides. Used to gate "invite friends" flows: a user may only invite
+ * people who are already their friends (prevents inviting/notifying arbitrary
+ * strangers by guessing UUIDs).
+ */
+export async function getFriendIds(userId: string): Promise<Set<string>> {
+  const rows = await db
+    .select({ a: friendshipsTable.userAId, b: friendshipsTable.userBId })
+    .from(friendshipsTable)
+    .where(
+      or(
+        eq(friendshipsTable.userAId, userId),
+        eq(friendshipsTable.userBId, userId),
+      ),
+    );
+  return new Set(rows.map((r) => (r.a === userId ? r.b : r.a)));
+}
+
+/**
  * True when the user may act AS the given page (create posts, react, comment
  * under the page's identity). Mirrors the "Page access" model: the page owner
  * (pages.createdBy) always can; anyone in page_members is an editor and can too.

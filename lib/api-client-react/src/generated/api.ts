@@ -97,6 +97,7 @@ import type {
   GroupUpdateInput,
   HealthStatus,
   Insights,
+  InviteInput,
   JoinGroupInput,
   ListAdAccountConversionsParams,
   ListAdminWithdrawalsParams,
@@ -3980,6 +3981,83 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getCreateGroupMutationOptions(options));
     }
 
+export const getListGroupInvitesUrl = () => {
+
+
+
+
+  return `/api/groups/invites`
+}
+
+/**
+ * @summary Groups the current user has been invited to join
+ */
+export const listGroupInvites = async ( options?: RequestInit): Promise<Group[]> => {
+
+  return customFetch<Group[]>(getListGroupInvitesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListGroupInvitesQueryKey = () => {
+    return [
+    `/api/groups/invites`
+    ] as const;
+    }
+
+
+export const getListGroupInvitesQueryOptions = <TData = Awaited<ReturnType<typeof listGroupInvites>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listGroupInvites>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListGroupInvitesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listGroupInvites>>> = ({ signal }) => listGroupInvites({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listGroupInvites>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListGroupInvitesQueryResult = NonNullable<Awaited<ReturnType<typeof listGroupInvites>>>
+export type ListGroupInvitesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Groups the current user has been invited to join
+ */
+
+export function useListGroupInvites<TData = Awaited<ReturnType<typeof listGroupInvites>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listGroupInvites>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListGroupInvitesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getGetGroupUrl = (id: number,) => {
 
 
@@ -4243,6 +4321,147 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getLeaveGroupMutationOptions(options));
+    }
+
+export const getInviteToGroupUrl = (id: number,) => {
+
+
+
+
+  return `/api/groups/${id}/invite`
+}
+
+/**
+ * @summary Invite friends to join the group
+ */
+export const inviteToGroup = async (id: number,
+    inviteInput: InviteInput, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getInviteToGroupUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(inviteInput)
+  }
+);}
+
+
+
+
+export const getInviteToGroupMutationOptions = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inviteToGroup>>, TError,{id: number;data: BodyType<InviteInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof inviteToGroup>>, TError,{id: number;data: BodyType<InviteInput>}, TContext> => {
+
+const mutationKey = ['inviteToGroup'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof inviteToGroup>>, {id: number;data: BodyType<InviteInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  inviteToGroup(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type InviteToGroupMutationResult = NonNullable<Awaited<ReturnType<typeof inviteToGroup>>>
+    export type InviteToGroupMutationBody = BodyType<InviteInput>
+    export type InviteToGroupMutationError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Invite friends to join the group
+ */
+export const useInviteToGroup = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inviteToGroup>>, TError,{id: number;data: BodyType<InviteInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof inviteToGroup>>,
+        TError,
+        {id: number;data: BodyType<InviteInput>},
+        TContext
+      > => {
+      return useMutation(getInviteToGroupMutationOptions(options));
+    }
+
+export const getDeclineGroupInviteUrl = (id: number,) => {
+
+
+
+
+  return `/api/groups/${id}/invite/decline`
+}
+
+/**
+ * @summary Decline a pending invite to join the group
+ */
+export const declineGroupInvite = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeclineGroupInviteUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getDeclineGroupInviteMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof declineGroupInvite>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof declineGroupInvite>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['declineGroupInvite'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof declineGroupInvite>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  declineGroupInvite(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeclineGroupInviteMutationResult = NonNullable<Awaited<ReturnType<typeof declineGroupInvite>>>
+
+    export type DeclineGroupInviteMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Decline a pending invite to join the group
+ */
+export const useDeclineGroupInvite = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof declineGroupInvite>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof declineGroupInvite>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeclineGroupInviteMutationOptions(options));
     }
 
 export const getListGroupMembersUrl = (id: number,) => {
@@ -12225,6 +12444,231 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getUnfollowPageMutationOptions(options));
+    }
+
+export const getListPageFollowersUrl = (id: number,) => {
+
+
+
+
+  return `/api/pages/${id}/followers`
+}
+
+/**
+ * @summary People who follow the page
+ */
+export const listPageFollowers = async (id: number, options?: RequestInit): Promise<Profile[]> => {
+
+  return customFetch<Profile[]>(getListPageFollowersUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPageFollowersQueryKey = (id: number,) => {
+    return [
+    `/api/pages/${id}/followers`
+    ] as const;
+    }
+
+
+export const getListPageFollowersQueryOptions = <TData = Awaited<ReturnType<typeof listPageFollowers>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPageFollowers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPageFollowersQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPageFollowers>>> = ({ signal }) => listPageFollowers(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPageFollowers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPageFollowersQueryResult = NonNullable<Awaited<ReturnType<typeof listPageFollowers>>>
+export type ListPageFollowersQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary People who follow the page
+ */
+
+export function useListPageFollowers<TData = Awaited<ReturnType<typeof listPageFollowers>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPageFollowers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPageFollowersQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListPageFollowingUrl = (id: number,) => {
+
+
+
+
+  return `/api/pages/${id}/following`
+}
+
+/**
+ * @summary Pages this page follows
+ */
+export const listPageFollowing = async (id: number, options?: RequestInit): Promise<Page[]> => {
+
+  return customFetch<Page[]>(getListPageFollowingUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPageFollowingQueryKey = (id: number,) => {
+    return [
+    `/api/pages/${id}/following`
+    ] as const;
+    }
+
+
+export const getListPageFollowingQueryOptions = <TData = Awaited<ReturnType<typeof listPageFollowing>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPageFollowing>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPageFollowingQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPageFollowing>>> = ({ signal }) => listPageFollowing(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPageFollowing>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPageFollowingQueryResult = NonNullable<Awaited<ReturnType<typeof listPageFollowing>>>
+export type ListPageFollowingQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Pages this page follows
+ */
+
+export function useListPageFollowing<TData = Awaited<ReturnType<typeof listPageFollowing>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPageFollowing>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPageFollowingQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getInviteToPageUrl = (id: number,) => {
+
+
+
+
+  return `/api/pages/${id}/invite`
+}
+
+/**
+ * @summary Invite friends to follow the page
+ */
+export const inviteToPage = async (id: number,
+    inviteInput: InviteInput, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getInviteToPageUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(inviteInput)
+  }
+);}
+
+
+
+
+export const getInviteToPageMutationOptions = <TError = ErrorType<NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inviteToPage>>, TError,{id: number;data: BodyType<InviteInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof inviteToPage>>, TError,{id: number;data: BodyType<InviteInput>}, TContext> => {
+
+const mutationKey = ['inviteToPage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof inviteToPage>>, {id: number;data: BodyType<InviteInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  inviteToPage(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type InviteToPageMutationResult = NonNullable<Awaited<ReturnType<typeof inviteToPage>>>
+    export type InviteToPageMutationBody = BodyType<InviteInput>
+    export type InviteToPageMutationError = ErrorType<NotFoundResponse>
+
+    /**
+ * @summary Invite friends to follow the page
+ */
+export const useInviteToPage = <TError = ErrorType<NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inviteToPage>>, TError,{id: number;data: BodyType<InviteInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof inviteToPage>>,
+        TError,
+        {id: number;data: BodyType<InviteInput>},
+        TContext
+      > => {
+      return useMutation(getInviteToPageMutationOptions(options));
     }
 
 export const getListStoriesUrl = () => {

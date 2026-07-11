@@ -3,10 +3,13 @@ import {
   db,
   groupsTable,
   groupMembersTable,
+  groupInvitesTable,
   postsTable,
 } from "@workspace/db";
-import { and, eq, lt, desc, ne, asc } from "drizzle-orm";
+import { and, eq, lt, desc, ne, asc, inArray } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
+import { createNotification } from "../lib/notify";
+import { getFriendIds } from "../lib/authz";
 import { buildGroup, buildPosts, buildGroupMembers } from "../lib/serialize";
 import {
   ListGroupsResponse,
@@ -39,6 +42,10 @@ import {
   GetGroupPostsParams,
   GetGroupPostsQueryParams,
   GetGroupPostsResponse,
+  ListGroupInvitesResponse,
+  InviteToGroupParams,
+  InviteToGroupBody,
+  DeclineGroupInviteParams,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -116,6 +123,23 @@ router.post("/groups", requireAuth, async (req, res): Promise<void> => {
   const built = await buildGroup(group, req.userId);
   res.status(201).json(CreateGroupResponse.parse(built));
 });
+
+router.get(
+  "/groups/invites",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const rows = await db
+      .select({ g: groupsTable })
+      .from(groupInvitesTable)
+      .innerJoin(groupsTable, eq(groupInvitesTable.groupId, groupsTable.id))
+      .where(eq(groupInvitesTable.inviteeId, req.userId!))
+      .orderBy(desc(groupInvitesTable.createdAt));
+    const built = await Promise.all(
+      rows.map((r) => buildGroup(r.g, req.userId)),
+    );
+    res.json(ListGroupInvitesResponse.parse(built));
+  },
+);
 
 router.get("/groups/:id", requireAuth, async (req, res): Promise<void> => {
   const params = GetGroupParams.safeParse(req.params);
@@ -199,7 +223,19 @@ router.post("/groups/:id/join", requireAuth, async (req, res): Promise<void> => 
     res.sendStatus(204);
     return;
   }
-  const status = group.privacy === "public" ? "active" : "pending";
+  // An outstanding invite lets the user join immediately, even for a
+  // private group (invited users bypass approval).
+  const [invite] = await db
+    .select()
+    .from(groupInvitesTable)
+    .where(
+      and(
+        eq(groupInvitesTable.groupId, params.data.id),
+        eq(groupInvitesTable.inviteeId, req.userId!),
+      ),
+    );
+  const status =
+    group.privacy === "public" || invite ? "active" : "pending";
   const answers = body.success ? (body.data?.answers ?? null) : null;
   await db
     .insert(groupMembersTable)
@@ -214,8 +250,108 @@ router.post("/groups/:id/join", requireAuth, async (req, res): Promise<void> => 
       target: [groupMembersTable.groupId, groupMembersTable.userId],
       set: { status, answers },
     });
+  if (invite) {
+    await db
+      .delete(groupInvitesTable)
+      .where(
+        and(
+          eq(groupInvitesTable.groupId, params.data.id),
+          eq(groupInvitesTable.inviteeId, req.userId!),
+        ),
+      );
+  }
   res.sendStatus(204);
 });
+
+router.post(
+  "/groups/:id/invite",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = InviteToGroupParams.safeParse(req.params);
+    const body = InviteToGroupBody.safeParse(req.body);
+    if (!params.success || !body.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    const [group] = await db
+      .select()
+      .from(groupsTable)
+      .where(eq(groupsTable.id, params.data.id));
+    if (!group) {
+      res.status(404).json({ error: "Group not found" });
+      return;
+    }
+    const membership = await getMembership(params.data.id, req.userId!);
+    if (!membership || membership.status !== "active") {
+      res.status(403).json({ error: "Only members can invite others" });
+      return;
+    }
+    // You may only invite your own friends — prevents notifying arbitrary
+    // users by guessing UUIDs (spam vector).
+    const friendIds = await getFriendIds(req.userId!);
+    const inviteeIds = [...new Set(body.data.userIds)].filter(
+      (u) => u !== req.userId! && friendIds.has(u),
+    );
+    if (inviteeIds.length === 0) {
+      res.sendStatus(204);
+      return;
+    }
+    // Skip people who are already active members.
+    const memberRows = await db
+      .select({
+        userId: groupMembersTable.userId,
+        status: groupMembersTable.status,
+      })
+      .from(groupMembersTable)
+      .where(
+        and(
+          eq(groupMembersTable.groupId, params.data.id),
+          inArray(groupMembersTable.userId, inviteeIds),
+        ),
+      );
+    const activeMembers = new Set(
+      memberRows.filter((m) => m.status === "active").map((m) => m.userId),
+    );
+    for (const inviteeId of inviteeIds.filter((u) => !activeMembers.has(u))) {
+      const [inv] = await db
+        .insert(groupInvitesTable)
+        .values({ groupId: params.data.id, inviterId: req.userId!, inviteeId })
+        .onConflictDoNothing()
+        .returning();
+      if (inv) {
+        await createNotification({
+          userId: inviteeId,
+          actorId: req.userId!,
+          type: "group_invite",
+          entityType: "group",
+          entityId: params.data.id,
+        });
+      }
+    }
+    res.sendStatus(204);
+  },
+);
+
+router.post(
+  "/groups/:id/invite/decline",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = DeclineGroupInviteParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    await db
+      .delete(groupInvitesTable)
+      .where(
+        and(
+          eq(groupInvitesTable.groupId, params.data.id),
+          eq(groupInvitesTable.inviteeId, req.userId!),
+        ),
+      );
+    res.sendStatus(204);
+  },
+);
 
 router.delete(
   "/groups/:id/leave",
