@@ -27,6 +27,7 @@ import {
   pageReviewsTable,
   storiesTable,
   storyViewsTable,
+  storyReactionsTable,
   reelsTable,
   reelLikesTable,
   reelCommentsTable,
@@ -585,6 +586,23 @@ export async function buildMessages(rows: MessageRow[], viewerId?: string) {
       .from(messageReactionsTable)
       .where(inArray(messageReactionsTable.messageId, ids)),
   ]);
+  // Story-reply embeds: load referenced stories + their authors so the
+  // chat renders a story preview above the message (Facebook-style).
+  const storyIds = [
+    ...new Set(rows.map((r) => r.storyId).filter((v): v is number => v != null)),
+  ];
+  const storyById = new Map<number, StoryRow>();
+  const storyAuthorMap =
+    storyIds.length > 0
+      ? await (async () => {
+          const storyRows = await db
+            .select()
+            .from(storiesTable)
+            .where(inArray(storiesTable.id, storyIds));
+          for (const s of storyRows) storyById.set(s.id, s);
+          return loadProfileMap(storyRows.map((s) => s.authorId));
+        })()
+      : new Map();
   const attByMsg = new Map<number, typeof attachments>();
   for (const a of attachments) {
     const list = attByMsg.get(a.messageId) ?? [];
@@ -630,6 +648,35 @@ export async function buildMessages(rows: MessageRow[], viewerId?: string) {
         viewerReacted: v.viewerReacted,
       }),
     ),
+    story:
+      row.storyId != null
+        ? (() => {
+            const s = storyById.get(row.storyId);
+            if (!s) {
+              return {
+                id: row.storyId,
+                storyType: "media" as const,
+                mediaUrl: null,
+                mediaType: null,
+                textContent: null,
+                backgroundStyle: null,
+                authorName: null,
+                expired: true,
+              };
+            }
+            const a = storyAuthorMap.get(s.authorId);
+            return {
+              id: s.id,
+              storyType: s.storyType as "media" | "text",
+              mediaUrl: s.mediaUrl,
+              mediaType: s.mediaType,
+              textContent: s.textContent,
+              backgroundStyle: s.backgroundStyle,
+              authorName: a?.displayName ?? null,
+              expired: new Date(s.expiresAt).getTime() < Date.now(),
+            };
+          })()
+        : null,
     createdAt: row.createdAt,
     editedAt: row.editedAt,
     deletedAt: row.deletedAt,
@@ -959,24 +1006,43 @@ export async function buildStoryGroups(viewerId: string) {
   const ids = rows.map((r) => r.id);
   const authorMap = await loadProfileMap(rows.map((r) => r.authorId));
   const pageMap = await loadPageRefMap(rows.map((r) => r.pageId));
-  const [viewRows, viewCounts] = await Promise.all([
-    db
-      .select()
-      .from(storyViewsTable)
-      .where(
-        and(
-          inArray(storyViewsTable.storyId, ids),
-          eq(storyViewsTable.viewerId, viewerId),
+  const [viewRows, viewCounts, reactCounts, viewerReactRows] =
+    await Promise.all([
+      db
+        .select()
+        .from(storyViewsTable)
+        .where(
+          and(
+            inArray(storyViewsTable.storyId, ids),
+            eq(storyViewsTable.viewerId, viewerId),
+          ),
         ),
-      ),
-    db
-      .select({ storyId: storyViewsTable.storyId, value: count() })
-      .from(storyViewsTable)
-      .where(inArray(storyViewsTable.storyId, ids))
-      .groupBy(storyViewsTable.storyId),
-  ]);
+      db
+        .select({ storyId: storyViewsTable.storyId, value: count() })
+        .from(storyViewsTable)
+        .where(inArray(storyViewsTable.storyId, ids))
+        .groupBy(storyViewsTable.storyId),
+      db
+        .select({ storyId: storyReactionsTable.storyId, value: count() })
+        .from(storyReactionsTable)
+        .where(inArray(storyReactionsTable.storyId, ids))
+        .groupBy(storyReactionsTable.storyId),
+      db
+        .select()
+        .from(storyReactionsTable)
+        .where(
+          and(
+            inArray(storyReactionsTable.storyId, ids),
+            eq(storyReactionsTable.userId, viewerId),
+          ),
+        ),
+    ]);
   const viewedSet = new Set(viewRows.map((v) => v.storyId));
   const viewCountByStory = new Map(viewCounts.map((v) => [v.storyId, v.value]));
+  const reactCountByStory = new Map(reactCounts.map((v) => [v.storyId, v.value]));
+  const viewerReactByStory = new Map(
+    viewerReactRows.map((v) => [v.storyId, v.type]),
+  );
 
   // Stories authored AS a page cluster under the page identity; otherwise
   // they group under the user who posted them.
@@ -1012,6 +1078,8 @@ export async function buildStoryGroups(viewerId: string) {
         expiresAt: s.expiresAt,
         viewCount: viewCountByStory.get(s.id) ?? 0,
         viewerHasViewed: viewedSet.has(s.id),
+        reactionCount: reactCountByStory.get(s.id) ?? 0,
+        viewerReaction: viewerReactByStory.get(s.id) ?? null,
       })),
       hasUnseen: stories.some((s) => !viewedSet.has(s.id)),
     };
@@ -1024,6 +1092,8 @@ export function toStory(
   viewCount = 0,
   viewerHasViewed = false,
   authorPage: PageRefDto | null = null,
+  reactionCount = 0,
+  viewerReaction: string | null = null,
 ) {
   return {
     id: s.id,
@@ -1043,7 +1113,58 @@ export function toStory(
     expiresAt: s.expiresAt,
     viewCount,
     viewerHasViewed,
+    reactionCount,
+    viewerReaction,
   };
+}
+
+// Build a single story with reaction + view counts for the given viewer.
+export async function buildStoryById(id: number, viewerId: string) {
+  const [s] = await db.select().from(storiesTable).where(eq(storiesTable.id, id));
+  if (!s) return null;
+  const [author] = await db
+    .select()
+    .from(profilesTable)
+    .where(eq(profilesTable.id, s.authorId));
+  const pageMap = await loadPageRefMap([s.pageId]);
+  const [viewCountRows, reactCountRows, viewerViewRows, viewerReactRows] =
+    await Promise.all([
+      db
+        .select({ value: count() })
+        .from(storyViewsTable)
+        .where(eq(storyViewsTable.storyId, id)),
+      db
+        .select({ value: count() })
+        .from(storyReactionsTable)
+        .where(eq(storyReactionsTable.storyId, id)),
+      db
+        .select()
+        .from(storyViewsTable)
+        .where(
+          and(
+            eq(storyViewsTable.storyId, id),
+            eq(storyViewsTable.viewerId, viewerId),
+          ),
+        ),
+      db
+        .select()
+        .from(storyReactionsTable)
+        .where(
+          and(
+            eq(storyReactionsTable.storyId, id),
+            eq(storyReactionsTable.userId, viewerId),
+          ),
+        ),
+    ]);
+  return toStory(
+    s,
+    toProfile(author),
+    viewCountRows[0]?.value ?? 0,
+    viewerViewRows.length > 0,
+    s.pageId != null ? (pageMap.get(s.pageId) ?? null) : null,
+    reactCountRows[0]?.value ?? 0,
+    viewerReactRows[0]?.type ?? null,
+  );
 }
 
 // ---------------- Reels ----------------
@@ -1097,6 +1218,9 @@ export async function buildReels(rows: ReelRow[], viewerId?: string) {
     videoUrl: row.videoUrl,
     thumbnailUrl: row.thumbnailUrl,
     caption: row.caption,
+    musicUrl: row.musicUrl,
+    musicTitle: row.musicTitle,
+    musicArtist: row.musicArtist,
     createdAt: row.createdAt,
     likeCount: likeCountByReel.get(row.id) ?? 0,
     commentCount: commentCountByReel.get(row.id) ?? 0,

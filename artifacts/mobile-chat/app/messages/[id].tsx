@@ -38,6 +38,7 @@ import {
   type Message,
   type Profile,
   type AttachmentInput,
+  type StoryEmbed,
 } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
 import { EmojiPickerSheet } from "@/components/EmojiPickerSheet";
@@ -47,6 +48,7 @@ import { useCall } from "@/components/CallProvider";
 import { useColors } from "@/hooks/useColors";
 import { auroraButtonGradient } from "@/constants/colors";
 import { formatClock } from "@/lib/format";
+import { storyBackground } from "@/lib/storyBackgrounds";
 import { uploadMedia, uploadAudio, UploadUnavailableError, type PickedAsset } from "@/lib/upload";
 import {
   AudioModule,
@@ -713,6 +715,77 @@ function TypingBubble() {
   );
 }
 
+function StoryReplyPreview({
+  story,
+  mine,
+  senderName,
+}: {
+  story: StoryEmbed;
+  mine: boolean;
+  senderName: string;
+}) {
+  const c = useColors();
+  const isMedia = story.storyType === "media";
+  const isVideo = (story.mediaType ?? "").startsWith("video");
+  const [g1, g2] = storyBackground(story.backgroundStyle);
+  const who = mine ? "You" : senderName;
+  const author = story.authorName ? `${story.authorName}'s` : "a";
+  const label = `${who} replied to ${author} story`;
+
+  return (
+    <View style={[styles.storyPreview, { alignSelf: mine ? "flex-end" : "flex-start" }]}>
+      <Text
+        style={[
+          styles.storyPreviewLabel,
+          { color: c.mutedForeground, textAlign: mine ? "right" : "left" },
+        ]}
+      >
+        {label}
+      </Text>
+      <View
+        style={[
+          styles.storyThumb,
+          { backgroundColor: c.secondary, borderColor: c.border },
+        ]}
+      >
+        {story.expired ? (
+          <View style={[styles.storyThumbFill, styles.storyThumbCenter]}>
+            <Ionicons name="time-outline" size={22} color={c.mutedForeground} />
+            <Text style={[styles.storyExpiredText, { color: c.mutedForeground }]}>
+              Story{"\n"}expired
+            </Text>
+          </View>
+        ) : isMedia && story.mediaUrl ? (
+          <>
+            <Image
+              source={{ uri: story.mediaUrl }}
+              style={styles.storyThumbFill}
+              contentFit="cover"
+              transition={150}
+            />
+            {isVideo && (
+              <View style={styles.storyThumbCenterOverlay}>
+                <Ionicons name="play-circle" size={26} color="#fff" />
+              </View>
+            )}
+          </>
+        ) : (
+          <LinearGradient
+            colors={[g1, g2]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.storyThumbFill, styles.storyThumbCenter, { padding: 6 }]}
+          >
+            <Text numberOfLines={4} style={styles.storyThumbText}>
+              {story.textContent || ""}
+            </Text>
+          </LinearGradient>
+        )}
+      </View>
+    </View>
+  );
+}
+
 function MessageBubble({
   message,
   mine,
@@ -801,6 +874,13 @@ function MessageBubble({
                 : "Unavailable"}
             </Text>
           </View>
+        )}
+        {message.story && (
+          <StoryReplyPreview
+            story={message.story}
+            mine={mine}
+            senderName={message.sender.displayName}
+          />
         )}
         {hasAttachments &&
           message.attachments.map((att) =>
@@ -966,6 +1046,41 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     maxWidth: "100%",
     opacity: 0.85,
+  },
+  storyPreview: { marginBottom: 4, maxWidth: 200 },
+  storyPreviewLabel: {
+    fontSize: fs(11),
+    fontFamily: "Inter_500Medium",
+    marginBottom: 4,
+  },
+  storyThumb: {
+    width: 108,
+    height: 150,
+    borderRadius: 14,
+    overflow: "hidden",
+    borderWidth: 1,
+    ...shadow("sm"),
+  },
+  storyThumbFill: { width: "100%", height: "100%" },
+  storyThumbCenter: { alignItems: "center", justifyContent: "center" },
+  storyThumbCenterOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#0002",
+  },
+  storyThumbText: {
+    color: "#fff",
+    fontSize: fs(12),
+    lineHeight: 16,
+    textAlign: "center",
+    fontFamily: "Inter_600SemiBold",
+  },
+  storyExpiredText: {
+    fontSize: fs(11),
+    textAlign: "center",
+    marginTop: 4,
+    lineHeight: 14,
   },
   contextBar: {
     flexDirection: "row",

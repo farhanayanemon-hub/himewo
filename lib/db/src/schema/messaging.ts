@@ -67,6 +67,9 @@ export const messagesTable = pgTable(
     content: text("content").notNull().default(""),
     type: messageTypeEnum("type").notNull().default("text"),
     replyToId: integer("reply_to_id"),
+    // When set, this message is a reply to a story; renders a story preview
+    // above the text (Facebook-style). References stories.id.
+    storyId: integer("story_id"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

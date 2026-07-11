@@ -21,7 +21,7 @@ import {
   type Post,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { Loader2, Plus, Cake } from "lucide-react";
+import { Loader2, Plus, Cake, Clapperboard } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRealtime } from "@/lib/realtime";
 import { useAuth } from "@/lib/auth";
@@ -52,6 +52,22 @@ function StoryRow() {
         </div>
         <div className="absolute bottom-2 left-0 right-0 text-center text-foreground text-xs font-semibold leading-tight px-1">
           Create Story
+        </div>
+      </Link>
+
+      {/* Create Reel */}
+      <Link
+        href="/reels"
+        className="w-28 h-48 shrink-0 rounded-2xl relative overflow-hidden group cursor-pointer border border-card-border card-depth lift-on-hover bg-card"
+      >
+        <div className="h-2/3 overflow-hidden bg-gradient-to-br from-purple-500 via-fuchsia-500 to-pink-500 flex items-center justify-center">
+          <Clapperboard className="w-9 h-9 text-white/90" />
+        </div>
+        <div className="absolute top-[calc(66%-16px)] left-1/2 -translate-x-1/2 w-9 h-9 rounded-full aurora-button flex items-center justify-center text-white border-4 border-card">
+          <Plus className="w-5 h-5" />
+        </div>
+        <div className="absolute bottom-2 left-0 right-0 text-center text-foreground text-xs font-semibold leading-tight px-1">
+          Create Reel
         </div>
       </Link>
 

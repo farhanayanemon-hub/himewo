@@ -9,6 +9,7 @@ import {
 import { and, eq, lt, asc, desc, inArray } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import { toProfile, buildReels, buildReelById } from "../lib/serialize";
+import { shareMusicToLibrary } from "./stories";
 import { createNotification } from "../lib/notify";
 import {
   ListReelsQueryParams,
@@ -65,8 +66,17 @@ router.post("/reels", requireAuth, async (req, res): Promise<void> => {
       videoUrl: parsed.data.videoUrl,
       thumbnailUrl: parsed.data.thumbnailUrl ?? null,
       caption: parsed.data.caption ?? null,
+      musicUrl: parsed.data.musicUrl ?? null,
+      musicTitle: parsed.data.musicTitle ?? null,
+      musicArtist: parsed.data.musicArtist ?? null,
     })
     .returning();
+  // Posted music becomes shared in the library.
+  await shareMusicToLibrary(
+    parsed.data.musicUrl,
+    parsed.data.musicTitle,
+    parsed.data.musicArtist,
+  );
   const built = await buildReelById(reel.id, req.userId);
   res.status(201).json(CreateReelResponse.parse(built));
 });

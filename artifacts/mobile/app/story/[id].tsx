@@ -3,8 +3,11 @@ import {
   ActivityIndicator,
   Animated,
   Dimensions,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   Text,
+  TextInput,
   View,
   StyleSheet,
 } from "react-native";
@@ -13,22 +16,42 @@ import { Image } from "expo-image";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { LinearGradient } from "expo-linear-gradient";
 import { createAudioPlayer, type AudioPlayer } from "expo-audio";
+import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
   useListStories,
   useViewStory,
+  useSetStoryReaction,
+  useRemoveStoryReaction,
+  useReplyToStory,
+  ReactionType,
   type Story,
   type StoryGroup,
 } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
 import { MentionText } from "@/components/Mention";
+import { useActingPage } from "@/lib/acting-page";
+import { reactionConfig } from "@/constants/reactions";
 import { useColors } from "@/hooks/useColors";
 import { timeAgo } from "@/lib/format";
 import { storyBackground } from "@/lib/storyBackgrounds";
 
 const STORY_DURATION = 5000;
 const { width } = Dimensions.get("window");
+
+const QUICK_CHIPS: { key: string; label: string; text: string }[] = [
+  { key: "toocute", label: "too cute", text: "too cute 🥺" },
+  { key: "clap", label: "👏", text: "👏" },
+  { key: "fire", label: "🔥🔥", text: "🔥🔥" },
+];
+
+// Reaction buttons shown FB-style at the bottom-right of the viewer.
+const QUICK_REACTIONS: ReactionType[] = [
+  ReactionType.love,
+  ReactionType.like,
+  ReactionType.haha,
+];
 
 export default function StoryViewerScreen() {
   const c = useColors();
@@ -113,6 +136,85 @@ export default function StoryViewerScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.id]);
 
+  // --- Reactions + reply (Facebook-style) ---
+  const { actingPage } = useActingPage();
+  const setStoryReaction = useSetStoryReaction();
+  const removeStoryReaction = useRemoveStoryReaction();
+  const replyToStory = useReplyToStory();
+
+  const [reaction, setReaction] = useState<ReactionType | null>(null);
+  const [reactionCount, setReactionCount] = useState(0);
+  const [replyText, setReplyText] = useState("");
+  const [composing, setComposing] = useState(false);
+  const [sentNote, setSentNote] = useState<string | null>(null);
+  const sentTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync the local reaction state whenever the visible story changes.
+  useEffect(() => {
+    setReaction(current?.viewerReaction ?? null);
+    setReactionCount(current?.reactionCount ?? 0);
+  }, [current?.id, current?.viewerReaction, current?.reactionCount]);
+
+  useEffect(
+    () => () => {
+      if (sentTimer.current) clearTimeout(sentTimer.current);
+    },
+    [],
+  );
+
+  const syncReaction = (updated: Story) => {
+    setReaction(updated.viewerReaction ?? null);
+    setReactionCount(updated.reactionCount);
+  };
+
+  const react = (t: ReactionType) => {
+    if (!current) return;
+    Haptics.selectionAsync();
+    const prev = { reaction, reactionCount };
+    const rollback = () => {
+      setReaction(prev.reaction);
+      setReactionCount(prev.reactionCount);
+    };
+    if (reaction === t) {
+      setReaction(null);
+      setReactionCount((n) => Math.max(0, n - 1));
+      removeStoryReaction.mutate(
+        { id: current.id },
+        { onSuccess: (d) => syncReaction(d as Story), onError: rollback },
+      );
+    } else {
+      if (!reaction) setReactionCount((n) => n + 1);
+      setReaction(t);
+      setStoryReaction.mutate(
+        {
+          id: current.id,
+          data: { type: t, ...(actingPage ? { pageId: actingPage.id } : {}) },
+        },
+        { onSuccess: (d) => syncReaction(d as Story), onError: rollback },
+      );
+    }
+  };
+
+  const showSent = (msg: string) => {
+    setSentNote(msg);
+    if (sentTimer.current) clearTimeout(sentTimer.current);
+    sentTimer.current = setTimeout(() => setSentNote(null), 1800);
+  };
+
+  const sendReply = (text: string) => {
+    const t = text.trim();
+    if (!t || !current || replyToStory.isPending) return;
+    replyToStory.mutate(
+      { id: current.id, data: { text: t } },
+      {
+        onSuccess: () => {
+          setReplyText("");
+          showSent("Sent");
+        },
+      },
+    );
+  };
+
   const goNext = () => {
     if (index < stories.length - 1) {
       setIndex((i) => i + 1);
@@ -127,8 +229,11 @@ export default function StoryViewerScreen() {
     }
   };
 
+  // Freeze auto-advance while long-pressing or composing a reply.
+  const frozen = paused || composing;
+
   useEffect(() => {
-    if (!current || paused) return;
+    if (!current || frozen) return;
     progress.setValue(0);
     const anim = Animated.timing(progress, {
       toValue: 1,
@@ -144,7 +249,7 @@ export default function StoryViewerScreen() {
   }, [index, current?.id]);
 
   useEffect(() => {
-    if (paused) {
+    if (frozen) {
       animRef.current?.stop();
     } else if (current) {
       const anim = Animated.timing(progress, {
@@ -158,7 +263,7 @@ export default function StoryViewerScreen() {
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paused]);
+  }, [frozen]);
 
   if (isLoading) {
     return (
@@ -199,7 +304,7 @@ export default function StoryViewerScreen() {
           />
         </LinearGradient>
       ) : isVideo ? (
-        <StoryVideo uri={current.mediaUrl ?? ""} paused={paused} />
+        <StoryVideo uri={current.mediaUrl ?? ""} paused={frozen} />
       ) : (
         <Image
           source={{ uri: current.mediaUrl ?? undefined }}
@@ -289,6 +394,79 @@ export default function StoryViewerScreen() {
           <MentionText content={current.caption} style={styles.captionText} />
         </SafeAreaView>
       )}
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={styles.interactionWrap}
+        pointerEvents="box-none"
+      >
+        <SafeAreaView edges={["bottom"]} pointerEvents="box-none">
+          {sentNote && (
+            <View style={styles.sentPill}>
+              <Ionicons name="checkmark-circle" size={16} color="#fff" />
+              <Text style={styles.sentText}>{sentNote}</Text>
+            </View>
+          )}
+
+          {reactionCount > 0 && (
+            <Text style={styles.reactionCountText}>
+              {reactionCount} {reactionCount === 1 ? "reaction" : "reactions"}
+            </Text>
+          )}
+
+          <View style={styles.chipsRow}>
+            {QUICK_CHIPS.map((chip) => (
+              <Pressable
+                key={chip.key}
+                style={styles.chip}
+                onPress={() => sendReply(chip.text)}
+                disabled={replyToStory.isPending}
+              >
+                <Text style={styles.chipText}>{chip.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <View style={styles.replyRow}>
+            <View style={styles.replyInputWrap}>
+              <TextInput
+                value={replyText}
+                onChangeText={setReplyText}
+                placeholder="Send message…"
+                placeholderTextColor="#ffffffaa"
+                style={styles.replyInput}
+                onFocus={() => setComposing(true)}
+                onBlur={() => setComposing(false)}
+                returnKeyType="send"
+                onSubmitEditing={() => sendReply(replyText)}
+              />
+              {replyText.trim().length > 0 && (
+                <Pressable
+                  onPress={() => sendReply(replyText)}
+                  hitSlop={8}
+                  disabled={replyToStory.isPending}
+                >
+                  <Ionicons name="send" size={20} color="#fff" />
+                </Pressable>
+              )}
+            </View>
+
+            {QUICK_REACTIONS.map((t) => {
+              const active = reaction === t;
+              return (
+                <Pressable
+                  key={t}
+                  onPress={() => react(t)}
+                  style={[styles.reactBtn, active && styles.reactBtnActive]}
+                  hitSlop={4}
+                >
+                  <Text style={styles.reactEmoji}>{reactionConfig[t].emoji}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -365,7 +543,13 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 6,
   },
-  captionWrap: { position: "absolute", left: 0, right: 0, bottom: 0, padding: 24 },
+  captionWrap: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 150,
+    paddingHorizontal: 24,
+  },
   captionText: {
     color: "#fff",
     fontFamily: "Inter_600SemiBold",
@@ -375,4 +559,70 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 6,
   },
+  interactionWrap: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 12,
+    paddingBottom: 8,
+  },
+  sentPill: {
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#000000aa",
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginBottom: 8,
+  },
+  sentText: { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 13 },
+  reactionCountText: {
+    color: "#ffffffdd",
+    fontFamily: "Inter_500Medium",
+    fontSize: 12,
+    marginBottom: 6,
+    marginLeft: 4,
+    textShadowColor: "#0008",
+    textShadowRadius: 4,
+  },
+  chipsRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
+  chip: {
+    backgroundColor: "#00000066",
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  chipText: { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  replyRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  replyInputWrap: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    borderWidth: 1.5,
+    borderColor: "#ffffff88",
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    paddingVertical: Platform.OS === "ios" ? 10 : 4,
+  },
+  replyInput: {
+    flex: 1,
+    color: "#fff",
+    fontFamily: "Inter_500Medium",
+    fontSize: 15,
+    padding: 0,
+  },
+  reactBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#00000066",
+  },
+  reactBtnActive: { backgroundColor: "#ffffff33" },
+  reactEmoji: { fontSize: 22 },
 });

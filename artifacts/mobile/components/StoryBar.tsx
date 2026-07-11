@@ -38,9 +38,29 @@ export function StoryBar() {
               numberOfLines={1}
               style={{ color: c.foreground, fontSize: 11, fontFamily: "Inter_600SemiBold" }}
             >
-              Create
+              Create story
             </Text>
           </View>
+        </Pressable>
+
+        <Pressable
+          style={[styles.tile, styles.createReelTile]}
+          onPress={() => router.push("/create-reel")}
+        >
+          <LinearGradient
+            colors={colorTokens.auroraGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={styles.reelIconWrap}>
+            <View style={styles.reelIconCircle}>
+              <Ionicons name="videocam" size={22} color="#fff" />
+            </View>
+          </View>
+          <Text numberOfLines={1} style={styles.reelLabel}>
+            Create reel
+          </Text>
         </Pressable>
 
         {groups.map((group) => {
@@ -117,6 +137,28 @@ const styles = StyleSheet.create({
   },
   createTop: { height: 100, overflow: "hidden" },
   createBottom: { flex: 1, alignItems: "center", justifyContent: "flex-end", paddingBottom: 8 },
+  createReelTile: { alignItems: "center", justifyContent: "center" },
+  reelIconWrap: { flex: 1, alignItems: "center", justifyContent: "center" },
+  reelIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#ffffff33",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#ffffffcc",
+  },
+  reelLabel: {
+    position: "absolute",
+    bottom: 8,
+    left: 8,
+    right: 8,
+    textAlign: "center",
+    color: "#fff",
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+  },
   plus: {
     width: 28,
     height: 28,

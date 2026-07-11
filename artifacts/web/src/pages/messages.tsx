@@ -9,8 +9,10 @@ import {
   useListFriends,
   getListMessagesQueryKey,
   getListConversationsQueryKey,
-  getListFriendsQueryKey
+  getListFriendsQueryKey,
+  type StoryEmbed
 } from "@workspace/api-client-react";
+import { storyBackground } from "@/pages/stories";
 import { Link, useParams, useLocation } from "wouter";
 import { useRealtime } from "@/lib/realtime";
 import { useCall } from "@/components/call-provider";
@@ -20,6 +22,36 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, Phone, Video, Info, Loader2, MessageCircle, SquarePen, X, ArrowLeft } from "lucide-react";
 import { EmojiPickerButton } from "@/components/emoji-picker";
+
+function StoryEmbedInline({ story, isMe }: { story: StoryEmbed; isMe: boolean }) {
+  return (
+    <div className={`mb-1 flex flex-col gap-1 ${isMe ? "items-end" : "items-start"}`}>
+      <span className="text-[11px] text-muted-foreground px-1">
+        {story.authorName ? `${story.authorName}'s story` : "Story"}
+      </span>
+      <div className="w-24 h-40 rounded-xl overflow-hidden border border-border/60 relative bg-muted">
+        {story.expired ? (
+          <div className="w-full h-full flex items-center justify-center text-[11px] text-muted-foreground text-center p-2">
+            Story unavailable
+          </div>
+        ) : story.storyType === "text" ? (
+          <div
+            className="w-full h-full flex items-center justify-center p-2"
+            style={{ background: storyBackground(story.backgroundStyle) }}
+          >
+            <span className="text-white text-[11px] font-semibold text-center line-clamp-4 break-words drop-shadow">
+              {story.textContent}
+            </span>
+          </div>
+        ) : story.mediaType === "video" ? (
+          <video src={story.mediaUrl ?? undefined} className="w-full h-full object-cover" muted />
+        ) : (
+          <img src={story.mediaUrl ?? undefined} className="w-full h-full object-cover" alt="" />
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function MessagesPage() {
   const { id } = useParams<{ id: string }>();
@@ -257,6 +289,7 @@ export default function MessagesPage() {
                             <img src={avatarSrc(msg.sender.avatarUrl)} className="w-8 h-8 rounded-full object-cover self-end mr-2 bg-muted" alt="" />
                           )}
                           <div className={`max-w-[70%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                            {msg.story && <StoryEmbedInline story={msg.story} isMe={isMe} />}
                             <div 
                               className={`px-4 py-2.5 rounded-2xl ${
                                 isMe 

@@ -4,13 +4,24 @@ import {
   profilesTable,
   storiesTable,
   storyViewsTable,
+  storyReactionsTable,
+  messagesTable,
+  conversationsTable,
   musicTracksTable,
   pagesTable,
   pageMembersTable,
 } from "@workspace/db";
 import { eq, inArray, or, and, ilike, desc } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
-import { toProfile, buildStoryGroups, toStory } from "../lib/serialize";
+import {
+  toProfile,
+  buildStoryGroups,
+  toStory,
+  buildStoryById,
+  buildMessageById,
+} from "../lib/serialize";
+import { findOrCreateDirectConversation } from "../lib/conversations";
+import { realtime } from "../realtime";
 import { createNotification } from "../lib/notify";
 import {
   ListStoriesResponse,
@@ -23,7 +34,39 @@ import {
   ListMusicTracksResponse,
   UploadMusicTrackBody,
   UploadMusicTrackResponse,
+  SetStoryReactionParams,
+  SetStoryReactionBody,
+  SetStoryReactionResponse,
+  RemoveStoryReactionParams,
+  RemoveStoryReactionResponse,
+  ReplyToStoryParams,
+  ReplyToStoryBody,
+  ReplyToStoryResponse,
 } from "@workspace/api-zod";
+
+// When a story or reel is posted with music, add that track to the shared
+// library (deduped by URL) so posted music becomes discoverable by everyone.
+export async function shareMusicToLibrary(
+  url: string | null | undefined,
+  title: string | null | undefined,
+  artist: string | null | undefined,
+): Promise<void> {
+  if (!url || !title) return;
+  if (!isHttpUrl(url)) return;
+  const [existing] = await db
+    .select({ id: musicTracksTable.id })
+    .from(musicTracksTable)
+    .where(and(eq(musicTracksTable.url, url), eq(musicTracksTable.source, "library")));
+  if (existing) return;
+  await db
+    .insert(musicTracksTable)
+    .values({
+      title: title.slice(0, 200),
+      artist: artist?.slice(0, 200) ?? null,
+      url,
+      source: "library",
+    });
+}
 
 const router: IRouter = Router();
 
@@ -135,6 +178,9 @@ router.post("/stories", requireAuth, async (req, res): Promise<void> => {
       expiresAt,
     })
     .returning();
+
+  // Posted music becomes shared in the library.
+  await shareMusicToLibrary(data.musicUrl, data.musicTitle, data.musicArtist);
 
   // Mentions in the caption or text content: @[Name](user:<uuid>) tokens.
   const mentionSource = `${data.caption ?? ""}\n${data.textContent ?? ""}`;
@@ -289,6 +335,147 @@ router.get(
       .from(profilesTable)
       .where(inArray(profilesTable.id, viewerIds));
     res.json(ListStoryViewsResponse.parse(profiles.map((p) => toProfile(p))));
+  },
+);
+
+router.put(
+  "/stories/:id/reaction",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = SetStoryReactionParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const body = SetStoryReactionBody.safeParse(req.body);
+    if (!body.success) {
+      res.status(400).json({ error: body.error.message });
+      return;
+    }
+    const [story] = await db
+      .select()
+      .from(storiesTable)
+      .where(eq(storiesTable.id, params.data.id));
+    if (!story || new Date(story.expiresAt).getTime() < Date.now()) {
+      res.status(404).json({ error: "Story not found" });
+      return;
+    }
+    await db
+      .insert(storyReactionsTable)
+      .values({
+        storyId: params.data.id,
+        userId: req.userId!,
+        type: body.data.type,
+      })
+      .onConflictDoUpdate({
+        target: [storyReactionsTable.storyId, storyReactionsTable.userId],
+        set: { type: body.data.type },
+      });
+    if (story.authorId !== req.userId) {
+      await createNotification({
+        userId: story.authorId,
+        actorId: req.userId!,
+        type: "reaction",
+        entityType: "story",
+        entityId: params.data.id,
+      });
+    }
+    const built = await buildStoryById(params.data.id, req.userId!);
+    res.json(SetStoryReactionResponse.parse(built));
+  },
+);
+
+router.delete(
+  "/stories/:id/reaction",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = RemoveStoryReactionParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    await db
+      .delete(storyReactionsTable)
+      .where(
+        and(
+          eq(storyReactionsTable.storyId, params.data.id),
+          eq(storyReactionsTable.userId, req.userId!),
+        ),
+      );
+    const built = await buildStoryById(params.data.id, req.userId!);
+    if (!built) {
+      res.status(404).json({ error: "Story not found" });
+      return;
+    }
+    res.json(RemoveStoryReactionResponse.parse(built));
+  },
+);
+
+router.post(
+  "/stories/:id/reply",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = ReplyToStoryParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const body = ReplyToStoryBody.safeParse(req.body);
+    if (!body.success) {
+      res.status(400).json({ error: body.error.message });
+      return;
+    }
+    const text = body.data.text.trim();
+    if (!text) {
+      res.status(400).json({ error: "Reply text is required" });
+      return;
+    }
+    const [story] = await db
+      .select()
+      .from(storiesTable)
+      .where(eq(storiesTable.id, params.data.id));
+    if (!story || new Date(story.expiresAt).getTime() < Date.now()) {
+      res.status(404).json({ error: "Story not found" });
+      return;
+    }
+    if (story.authorId === req.userId) {
+      res.status(400).json({ error: "You can't reply to your own story" });
+      return;
+    }
+    const conversationId = await findOrCreateDirectConversation(
+      req.userId!,
+      story.authorId,
+    );
+    const [message] = await db
+      .insert(messagesTable)
+      .values({
+        conversationId,
+        senderId: req.userId!,
+        content: text,
+        type: "text",
+        storyId: params.data.id,
+      })
+      .returning();
+    await db
+      .update(conversationsTable)
+      .set({ lastMessageAt: new Date() })
+      .where(eq(conversationsTable.id, conversationId));
+    const built = await buildMessageById(message.id, req.userId!);
+    await realtime.toConversation(conversationId, {
+      type: "message",
+      conversationId,
+      message: built,
+    });
+    await createNotification({
+      userId: story.authorId,
+      actorId: req.userId!,
+      type: "message",
+      entityType: "conversation",
+      entityId: conversationId,
+    });
+    res
+      .status(201)
+      .json(ReplyToStoryResponse.parse({ conversationId, message: built }));
   },
 );
 

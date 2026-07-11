@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -27,6 +27,7 @@ import { useActingPage } from "@/lib/acting-page";
 import { uploadMedia, UploadUnavailableError, captureWithCamera, type PickedAsset } from "@/lib/upload";
 import { GifPickerModal } from "@/components/GifPicker";
 import { MusicPickerModal, type SelectedMusic } from "@/components/MusicPicker";
+import { EmojiPickerSheet } from "@/components/EmojiPickerSheet";
 import { MentionSuggestions, activeMentionQuery, insertMention } from "@/components/Mention";
 import { STORY_BACKGROUNDS, DEFAULT_STORY_BG, storyBackground } from "@/lib/storyBackgrounds";
 
@@ -46,7 +47,10 @@ export default function CreateStoryScreen() {
   const [music, setMusic] = useState<SelectedMusic | null>(null);
   const [gifOpen, setGifOpen] = useState(false);
   const [musicOpen, setMusicOpen] = useState(false);
+  const [emojiOpen, setEmojiOpen] = useState(false);
   const [posting, setPosting] = useState(false);
+  const captionRef = useRef<TextInput>(null);
+  const textRef = useRef<TextInput>(null);
 
   const isVideo = asset?.type === "video";
   const activeText = mode === "media" ? caption : textContent;
@@ -55,6 +59,16 @@ export default function CreateStoryScreen() {
 
   const onPickMention = (p: Profile) => {
     setActiveText(insertMention(activeText, p));
+  };
+
+  const insertEmoji = (emoji: string) => {
+    setActiveText(activeText + emoji);
+  };
+
+  const startMention = () => {
+    const prefix = activeText.length > 0 && !activeText.endsWith(" ") ? " @" : "@";
+    setActiveText(activeText + prefix);
+    (mode === "media" ? captionRef : textRef).current?.focus();
   };
 
   const pick = async () => {
@@ -212,6 +226,7 @@ export default function CreateStoryScreen() {
             style={styles.textPreview}
           >
             <TextInput
+              ref={textRef}
               value={textContent}
               onChangeText={setTextContent}
               placeholder="Start typing... (@ to mention)"
@@ -220,6 +235,11 @@ export default function CreateStoryScreen() {
               multiline
               maxLength={700}
             />
+            <View style={styles.toolbar}>
+              <ToolButton icon="happy-outline" label="Stickers" onPress={() => setEmojiOpen(true)} />
+              <ToolButton icon="at-outline" label="Mention" onPress={startMention} />
+              <ToolButton icon="musical-notes" label="Music" onPress={() => setMusicOpen(true)} />
+            </View>
           </LinearGradient>
           {mentionQuery !== null && (
             <MentionSuggestions query={mentionQuery} onSelect={onPickMention} />
@@ -268,11 +288,19 @@ export default function CreateStoryScreen() {
             </View>
           )}
 
+          <View style={styles.toolbar}>
+            <ToolButton icon="text-outline" label="Text" onPress={() => captionRef.current?.focus()} />
+            <ToolButton icon="happy-outline" label="Stickers" onPress={() => setEmojiOpen(true)} />
+            <ToolButton icon="at-outline" label="Mention" onPress={startMention} />
+            <ToolButton icon="musical-notes" label="Music" onPress={() => setMusicOpen(true)} />
+          </View>
+
           <View style={styles.bottomBar}>
             {mentionQuery !== null && (
               <MentionSuggestions query={mentionQuery} onSelect={onPickMention} />
             )}
             <TextInput
+              ref={captionRef}
               value={caption}
               onChangeText={setCaption}
               placeholder="Add a caption... (@ to mention)"
@@ -348,7 +376,31 @@ export default function CreateStoryScreen() {
         onClose={() => setMusicOpen(false)}
         onSelect={setMusic}
       />
+      <EmojiPickerSheet
+        visible={emojiOpen}
+        onClose={() => setEmojiOpen(false)}
+        onSelect={insertEmoji}
+      />
     </SafeAreaView>
+  );
+}
+
+function ToolButton({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable style={styles.toolBtn} onPress={onPress} hitSlop={4}>
+      <View style={styles.toolIconCircle}>
+        <Ionicons name={icon} size={20} color="#fff" />
+      </View>
+      <Text style={styles.toolLabel}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -435,6 +487,29 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   musicBtnText: { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 13 },
+  toolbar: {
+    position: "absolute",
+    top: 16,
+    right: 12,
+    gap: 16,
+    alignItems: "center",
+  },
+  toolBtn: { alignItems: "center", gap: 4 },
+  toolIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#00000066",
+  },
+  toolLabel: {
+    color: "#fff",
+    fontFamily: "Inter_500Medium",
+    fontSize: 11,
+    textShadowColor: "#0008",
+    textShadowRadius: 4,
+  },
   videoBadge: {
     position: "absolute",
     top: 12,

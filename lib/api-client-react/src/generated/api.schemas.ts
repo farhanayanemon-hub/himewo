@@ -429,6 +429,30 @@ export interface MessageReaction {
   viewerReacted?: boolean;
 }
 
+export type StoryEmbedStoryType = typeof StoryEmbedStoryType[keyof typeof StoryEmbedStoryType];
+
+
+export const StoryEmbedStoryType = {
+  media: 'media',
+  text: 'text',
+} as const;
+
+export interface StoryEmbed {
+  id: number;
+  storyType: StoryEmbedStoryType;
+  /** @nullable */
+  mediaUrl?: string | null;
+  /** @nullable */
+  mediaType?: string | null;
+  /** @nullable */
+  textContent?: string | null;
+  /** @nullable */
+  backgroundStyle?: string | null;
+  /** @nullable */
+  authorName?: string | null;
+  expired?: boolean;
+}
+
 export interface Message {
   id: number;
   conversationId: number;
@@ -439,6 +463,7 @@ export interface Message {
   replyToId?: number | null;
   attachments: Attachment[];
   reactions: MessageReaction[];
+  story?: StoryEmbed | null;
   createdAt: string;
   /** @nullable */
   editedAt?: string | null;
@@ -1962,6 +1987,12 @@ export interface Reel {
   thumbnailUrl?: string | null;
   /** @nullable */
   caption?: string | null;
+  /** @nullable */
+  musicUrl?: string | null;
+  /** @nullable */
+  musicTitle?: string | null;
+  /** @nullable */
+  musicArtist?: string | null;
   createdAt: string;
   likeCount: number;
   commentCount: number;
@@ -2211,6 +2242,8 @@ export interface Story {
   expiresAt: string;
   viewCount: number;
   viewerHasViewed: boolean;
+  reactionCount: number;
+  viewerReaction?: ReactionType | null;
 }
 
 export type StoryInputStoryType = typeof StoryInputStoryType[keyof typeof StoryInputStoryType];
@@ -2275,10 +2308,26 @@ export interface StoryGroup {
   hasUnseen: boolean;
 }
 
+export interface StoryReplyInput {
+  /**
+     * @minLength 1
+     * @maxLength 5000
+     */
+  text: string;
+}
+
+export interface StoryReplyResponse {
+  conversationId: number;
+  message: Message;
+}
+
 export interface ReelInput {
   videoUrl: string;
   thumbnailUrl?: string;
   caption?: string;
+  musicUrl?: string;
+  musicTitle?: string;
+  musicArtist?: string;
 }
 
 export interface ReelComment {
