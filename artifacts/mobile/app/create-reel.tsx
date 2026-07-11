@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -29,6 +29,25 @@ export default function CreateReelScreen() {
   const [music, setMusic] = useState<SelectedMusic | null>(null);
   const [musicOpen, setMusicOpen] = useState(false);
   const [posting, setPosting] = useState(false);
+
+  // Facebook-style: opening the reel creator jumps straight to the gallery.
+  // If the user backs out of the picker without choosing, leave the screen.
+  const autoOpened = useRef(false);
+  useEffect(() => {
+    if (autoOpened.current) return;
+    autoOpened.current = true;
+    (async () => {
+      const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["videos"],
+        quality: 0.8,
+      });
+      if (!res.canceled && res.assets[0]) {
+        setAsset(res.assets[0]);
+      } else {
+        router.back();
+      }
+    })();
+  }, []);
 
   const pick = async () => {
     const res = await ImagePicker.launchImageLibraryAsync({

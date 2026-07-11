@@ -7874,6 +7874,7 @@ export const ListStoriesResponseItem = zod.object({
 }).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
   "pageId": zod.number().nullish(),
   "storyType": zod.enum(['media', 'text']),
+  "audience": zod.enum(['public', 'friends', 'private']),
   "mediaUrl": zod.string().nullish(),
   "mediaType": zod.union([zod.enum(['image', 'video']),zod.null()]).optional(),
   "caption": zod.string().nullish(),
@@ -7895,9 +7896,11 @@ export const ListStoriesResponse = zod.array(ListStoriesResponseItem)
 
 
 export const createStoryBodyStoryTypeDefault = `media`;
+export const createStoryBodyAudienceDefault = `public`;
 
 export const CreateStoryBody = zod.object({
   "storyType": zod.enum(['media', 'text']).default(createStoryBodyStoryTypeDefault),
+  "audience": zod.enum(['public', 'friends', 'private']).default(createStoryBodyAudienceDefault),
   "mediaUrl": zod.string().optional(),
   "mediaType": zod.enum(['image', 'video']).optional(),
   "caption": zod.string().optional(),
@@ -7954,6 +7957,7 @@ export const CreateStoryResponse = zod.object({
 }).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
   "pageId": zod.number().nullish(),
   "storyType": zod.enum(['media', 'text']),
+  "audience": zod.enum(['public', 'friends', 'private']),
   "mediaUrl": zod.string().nullish(),
   "mediaType": zod.union([zod.enum(['image', 'video']),zod.null()]).optional(),
   "caption": zod.string().nullish(),
@@ -8006,6 +8010,16 @@ export const UploadMusicTrackResponse = zod.object({
   "mood": zod.string().nullish(),
   "source": zod.enum(['library', 'upload'])
 })
+
+
+/**
+ * @summary Delete your own story
+ */
+export const DeleteStoryParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteStoryResponse = zod.void()
 
 
 export const ViewStoryParams = zod.object({
@@ -8110,6 +8124,7 @@ export const SetStoryReactionResponse = zod.object({
 }).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
   "pageId": zod.number().nullish(),
   "storyType": zod.enum(['media', 'text']),
+  "audience": zod.enum(['public', 'friends', 'private']),
   "mediaUrl": zod.string().nullish(),
   "mediaType": zod.union([zod.enum(['image', 'video']),zod.null()]).optional(),
   "caption": zod.string().nullish(),
@@ -8175,6 +8190,7 @@ export const RemoveStoryReactionResponse = zod.object({
 }).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
   "pageId": zod.number().nullish(),
   "storyType": zod.enum(['media', 'text']),
+  "audience": zod.enum(['public', 'friends', 'private']),
   "mediaUrl": zod.string().nullish(),
   "mediaType": zod.union([zod.enum(['image', 'video']),zod.null()]).optional(),
   "caption": zod.string().nullish(),

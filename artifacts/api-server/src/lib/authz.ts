@@ -313,6 +313,147 @@ export async function filterVisiblePosts<T extends PostVisibility>(
 }
 
 /**
+ * Load the viewer's friend set plus the effective profile audience (lock +
+ * profileVisibility) for a batch of author ids, in two queries. Shared by the
+ * story and reel visibility filters so their policy can never drift from the
+ * profile-audience rule used everywhere else.
+ */
+async function loadAudienceContext(viewerId: string, authorIds: string[]) {
+  const friendRows = await db
+    .select()
+    .from(friendshipsTable)
+    .where(
+      or(
+        eq(friendshipsTable.userAId, viewerId),
+        eq(friendshipsTable.userBId, viewerId),
+      ),
+    );
+  const friendSet = new Set(
+    friendRows.map((f) => (f.userAId === viewerId ? f.userBId : f.userAId)),
+  );
+  const others = [...new Set(authorIds)].filter((a) => a !== viewerId);
+  const audienceByAuthor = new Map<string, ProfileAudience>();
+  if (others.length > 0) {
+    const settings = await db
+      .select({
+        userId: userSettingsTable.userId,
+        isLocked: userSettingsTable.isLocked,
+        profileVisibility: userSettingsTable.profileVisibility,
+      })
+      .from(userSettingsTable)
+      .where(inArray(userSettingsTable.userId, others));
+    for (const s of settings) {
+      audienceByAuthor.set(
+        s.userId,
+        s.profileVisibility === "only_me"
+          ? "only_me"
+          : s.isLocked || s.profileVisibility === "friends"
+            ? "friends"
+            : "public",
+      );
+    }
+  }
+  return { friendSet, audienceByAuthor };
+}
+
+type StoryVisibility = {
+  authorId: string;
+  audience: string; // "public" | "friends" | "private"
+  pageId: number | null;
+};
+
+/**
+ * Filter stories to the ones `viewerId` may see. The author always sees their
+ * own. Stories posted AS a page are public (pages have no friend graph).
+ * Otherwise the effective profile audience gates first (only_me hides all;
+ * friends/lock hides from non-friends), then the story's own audience:
+ * "public" → everyone (subject to profile audience), "friends" → friends only,
+ * "private" → author only.
+ */
+export async function filterVisibleStories<T extends StoryVisibility>(
+  stories: T[],
+  viewerId: string,
+): Promise<T[]> {
+  if (stories.length === 0) return stories;
+  const { friendSet, audienceByAuthor } = await loadAudienceContext(
+    viewerId,
+    stories.filter((s) => s.pageId == null).map((s) => s.authorId),
+  );
+  const result: T[] = [];
+  for (const s of stories) {
+    if (s.authorId === viewerId) {
+      result.push(s);
+      continue;
+    }
+    // Page stories are public brand content — no friend/lock gating.
+    if (s.pageId != null) {
+      result.push(s);
+      continue;
+    }
+    const audience = audienceByAuthor.get(s.authorId) ?? "public";
+    const friend = friendSet.has(s.authorId);
+    if (audience === "only_me") continue;
+    if (audience === "friends" && !friend) continue;
+    if (s.audience === "private") continue;
+    if (s.audience === "friends" && !friend) continue;
+    result.push(s);
+  }
+  return result;
+}
+
+/** Single-story visibility, sharing the exact policy of filterVisibleStories. */
+export async function canViewStory(
+  story: StoryVisibility,
+  viewerId: string,
+): Promise<boolean> {
+  const [visible] = await filterVisibleStories([story], viewerId);
+  return Boolean(visible);
+}
+
+type ReelVisibility = { authorId: string };
+
+/**
+ * Filter reels to the ones `viewerId` may see. Reels have no per-reel audience,
+ * so visibility follows the author's effective profile audience: the author
+ * always sees their own; "only_me" hides from everyone else; "friends"/lock
+ * hides from non-friends; "public" shows to all.
+ */
+export async function filterVisibleReels<T extends ReelVisibility>(
+  reels: T[],
+  viewerId: string,
+): Promise<T[]> {
+  if (reels.length === 0) return reels;
+  const { friendSet, audienceByAuthor } = await loadAudienceContext(
+    viewerId,
+    reels.map((r) => r.authorId),
+  );
+  const result: T[] = [];
+  for (const r of reels) {
+    if (r.authorId === viewerId) {
+      result.push(r);
+      continue;
+    }
+    const audience = audienceByAuthor.get(r.authorId) ?? "public";
+    const friend = friendSet.has(r.authorId);
+    if (audience === "only_me") continue;
+    if (audience === "friends" && !friend) continue;
+    result.push(r);
+  }
+  return result;
+}
+
+/**
+ * Single-reel visibility. Reuses the profile-audience rule (same as
+ * canViewProfileDetails) since reels carry no per-reel privacy.
+ */
+export async function canViewReel(
+  authorId: string,
+  viewerId: string,
+): Promise<boolean> {
+  return canViewProfileDetails(authorId, viewerId);
+}
+
+/**
  * A comment is viewable iff its parent post is viewable. Returns false when the
  * comment (or its parent post) does not exist.
  */

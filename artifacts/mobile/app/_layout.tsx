@@ -58,6 +58,10 @@ function RootNavigator() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="create-post" options={{ presentation: "modal" }} />
       <Stack.Screen name="create-story" options={{ presentation: "modal" }} />
+      <Stack.Screen
+        name="story/[id]"
+        options={{ presentation: "fullScreenModal", animation: "fade" }}
+      />
       <Stack.Screen name="search" options={{ presentation: "modal" }} />
       <Stack.Screen
         name="groups/index"

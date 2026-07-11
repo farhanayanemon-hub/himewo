@@ -1,17 +1,20 @@
 import { MainLayout } from "@/components/layout/main-layout";
 import { avatarSrc } from "@/lib/avatar";
 import { useActingPage } from "@/lib/acting-page";
+import { useAuth } from "@/lib/auth";
 import {
   useListStories,
   useCreateStory,
   useSetStoryReaction,
   useRemoveStoryReaction,
   useReplyToStory,
+  useDeleteStory,
   getListStoriesQueryKey,
+  StoryInputAudience,
   type StoryInputMediaType,
   type ReactionType,
 } from "@workspace/api-client-react";
-import { Heart, Image as ImageIcon, Laugh, Loader2, Music, Plus, Send, ThumbsUp, Type, X } from "lucide-react";
+import { Image as ImageIcon, Loader2, Music, Plus, Send, Trash2, Type, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -62,6 +65,9 @@ function CreateStoryDialog() {
 
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"media" | "text">("media");
+  const [audience, setAudience] = useState<StoryInputAudience>(
+    StoryInputAudience.public,
+  );
   const [media, setMedia] = useState<UploadedMedia | null>(null);
   const [caption, setCaption] = useState("");
   const [textContent, setTextContent] = useState("");
@@ -81,6 +87,7 @@ function CreateStoryDialog() {
     setMusic(null);
     setMentionTargets([]);
     setMode("media");
+    setAudience(StoryInputAudience.public);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -118,6 +125,7 @@ function CreateStoryDialog() {
           mode === "media"
             ? {
                 storyType: "media",
+                audience,
                 mediaUrl: media!.url,
                 mediaType: media!.type as StoryInputMediaType,
                 caption:
@@ -133,6 +141,7 @@ function CreateStoryDialog() {
               }
             : {
                 storyType: "text",
+                audience,
                 textContent: applyMentionTokens(textContent, mentionTargets).trim(),
                 backgroundStyle: background,
                 ...(music
@@ -179,6 +188,26 @@ function CreateStoryDialog() {
         <DialogHeader>
           <DialogTitle>Create Story</DialogTitle>
         </DialogHeader>
+
+        {/* Audience selector — who can see this story */}
+        <div className="flex gap-2">
+          {(
+            [
+              { value: StoryInputAudience.public, label: "Public" },
+              { value: StoryInputAudience.friends, label: "Friends" },
+              { value: StoryInputAudience.private, label: "Only me" },
+            ] as const
+          ).map((a) => (
+            <button
+              key={a.value}
+              type="button"
+              onClick={() => setAudience(a.value)}
+              className={`flex-1 rounded-lg py-1.5 text-xs font-medium border transition-colors ${audience === a.value ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted/50"}`}
+            >
+              {a.label}
+            </button>
+          ))}
+        </div>
 
         {/* Mode tabs */}
         <div className="flex gap-2">
@@ -313,8 +342,20 @@ function CreateStoryDialog() {
 
 const REPLY_CHIPS = ["too cute", "👏", "🔥🔥", "😍", "haha"];
 
+// Full Facebook reaction set, shown in a tray so all seven are reachable.
+const STORY_REACTIONS: { type: ReactionType; emoji: string; label: string }[] = [
+  { type: "like" as ReactionType, emoji: "👍", label: "Like" },
+  { type: "love" as ReactionType, emoji: "❤️", label: "Love" },
+  { type: "care" as ReactionType, emoji: "🥰", label: "Care" },
+  { type: "haha" as ReactionType, emoji: "😆", label: "Haha" },
+  { type: "wow" as ReactionType, emoji: "😮", label: "Wow" },
+  { type: "sad" as ReactionType, emoji: "😢", label: "Sad" },
+  { type: "angry" as ReactionType, emoji: "😡", label: "Angry" },
+];
+
 export default function StoriesPage() {
   const { data: storyGroups, isLoading } = useListStories();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [activeIndex, setActiveIndex] = useState(0);
   const [storyIndex, setStoryIndex] = useState(0);
@@ -324,9 +365,38 @@ export default function StoriesPage() {
   const setReaction = useSetStoryReaction();
   const removeReaction = useRemoveStoryReaction();
   const replyStory = useReplyToStory();
+  const deleteStory = useDeleteStory();
 
   const activeGroup = storyGroups?.[activeIndex];
   const activeStory = activeGroup?.stories[Math.min(storyIndex, (activeGroup?.stories.length ?? 1) - 1)];
+  const isOwnStory = !!activeStory && !!user && activeStory.author?.id === user.id;
+
+  // Keep the selected group/story in range whenever the list changes (e.g. after
+  // deleting a story, a whole group may disappear).
+  useEffect(() => {
+    if (!storyGroups || storyGroups.length === 0) return;
+    setActiveIndex((ai) => Math.min(ai, storyGroups.length - 1));
+  }, [storyGroups]);
+  useEffect(() => {
+    const len = activeGroup?.stories.length ?? 0;
+    if (len > 0) setStoryIndex((si) => Math.min(si, len - 1));
+  }, [activeGroup?.stories.length]);
+
+  const handleDelete = () => {
+    if (!activeStory) return;
+    if (!window.confirm("Delete this story? This cannot be undone.")) return;
+    deleteStory.mutate(
+      { id: activeStory.id },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListStoriesQueryKey() });
+          setStoryIndex(0);
+          toast({ title: "Story deleted" });
+        },
+        onError: () => toast({ title: "Could not delete", description: "Please try again." }),
+      },
+    );
+  };
 
   const react = (type: ReactionType) => {
     if (!activeStory) return;
@@ -475,91 +545,97 @@ export default function StoriesPage() {
 
           {/* Reactions + reply footer (Facebook-style) */}
           <div className="absolute bottom-0 left-0 right-0 z-30 p-3 space-y-2 bg-gradient-to-t from-black/70 via-black/30 to-transparent">
-            {/* Quick reply chips */}
-            <div className="flex flex-wrap justify-center gap-2">
-              {REPLY_CHIPS.map((chip) => (
-                <button
-                  key={chip}
-                  type="button"
-                  onClick={() => sendReply(chip)}
-                  disabled={replyStory.isPending}
-                  className="px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-md text-white text-sm font-medium hover:bg-white/25 transition-colors disabled:opacity-50"
-                >
-                  {chip}
-                </button>
-              ))}
-            </div>
-
-            {/* Reply box + reactions */}
-            <div className="flex items-center gap-2">
-              <form
-                className="flex-1"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  sendReply(replyText);
-                }}
-              >
-                <div className="flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-md border border-white/30 px-3 py-1.5">
-                  <input
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    placeholder="Send message..."
-                    maxLength={5000}
-                    className="flex-1 bg-transparent text-white text-sm placeholder:text-white/70 focus:outline-none"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!replyText.trim() || replyStory.isPending}
-                    aria-label="Send reply"
-                    className="text-white disabled:opacity-40"
-                  >
-                    {replyStory.isPending ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Send className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
-              </form>
-
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => react("love")}
-                  aria-label="React love"
-                  className="w-10 h-10 rounded-full bg-white flex items-center justify-center hover:scale-110 transition-transform"
-                >
-                  <Heart
-                    className={`w-5 h-5 ${activeStory.viewerReaction === "love" ? "fill-red-500 text-red-500" : "fill-red-500/90 text-red-500"}`}
-                  />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => react("like")}
-                  aria-label="React like"
-                  className={`w-10 h-10 rounded-full flex items-center justify-center hover:scale-110 transition-transform ${activeStory.viewerReaction === "like" ? "bg-blue-500" : "bg-blue-500"}`}
-                >
-                  <ThumbsUp
-                    className={`w-5 h-5 ${activeStory.viewerReaction === "like" ? "fill-white text-white" : "text-white"}`}
-                  />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => react("haha")}
-                  aria-label="React haha"
-                  className="w-10 h-10 rounded-full bg-yellow-400 flex items-center justify-center hover:scale-110 transition-transform"
-                >
-                  <Laugh
-                    className={`w-5 h-5 ${activeStory.viewerReaction === "haha" ? "text-black" : "text-black/80"}`}
-                  />
-                </button>
-              </div>
-            </div>
-
             {activeStory.reactionCount > 0 && (
               <div className="text-center text-white/80 text-xs">
                 {activeStory.reactionCount} reaction{activeStory.reactionCount > 1 ? "s" : ""}
               </div>
+            )}
+
+            {isOwnStory ? (
+              /* Your own story: no reply/react to yourself — offer delete. */
+              <div className="flex items-center justify-between gap-3 rounded-full bg-white/10 backdrop-blur-md border border-white/25 px-4 py-2">
+                <span className="text-white/90 text-sm">This is your story.</span>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleteStory.isPending}
+                  className="flex items-center gap-1.5 rounded-full bg-red-500 px-3 py-1.5 text-white text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50"
+                >
+                  {deleteStory.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
+                  Delete story
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Full reaction tray — all seven reachable */}
+                <div className="flex justify-center gap-1.5">
+                  {STORY_REACTIONS.map((r) => (
+                    <button
+                      key={r.type}
+                      type="button"
+                      onClick={() => react(r.type)}
+                      aria-label={`React ${r.label}`}
+                      title={r.label}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center text-xl transition-transform hover:scale-125 ${
+                        activeStory.viewerReaction === r.type
+                          ? "bg-white/30 scale-110"
+                          : "bg-white/10"
+                      }`}
+                    >
+                      {r.emoji}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Quick reply chips */}
+                <div className="flex flex-wrap justify-center gap-2">
+                  {REPLY_CHIPS.map((chip) => (
+                    <button
+                      key={chip}
+                      type="button"
+                      onClick={() => sendReply(chip)}
+                      disabled={replyStory.isPending}
+                      className="px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-md text-white text-sm font-medium hover:bg-white/25 transition-colors disabled:opacity-50"
+                    >
+                      {chip}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Reply box */}
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    sendReply(replyText);
+                  }}
+                >
+                  <div className="flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-md border border-white/30 px-3 py-1.5">
+                    <input
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      placeholder="Send message..."
+                      maxLength={5000}
+                      className="flex-1 bg-transparent text-white text-sm placeholder:text-white/70 focus:outline-none"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!replyText.trim() || replyStory.isPending}
+                      aria-label="Send reply"
+                      className="text-white disabled:opacity-40"
+                    >
+                      {replyStory.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Send className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </>
             )}
           </div>
         </div>

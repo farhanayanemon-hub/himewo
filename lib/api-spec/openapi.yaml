@@ -3023,6 +3023,15 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/MusicTrack" }
+  /stories/{id}:
+    delete:
+      operationId: deleteStory
+      tags: [stories]
+      summary: Delete your own story
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
   /stories/{id}/view:
     post:
       operationId: viewStory
@@ -5166,7 +5175,7 @@ components:
 
     Story:
       type: object
-      required: [id, author, storyType, createdAt, expiresAt, viewCount, viewerHasViewed, reactionCount]
+      required: [id, author, storyType, audience, createdAt, expiresAt, viewCount, viewerHasViewed, reactionCount]
       properties:
         id: { type: integer }
         author: { $ref: "#/components/schemas/Profile" }
@@ -5176,6 +5185,7 @@ components:
             - { type: "null" }
         pageId: { type: ["integer", "null"] }
         storyType: { type: string, enum: [media, text] }
+        audience: { type: string, enum: [public, friends, private] }
         mediaUrl: { type: ["string", "null"] }
         mediaType:
           oneOf:
@@ -5200,6 +5210,7 @@ components:
       type: object
       properties:
         storyType: { type: string, enum: [media, text], default: media }
+        audience: { type: string, enum: [public, friends, private], default: public }
         mediaUrl: { type: string }
         mediaType: { type: string, enum: [image, video] }
         caption: { type: string }

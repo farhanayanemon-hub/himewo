@@ -20,6 +20,7 @@ import {
   buildStoryById,
   buildMessageById,
 } from "../lib/serialize";
+import { canViewStory } from "../lib/authz";
 import { findOrCreateDirectConversation } from "../lib/conversations";
 import { realtime } from "../realtime";
 import { createNotification } from "../lib/notify";
@@ -42,6 +43,7 @@ import {
   ReplyToStoryParams,
   ReplyToStoryBody,
   ReplyToStoryResponse,
+  DeleteStoryParams,
 } from "@workspace/api-zod";
 
 // When a story or reel is posted with music, add that track to the shared
@@ -167,6 +169,7 @@ router.post("/stories", requireAuth, async (req, res): Promise<void> => {
       authorId: req.userId!,
       pageId: data.pageId ?? null,
       storyType,
+      audience: data.audience ?? "public",
       mediaUrl: storyType === "media" ? data.mediaUrl! : null,
       mediaType: storyType === "media" ? data.mediaType! : null,
       caption: data.caption ?? null,
@@ -305,6 +308,15 @@ router.post("/stories/:id/view", requireAuth, async (req, res): Promise<void> =>
     res.status(400).json({ error: params.error.message });
     return;
   }
+  const [story] = await db
+    .select()
+    .from(storiesTable)
+    .where(eq(storiesTable.id, params.data.id));
+  // Don't record a view (or leak existence) for a story this viewer can't see.
+  if (!story || !(await canViewStory(story, req.userId!))) {
+    res.status(404).json({ error: "Story not found" });
+    return;
+  }
   await db
     .insert(storyViewsTable)
     .values({ storyId: params.data.id, viewerId: req.userId! })
@@ -319,6 +331,16 @@ router.get(
     const params = ListStoryViewsParams.safeParse(req.params);
     if (!params.success) {
       res.status(400).json({ error: params.error.message });
+      return;
+    }
+    // The viewers list is author-only metadata (like Facebook/Instagram): only
+    // the story's own author may see who viewed it.
+    const [story] = await db
+      .select()
+      .from(storiesTable)
+      .where(eq(storiesTable.id, params.data.id));
+    if (!story || story.authorId !== req.userId) {
+      res.status(404).json({ error: "Story not found" });
       return;
     }
     const views = await db
@@ -356,7 +378,11 @@ router.put(
       .select()
       .from(storiesTable)
       .where(eq(storiesTable.id, params.data.id));
-    if (!story || new Date(story.expiresAt).getTime() < Date.now()) {
+    if (
+      !story ||
+      new Date(story.expiresAt).getTime() < Date.now() ||
+      !(await canViewStory(story, req.userId!))
+    ) {
       res.status(404).json({ error: "Story not found" });
       return;
     }
@@ -434,7 +460,11 @@ router.post(
       .select()
       .from(storiesTable)
       .where(eq(storiesTable.id, params.data.id));
-    if (!story || new Date(story.expiresAt).getTime() < Date.now()) {
+    if (
+      !story ||
+      new Date(story.expiresAt).getTime() < Date.now() ||
+      !(await canViewStory(story, req.userId!))
+    ) {
       res.status(404).json({ error: "Story not found" });
       return;
     }
@@ -476,6 +506,38 @@ router.post(
     res
       .status(201)
       .json(ReplyToStoryResponse.parse({ conversationId, message: built }));
+  },
+);
+
+router.delete(
+  "/stories/:id",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = DeleteStoryParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const [story] = await db
+      .select()
+      .from(storiesTable)
+      .where(eq(storiesTable.id, params.data.id));
+    if (!story) {
+      res.status(404).json({ error: "Story not found" });
+      return;
+    }
+    if (story.authorId !== req.userId) {
+      res.status(403).json({ error: "You can only delete your own story" });
+      return;
+    }
+    await db
+      .delete(storyReactionsTable)
+      .where(eq(storyReactionsTable.storyId, params.data.id));
+    await db
+      .delete(storyViewsTable)
+      .where(eq(storyViewsTable.storyId, params.data.id));
+    await db.delete(storiesTable).where(eq(storiesTable.id, params.data.id));
+    res.status(204).end();
   },
 );
 

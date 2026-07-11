@@ -8,6 +8,7 @@
 import type { PageRef } from './pageRef';
 import type { Profile } from './profile';
 import type { ReactionType } from './reactionType';
+import type { StoryAudience } from './storyAudience';
 import type { StoryMediaType } from './storyMediaType';
 import type { StoryStoryType } from './storyStoryType';
 
@@ -18,6 +19,7 @@ export interface Story {
   /** @nullable */
   pageId?: number | null;
   storyType: StoryStoryType;
+  audience: StoryAudience;
   /** @nullable */
   mediaUrl?: string | null;
   mediaType?: StoryMediaType;

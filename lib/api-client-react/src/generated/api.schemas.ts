@@ -2208,6 +2208,15 @@ export const StoryStoryType = {
   text: 'text',
 } as const;
 
+export type StoryAudience = typeof StoryAudience[keyof typeof StoryAudience];
+
+
+export const StoryAudience = {
+  public: 'public',
+  friends: 'friends',
+  private: 'private',
+} as const;
+
 export type StoryMediaType = typeof StoryMediaType[keyof typeof StoryMediaType] | null;
 
 
@@ -2223,6 +2232,7 @@ export interface Story {
   /** @nullable */
   pageId?: number | null;
   storyType: StoryStoryType;
+  audience: StoryAudience;
   /** @nullable */
   mediaUrl?: string | null;
   mediaType?: StoryMediaType;
@@ -2254,6 +2264,15 @@ export const StoryInputStoryType = {
   text: 'text',
 } as const;
 
+export type StoryInputAudience = typeof StoryInputAudience[keyof typeof StoryInputAudience];
+
+
+export const StoryInputAudience = {
+  public: 'public',
+  friends: 'friends',
+  private: 'private',
+} as const;
+
 export type StoryInputMediaType = typeof StoryInputMediaType[keyof typeof StoryInputMediaType];
 
 
@@ -2264,6 +2283,7 @@ export const StoryInputMediaType = {
 
 export interface StoryInput {
   storyType?: StoryInputStoryType;
+  audience?: StoryInputAudience;
   mediaUrl?: string;
   mediaType?: StoryInputMediaType;
   caption?: string;

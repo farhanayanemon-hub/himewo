@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -41,6 +41,8 @@ export default function CreatePostScreen() {
   const { actingPage } = useActingPage();
   const createPost = useCreatePost();
 
+  const { media } = useLocalSearchParams<{ media?: string }>();
+
   const [content, setContent] = useState("");
   const [privacy, setPrivacy] = useState<PostInputPrivacy>(PostInputPrivacy.public);
   const [assets, setAssets] = useState<PickedAsset[]>([]);
@@ -58,6 +60,15 @@ export default function CreatePostScreen() {
       setAssets((prev) => [...prev, ...res.assets].slice(0, 6));
     }
   };
+
+  const autoOpened = useRef(false);
+  useEffect(() => {
+    if (media && !autoOpened.current) {
+      autoOpened.current = true;
+      pick();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [media]);
 
   const capture = async () => {
     const asset = await captureWithCamera(["images", "videos"]);

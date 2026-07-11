@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   Dimensions,
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   Text,
   TextInput,
   View,
@@ -19,20 +21,24 @@ import { createAudioPlayer, type AudioPlayer } from "expo-audio";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useListStories,
   useViewStory,
   useSetStoryReaction,
   useRemoveStoryReaction,
   useReplyToStory,
+  useDeleteStory,
+  getListStoriesQueryKey,
   ReactionType,
   type Story,
   type StoryGroup,
 } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
 import { MentionText } from "@/components/Mention";
+import { useAuth } from "@/lib/auth";
 import { useActingPage } from "@/lib/acting-page";
-import { reactionConfig } from "@/constants/reactions";
+import { reactionConfig, reactionOrder } from "@/constants/reactions";
 import { useColors } from "@/hooks/useColors";
 import { timeAgo } from "@/lib/format";
 import { storyBackground } from "@/lib/storyBackgrounds";
@@ -46,42 +52,55 @@ const QUICK_CHIPS: { key: string; label: string; text: string }[] = [
   { key: "fire", label: "🔥🔥", text: "🔥🔥" },
 ];
 
-// Reaction buttons shown FB-style at the bottom-right of the viewer.
-const QUICK_REACTIONS: ReactionType[] = [
-  ReactionType.love,
-  ReactionType.like,
-  ReactionType.haha,
-];
+// Haptics reject on web; keep them best-effort and non-fatal everywhere.
+function tapHaptic() {
+  if (Platform.OS === "web") return;
+  Haptics.selectionAsync().catch(() => {});
+}
 
 export default function StoryViewerScreen() {
   const c = useColors();
+  const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const storyId = Number(id);
   const { data, isLoading } = useListStories();
   const viewStory = useViewStory();
+  const queryClient = useQueryClient();
 
   const groups = (data ?? []) as StoryGroup[];
 
-  const stories = useMemo<Story[]>(() => {
-    for (const g of groups) {
-      if (g.stories.some((s) => s.id === storyId)) return g.stories;
+  // Position across ALL story groups so navigation can move person-to-person.
+  // Lazy-initialise from cache (StoryBar preloads the list) to avoid a flash,
+  // and position exactly once so background refetches never snap the viewer back.
+  const [pos, setPos] = useState(() => {
+    for (let g = 0; g < groups.length; g++) {
+      const s = groups[g].stories.findIndex((st) => st.id === storyId);
+      if (s >= 0) return { g, s };
     }
-    return [];
+    return { g: 0, s: 0 };
+  });
+  const positionedRef = useRef(false);
+  useEffect(() => {
+    if (positionedRef.current || groups.length === 0) return;
+    for (let g = 0; g < groups.length; g++) {
+      const s = groups[g].stories.findIndex((st) => st.id === storyId);
+      if (s >= 0) {
+        setPos({ g, s });
+        positionedRef.current = true;
+        return;
+      }
+    }
+    positionedRef.current = true;
   }, [groups, storyId]);
 
-  const [index, setIndex] = useState(0);
+  const currentGroup = groups[pos.g];
+  const stories = currentGroup?.stories ?? [];
+  const current = stories[pos.s];
+
   const [paused, setPaused] = useState(false);
   const progress = useRef(new Animated.Value(0)).current;
   const animRef = useRef<Animated.CompositeAnimation | null>(null);
   const viewedRef = useRef<Set<number>>(new Set());
-
-  useEffect(() => {
-    if (stories.length === 0) return;
-    const start = stories.findIndex((s) => s.id === storyId);
-    setIndex(start >= 0 ? start : 0);
-  }, [stories, storyId]);
-
-  const current = stories[index];
 
   // Story music: play while its story is on screen, pause with long-press.
   const musicRef = useRef<AudioPlayer | null>(null);
@@ -141,11 +160,15 @@ export default function StoryViewerScreen() {
   const setStoryReaction = useSetStoryReaction();
   const removeStoryReaction = useRemoveStoryReaction();
   const replyToStory = useReplyToStory();
+  const deleteStory = useDeleteStory();
+
+  const isOwn = !!current && !!user && current.author?.id === user.id;
 
   const [reaction, setReaction] = useState<ReactionType | null>(null);
   const [reactionCount, setReactionCount] = useState(0);
   const [replyText, setReplyText] = useState("");
   const [composing, setComposing] = useState(false);
+  const [trayOpen, setTrayOpen] = useState(false);
   const [sentNote, setSentNote] = useState<string | null>(null);
   const sentTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -153,6 +176,7 @@ export default function StoryViewerScreen() {
   useEffect(() => {
     setReaction(current?.viewerReaction ?? null);
     setReactionCount(current?.reactionCount ?? 0);
+    setTrayOpen(false);
   }, [current?.id, current?.viewerReaction, current?.reactionCount]);
 
   useEffect(
@@ -169,7 +193,8 @@ export default function StoryViewerScreen() {
 
   const react = (t: ReactionType) => {
     if (!current) return;
-    Haptics.selectionAsync();
+    tapHaptic();
+    setTrayOpen(false);
     const prev = { reaction, reactionCount };
     const rollback = () => {
       setReaction(prev.reaction);
@@ -211,28 +236,62 @@ export default function StoryViewerScreen() {
           setReplyText("");
           showSent("Sent");
         },
+        onError: () => showSent("Couldn't send — try again"),
       },
     );
   };
 
+  const confirmDelete = () => {
+    if (!current) return;
+    Alert.alert("Delete story", "This story will be permanently removed.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () =>
+          deleteStory.mutate(
+            { id: current.id },
+            {
+              onSuccess: () => {
+                queryClient.invalidateQueries({
+                  queryKey: getListStoriesQueryKey(),
+                });
+                router.back();
+              },
+              onError: () =>
+                Alert.alert("Could not delete", "Please try again."),
+            },
+          ),
+      },
+    ]);
+  };
+
   const goNext = () => {
-    if (index < stories.length - 1) {
-      setIndex((i) => i + 1);
+    if (pos.s < stories.length - 1) {
+      setPos((p) => ({ ...p, s: p.s + 1 }));
+    } else if (pos.g < groups.length - 1) {
+      setPos((p) => ({ g: p.g + 1, s: 0 }));
     } else {
       router.back();
     }
   };
 
   const goPrev = () => {
-    if (index > 0) {
-      setIndex((i) => i - 1);
+    if (pos.s > 0) {
+      setPos((p) => ({ ...p, s: p.s - 1 }));
+    } else if (pos.g > 0) {
+      const prevLen = groups[pos.g - 1]?.stories.length ?? 1;
+      setPos((p) => ({ g: p.g - 1, s: Math.max(0, prevLen - 1) }));
     }
   };
 
   // Freeze auto-advance while long-pressing or composing a reply.
   const frozen = paused || composing;
 
+  // Single source of truth for the auto-advance timer so we never run two
+  // competing animations (which caused stories to skip / double-advance).
   useEffect(() => {
+    animRef.current?.stop();
     if (!current || frozen) return;
     progress.setValue(0);
     const anim = Animated.timing(progress, {
@@ -246,24 +305,7 @@ export default function StoryViewerScreen() {
     });
     return () => anim.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index, current?.id]);
-
-  useEffect(() => {
-    if (frozen) {
-      animRef.current?.stop();
-    } else if (current) {
-      const anim = Animated.timing(progress, {
-        toValue: 1,
-        duration: STORY_DURATION,
-        useNativeDriver: false,
-      });
-      animRef.current = anim;
-      anim.start(({ finished }) => {
-        if (finished) goNext();
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [frozen]);
+  }, [pos.g, pos.s, current?.id, frozen]);
 
   if (isLoading) {
     return (
@@ -314,6 +356,8 @@ export default function StoryViewerScreen() {
         />
       )}
 
+      {/* Tap zones sit above the media but stop short of the bottom bar so they
+          never swallow reaction / reply taps. */}
       <Pressable
         style={styles.tapLeft}
         onPress={goPrev}
@@ -338,9 +382,9 @@ export default function StoryViewerScreen() {
                   styles.progressFill,
                   {
                     width:
-                      i < index
+                      i < pos.s
                         ? "100%"
-                        : i === index
+                        : i === pos.s
                           ? progress.interpolate({
                               inputRange: [0, 1],
                               outputRange: ["0%", "100%"],
@@ -383,9 +427,16 @@ export default function StoryViewerScreen() {
               )}
             </View>
           </Pressable>
-          <Pressable onPress={() => router.back()} hitSlop={10}>
-            <Ionicons name="close" size={28} color="#fff" />
-          </Pressable>
+          <View style={styles.headerActions}>
+            {isOwn && (
+              <Pressable onPress={confirmDelete} hitSlop={10} disabled={deleteStory.isPending}>
+                <Ionicons name="trash-outline" size={24} color="#fff" />
+              </Pressable>
+            )}
+            <Pressable onPress={() => router.back()} hitSlop={10}>
+              <Ionicons name="close" size={28} color="#fff" />
+            </Pressable>
+          </View>
         </View>
       </SafeAreaView>
 
@@ -414,57 +465,90 @@ export default function StoryViewerScreen() {
             </Text>
           )}
 
-          <View style={styles.chipsRow}>
-            {QUICK_CHIPS.map((chip) => (
+          {isOwn ? (
+            <View style={styles.ownRow}>
+              <Text style={styles.ownText}>This is your story.</Text>
               <Pressable
-                key={chip.key}
-                style={styles.chip}
-                onPress={() => sendReply(chip.text)}
-                disabled={replyToStory.isPending}
+                style={styles.deleteBtn}
+                onPress={confirmDelete}
+                disabled={deleteStory.isPending}
               >
-                <Text style={styles.chipText}>{chip.label}</Text>
+                <Ionicons name="trash-outline" size={18} color="#fff" />
+                <Text style={styles.deleteText}>Delete story</Text>
               </Pressable>
-            ))}
-          </View>
-
-          <View style={styles.replyRow}>
-            <View style={styles.replyInputWrap}>
-              <TextInput
-                value={replyText}
-                onChangeText={setReplyText}
-                placeholder="Send message…"
-                placeholderTextColor="#ffffffaa"
-                style={styles.replyInput}
-                onFocus={() => setComposing(true)}
-                onBlur={() => setComposing(false)}
-                returnKeyType="send"
-                onSubmitEditing={() => sendReply(replyText)}
-              />
-              {replyText.trim().length > 0 && (
-                <Pressable
-                  onPress={() => sendReply(replyText)}
-                  hitSlop={8}
-                  disabled={replyToStory.isPending}
-                >
-                  <Ionicons name="send" size={20} color="#fff" />
-                </Pressable>
-              )}
             </View>
+          ) : (
+            <>
+              {/* Full reaction tray (all seven) — opens above the reply row. */}
+              {trayOpen && (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.trayRow}
+                  keyboardShouldPersistTaps="handled"
+                >
+                  {reactionOrder.map((t) => (
+                    <Pressable
+                      key={t}
+                      onPress={() => react(t)}
+                      style={[styles.trayBtn, reaction === t && styles.reactBtnActive]}
+                      hitSlop={4}
+                    >
+                      <Text style={styles.trayEmoji}>{reactionConfig[t].emoji}</Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              )}
 
-            {QUICK_REACTIONS.map((t) => {
-              const active = reaction === t;
-              return (
+              <View style={styles.chipsRow}>
+                {QUICK_CHIPS.map((chip) => (
+                  <Pressable
+                    key={chip.key}
+                    style={styles.chip}
+                    onPress={() => sendReply(chip.text)}
+                    disabled={replyToStory.isPending}
+                  >
+                    <Text style={styles.chipText}>{chip.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <View style={styles.replyRow}>
+                <View style={styles.replyInputWrap}>
+                  <TextInput
+                    value={replyText}
+                    onChangeText={setReplyText}
+                    placeholder="Send message…"
+                    placeholderTextColor="#ffffffaa"
+                    style={styles.replyInput}
+                    onFocus={() => setComposing(true)}
+                    onBlur={() => setComposing(false)}
+                    returnKeyType="send"
+                    onSubmitEditing={() => sendReply(replyText)}
+                  />
+                  {replyText.trim().length > 0 && (
+                    <Pressable
+                      onPress={() => sendReply(replyText)}
+                      hitSlop={8}
+                      disabled={replyToStory.isPending}
+                    >
+                      <Ionicons name="send" size={20} color="#fff" />
+                    </Pressable>
+                  )}
+                </View>
+
                 <Pressable
-                  key={t}
-                  onPress={() => react(t)}
-                  style={[styles.reactBtn, active && styles.reactBtnActive]}
+                  onPress={() => setTrayOpen((o) => !o)}
+                  style={[styles.reactBtn, (reaction || trayOpen) && styles.reactBtnActive]}
                   hitSlop={4}
                 >
-                  <Text style={styles.reactEmoji}>{reactionConfig[t].emoji}</Text>
+                  <Text style={styles.reactEmoji}>
+                    {reaction ? reactionConfig[reaction].emoji : "😍"}
+                  </Text>
                 </Pressable>
-              );
-            })}
-          </View>
+              </View>
+            </>
+          )}
         </SafeAreaView>
       </KeyboardAvoidingView>
     </View>
@@ -500,8 +584,8 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   center: { alignItems: "center", justifyContent: "center" },
   backLink: { marginTop: 16 },
-  tapLeft: { position: "absolute", left: 0, top: 0, bottom: 0, width: width * 0.35 },
-  tapRight: { position: "absolute", right: 0, top: 0, bottom: 0, width: width * 0.65 },
+  tapLeft: { position: "absolute", left: 0, top: 0, bottom: 190, width: width * 0.35 },
+  tapRight: { position: "absolute", right: 0, top: 0, bottom: 190, width: width * 0.65 },
   topOverlay: { position: "absolute", top: 0, left: 0, right: 0, paddingHorizontal: 8 },
   progressRow: { flexDirection: "row", gap: 4, paddingHorizontal: 4, paddingTop: 8 },
   progressTrack: {
@@ -519,7 +603,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingTop: 12,
   },
-  authorRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 16 },
+  authorRow: { flexDirection: "row", alignItems: "center", gap: 10, flexShrink: 1 },
   authorName: {
     color: "#fff",
     fontFamily: "Inter_600SemiBold",
@@ -588,6 +673,21 @@ const styles = StyleSheet.create({
     textShadowColor: "#0008",
     textShadowRadius: 4,
   },
+  trayRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 10,
+    paddingHorizontal: 2,
+  },
+  trayBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#00000088",
+  },
+  trayEmoji: { fontSize: 26 },
   chipsRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
   chip: {
     backgroundColor: "#00000066",
@@ -625,4 +725,25 @@ const styles = StyleSheet.create({
   },
   reactBtnActive: { backgroundColor: "#ffffff33" },
   reactEmoji: { fontSize: 22 },
+  ownRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    backgroundColor: "#00000066",
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  ownText: { color: "#ffffffdd", fontFamily: "Inter_500Medium", fontSize: 14 },
+  deleteBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#e5484d",
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  deleteText: { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 13 },
 });

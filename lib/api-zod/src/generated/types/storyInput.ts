@@ -5,11 +5,13 @@
  * HiMewo social platform + Messenger API
  * OpenAPI spec version: 0.1.0
  */
+import type { StoryInputAudience } from './storyInputAudience';
 import type { StoryInputMediaType } from './storyInputMediaType';
 import type { StoryInputStoryType } from './storyInputStoryType';
 
 export interface StoryInput {
   storyType?: StoryInputStoryType;
+  audience?: StoryInputAudience;
   mediaUrl?: string;
   mediaType?: StoryInputMediaType;
   caption?: string;

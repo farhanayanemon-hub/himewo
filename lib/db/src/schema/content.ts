@@ -21,6 +21,9 @@ export const storiesTable = pgTable("stories", {
   pageId: integer("page_id"),
   // "media" (photo/video/GIF) or "text" (colored-background text story).
   storyType: text("story_type").notNull().default("media"),
+  // Who can see this story: "public" | "friends" | "private" (only me).
+  // Consumed by the privacy-enforcement task; stored here at creation time.
+  audience: text("audience").notNull().default("public"),
   mediaUrl: text("media_url"),
   mediaType: mediaTypeEnum("media_type"),
   caption: text("caption"),
