@@ -8,6 +8,7 @@ import {
 } from "@workspace/db";
 import { and, eq, lt, asc, desc, inArray } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
+import { filterVisibleReels, canViewReel } from "../lib/authz";
 import { toProfile, buildReels, buildReelById } from "../lib/serialize";
 import { shareMusicToLibrary } from "./stories";
 import { createNotification } from "../lib/notify";
@@ -43,13 +44,29 @@ router.get("/reels", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   const { cursor, limit } = query.data;
-  const rows = await db
-    .select()
-    .from(reelsTable)
-    .where(cursor ? lt(reelsTable.id, cursor) : undefined)
-    .orderBy(desc(reelsTable.id))
-    .limit(limit ?? 10);
-  const built = await buildReels(rows, req.userId);
+  // filterVisibleReels drops reels from locked/friends-only/only-me authors
+  // AFTER the SQL limit, so a single limited query could return a short page
+  // while older visible reels still exist (the client treats a short page as
+  // end of feed). Scan in batches until we collect a full page or run out.
+  const pageLimit = limit ?? 10;
+  const SCAN_BATCH = 50;
+  const MAX_SCANS = 8;
+  const visibleRows: (typeof reelsTable.$inferSelect)[] = [];
+  let scanCursor = cursor;
+  for (let i = 0; i < MAX_SCANS && visibleRows.length < pageLimit; i++) {
+    const rows = await db
+      .select()
+      .from(reelsTable)
+      .where(scanCursor ? lt(reelsTable.id, scanCursor) : undefined)
+      .orderBy(desc(reelsTable.id))
+      .limit(SCAN_BATCH);
+    if (rows.length === 0) break;
+    scanCursor = rows[rows.length - 1]!.id;
+    const vis = await filterVisibleReels(rows, req.userId!);
+    visibleRows.push(...vis);
+    if (rows.length < SCAN_BATCH) break;
+  }
+  const built = await buildReels(visibleRows.slice(0, pageLimit), req.userId);
   res.json(ListReelsResponse.parse(built));
 });
 
@@ -88,7 +105,7 @@ router.get("/reels/:id", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   const built = await buildReelById(params.data.id, req.userId);
-  if (!built) {
+  if (!built || !(await canViewReel(built.author.id, req.userId!))) {
     res.status(404).json({ error: "Reel not found" });
     return;
   }
@@ -108,7 +125,7 @@ const likeReelHandler = async (
     .select()
     .from(reelsTable)
     .where(eq(reelsTable.id, params.data.id));
-  if (!reel) {
+  if (!reel || !(await canViewReel(reel.authorId, req.userId!))) {
     res.status(404).json({ error: "Reel not found" });
     return;
   }
@@ -148,7 +165,7 @@ router.delete(
         ),
       );
     const built = await buildReelById(params.data.id, req.userId);
-    if (!built) {
+    if (!built || !(await canViewReel(built.author.id, req.userId!))) {
       res.status(404).json({ error: "Reel not found" });
       return;
     }
@@ -170,7 +187,7 @@ router.put(
       .select()
       .from(reelsTable)
       .where(eq(reelsTable.id, params.data.id));
-    if (!reel) {
+    if (!reel || !(await canViewReel(reel.authorId, req.userId!))) {
       res.status(404).json({ error: "Reel not found" });
       return;
     }
@@ -215,7 +232,7 @@ router.delete(
         ),
       );
     const built = await buildReelById(params.data.id, req.userId);
-    if (!built) {
+    if (!built || !(await canViewReel(built.author.id, req.userId!))) {
       res.status(404).json({ error: "Reel not found" });
       return;
     }
@@ -230,6 +247,14 @@ router.get(
     const params = ListReelCommentsParams.safeParse(req.params);
     if (!params.success) {
       res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const [reel] = await db
+      .select()
+      .from(reelsTable)
+      .where(eq(reelsTable.id, params.data.id));
+    if (!reel || !(await canViewReel(reel.authorId, req.userId!))) {
+      res.status(404).json({ error: "Reel not found" });
       return;
     }
     const rows = await db
@@ -271,7 +296,7 @@ router.post(
       .select()
       .from(reelsTable)
       .where(eq(reelsTable.id, params.data.id));
-    if (!reel) {
+    if (!reel || !(await canViewReel(reel.authorId, req.userId!))) {
       res.status(404).json({ error: "Reel not found" });
       return;
     }

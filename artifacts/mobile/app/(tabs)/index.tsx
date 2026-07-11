@@ -173,7 +173,12 @@ export default function HomeScreen() {
                     {actingPage ? `What's on your mind, ${actingPage.name}?` : "What's on your mind?"}
                   </Text>
                 </View>
-                <Ionicons name="images" size={24} color="#31a24c" />
+                <Pressable
+                  hitSlop={10}
+                  onPress={() => router.push("/create-post?media=1")}
+                >
+                  <Ionicons name="images" size={24} color="#31a24c" />
+                </Pressable>
               </Pressable>
             </>
           }

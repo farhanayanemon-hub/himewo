@@ -15,6 +15,11 @@ description: Page access model (page_members), boost gating to page posts, ad-ac
 ## Boost gating
 - Boost is allowed ONLY on page posts: web `post-card.tsx` + mobile `PostCard.tsx` `canBoost` requires `post.pageId != null`. Page-top Boost button was intentionally removed.
 
+## "Act as a Page" scope (Facebook-style)
+- Acting-as-page is a CLIENT context (`lib/acting-page` on web+mobile). When set, composer avatar/name AND create flows send `pageId`; clients render `authorPage ?? author` everywhere.
+- Stories mirror posts for page authorship: bare `stories.page_id` (int, NO drizzle FK, additive DDL on dev+live). POST /stories authz = owner OR page_members (same as POST /posts). serialize groups page stories under key `page:<id>` (vs `user:<uuid>`) and attaches `authorPage` to group + each story.
+- **Any new "as a page" surface (posts/stories/uploads):** the server MUST re-verify owner-or-member on the supplied pageId — never trust client actingPage. Display sites must all fall back `authorPage ?? author` or the user avatar leaks through (architect caught the web Home create-story tile).
+
 ## Ad account owner transfer
 - `POST /ad-accounts/{id}/transfer` — owner-only, self-transfer blocked; old owner becomes admin member, new owner's member row deleted. UI: ads-dashboard Settings "Transfer ownership" card (shown only to owner).
 

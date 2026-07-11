@@ -60,7 +60,13 @@ import {
   avg,
   isNull,
 } from "drizzle-orm";
-import { canViewPost, canSendFriendRequest } from "./authz";
+import {
+  canViewPost,
+  canSendFriendRequest,
+  filterVisibleStories,
+  canViewStory,
+  canViewReel,
+} from "./authz";
 
 // ---------------- Profiles ----------------
 /**
@@ -997,11 +1003,14 @@ export async function buildPageReviews(
 // ---------------- Stories ----------------
 export async function buildStoryGroups(viewerId: string) {
   const now = new Date();
-  const rows = await db
+  const allRows = await db
     .select()
     .from(storiesTable)
     .where(gt(storiesTable.expiresAt, now))
     .orderBy(asc(storiesTable.createdAt));
+  // Enforce audience: only stories this viewer is allowed to see (author's
+  // profile audience + the story's own public/friends/private setting).
+  const rows = await filterVisibleStories(allRows, viewerId);
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);
   const authorMap = await loadProfileMap(rows.map((r) => r.authorId));
@@ -1066,6 +1075,7 @@ export async function buildStoryGroups(viewerId: string) {
         authorPage: s.pageId != null ? (pageMap.get(s.pageId) ?? null) : null,
         pageId: s.pageId,
         storyType: s.storyType,
+        audience: s.audience,
         mediaUrl: s.mediaUrl,
         mediaType: s.mediaType,
         caption: s.caption,
@@ -1101,6 +1111,7 @@ export function toStory(
     authorPage,
     pageId: s.pageId,
     storyType: s.storyType,
+    audience: s.audience,
     mediaUrl: s.mediaUrl,
     mediaType: s.mediaType,
     caption: s.caption,
@@ -1122,6 +1133,8 @@ export function toStory(
 export async function buildStoryById(id: number, viewerId: string) {
   const [s] = await db.select().from(storiesTable).where(eq(storiesTable.id, id));
   if (!s) return null;
+  // Never return a story the viewer isn't allowed to see, even by direct id.
+  if (!(await canViewStory(s, viewerId))) return null;
   const [author] = await db
     .select()
     .from(profilesTable)
@@ -1323,7 +1336,7 @@ export async function buildSavedItems(
     .filter((r) => r.entityType === "reel")
     .map((r) => r.entityId);
 
-  const [postRowsRaw, listingRows, reelRows] = await Promise.all([
+  const [postRowsRaw, listingRows, reelRowsRaw] = await Promise.all([
     postIds.length
       ? db.select().from(postsTable).where(inArray(postsTable.id, postIds))
       : Promise.resolve([]),
@@ -1338,13 +1351,18 @@ export async function buildSavedItems(
       : Promise.resolve([]),
   ]);
 
-  // Re-check visibility at read time: a post saved earlier may now be hidden
-  // (e.g. its author locked their profile, or changed privacy). Without this a
-  // non-friend could keep retrieving a locked user's post via stale saved IDs.
+  // Re-check visibility at read time: a post/reel saved earlier may now be
+  // hidden (e.g. its author locked their profile, or changed privacy). Without
+  // this a non-friend could keep retrieving a locked user's content via stale
+  // saved IDs.
   const postVisibility = await Promise.all(
     postRowsRaw.map((p) => canViewPost(p, viewerId)),
   );
   const postRows = postRowsRaw.filter((_, i) => postVisibility[i]);
+  const reelVisibility = await Promise.all(
+    reelRowsRaw.map((r) => canViewReel(r.authorId, viewerId)),
+  );
+  const reelRows = reelRowsRaw.filter((_, i) => reelVisibility[i]);
 
   const [builtPosts, builtListings, builtReels] = await Promise.all([
     buildPosts(postRows, viewerId),

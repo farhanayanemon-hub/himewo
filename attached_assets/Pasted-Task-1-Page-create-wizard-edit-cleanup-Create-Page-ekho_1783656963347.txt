@@ -1,0 +1,28 @@
+Task 1: Page create wizard + edit cleanup
+
+"Create Page" ekhon ek page er lomba form — eta step-by-step popup banate hobe (Facebook style): Step 1 = Page name → Step 2 = Category (free text na, ekta predefined list theke select korbe: Business, Brand, Community, Public Figure, Entertainment, Shop, Education etc.) → Step 3 = Bio/description + baki details. Next/Back button thakbe, name ar category chara agano jabe na.
+Edit Page dialog theke "Avatar URL" ar "Cover URL" text field 2ta remove korte hobe (photo change er jonno alada flow ashbe — Task 2). Edit eo category picker hobe.
+Mobile main app er page create/edit form eo same category list use hobe.
+Files: artifacts/web/src/pages/pages.tsx, artifacts/mobile/app/pages/
+Task 2: Photo view/change with crop (FB-style) — Task 1 er por
+
+Nijer profile e profile photo te click korle 2ta option: "View profile picture" (fullscreen viewer) / "Change profile picture". Cover photo teo same: "View cover photo" / "Change cover photo".
+Nijer/manage kora Page er avatar + cover eo exactly same options.
+Change flow: image select korle SATHE SATHE upload hobe NA — age preview dialog ashbe (avatar hole round preview, cover hole wide preview) → sekhane Update / Cancel / Edit button. Edit e click korle zoom in/out + drag kore photo choto-boro/reposition kora jabe (Facebook er moto). Update dile tokhon upload + save hobe.
+Onno manusher profile/page e photo click korle sudhu view hobe, change option ashbe na.
+Files: artifacts/web/src/pages/me.tsx, profile.tsx, pages.tsx, artifacts/web/src/lib/upload.ts
+Task 3: Switch account — Page hisebe HiMewo chalano — Task 2 er por
+
+Menu te ekdom opore: logged-in profile show korbe, tar right side e last-use-kora Page + ekta arrow button. Arrow te click korle baki sob Page er list ashbe. Jekono user multiple page banate parbe (limit nai).
+Page e switch korle full-screen loading ashbe: "Switching to <Page name>" + majhkhane Page er profile photo (photo na thakle default placeholder).
+Page hisebe active thakle: feed normal e dekhabe, kintu post / like-react / comment sob Page er name + avatar diye hobe (author = Page). Abar profile e switch back kora jabe same vabe.
+Onno manusher page normally view kora jabe kintu edit kora jabe na.
+Backend: post/reaction/comment endpoint e optional "acting page id" add korte hobe — server check korbe user oi page er owner/editor kina; OpenAPI spec update + codegen lagbe.
+Mobile main app er Menu tab eo same switcher + loading screen + acting-as-page behavior.
+Files: lib/api-spec/openapi.yaml, artifacts/api-server/src/routes/posts.ts, pages.ts, serialize.ts, artifacts/web/src/components/layout/main-layout.tsx, post-composer.tsx, post-card.tsx, artifacts/mobile/app/(tabs)/menu.tsx
+Rules (notun account er Agent ke mone koriye dio):
+
+replit.md + .agents/memory/MEMORY.md age porbe
+UI text English, reply simple Banglish, kichu delete korba na
+Kaj sesh hole GitHub push (REST diye, git CLI blocked) + deploy (API = Railway auto, web/admin/ads = GitHub Actions)
+Live DB te drizzle-push kokhono na — Supabase Management API diye DDL

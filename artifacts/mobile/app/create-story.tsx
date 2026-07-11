@@ -20,6 +20,7 @@ import {
   useCreateStory,
   getListStoriesQueryKey,
   StoryInputMediaType,
+  StoryInputAudience,
   type Profile,
 } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
@@ -39,6 +40,9 @@ export default function CreateStoryScreen() {
   const pageFields = actingPage ? { pageId: actingPage.id } : {};
 
   const [mode, setMode] = useState<"media" | "text">("media");
+  const [audience, setAudience] = useState<StoryInputAudience>(
+    StoryInputAudience.public,
+  );
   const [asset, setAsset] = useState<PickedAsset | null>(null);
   const [gifUrl, setGifUrl] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
@@ -108,6 +112,7 @@ export default function CreateStoryScreen() {
         await createStory.mutateAsync({
           data: {
             storyType: "text",
+            audience,
             textContent: textContent.trim(),
             backgroundStyle: background,
             ...musicFields,
@@ -118,6 +123,7 @@ export default function CreateStoryScreen() {
         await createStory.mutateAsync({
           data: {
             storyType: "media",
+            audience,
             mediaUrl: gifUrl,
             mediaType: StoryInputMediaType.image,
             caption: caption.trim() || undefined,
@@ -142,6 +148,7 @@ export default function CreateStoryScreen() {
         await createStory.mutateAsync({
           data: {
             storyType: "media",
+            audience,
             mediaUrl: uploaded.url,
             mediaType:
               uploaded.type === "video"
@@ -202,6 +209,26 @@ export default function CreateStoryScreen() {
           <Ionicons name="text" size={16} color="#fff" />
           <Text style={styles.tabText}>Text</Text>
         </Pressable>
+      </View>
+
+      {/* Audience selector — who can see this story */}
+      <View style={styles.audienceRow}>
+        {(
+          [
+            { value: StoryInputAudience.public, label: "Public", icon: "earth" },
+            { value: StoryInputAudience.friends, label: "Friends", icon: "people" },
+            { value: StoryInputAudience.private, label: "Only me", icon: "lock-closed" },
+          ] as const
+        ).map((a) => (
+          <Pressable
+            key={a.value}
+            style={[styles.audienceChip, audience === a.value && { backgroundColor: c.primary }]}
+            onPress={() => setAudience(a.value)}
+          >
+            <Ionicons name={a.icon} size={13} color="#fff" />
+            <Text style={styles.audienceChipText}>{a.label}</Text>
+          </Pressable>
+        ))}
       </View>
 
       {music && (
@@ -565,6 +592,26 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   changeBtnText: { color: "#fff", fontFamily: "Inter_500Medium", fontSize: 13 },
+  audienceRow: {
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+  },
+  audienceChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "#ffffff22",
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  audienceChipText: {
+    color: "#fff",
+    fontFamily: "Inter_500Medium",
+    fontSize: 12,
+  },
   empty: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, padding: 32 },
   pickBtn: {
     flexDirection: "row",

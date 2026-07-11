@@ -18,6 +18,24 @@ description: Design of Page contact info, call-to-action button, and reviews —
 - `viewerReview` is built by reusing `buildPageReviews([row])[0]` inside `buildPage`, so
   the review-with-profile shape stays defined in one place.
 
+## Reviews on/off + self-review block (product rules — keep consistent)
+- A page owner/manager must **NOT** be able to review their OWN page — only outsiders can.
+  Enforced server-side (POST reviews 403 when `canManagePage`) and surfaced as
+  `viewerCanReview = viewerId && !viewerCanPost && reviewsEnabled`; the client gates the
+  composer on this flag.
+- `pages.reviews_enabled` (bool default true) is a per-page toggle in the edit dialog. When
+  off, the whole Reviews block is hidden and POST reviews 403s. **Why:** owners asked to be
+  able to turn reviews off entirely; don't silently keep accepting reviews when disabled.
+
+## Following + media (page profile parity)
+- Pages follow other pages via a separate `page_following` table (page→page, self-follow
+  blocked); `followingCount` sits alongside `followerCount`. Page follow/unfollow accept
+  `asPageId` so the acting page (not the user) follows.
+- Page profile has a Photos/Videos tab backed by `GET /pages/:id/media` (`PageMediaItem`:
+  postId/url/type/thumbnailUrl). Web and **mobile** page profiles are full parity — mobile
+  also has owner edit (incl. reviews toggle), inline avatar/cover edit, owner page-access
+  member mgmt, and the message CTA (mobile DOES support conversations via useCreateConversation).
+
 ## URL-safety rule (security — do NOT drop)
 Any user-supplied field that ends up in an `<a href>` (here `website`, `ctaUrl`) MUST be
 scheme-checked, or a page owner can store a `javascript:`/`data:` link that runs when
