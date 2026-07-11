@@ -17,11 +17,18 @@ import {
   useRemovePageMember,
   useSearchUsers,
   useListPageMedia,
+  useListPageFollowers,
+  useListPageFollowing,
+  useInviteToPage,
+  useListFriends,
   getListPagesQueryKey,
   getGetPageQueryKey,
   getListPageReviewsQueryKey,
   getListPageMembersQueryKey,
   getSearchUsersQueryKey,
+  getListPageFollowersQueryKey,
+  getListPageFollowingQueryKey,
+  getListFriendsQueryKey,
 } from "@workspace/api-client-react";
 import type { Page, PageReview, Profile } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
@@ -58,6 +65,8 @@ import {
   Trash2,
   Settings,
   X,
+  MoreHorizontal,
+  Users,
 } from "lucide-react";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -68,6 +77,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export const PAGE_CATEGORIES = [
   "Business",
@@ -861,6 +877,187 @@ function PageMediaGrid({ pageId }: { pageId: number }) {
   );
 }
 
+function PageFollowersDialog({
+  pageId,
+  open,
+  onOpenChange,
+}: {
+  pageId: number;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const { data: followers, isLoading } = useListPageFollowers(pageId, {
+    query: { enabled: open, queryKey: getListPageFollowersQueryKey(pageId) },
+  });
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[70vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Followers</DialogTitle>
+        </DialogHeader>
+        {isLoading ? (
+          <div className="py-6 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+        ) : followers?.length === 0 ? (
+          <div className="py-6 text-center text-muted-foreground text-sm">No followers yet.</div>
+        ) : (
+          <div className="space-y-1">
+            {followers?.map((p) => (
+              <Link
+                key={p.id}
+                href={`/profile/${p.id}`}
+                onClick={() => onOpenChange(false)}
+                className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+              >
+                <img src={avatarSrc(p.avatarUrl)} className="w-10 h-10 rounded-full object-cover bg-muted shrink-0" alt="" />
+                <div className="min-w-0">
+                  <div className="font-medium truncate">{p.displayName || p.username}</div>
+                  {p.username && <div className="text-xs text-muted-foreground truncate">@{p.username}</div>}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function PageFollowingDialog({
+  pageId,
+  open,
+  onOpenChange,
+}: {
+  pageId: number;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const { data: following, isLoading } = useListPageFollowing(pageId, {
+    query: { enabled: open, queryKey: getListPageFollowingQueryKey(pageId) },
+  });
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[70vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Following</DialogTitle>
+        </DialogHeader>
+        {isLoading ? (
+          <div className="py-6 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+        ) : following?.length === 0 ? (
+          <div className="py-6 text-center text-muted-foreground text-sm">Not following any pages.</div>
+        ) : (
+          <div className="space-y-1">
+            {following?.map((pg) => (
+              <Link
+                key={pg.id}
+                href={`/pages/${pg.id}`}
+                onClick={() => onOpenChange(false)}
+                className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+              >
+                <div className="w-10 h-10 rounded-full bg-muted shrink-0 overflow-hidden">
+                  {pg.avatarUrl ? (
+                    <img src={avatarSrc(pg.avatarUrl)} className="w-full h-full object-cover" alt="" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="font-medium truncate">{pg.name}</div>
+                  <div className="text-xs text-muted-foreground truncate">{pg.category || "General"}</div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function InvitePageFriendsDialog({
+  pageId,
+  open,
+  onOpenChange,
+}: {
+  pageId: number;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const { data: friends, isLoading } = useListFriends({
+    query: { enabled: open, queryKey: getListFriendsQueryKey() },
+  });
+  const inviteToPage = useInviteToPage();
+  const [selected, setSelected] = useState<string[]>([]);
+
+  const toggle = (id: string) => {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
+
+  const handleInvite = () => {
+    if (selected.length === 0) return;
+    inviteToPage.mutate(
+      { id: pageId, data: { userIds: selected } },
+      {
+        onSuccess: () => {
+          setSelected([]);
+          onOpenChange(false);
+        },
+      },
+    );
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        onOpenChange(v);
+        if (!v) setSelected([]);
+      }}
+    >
+      <DialogContent className="max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Invite friends</DialogTitle>
+        </DialogHeader>
+        <div className="flex-1 overflow-y-auto -mx-1 px-1">
+          {isLoading ? (
+            <div className="py-6 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+          ) : friends?.length === 0 ? (
+            <div className="py-6 text-center text-muted-foreground text-sm">No friends to invite.</div>
+          ) : (
+            <div className="space-y-1">
+              {friends?.map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => toggle(f.id)}
+                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors text-left"
+                >
+                  <Checkbox checked={selected.includes(f.id)} className="pointer-events-none" />
+                  <img src={avatarSrc(f.avatarUrl)} className="w-10 h-10 rounded-full object-cover bg-muted shrink-0" alt="" />
+                  <div className="min-w-0">
+                    <div className="font-medium truncate">{f.displayName || f.username}</div>
+                    {f.username && <div className="text-xs text-muted-foreground truncate">@{f.username}</div>}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="secondary" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={handleInvite} disabled={selected.length === 0 || inviteToPage.isPending}>
+            {inviteToPage.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+            Send{selected.length > 0 ? ` (${selected.length})` : ""}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function PageDetail({ id }: { id: number }) {
   const { actingPage } = useActingPage();
   const { data: page, isLoading } = useGetPage(
@@ -873,6 +1070,10 @@ function PageDetail({ id }: { id: number }) {
   const [editOpen, setEditOpen] = useState(false);
   const [accessOpen, setAccessOpen] = useState(false);
   const [tab, setTab] = useState<"posts" | "media">("posts");
+  const [followersOpen, setFollowersOpen] = useState(false);
+  const [followingOpen, setFollowingOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [, navigate] = useLocation();
 
   const followPage = useFollowPage();
   const unfollowPage = useUnfollowPage();
@@ -971,6 +1172,23 @@ function PageDetail({ id }: { id: number }) {
                   <Settings className="w-4 h-4" />
                 </Button>
               )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" size="icon" aria-label="More options">
+                    <MoreHorizontal className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setInviteOpen(true)}>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Invite friends
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/groups?create=1")}>
+                    <Users className="w-4 h-4 mr-2" />
+                    Create group
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
           <div>
@@ -978,8 +1196,20 @@ function PageDetail({ id }: { id: number }) {
             <p className="text-muted-foreground text-sm mb-2">{page.category}</p>
             {page.description && <p className="text-[15px] mb-4">{page.description}</p>}
             <div className="text-sm text-muted-foreground font-medium flex items-center gap-3">
-              <span>{page.followerCount} Followers</span>
-              <span>{page.followingCount} Following</span>
+              <button
+                type="button"
+                onClick={() => setFollowersOpen(true)}
+                className="hover:text-foreground hover:underline transition-colors"
+              >
+                {page.followerCount} Followers
+              </button>
+              <button
+                type="button"
+                onClick={() => setFollowingOpen(true)}
+                className="hover:text-foreground hover:underline transition-colors"
+              >
+                {page.followingCount} Following
+              </button>
               {page.reviewCount > 0 && (
                 <span className="flex items-center gap-1">
                   <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
@@ -1036,6 +1266,9 @@ function PageDetail({ id }: { id: number }) {
       {user?.id === page.ownerId && (
         <PageAccessDialog page={page} open={accessOpen} onOpenChange={setAccessOpen} />
       )}
+      <PageFollowersDialog pageId={id} open={followersOpen} onOpenChange={setFollowersOpen} />
+      <PageFollowingDialog pageId={id} open={followingOpen} onOpenChange={setFollowingOpen} />
+      <InvitePageFriendsDialog pageId={id} open={inviteOpen} onOpenChange={setInviteOpen} />
       {avatarEditor.dialogs}
       {coverEditor.dialogs}
     </MainLayout>

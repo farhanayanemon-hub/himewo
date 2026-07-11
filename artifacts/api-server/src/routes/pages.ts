@@ -6,17 +6,20 @@ import {
   pageFollowingTable,
   pageMembersTable,
   pageReviewsTable,
+  pageInvitesTable,
   profilesTable,
   postsTable,
   postMediaTable,
 } from "@workspace/db";
 import { and, eq, lt, desc, or, inArray } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
-import { canManagePage } from "../lib/authz";
+import { canManagePage, getFriendIds } from "../lib/authz";
+import { createNotification } from "../lib/notify";
 import {
   buildPage,
   buildPageReviews,
   buildPageMembers,
+  buildListProfiles,
   buildPosts,
 } from "../lib/serialize";
 import {
@@ -52,6 +55,12 @@ import {
   ReviewPageBody,
   ReviewPageResponse,
   DeletePageReviewParams,
+  ListPageFollowersParams,
+  ListPageFollowersResponse,
+  ListPageFollowingParams,
+  ListPageFollowingResponse,
+  InviteToPageParams,
+  InviteToPageBody,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -522,6 +531,112 @@ router.delete(
           eq(pageFollowersTable.userId, req.userId!),
         ),
       );
+    res.sendStatus(204);
+  },
+);
+
+router.get(
+  "/pages/:id/followers",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = ListPageFollowersParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    const rows = await db
+      .select({ p: profilesTable })
+      .from(pageFollowersTable)
+      .innerJoin(profilesTable, eq(pageFollowersTable.userId, profilesTable.id))
+      .where(eq(pageFollowersTable.pageId, params.data.id))
+      .orderBy(desc(pageFollowersTable.createdAt))
+      .limit(200);
+    res.json(
+      ListPageFollowersResponse.parse(
+        await buildListProfiles(rows.map((r) => r.p)),
+      ),
+    );
+  },
+);
+
+router.get(
+  "/pages/:id/following",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = ListPageFollowingParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    const rows = await db
+      .select({ target: pagesTable })
+      .from(pageFollowingTable)
+      .innerJoin(pagesTable, eq(pageFollowingTable.targetPageId, pagesTable.id))
+      .where(eq(pageFollowingTable.pageId, params.data.id))
+      .orderBy(desc(pageFollowingTable.createdAt))
+      .limit(200);
+    const built = await Promise.all(
+      rows.map((r) => buildPage(r.target, req.userId!)),
+    );
+    res.json(ListPageFollowingResponse.parse(built));
+  },
+);
+
+router.post(
+  "/pages/:id/invite",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = InviteToPageParams.safeParse(req.params);
+    const body = InviteToPageBody.safeParse(req.body);
+    if (!params.success || !body.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    const [page] = await db
+      .select()
+      .from(pagesTable)
+      .where(eq(pagesTable.id, params.data.id));
+    if (!page) {
+      res.status(404).json({ error: "Page not found" });
+      return;
+    }
+    // You may only invite your own friends — this is the authorization gate.
+    // It prevents notifying arbitrary users by guessing UUIDs (spam vector).
+    const friendIds = await getFriendIds(req.userId!);
+    const inviteeIds = [...new Set(body.data.userIds)].filter(
+      (u) => u !== req.userId! && friendIds.has(u),
+    );
+    if (inviteeIds.length === 0) {
+      res.sendStatus(204);
+      return;
+    }
+    // Skip people who already follow the page.
+    const followerRows = await db
+      .select({ userId: pageFollowersTable.userId })
+      .from(pageFollowersTable)
+      .where(
+        and(
+          eq(pageFollowersTable.pageId, params.data.id),
+          inArray(pageFollowersTable.userId, inviteeIds),
+        ),
+      );
+    const already = new Set(followerRows.map((r) => r.userId));
+    for (const inviteeId of inviteeIds.filter((u) => !already.has(u))) {
+      const [inv] = await db
+        .insert(pageInvitesTable)
+        .values({ pageId: params.data.id, inviterId: req.userId!, inviteeId })
+        .onConflictDoNothing()
+        .returning();
+      if (inv) {
+        await createNotification({
+          userId: inviteeId,
+          actorId: req.userId!,
+          type: "page_invite",
+          entityType: "page",
+          entityId: params.data.id,
+        });
+      }
+    }
     res.sendStatus(204);
   },
 );

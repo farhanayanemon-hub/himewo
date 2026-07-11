@@ -3093,6 +3093,30 @@ export const CreateGroupResponse = zod.object({
 })
 
 
+/**
+ * @summary Groups the current user has been invited to join
+ */
+export const ListGroupInvitesResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "privacy": zod.enum(['public', 'friends', 'private', 'hidden']),
+  "rules": zod.string().nullish(),
+  "requirePostApproval": zod.boolean(),
+  "joinQuestions": zod.array(zod.string()).nullish(),
+  "pinnedPostId": zod.number().nullish(),
+  "memberCount": zod.number(),
+  "viewerIsMember": zod.boolean(),
+  "viewerStatus": zod.enum(['none', 'active', 'pending', 'banned']),
+  "viewerRole": zod.union([zod.literal('admin'),zod.literal('moderator'),zod.literal('member'),zod.literal(null)]).nullish(),
+  "viewerIsMuted": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+export const ListGroupInvitesResponse = zod.array(ListGroupInvitesResponseItem)
+
+
 export const GetGroupParams = zod.object({
   "id": zod.coerce.number()
 })
@@ -3172,6 +3196,30 @@ export const LeaveGroupParams = zod.object({
 })
 
 export const LeaveGroupResponse = zod.void()
+
+
+/**
+ * @summary Invite friends to join the group
+ */
+export const InviteToGroupParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const InviteToGroupBody = zod.object({
+  "userIds": zod.array(zod.string())
+})
+
+export const InviteToGroupResponse = zod.void()
+
+
+/**
+ * @summary Decline a pending invite to join the group
+ */
+export const DeclineGroupInviteParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeclineGroupInviteResponse = zod.void()
 
 
 export const ListGroupMembersParams = zod.object({
@@ -7494,6 +7542,145 @@ export const UnfollowPageResponse = zod.void()
 
 
 /**
+ * @summary People who follow the page
+ */
+export const ListPageFollowersParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListPageFollowersResponseItem = zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+})
+export const ListPageFollowersResponse = zod.array(ListPageFollowersResponseItem)
+
+
+/**
+ * @summary Pages this page follows
+ */
+export const ListPageFollowingParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const listPageFollowingResponseViewerReviewOneRatingMax = 5;
+
+
+
+export const ListPageFollowingResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "category": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "contactPhone": zod.string().nullish(),
+  "contactEmail": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "hours": zod.string().nullish(),
+  "ctaType": zod.enum(['none', 'message', 'call', 'shop', 'signup']),
+  "ctaUrl": zod.string().nullish(),
+  "ownerId": zod.string(),
+  "followerCount": zod.number(),
+  "followingCount": zod.number(),
+  "reviewCount": zod.number(),
+  "averageRating": zod.number().nullable(),
+  "reviewsEnabled": zod.boolean(),
+  "viewerFollows": zod.boolean().optional(),
+  "viewerCanPost": zod.boolean().optional(),
+  "viewerCanReview": zod.boolean().optional(),
+  "viewerReview": zod.union([zod.object({
+  "id": zod.number(),
+  "user": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "rating": zod.number().min(1).max(listPageFollowingResponseViewerReviewOneRatingMax),
+  "body": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}),zod.null()]).optional(),
+  "createdAt": zod.coerce.date()
+})
+export const ListPageFollowingResponse = zod.array(ListPageFollowingResponseItem)
+
+
+/**
+ * @summary Invite friends to follow the page
+ */
+export const InviteToPageParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const InviteToPageBody = zod.object({
+  "userIds": zod.array(zod.string())
+})
+
+export const InviteToPageResponse = zod.void()
+
+
+/**
  * @summary Active stories grouped by author
  */
 export const ListStoriesResponseItem = zod.object({
@@ -8250,7 +8437,7 @@ export const ListNotificationsQueryParams = zod.object({
 
 export const ListNotificationsResponseItem = zod.object({
   "id": zod.number(),
-  "type": zod.enum(['reaction', 'comment', 'friend_request', 'friend_accept', 'follow', 'message', 'group_invite', 'page_follow', 'mention', 'share', 'story_view']),
+  "type": zod.enum(['reaction', 'comment', 'friend_request', 'friend_accept', 'follow', 'message', 'group_invite', 'page_follow', 'page_invite', 'mention', 'share', 'story_view', 'announcement', 'verification']),
   "actor": zod.union([zod.object({
   "id": zod.string(),
   "username": zod.string(),

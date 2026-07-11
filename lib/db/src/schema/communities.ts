@@ -178,9 +178,53 @@ export const pageReviewsTable = pgTable(
   (t) => [uniqueIndex("page_reviews_uniq").on(t.pageId, t.userId)],
 );
 
+// Pending invites to JOIN a group (inviter -> invitee). Cleared on accept/decline.
+export const groupInvitesTable = pgTable(
+  "group_invites",
+  {
+    id: serial("id").primaryKey(),
+    groupId: integer("group_id")
+      .notNull()
+      .references(() => groupsTable.id, { onDelete: "cascade" }),
+    inviterId: uuid("inviter_id")
+      .notNull()
+      .references(() => profilesTable.id, { onDelete: "cascade" }),
+    inviteeId: uuid("invitee_id")
+      .notNull()
+      .references(() => profilesTable.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [uniqueIndex("group_invites_uniq").on(t.groupId, t.inviteeId)],
+);
+
+// Pending invites to FOLLOW/like a page (inviter -> invitee). Cleared on follow/decline.
+export const pageInvitesTable = pgTable(
+  "page_invites",
+  {
+    id: serial("id").primaryKey(),
+    pageId: integer("page_id")
+      .notNull()
+      .references(() => pagesTable.id, { onDelete: "cascade" }),
+    inviterId: uuid("inviter_id")
+      .notNull()
+      .references(() => profilesTable.id, { onDelete: "cascade" }),
+    inviteeId: uuid("invitee_id")
+      .notNull()
+      .references(() => profilesTable.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [uniqueIndex("page_invites_uniq").on(t.pageId, t.inviteeId)],
+);
+
 export type Group = typeof groupsTable.$inferSelect;
 export type GroupMember = typeof groupMembersTable.$inferSelect;
+export type GroupInvite = typeof groupInvitesTable.$inferSelect;
 export type Page = typeof pagesTable.$inferSelect;
 export type PageFollower = typeof pageFollowersTable.$inferSelect;
 export type PageFollowing = typeof pageFollowingTable.$inferSelect;
+export type PageInvite = typeof pageInvitesTable.$inferSelect;
 export type PageReview = typeof pageReviewsTable.$inferSelect;

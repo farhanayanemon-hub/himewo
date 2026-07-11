@@ -18,7 +18,10 @@ export const NotificationType = {
   message: 'message',
   group_invite: 'group_invite',
   page_follow: 'page_follow',
+  page_invite: 'page_invite',
   mention: 'mention',
   share: 'share',
   story_view: 'story_view',
+  announcement: 'announcement',
+  verification: 'verification',
 } as const;

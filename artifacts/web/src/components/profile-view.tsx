@@ -249,6 +249,21 @@ export function ProfileView({
             )}
           </div>
 
+          {/* Groups */}
+          {isOwnProfile && (
+            <div className="aurora-glass-card rounded-2xl p-4">
+              <div className="flex items-center justify-between">
+                <h2 className="font-bold text-lg">Groups</h2>
+                <Link href="/groups?create=1">
+                  <span className="text-primary text-sm hover:underline cursor-pointer">Create group</span>
+                </Link>
+              </div>
+              <p className="text-muted-foreground text-sm mt-2">
+                Start a group to connect with people who share your interests.
+              </p>
+            </div>
+          )}
+
           {/* Photos */}
           <div className="aurora-glass-card rounded-2xl p-4">
             <h2 className="font-bold text-lg mb-3">Photos</h2>

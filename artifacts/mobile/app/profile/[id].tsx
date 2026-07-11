@@ -262,15 +262,26 @@ export function ProfileBody({
 
                 <View style={styles.actions}>
                   {isOwn ? (
-                    <Pressable
-                      style={[styles.actionBtn, styles.primaryBtn, { backgroundColor: c.primary }]}
-                      onPress={() => router.push("/edit-profile")}
-                    >
-                      <Ionicons name="create-outline" size={18} color={c.primaryForeground} />
-                      <Text style={[styles.primaryLabel, { color: c.primaryForeground }]}>
-                        Edit Profile
-                      </Text>
-                    </Pressable>
+                    <>
+                      <Pressable
+                        style={[styles.actionBtn, styles.primaryBtn, { backgroundColor: c.primary }]}
+                        onPress={() => router.push("/edit-profile")}
+                      >
+                        <Ionicons name="create-outline" size={18} color={c.primaryForeground} />
+                        <Text style={[styles.primaryLabel, { color: c.primaryForeground }]}>
+                          Edit Profile
+                        </Text>
+                      </Pressable>
+                      <Pressable
+                        style={[styles.actionBtn, { backgroundColor: c.secondary }]}
+                        onPress={() => router.push("/groups?create=1")}
+                      >
+                        <Ionicons name="people-outline" size={18} color={c.foreground} />
+                        <Text style={[styles.actionLabel, { color: c.foreground }]}>
+                          Create Group
+                        </Text>
+                      </Pressable>
+                    </>
                   ) : (
                     <>
                       {showFriendButton && (

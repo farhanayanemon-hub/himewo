@@ -786,6 +786,19 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Group" }
+  /groups/invites:
+    get:
+      operationId: listGroupInvites
+      tags: [groups]
+      summary: Groups the current user has been invited to join
+      responses:
+        "200":
+          description: Invited groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Group" }
   /groups/{id}:
     get:
       operationId: getGroup
@@ -843,6 +856,33 @@ paths:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
         "204": { description: Left }
+  /groups/{id}/invite:
+    post:
+      operationId: inviteToGroup
+      tags: [groups]
+      summary: Invite friends to join the group
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InviteInput" }
+      responses:
+        "204": { description: Invited }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /groups/{id}/invite/decline:
+    post:
+      operationId: declineGroupInvite
+      tags: [groups]
+      summary: Decline a pending invite to join the group
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Declined }
   /groups/{id}/members:
     get:
       operationId: listGroupMembers
@@ -2878,6 +2918,52 @@ paths:
         "204": { description: Unfollowed }
         "403":
           $ref: "#/components/responses/Forbidden"
+  /pages/{id}/followers:
+    get:
+      operationId: listPageFollowers
+      tags: [pages]
+      summary: People who follow the page
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Followers
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Profile" }
+  /pages/{id}/following:
+    get:
+      operationId: listPageFollowing
+      tags: [pages]
+      summary: Pages this page follows
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Following pages
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Page" }
+  /pages/{id}/invite:
+    post:
+      operationId: inviteToPage
+      tags: [pages]
+      summary: Invite friends to follow the page
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InviteInput" }
+      responses:
+        "204": { description: Invited }
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   # ---------------- Stories ----------------
   /stories:
@@ -3954,6 +4040,13 @@ components:
           type: ["array", "null"]
           items: { type: string }
         joinedAt: { type: string, format: date-time }
+    InviteInput:
+      type: object
+      required: [userIds]
+      properties:
+        userIds:
+          type: array
+          items: { type: string }
     SetMemberRoleInput:
       type: object
       required: [role]
@@ -5140,7 +5233,7 @@ components:
         id: { type: integer }
         type:
           type: string
-          enum: [reaction, comment, friend_request, friend_accept, follow, message, group_invite, page_follow, mention, share, story_view]
+          enum: [reaction, comment, friend_request, friend_accept, follow, message, group_invite, page_follow, page_invite, mention, share, story_view, announcement, verification]
         actor:
           oneOf:
             - { $ref: "#/components/schemas/Profile" }

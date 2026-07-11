@@ -46,6 +46,8 @@ function notificationText(n: Notification): string {
       return `${actor} sent you a message.`;
     case NotificationType.group_invite:
       return `${actor} invited you to a group.`;
+    case NotificationType.page_invite:
+      return `${actor} invited you to follow a page.`;
     case NotificationType.page_follow:
       return `${actor} followed your page.`;
     case NotificationType.mention:
@@ -78,6 +80,8 @@ function NotificationIcon({ type }: { type: NotificationType }) {
       return <Mail className={cls} />;
     case NotificationType.group_invite:
       return <Users className={cls} />;
+    case NotificationType.page_invite:
+      return <UserPlus className={cls} />;
     case NotificationType.mention:
       return <AtSign className={cls} />;
     case NotificationType.share:
@@ -115,6 +119,12 @@ export default function NotificationsPage() {
       navigate(`/post/${n.entityId}`);
     } else if (n.entityType === "album" && n.entityId != null) {
       navigate(`/albums/${n.entityId}`);
+    } else if (n.entityType === "page" && n.entityId != null) {
+      navigate(`/pages/${n.entityId}`);
+    } else if (n.type === NotificationType.group_invite) {
+      navigate(n.entityId != null ? `/groups/${n.entityId}` : "/groups");
+    } else if (n.entityType === "group" && n.entityId != null) {
+      navigate(`/groups/${n.entityId}`);
     } else if (n.type === NotificationType.message) {
       navigate("/messages");
     } else if (

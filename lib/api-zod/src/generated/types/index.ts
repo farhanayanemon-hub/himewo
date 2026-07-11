@@ -141,6 +141,7 @@ export * from './insightsMetrics';
 export * from './insightsRow';
 export * from './insightsRowLevel';
 export * from './insightsSeriesPoint';
+export * from './inviteInput';
 export * from './joinGroupInput';
 export * from './listAdAccountConversionsParams';
 export * from './listAdminWithdrawalsParams';
