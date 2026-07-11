@@ -306,7 +306,7 @@ export function PostComposer({
               onChange={(e) => setContent(e.target.value)}
               rows={content || media.length ? 3 : 1}
               className="w-full bg-muted/50 border-none rounded-2xl px-4 py-2.5 text-base focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-muted-foreground resize-none"
-              placeholder={`What's on your mind, ${user?.displayName?.split(" ")[0] || ""}?`}
+              placeholder={`What's on your mind, ${(actingPage?.name ?? user?.displayName)?.split(" ")[0] || ""}?`}
             />
           </div>
         </div>

@@ -986,19 +986,23 @@ export default function PageDetailScreen() {
                   )}
                 </Pressable>
               ) : null}
-              <Pressable
-                style={[styles.iconBtn, { backgroundColor: page.viewerFollows ? c.secondary : c.primary }]}
-                onPress={handleFollow}
-                disabled={busy}
-              >
-                {busy ? (
-                  <ActivityIndicator color={page.viewerFollows ? c.foreground : "#fff"} size="small" />
-                ) : (
-                  <Text style={{ color: page.viewerFollows ? c.foreground : "#fff", fontFamily: "Inter_700Bold" }}>
-                    {page.viewerFollows ? "Following" : "Follow"}
-                  </Text>
-                )}
-              </Pressable>
+              {/* Hide the Follow button when browsing AS this same page — you
+                  can't follow yourself. It reappears when acting as your profile. */}
+              {actingPage?.id !== page.id ? (
+                <Pressable
+                  style={[styles.iconBtn, { backgroundColor: page.viewerFollows ? c.secondary : c.primary }]}
+                  onPress={handleFollow}
+                  disabled={busy}
+                >
+                  {busy ? (
+                    <ActivityIndicator color={page.viewerFollows ? c.foreground : "#fff"} size="small" />
+                  ) : (
+                    <Text style={{ color: page.viewerFollows ? c.foreground : "#fff", fontFamily: "Inter_700Bold" }}>
+                      {page.viewerFollows ? "Following" : "Follow"}
+                    </Text>
+                  )}
+                </Pressable>
+              ) : null}
               {isManager ? (
                 <Pressable style={[styles.squareBtn, { backgroundColor: c.secondary }]} onPress={() => setEditOpen(true)}>
                   <Ionicons name="create-outline" size={18} color={c.foreground} />

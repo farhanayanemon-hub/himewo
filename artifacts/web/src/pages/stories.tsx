@@ -14,7 +14,7 @@ import {
   type StoryInputMediaType,
   type ReactionType,
 } from "@workspace/api-client-react";
-import { Image as ImageIcon, Loader2, Music, Plus, Send, Trash2, Type, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Image as ImageIcon, Loader2, Music, Plus, Send, Trash2, Type, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -353,6 +353,18 @@ const STORY_REACTIONS: { type: ReactionType; emoji: string; label: string }[] = 
   { type: "angry" as ReactionType, emoji: "😡", label: "Angry" },
 ];
 
+// Facebook-style per-media durations: photos/text 15s, videos up to 30s.
+const IMAGE_STORY_MS = 15000;
+const VIDEO_STORY_MS = 30000;
+
+// Where to start inside a person's tray: the first UNSEEN story, so reopening
+// someone who added a new story jumps straight to it. Tapping left still walks
+// back through the seen ones. Falls back to the start.
+function firstUnseenIndex(stories: { viewerHasViewed?: boolean }[]): number {
+  const i = stories.findIndex((s) => !s.viewerHasViewed);
+  return i >= 0 ? i : 0;
+}
+
 export default function StoriesPage() {
   const { data: storyGroups, isLoading } = useListStories();
   const { user } = useAuth();
@@ -361,6 +373,10 @@ export default function StoriesPage() {
   const [storyIndex, setStoryIndex] = useState(0);
   const [replyText, setReplyText] = useState("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const touchStartX = useRef<number | null>(null);
+  // Position on the first person with unseen stories exactly once, so the deck
+  // opens like Facebook (unseen first) without snapping back on refetch.
+  const positionedRef = useRef(false);
 
   const setReaction = useSetStoryReaction();
   const removeReaction = useRemoveStoryReaction();
@@ -438,10 +454,63 @@ export default function StoriesPage() {
     if (activeGroup && storyIndex < activeGroup.stories.length - 1) {
       setStoryIndex(storyIndex + 1);
     } else if (storyGroups && activeIndex < storyGroups.length - 1) {
+      const nextGroup = storyGroups[activeIndex + 1];
       setActiveIndex(activeIndex + 1);
-      setStoryIndex(0);
+      setStoryIndex(firstUnseenIndex(nextGroup.stories));
     }
   };
+
+  // Swiping / arrow-navigation jumps to a DIFFERENT person (whereas the tap
+  // zones move within the current person). Each jump lands on that person's
+  // first unseen story, mirroring Facebook.
+  const nextAuthor = () => {
+    if (storyGroups && activeIndex < storyGroups.length - 1) {
+      const ng = storyGroups[activeIndex + 1];
+      setActiveIndex(activeIndex + 1);
+      setStoryIndex(firstUnseenIndex(ng.stories));
+    }
+  };
+  const prevAuthor = () => {
+    if (storyGroups && activeIndex > 0) {
+      const pg = storyGroups[activeIndex - 1];
+      setActiveIndex(activeIndex - 1);
+      setStoryIndex(firstUnseenIndex(pg.stories));
+    }
+  };
+
+  // Open on the first person who has an unseen story, at their first unseen
+  // story — once, so background refetches don't yank the viewer around.
+  useEffect(() => {
+    if (positionedRef.current || !storyGroups || storyGroups.length === 0) return;
+    positionedRef.current = true;
+    const gi = storyGroups.findIndex((g) => g.hasUnseen);
+    if (gi >= 0) {
+      setActiveIndex(gi);
+      setStoryIndex(firstUnseenIndex(storyGroups[gi].stories));
+    }
+  }, [storyGroups]);
+
+  // Auto-advance timer: photos/text 15s, video 30s (a shorter clip advances
+  // early via the <video> onEnded handler below).
+  const storyDurationMs =
+    activeStory?.mediaType === "video" ? VIDEO_STORY_MS : IMAGE_STORY_MS;
+  useEffect(() => {
+    if (!activeStory) return;
+    const t = window.setTimeout(goNext, storyDurationMs);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeStory?.id, activeIndex, storyIndex, storyDurationMs]);
+
+  // Keyboard: ←/→ jump between people, Esc handled by the browser.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") nextAuthor();
+      else if (e.key === "ArrowLeft") prevAuthor();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeIndex, storyGroups]);
 
   // Play the story's music while it is on screen.
   useEffect(() => {
@@ -487,14 +556,61 @@ export default function StoriesPage() {
         <CreateStoryDialog />
       </div>
       <div className="h-[80vh] flex items-center justify-center bg-black/5 rounded-2xl relative animate-in fade-in">
-        <div className="relative w-full max-w-sm h-full max-h-[800px] bg-black rounded-2xl overflow-hidden shadow-2xl flex flex-col">
-          {/* Progress bar */}
+        {/* Segment fill animation for the active story's progress bar. */}
+        <style>{`@keyframes himewoStoryFill { from { width: 0% } to { width: 100% } }`}</style>
+        {/* Change person (chevrons, desktop) */}
+        {activeIndex > 0 && (
+          <button
+            type="button"
+            onClick={prevAuthor}
+            aria-label="Previous person"
+            className="hidden sm:flex absolute left-2 top-1/2 -translate-y-1/2 z-30 w-10 h-10 items-center justify-center rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+        )}
+        {storyGroups.length > activeIndex + 1 && (
+          <button
+            type="button"
+            onClick={nextAuthor}
+            aria-label="Next person"
+            className="hidden sm:flex absolute right-2 top-1/2 -translate-y-1/2 z-30 w-10 h-10 items-center justify-center rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+        )}
+        <div
+          className="relative w-full max-w-sm h-full max-h-[800px] bg-black rounded-2xl overflow-hidden shadow-2xl flex flex-col"
+          onTouchStart={(e) => { touchStartX.current = e.touches[0]?.clientX ?? null; }}
+          onTouchEnd={(e) => {
+            const start = touchStartX.current;
+            touchStartX.current = null;
+            if (start == null) return;
+            const dx = (e.changedTouches[0]?.clientX ?? start) - start;
+            if (dx < -50) nextAuthor();
+            else if (dx > 50) prevAuthor();
+          }}
+        >
+          {/* Progress bar — active segment animates over the story's duration. */}
           <div className="absolute top-2 left-2 right-2 flex gap-1 z-20">
-            {activeGroup.stories.map((s, i) => (
-              <div key={s.id} className="h-1 flex-1 bg-white/30 rounded-full overflow-hidden">
-                <div className={`h-full bg-white ${i <= Math.min(storyIndex, activeGroup.stories.length - 1) ? 'w-full' : 'w-0'}`} />
-              </div>
-            ))}
+            {activeGroup.stories.map((s, i) => {
+              const clamped = Math.min(storyIndex, activeGroup.stories.length - 1);
+              return (
+                <div key={s.id} className="h-1 flex-1 bg-white/30 rounded-full overflow-hidden">
+                  {i < clamped ? (
+                    <div className="h-full bg-white w-full" />
+                  ) : i === clamped ? (
+                    <div
+                      key={activeStory.id}
+                      className="h-full bg-white"
+                      style={{ animation: `himewoStoryFill ${storyDurationMs}ms linear forwards` }}
+                    />
+                  ) : (
+                    <div className="h-full bg-white w-0" />
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {/* Author Header */}
@@ -525,7 +641,14 @@ export default function StoriesPage() {
               </span>
             </div>
           ) : activeStory.mediaType === "video" ? (
-            <video src={activeStory.mediaUrl ?? undefined} className="w-full h-full object-cover" autoPlay loop muted />
+            <video
+              key={activeStory.id}
+              src={activeStory.mediaUrl ?? undefined}
+              className="w-full h-full object-cover"
+              autoPlay
+              muted
+              onEnded={goNext}
+            />
           ) : (
             <img src={activeStory.mediaUrl ?? undefined} className="w-full h-full object-cover" alt="" />
           )}

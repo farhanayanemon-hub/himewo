@@ -1153,14 +1153,18 @@ function PageDetail({ id }: { id: number }) {
               </PhotoActionMenu>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant={page.viewerFollows ? "secondary" : "default"}
-                onClick={handleFollow}
-                disabled={followPage.isPending || unfollowPage.isPending}
-              >
-                {(followPage.isPending || unfollowPage.isPending) && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                {page.viewerFollows ? "Following" : "Follow"}
-              </Button>
+              {/* Hide the Follow button when browsing AS this same page — you
+                  can't follow yourself. It reappears when acting as your profile. */}
+              {actingPage?.id !== page.id && (
+                <Button
+                  variant={page.viewerFollows ? "secondary" : "default"}
+                  onClick={handleFollow}
+                  disabled={followPage.isPending || unfollowPage.isPending}
+                >
+                  {(followPage.isPending || unfollowPage.isPending) && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                  {page.viewerFollows ? "Following" : "Follow"}
+                </Button>
+              )}
               <PageCTA page={page} />
               {page.viewerCanPost && (
                 <Button variant="secondary" size="icon" onClick={() => setEditOpen(true)} aria-label="Edit page">

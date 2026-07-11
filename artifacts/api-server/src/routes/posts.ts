@@ -74,41 +74,72 @@ router.get("/feed", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   const viewer = req.userId!;
-  const { cursor, limit } = query.data;
-  const friends = await db
-    .select()
-    .from(friendshipsTable)
-    .where(
-      or(
-        eq(friendshipsTable.userAId, viewer),
-        eq(friendshipsTable.userBId, viewer),
-      ),
-    );
+  const { cursor, limit, pageId } = query.data;
+
+  // Page mode: when the caller is acting as a page they own/manage, the home
+  // feed becomes a public feed (all public posts, Facebook-style), rather than
+  // the personal friends feed. Unmanaged/invalid pageId silently falls back to
+  // the personal feed (public-only content, so this is not an escalation).
+  const actingAsPage =
+    pageId != null && (await canManagePage(viewer, pageId));
+
+  const friends = actingAsPage
+    ? []
+    : await db
+        .select()
+        .from(friendshipsTable)
+        .where(
+          or(
+            eq(friendshipsTable.userAId, viewer),
+            eq(friendshipsTable.userBId, viewer),
+          ),
+        );
   const friendIds = friends.map((f) =>
     f.userAId === viewer ? f.userBId : f.userAId,
   );
   const visibleAuthors = [viewer, ...friendIds];
-  const rows = await db
-    .select()
-    .from(postsTable)
-    .where(
-      and(
-        isNull(postsTable.groupId),
-        or(
-          eq(postsTable.privacy, "public"),
-          inArray(postsTable.authorId, visibleAuthors),
+
+  // filterVisiblePosts can drop rows AFTER the SQL limit, so a single limited
+  // query could return a short page while older visible posts still exist (the
+  // client treats a short page == end of feed). Scan in batches until we
+  // collect a full page or truly run out of rows.
+  const pageLimit = limit ?? 20;
+  const SCAN_BATCH = 50;
+  const MAX_SCANS = 8;
+  const visibleRows: (typeof postsTable.$inferSelect)[] = [];
+  let scanCursor = cursor;
+  for (let i = 0; i < MAX_SCANS && visibleRows.length < pageLimit; i++) {
+    const rows = await db
+      .select()
+      .from(postsTable)
+      .where(
+        and(
+          isNull(postsTable.groupId),
+          // Page mode sees only public posts; personal mode also sees own +
+          // friends' non-public posts.
+          actingAsPage
+            ? eq(postsTable.privacy, "public")
+            : or(
+                eq(postsTable.privacy, "public"),
+                inArray(postsTable.authorId, visibleAuthors),
+              ),
+          scanCursor ? lt(postsTable.id, scanCursor) : undefined,
         ),
-        cursor ? lt(postsTable.id, cursor) : undefined,
-      ),
-    )
-    .orderBy(desc(postsTable.id))
-    .limit(limit ?? 20);
-  // The SQL above is a coarse net (public OR self/friend authored). Run every
-  // row through the shared visibility policy so the author's effective audience
-  // (lock / profileVisibility incl. only_me) AND per-post privacy are honored —
-  // e.g. a friend's only_me or private posts must never leak into the feed.
-  const visibleRows = await filterVisiblePosts(rows, viewer);
-  const posts = await buildPosts(visibleRows, viewer);
+      )
+      .orderBy(desc(postsTable.id))
+      .limit(SCAN_BATCH);
+    if (rows.length === 0) break;
+    scanCursor = rows[rows.length - 1]!.id;
+    // The SQL above is a coarse net. Run every row through the shared
+    // visibility policy so the author's effective audience (lock /
+    // profileVisibility incl. only_me) AND per-post privacy are honored —
+    // e.g. a friend's only_me or private posts must never leak into the feed.
+    const vis = await filterVisiblePosts(rows, viewer);
+    visibleRows.push(...vis);
+    if (rows.length < SCAN_BATCH) break;
+  }
+
+  const posts = await buildPosts(visibleRows.slice(0, pageLimit), viewer);
   res.json(GetFeedResponse.parse(posts));
 });
 

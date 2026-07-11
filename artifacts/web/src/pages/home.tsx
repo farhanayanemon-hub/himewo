@@ -293,15 +293,28 @@ function HomeRightRail() {
 const FEED_PAGE_SIZE = 10;
 
 export default function HomePage() {
+  const { actingPage } = useActingPage();
   const [pages, setPages] = useState<Post[][]>([]);
   const [cursor, setCursor] = useState<number | undefined>(undefined);
   const [hasMore, setHasMore] = useState(true);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const { data: page, isLoading, isFetching } = useGetFeed(
-    { cursor, limit: FEED_PAGE_SIZE },
-    { query: { queryKey: getGetFeedQueryKey({ cursor, limit: FEED_PAGE_SIZE }) } },
-  );
+  const feedParams = {
+    cursor,
+    limit: FEED_PAGE_SIZE,
+    ...(actingPage ? { pageId: actingPage.id } : {}),
+  };
+  const { data: page, isLoading, isFetching } = useGetFeed(feedParams, {
+    query: { queryKey: getGetFeedQueryKey(feedParams) },
+  });
+
+  // Switching identity (self <-> page) changes what the feed returns, so reset
+  // the accumulated pages and start again from the top.
+  useEffect(() => {
+    setPages([]);
+    setCursor(undefined);
+    setHasMore(true);
+  }, [actingPage?.id]);
 
   useEffect(() => {
     if (!page) return;
