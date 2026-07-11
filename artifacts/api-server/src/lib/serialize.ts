@@ -958,6 +958,7 @@ export async function buildStoryGroups(viewerId: string) {
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);
   const authorMap = await loadProfileMap(rows.map((r) => r.authorId));
+  const pageMap = await loadPageRefMap(rows.map((r) => r.pageId));
   const [viewRows, viewCounts] = await Promise.all([
     db
       .select()
@@ -977,33 +978,44 @@ export async function buildStoryGroups(viewerId: string) {
   const viewedSet = new Set(viewRows.map((v) => v.storyId));
   const viewCountByStory = new Map(viewCounts.map((v) => [v.storyId, v.value]));
 
-  const byAuthor = new Map<string, StoryRow[]>();
+  // Stories authored AS a page cluster under the page identity; otherwise
+  // they group under the user who posted them.
+  const byKey = new Map<string, StoryRow[]>();
   for (const s of rows) {
-    const list = byAuthor.get(s.authorId) ?? [];
+    const key = s.pageId != null ? `page:${s.pageId}` : `user:${s.authorId}`;
+    const list = byKey.get(key) ?? [];
     list.push(s);
-    byAuthor.set(s.authorId, list);
+    byKey.set(key, list);
   }
-  return [...byAuthor.entries()].map(([authorId, stories]) => ({
-    author: authorMap.get(authorId)!,
-    stories: stories.map((s) => ({
-      id: s.id,
-      author: authorMap.get(authorId)!,
-      storyType: s.storyType,
-      mediaUrl: s.mediaUrl,
-      mediaType: s.mediaType,
-      caption: s.caption,
-      textContent: s.textContent,
-      backgroundStyle: s.backgroundStyle,
-      musicUrl: s.musicUrl,
-      musicTitle: s.musicTitle,
-      musicArtist: s.musicArtist,
-      createdAt: s.createdAt,
-      expiresAt: s.expiresAt,
-      viewCount: viewCountByStory.get(s.id) ?? 0,
-      viewerHasViewed: viewedSet.has(s.id),
-    })),
-    hasUnseen: stories.some((s) => !viewedSet.has(s.id)),
-  }));
+  return [...byKey.values()].map((stories) => {
+    const first = stories[0];
+    const groupPage =
+      first.pageId != null ? (pageMap.get(first.pageId) ?? null) : null;
+    return {
+      author: authorMap.get(first.authorId)!,
+      authorPage: groupPage,
+      stories: stories.map((s) => ({
+        id: s.id,
+        author: authorMap.get(s.authorId)!,
+        authorPage: s.pageId != null ? (pageMap.get(s.pageId) ?? null) : null,
+        pageId: s.pageId,
+        storyType: s.storyType,
+        mediaUrl: s.mediaUrl,
+        mediaType: s.mediaType,
+        caption: s.caption,
+        textContent: s.textContent,
+        backgroundStyle: s.backgroundStyle,
+        musicUrl: s.musicUrl,
+        musicTitle: s.musicTitle,
+        musicArtist: s.musicArtist,
+        createdAt: s.createdAt,
+        expiresAt: s.expiresAt,
+        viewCount: viewCountByStory.get(s.id) ?? 0,
+        viewerHasViewed: viewedSet.has(s.id),
+      })),
+      hasUnseen: stories.some((s) => !viewedSet.has(s.id)),
+    };
+  });
 }
 
 export function toStory(
@@ -1011,10 +1023,13 @@ export function toStory(
   author: ReturnType<typeof toProfile>,
   viewCount = 0,
   viewerHasViewed = false,
+  authorPage: PageRefDto | null = null,
 ) {
   return {
     id: s.id,
     author,
+    authorPage,
+    pageId: s.pageId,
     storyType: s.storyType,
     mediaUrl: s.mediaUrl,
     mediaType: s.mediaType,

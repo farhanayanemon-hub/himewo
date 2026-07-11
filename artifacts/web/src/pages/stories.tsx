@@ -1,5 +1,6 @@
 import { MainLayout } from "@/components/layout/main-layout";
 import { avatarSrc } from "@/lib/avatar";
+import { useActingPage } from "@/lib/acting-page";
 import {
   useListStories,
   useCreateStory,
@@ -50,6 +51,8 @@ export function storyBackground(key: string | null | undefined): string {
 function CreateStoryDialog() {
   const queryClient = useQueryClient();
   const createStory = useCreateStory();
+  const { actingPage } = useActingPage();
+  const pageFields = actingPage ? { pageId: actingPage.id } : {};
   const fileInputRef = useRef<HTMLInputElement>(null);
   const captionRef = useRef<HTMLTextAreaElement>(null);
 
@@ -122,6 +125,7 @@ function CreateStoryDialog() {
                       musicArtist: music.artist ?? undefined,
                     }
                   : {}),
+                ...pageFields,
               }
             : {
                 storyType: "text",
@@ -134,6 +138,7 @@ function CreateStoryDialog() {
                       musicArtist: music.artist ?? undefined,
                     }
                   : {}),
+                ...pageFields,
               },
       },
       {
@@ -386,9 +391,9 @@ export default function StoriesPage() {
 
           {/* Author Header */}
           <div className="absolute top-6 left-4 right-4 flex items-center gap-3 z-20">
-            <img src={avatarSrc(activeGroup.author.avatarUrl)} className="w-10 h-10 rounded-full border border-white/20 object-cover" alt="" />
+            <img src={avatarSrc(activeGroup.authorPage?.avatarUrl ?? activeGroup.author.avatarUrl)} className="w-10 h-10 rounded-full border border-white/20 object-cover" alt="" />
             <div className="min-w-0">
-              <div className="font-bold text-white text-sm drop-shadow-md">{activeGroup.author.displayName}</div>
+              <div className="font-bold text-white text-sm drop-shadow-md">{activeGroup.authorPage?.name ?? activeGroup.author.displayName}</div>
               {activeStory.musicUrl && (
                 <div className="flex items-center gap-1 text-white/90 text-xs drop-shadow-md truncate">
                   <Music className="w-3 h-3 shrink-0" />

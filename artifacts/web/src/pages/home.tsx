@@ -25,11 +25,13 @@ import { Loader2, Plus, Cake } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRealtime } from "@/lib/realtime";
 import { useAuth } from "@/lib/auth";
+import { useActingPage } from "@/lib/acting-page";
 import { Link } from "wouter";
 
 function StoryRow() {
   const { data: stories } = useListStories();
   const { user } = useAuth();
+  const { actingPage } = useActingPage();
 
   return (
     <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
@@ -40,7 +42,7 @@ function StoryRow() {
       >
         <div className="h-2/3 overflow-hidden">
           <img
-            src={avatarSrc(user?.avatarUrl)}
+            src={avatarSrc(actingPage?.avatarUrl ?? user?.avatarUrl)}
             className="w-full h-full object-cover"
             alt=""
           />
@@ -56,12 +58,12 @@ function StoryRow() {
       {/* Friends' stories */}
       {stories?.map((group) => (
         <Link
-          key={group.author.id}
+          key={group.authorPage ? `p${group.authorPage.id}` : group.author.id}
           href="/stories"
           className="w-28 h-48 shrink-0 rounded-2xl relative overflow-hidden group cursor-pointer border border-card-border card-depth lift-on-hover"
         >
           <img
-            src={group.stories[0]?.mediaUrl || avatarSrc(group.author.avatarUrl)}
+            src={group.stories[0]?.mediaUrl || avatarSrc(group.authorPage?.avatarUrl ?? group.author.avatarUrl)}
             className="w-full h-full object-cover"
             alt=""
           />
@@ -69,10 +71,10 @@ function StoryRow() {
           <div
             className={`absolute top-3 left-3 rounded-full ${group.hasUnseen ? "aurora-story-ring" : "p-[2px] bg-white/60"}`}
           >
-            <img src={avatarSrc(group.author.avatarUrl)} className="w-8 h-8 rounded-full object-cover border-2 border-black/40" alt="" />
+            <img src={avatarSrc(group.authorPage?.avatarUrl ?? group.author.avatarUrl)} className="w-8 h-8 rounded-full object-cover border-2 border-black/40" alt="" />
           </div>
           <div className="absolute bottom-2 left-2 right-2 text-white text-xs font-medium leading-tight line-clamp-2">
-            {group.author.displayName}
+            {group.authorPage?.name ?? group.author.displayName}
           </div>
         </Link>
       ))}

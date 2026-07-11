@@ -251,11 +251,21 @@ export default function StoryViewerScreen() {
         <View style={styles.headerRow}>
           <Pressable
             style={styles.authorRow}
-            onPress={() => current.author?.id && router.push(`/profile/${current.author.id}`)}
+            onPress={() =>
+              current.authorPage
+                ? router.push(`/pages/${current.authorPage.id}`)
+                : current.author?.id && router.push(`/profile/${current.author.id}`)
+            }
           >
-            <Avatar uri={current.author?.avatarUrl} name={current.author?.displayName} size={36} />
+            <Avatar
+              uri={current.authorPage?.avatarUrl ?? current.author?.avatarUrl}
+              name={current.authorPage?.name ?? current.author?.displayName}
+              size={36}
+            />
             <View style={{ flexShrink: 1 }}>
-              <Text style={styles.authorName}>{current.author?.displayName}</Text>
+              <Text style={styles.authorName}>
+                {current.authorPage?.name ?? current.author?.displayName}
+              </Text>
               <Text style={styles.timeText}>{timeAgo(current.createdAt)}</Text>
               {!!current.musicUrl && (
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>

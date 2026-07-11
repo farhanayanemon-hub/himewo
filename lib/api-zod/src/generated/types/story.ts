@@ -5,6 +5,7 @@
  * HiMewo social platform + Messenger API
  * OpenAPI spec version: 0.1.0
  */
+import type { PageRef } from './pageRef';
 import type { Profile } from './profile';
 import type { StoryMediaType } from './storyMediaType';
 import type { StoryStoryType } from './storyStoryType';
@@ -12,6 +13,9 @@ import type { StoryStoryType } from './storyStoryType';
 export interface Story {
   id: number;
   author: Profile;
+  authorPage?: PageRef | null;
+  /** @nullable */
+  pageId?: number | null;
   storyType: StoryStoryType;
   /** @nullable */
   mediaUrl?: string | null;

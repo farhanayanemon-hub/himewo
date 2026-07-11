@@ -7532,6 +7532,11 @@ export const ListStoriesResponseItem = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
 }),
+  "authorPage": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
   "stories": zod.array(zod.object({
   "id": zod.number(),
   "author": zod.object({
@@ -7569,6 +7574,12 @@ export const ListStoriesResponseItem = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
 }),
+  "authorPage": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
+  "pageId": zod.number().nullish(),
   "storyType": zod.enum(['media', 'text']),
   "mediaUrl": zod.string().nullish(),
   "mediaType": zod.union([zod.enum(['image', 'video']),zod.null()]).optional(),
@@ -7600,7 +7611,8 @@ export const CreateStoryBody = zod.object({
   "musicUrl": zod.string().optional(),
   "musicTitle": zod.string().optional(),
   "musicArtist": zod.string().optional(),
-  "expiresInHours": zod.number().optional()
+  "expiresInHours": zod.number().optional(),
+  "pageId": zod.number().optional()
 })
 
 export const CreateStoryResponse = zod.object({
@@ -7640,6 +7652,12 @@ export const CreateStoryResponse = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
 }),
+  "authorPage": zod.union([zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}).describe('Lightweight page identity used when a post\/comment\/reaction is made as a Page.'),zod.null()]).optional(),
+  "pageId": zod.number().nullish(),
   "storyType": zod.enum(['media', 'text']),
   "mediaUrl": zod.string().nullish(),
   "mediaType": zod.union([zod.enum(['image', 'video']),zod.null()]).optional(),

@@ -5027,6 +5027,11 @@ components:
       properties:
         id: { type: integer }
         author: { $ref: "#/components/schemas/Profile" }
+        authorPage:
+          oneOf:
+            - { $ref: "#/components/schemas/PageRef" }
+            - { type: "null" }
+        pageId: { type: ["integer", "null"] }
         storyType: { type: string, enum: [media, text] }
         mediaUrl: { type: ["string", "null"] }
         mediaType:
@@ -5056,6 +5061,7 @@ components:
         musicTitle: { type: string }
         musicArtist: { type: string }
         expiresInHours: { type: integer }
+        pageId: { type: integer }
     MusicTrack:
       type: object
       required: [id, title, url, source]
@@ -5078,6 +5084,10 @@ components:
       required: [author, stories, hasUnseen]
       properties:
         author: { $ref: "#/components/schemas/Profile" }
+        authorPage:
+          oneOf:
+            - { $ref: "#/components/schemas/PageRef" }
+            - { type: "null" }
         stories:
           type: array
           items: { $ref: "#/components/schemas/Story" }
