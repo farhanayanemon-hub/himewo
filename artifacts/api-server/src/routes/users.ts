@@ -21,6 +21,7 @@ import {
   notInArray,
   isNull,
   sql,
+  type SQL,
 } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import {
@@ -134,20 +135,36 @@ router.get(
     const excludeSet = new Set(exclude);
     const friendIdSet = new Set(friendIds);
 
+    // Viewer's location signals, used to surface "nearby" people first —
+    // same city/location, then same country — in both the onboarding batch
+    // and the standard backfill below.
+    const [me] = await db
+      .select({
+        country: profilesTable.country,
+        location: profilesTable.location,
+      })
+      .from(profilesTable)
+      .where(eq(profilesTable.id, viewer));
+    const nearbyOrder = (): SQL[] => {
+      const parts: SQL[] = [];
+      if (me?.location)
+        parts.push(
+          sql`CASE WHEN ${profilesTable.location} = ${me.location} THEN 0 ELSE 1 END`,
+        );
+      if (me?.country)
+        parts.push(
+          sql`CASE WHEN ${profilesTable.country} = ${me.country} THEN 0 ELSE 1 END`,
+        );
+      parts.push(sql`random()`);
+      return parts;
+    };
+
     // Onboarding mode: a fresh randomized batch per request, preferring
-    // same-country profiles, still excluding friends + pending both ways.
+    // nearby (same location, then same country) profiles, still excluding
+    // friends + pending both ways.
     if (q.data.mode === "onboarding") {
       const limit = Math.min(q.data.limit ?? 12, 30);
-      const [me] = await db
-        .select({ country: profilesTable.country })
-        .from(profilesTable)
-        .where(eq(profilesTable.id, viewer));
-      const order = me?.country
-        ? [
-            sql`CASE WHEN ${profilesTable.country} = ${me.country} THEN 0 ELSE 1 END`,
-            sql`random()`,
-          ]
-        : [sql`random()`];
+      const order = nearbyOrder();
       const rows = await db
         .select()
         .from(profilesTable)
@@ -194,6 +211,7 @@ router.get(
         .select()
         .from(profilesTable)
         .where(notInArray(profilesTable.id, [...exclude, ...ranked]))
+        .orderBy(...nearbyOrder())
         .limit(10 - ranked.length);
     }
     const rankedRows = ranked.length
