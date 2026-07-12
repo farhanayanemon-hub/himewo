@@ -45,6 +45,11 @@ export const profilesTable = pgTable(
   displayNameChangedAt: timestamp("display_name_changed_at", {
     withTimezone: true,
   }),
+  // Null = new signup that hasn't finished (or skipped through) the one-time
+  // post-signup onboarding flow yet. Backfilled to now() for pre-existing users.
+  onboardingCompletedAt: timestamp("onboarding_completed_at", {
+    withTimezone: true,
+  }),
   // Platform role. Governs admin-panel access and RBAC. Defaults to "user".
   role: userRoleEnum("role").notNull().default("user"),
   // Moderation state (set from the admin panel).

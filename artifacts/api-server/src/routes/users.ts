@@ -40,6 +40,8 @@ import {
   SearchUsersQueryParams,
   SearchUsersResponse,
   GetFriendSuggestionsResponse,
+  GetFriendSuggestionsQueryParams,
+  CompleteOnboardingResponse,
   UpdateMyProfileBody,
   UpdateMyProfileResponse,
   GetUserByUsernameParams,
@@ -92,6 +94,11 @@ router.get(
   "/users/suggestions",
   requireAuth,
   async (req, res): Promise<void> => {
+    const q = GetFriendSuggestionsQueryParams.safeParse(req.query);
+    if (!q.success) {
+      res.status(400).json({ error: q.error.message });
+      return;
+    }
     const viewer = req.userId!;
     const friends = await db
       .select()
@@ -126,6 +133,35 @@ router.get(
     const exclude = [viewer, ...friendIds, ...pendingIds];
     const excludeSet = new Set(exclude);
     const friendIdSet = new Set(friendIds);
+
+    // Onboarding mode: a fresh randomized batch per request, preferring
+    // same-country profiles, still excluding friends + pending both ways.
+    if (q.data.mode === "onboarding") {
+      const limit = Math.min(q.data.limit ?? 12, 30);
+      const [me] = await db
+        .select({ country: profilesTable.country })
+        .from(profilesTable)
+        .where(eq(profilesTable.id, viewer));
+      const order = me?.country
+        ? [
+            sql`CASE WHEN ${profilesTable.country} = ${me.country} THEN 0 ELSE 1 END`,
+            sql`random()`,
+          ]
+        : [sql`random()`];
+      const rows = await db
+        .select()
+        .from(profilesTable)
+        .where(notInArray(profilesTable.id, exclude))
+        .orderBy(...order)
+        .limit(limit);
+      const profiles = await buildListProfiles(rows);
+      res.json(
+        GetFriendSuggestionsResponse.parse(
+          profiles.map((p) => ({ ...p, mutualFriendsCount: 0 })),
+        ),
+      );
+      return;
+    }
 
     // Friends-of-friends ranked by mutual friend count.
     const mutualCounts = new Map<string, number>();
@@ -341,6 +377,30 @@ router.patch("/users/me", requireAuth, async (req, res): Promise<void> => {
   const profile = await buildProfileDetail(req.userId!, req.userId);
   res.json(UpdateMyProfileResponse.parse(profile));
 });
+
+// One-time post-signup onboarding: mark finished. Idempotent — completing
+// again just leaves the original timestamp.
+router.post(
+  "/users/me/onboarding-complete",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    await db
+      .update(profilesTable)
+      .set({ onboardingCompletedAt: new Date() })
+      .where(
+        and(
+          eq(profilesTable.id, req.userId!),
+          isNull(profilesTable.onboardingCompletedAt),
+        ),
+      );
+    const profile = await buildProfileDetail(req.userId!, req.userId);
+    if (!profile) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+    res.json(CompleteOnboardingResponse.parse(profile));
+  },
+);
 
 router.get(
   "/users/by-username/:username",

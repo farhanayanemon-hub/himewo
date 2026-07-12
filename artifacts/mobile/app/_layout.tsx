@@ -17,6 +17,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { CallProvider } from "@/components/CallProvider";
+import { OnboardingFlow } from "@/components/OnboardingFlow";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { RealtimeProvider } from "@/lib/realtime";
 import { ActingPageProvider } from "@/lib/acting-page";
@@ -29,7 +30,7 @@ const queryClient = new QueryClient({
 });
 
 function RootNavigator() {
-  const { loading, isAuthenticated } = useAuth();
+  const { loading, isAuthenticated, user } = useAuth();
   const segments = useSegments();
   const router = useRouter();
   const c = useColors();
@@ -52,8 +53,15 @@ function RootNavigator() {
     );
   }
 
+  // One-time post-signup onboarding takeover (false = explicitly not done;
+  // null/undefined = legacy or non-owner payloads, never show). Rendered as
+  // an overlay so the router stays mounted underneath.
+  const showOnboarding =
+    isAuthenticated && user?.hasCompletedOnboarding === false;
+
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.background } }}>
+    <View style={{ flex: 1 }}>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.background } }}>
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="create-post" options={{ presentation: "modal" }} />
@@ -110,7 +118,9 @@ function RootNavigator() {
         }}
       />
       <Stack.Screen name="earnings" />
-    </Stack>
+      </Stack>
+      {showOnboarding && <OnboardingFlow />}
+    </View>
   );
 }
 

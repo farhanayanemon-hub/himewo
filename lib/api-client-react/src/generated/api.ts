@@ -86,6 +86,7 @@ import type {
   GetAdAccountInsightsParams,
   GetEarningsHistoryParams,
   GetFeedParams,
+  GetFriendSuggestionsParams,
   GetGroupPostsParams,
   GetHashtagPostsParams,
   GetPageParams,
@@ -677,20 +678,27 @@ export function useSearchUsers<TData = Awaited<ReturnType<typeof searchUsers>>, 
 
 
 
-export const getGetFriendSuggestionsUrl = () => {
+export const getGetFriendSuggestionsUrl = (params?: GetFriendSuggestionsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/users/suggestions`
+  return stringifiedParams.length > 0 ? `/api/users/suggestions?${stringifiedParams}` : `/api/users/suggestions`
 }
 
 /**
  * @summary Get people-you-may-know suggestions
  */
-export const getFriendSuggestions = async ( options?: RequestInit): Promise<FriendSuggestion[]> => {
+export const getFriendSuggestions = async (params?: GetFriendSuggestionsParams, options?: RequestInit): Promise<FriendSuggestion[]> => {
 
-  return customFetch<FriendSuggestion[]>(getGetFriendSuggestionsUrl(),
+  return customFetch<FriendSuggestion[]>(getGetFriendSuggestionsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -703,23 +711,23 @@ export const getFriendSuggestions = async ( options?: RequestInit): Promise<Frie
 
 
 
-export const getGetFriendSuggestionsQueryKey = () => {
+export const getGetFriendSuggestionsQueryKey = (params?: GetFriendSuggestionsParams,) => {
     return [
-    `/api/users/suggestions`
+    `/api/users/suggestions`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetFriendSuggestionsQueryOptions = <TData = Awaited<ReturnType<typeof getFriendSuggestions>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFriendSuggestions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetFriendSuggestionsQueryOptions = <TData = Awaited<ReturnType<typeof getFriendSuggestions>>, TError = ErrorType<unknown>>(params?: GetFriendSuggestionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFriendSuggestions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetFriendSuggestionsQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetFriendSuggestionsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFriendSuggestions>>> = ({ signal }) => getFriendSuggestions({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFriendSuggestions>>> = ({ signal }) => getFriendSuggestions(params, { signal, ...requestOptions });
 
 
 
@@ -737,11 +745,11 @@ export type GetFriendSuggestionsQueryError = ErrorType<unknown>
  */
 
 export function useGetFriendSuggestions<TData = Awaited<ReturnType<typeof getFriendSuggestions>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFriendSuggestions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: GetFriendSuggestionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFriendSuggestions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetFriendSuggestionsQueryOptions(options)
+  const queryOptions = getGetFriendSuggestionsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -822,6 +830,76 @@ export const useUpdateMyProfile = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getUpdateMyProfileMutationOptions(options));
+    }
+
+export const getCompleteOnboardingUrl = () => {
+
+
+
+
+  return `/api/users/me/onboarding-complete`
+}
+
+/**
+ * @summary Mark the one-time post-signup onboarding as finished (idempotent)
+ */
+export const completeOnboarding = async ( options?: RequestInit): Promise<Profile> => {
+
+  return customFetch<Profile>(getCompleteOnboardingUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getCompleteOnboardingMutationOptions = <TError = ErrorType<UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeOnboarding>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completeOnboarding>>, TError,void, TContext> => {
+
+const mutationKey = ['completeOnboarding'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeOnboarding>>, void> = () => {
+
+
+          return  completeOnboarding(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompleteOnboardingMutationResult = NonNullable<Awaited<ReturnType<typeof completeOnboarding>>>
+
+    export type CompleteOnboardingMutationError = ErrorType<UnauthorizedResponse>
+
+    /**
+ * @summary Mark the one-time post-signup onboarding as finished (idempotent)
+ */
+export const useCompleteOnboarding = <TError = ErrorType<UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeOnboarding>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof completeOnboarding>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getCompleteOnboardingMutationOptions(options));
     }
 
 export const getGetTodaysBirthdaysUrl = () => {

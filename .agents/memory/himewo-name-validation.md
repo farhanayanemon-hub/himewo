@@ -18,7 +18,10 @@ blocklist (brands/roles/places). "Md." / "Jean-Pierre" / Bangla-script names pas
 
 **Enforcement (anti-bypass) — 3 points, all server-side:**
 1. `/auth/sync` → 400 if a provided firstName/lastName is invalid. Validate ONLY the provided
-   part(s) individually (partial updates must not require both fields).
+   part(s) individually (partial updates must not require both fields). displayName is ALSO
+   enforced here, but only when the profile is new or the name is CHANGING — sync re-sends
+   displayName on every login, so unconditional validation would lock out legacy users whose
+   stored name predates the policy.
 2. `PATCH /users/me` displayName → validateDisplayName BEFORE rename-cooldown checks.
 3. Wizard UX (web + mobile) calls validate-name on the name step — UX only, not the security layer.
 
