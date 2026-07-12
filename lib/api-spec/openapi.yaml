@@ -54,6 +54,18 @@ paths:
                 $ref: "#/components/schemas/Profile"
         "401":
           $ref: "#/components/responses/Unauthorized"
+  /geo:
+    get:
+      operationId: detectCountry
+      tags: [auth]
+      summary: Detect the requester's country from their IP (public, best-effort)
+      responses:
+        "200":
+          description: Detected country (nulls when detection fails)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeoCountry"
   /auth/sync:
     post:
       operationId: syncProfile
@@ -3684,6 +3696,13 @@ components:
       type: string
       enum: [like, love, care, haha, wow, sad, angry]
 
+    GeoCountry:
+      type: object
+      required: [countryCode]
+      properties:
+        countryCode: { type: ["string", "null"] }
+        countryName: { type: ["string", "null"] }
+
     Profile:
       type: object
       required: [id, username, displayName, isVerified, createdAt]
@@ -3697,6 +3716,10 @@ components:
         coverUrl: { type: ["string", "null"] }
         bio: { type: ["string", "null"] }
         birthday: { type: ["string", "null"] }
+        firstName: { type: ["string", "null"] }
+        lastName: { type: ["string", "null"] }
+        gender: { type: ["string", "null"] }
+        country: { type: ["string", "null"] }
         location: { type: ["string", "null"] }
         work: { type: ["string", "null"] }
         education: { type: ["string", "null"] }
@@ -3739,6 +3762,11 @@ components:
         email: { type: string }
         phone: { type: string }
         avatarUrl: { type: string }
+        firstName: { type: string, maxLength: 50 }
+        lastName: { type: string, maxLength: 50 }
+        gender: { type: string, enum: [male, female] }
+        birthday: { type: string }
+        country: { type: string, minLength: 2, maxLength: 2 }
     ProfileUpdate:
       type: object
       properties:

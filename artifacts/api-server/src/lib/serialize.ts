@@ -90,6 +90,11 @@ export function toProfile(
     coverUrl: row.coverUrl,
     bio: includeIntro ? row.bio : null,
     birthday: includeIntro ? row.birthday : null,
+    // Name parts are as public as displayName itself.
+    firstName: row.firstName,
+    lastName: row.lastName,
+    gender: includeIntro ? row.gender : null,
+    country: includeIntro ? row.country : null,
     location: includeIntro ? row.location : null,
     work: includeIntro ? row.work : null,
     education: includeIntro ? row.education : null,

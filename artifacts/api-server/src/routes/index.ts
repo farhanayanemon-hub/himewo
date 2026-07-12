@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { authMiddleware } from "../lib/auth";
 import healthRouter from "./health";
 import authRouter from "./auth";
+import geoRouter from "./geo";
 import usersRouter from "./users";
 import postsRouter from "./posts";
 import commentsRouter from "./comments";
@@ -34,6 +35,7 @@ const router: IRouter = Router();
 router.use(authMiddleware);
 
 router.use(healthRouter);
+router.use(geoRouter);
 router.use(authRouter);
 router.use(usersRouter);
 router.use(postsRouter);

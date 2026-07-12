@@ -5,6 +5,7 @@
  * HiMewo social platform + Messenger API
  * OpenAPI spec version: 0.1.0
  */
+import type { ProfileInputGender } from './profileInputGender';
 
 export interface ProfileInput {
   id: string;
@@ -15,4 +16,15 @@ export interface ProfileInput {
   email?: string;
   phone?: string;
   avatarUrl?: string;
+  /** @maxLength 50 */
+  firstName?: string;
+  /** @maxLength 50 */
+  lastName?: string;
+  gender?: ProfileInputGender;
+  birthday?: string;
+  /**
+     * @minLength 2
+     * @maxLength 2
+     */
+  country?: string;
 }

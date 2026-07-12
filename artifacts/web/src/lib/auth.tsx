@@ -28,6 +28,16 @@ interface SignUpArgs {
   displayName: string;
 }
 
+export interface WizardProfileArgs {
+  firstName: string;
+  lastName: string;
+  gender: "male" | "female";
+  birthday: string; // YYYY-MM-DD
+  country?: string; // ISO alpha-2
+  email?: string;
+  phone?: string;
+}
+
 interface AuthContextValue {
   user: Profile | null;
   loading: boolean;
@@ -39,6 +49,13 @@ interface AuthContextValue {
   signInWithGoogle: () => Promise<void>;
   sendPhoneOtp: (phone: string) => Promise<void>;
   verifyPhoneOtp: (phone: string, token: string) => Promise<void>;
+  /** Signup wizard: suppress the auto profile-sync fallback while active. */
+  setWizardActive: (active: boolean) => void;
+  sendEmailOtp: (email: string) => Promise<void>;
+  verifyEmailOtp: (email: string, token: string) => Promise<void>;
+  verifyPhoneOtpNoSync: (phone: string, token: string) => Promise<void>;
+  setPassword: (password: string) => Promise<void>;
+  completeWizardSignup: (args: WizardProfileArgs) => Promise<void>;
   signInAsDevUser: (id: string) => Promise<void>;
   refreshUser: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -59,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const pendingProfile = useRef<SignUpArgs | null>(null);
+  const wizardActive = useRef(false);
 
   const loadUser = useCallback(async () => {
     try {
@@ -86,6 +104,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setUser(null);
               return;
             }
+            // During the signup wizard the wizard itself syncs the profile
+            // with the full field set — skip the fallback sync so we don't
+            // create a half-empty profile from the email prefix.
+            if (wizardActive.current) return;
             const pending = pendingProfile.current;
             if (pending && session.user) {
               try {
@@ -216,6 +238,68 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [loadUser],
   );
 
+  const setWizardActive = useCallback((active: boolean) => {
+    wizardActive.current = active;
+  }, []);
+
+  const sendEmailOtp = useCallback(async (email: string) => {
+    const sb = requireSupabase();
+    const { error } = await sb.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: true },
+    });
+    if (error) throw error;
+  }, []);
+
+  const verifyEmailOtp = useCallback(async (email: string, token: string) => {
+    const sb = requireSupabase();
+    const { error } = await sb.auth.verifyOtp({ email, token, type: "email" });
+    if (error) throw error;
+  }, []);
+
+  // Wizard phone verify: creates the session but does NOT load the user, so
+  // the wizard can finish password + profile steps before the app redirects.
+  const verifyPhoneOtpNoSync = useCallback(
+    async (phone: string, token: string) => {
+      const sb = requireSupabase();
+      const { error } = await sb.auth.verifyOtp({ phone, token, type: "sms" });
+      if (error) throw error;
+    },
+    [],
+  );
+
+  const setPassword = useCallback(async (password: string) => {
+    const sb = requireSupabase();
+    const { error } = await sb.auth.updateUser({ password });
+    if (error) throw error;
+  }, []);
+
+  const completeWizardSignup = useCallback(
+    async (args: WizardProfileArgs) => {
+      const sb = requireSupabase();
+      const { data } = await sb.auth.getUser();
+      if (!data.user) throw new Error("Not signed in yet.");
+      const displayName = `${args.firstName} ${args.lastName}`.trim();
+      const username = `${args.firstName}.${args.lastName}`
+        .toLowerCase()
+        .replace(/[^a-z0-9._]/g, "");
+      await syncProfile({
+        id: data.user.id,
+        username: username || "user",
+        displayName,
+        firstName: args.firstName,
+        lastName: args.lastName,
+        gender: args.gender,
+        birthday: args.birthday,
+        country: args.country,
+        email: args.email ?? data.user.email ?? undefined,
+        phone: args.phone ?? (data.user.phone || undefined),
+      });
+      wizardActive.current = false;
+    },
+    [],
+  );
+
   const signInAsDevUser = useCallback(
     async (id: string) => {
       localStorage.setItem(DEV_USER_STORAGE_KEY, id);
@@ -247,6 +331,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signInWithGoogle,
     sendPhoneOtp,
     verifyPhoneOtp,
+    setWizardActive,
+    sendEmailOtp,
+    verifyEmailOtp,
+    verifyPhoneOtpNoSync,
+    setPassword,
+    completeWizardSignup,
     signInAsDevUser,
     refreshUser,
     signOut,

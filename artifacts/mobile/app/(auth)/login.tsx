@@ -10,11 +10,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { Avatar } from "@/components/Avatar";
 import { useAuth } from "@/lib/auth";
 import { useColors } from "@/hooks/useColors";
 
-type Mode = "signin" | "signup";
 type Method = "email" | "phone";
 
 export default function LoginScreen() {
@@ -24,18 +24,15 @@ export default function LoginScreen() {
     devUsers,
     signInAsDevUser,
     signInWithEmail,
-    signUpWithEmail,
     signInWithGoogle,
     sendPhoneOtp,
     verifyPhoneOtp,
   } = useAuth();
 
+  const [screen, setScreen] = useState<"landing" | "login">("landing");
   const [method, setMethod] = useState<Method>("email");
-  const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
-  const [displayName, setDisplayName] = useState("");
 
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
@@ -51,16 +48,7 @@ export default function LoginScreen() {
     setError(null);
     setBusy(true);
     try {
-      if (mode === "signin") {
-        await signInWithEmail(email.trim(), password);
-      } else {
-        await signUpWithEmail({
-          email: email.trim(),
-          password,
-          username: username.trim(),
-          displayName: displayName.trim(),
-        });
-      }
+      await signInWithEmail(email.trim(), password);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
@@ -137,7 +125,70 @@ export default function LoginScreen() {
           </Text>
         </View>
 
-        {supabaseEnabled ? (
+        {supabaseEnabled && screen === "landing" ? (
+          <View style={styles.form}>
+            <Pressable
+              style={[styles.primaryBtn, { backgroundColor: c.primary }]}
+              onPress={() => router.push("/(auth)/signup")}
+            >
+              <Text style={styles.primaryBtnText}>Create new account</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.googleBtn, { borderColor: c.border, backgroundColor: c.card }]}
+              onPress={() => {
+                setScreen("login");
+                setError(null);
+                setNotice(null);
+              }}
+            >
+              <Text style={{ color: c.foreground, fontFamily: "Inter_700Bold", fontSize: 16 }}>
+                Login
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() =>
+                setNotice("Find my account is coming soon — it's still being built.")
+              }
+            >
+              <Text style={[styles.switchText, { color: c.primary, marginTop: 4 }]}>
+                Find my account
+              </Text>
+            </Pressable>
+            {notice && (
+              <Text style={{ color: c.mutedForeground, fontSize: 13, textAlign: "center" }}>
+                {notice}
+              </Text>
+            )}
+
+            <View style={styles.dividerRow}>
+              <View style={[styles.divider, { backgroundColor: c.border }]} />
+              <Text style={{ color: c.mutedForeground, fontSize: 12 }}>OR</Text>
+              <View style={[styles.divider, { backgroundColor: c.border }]} />
+            </View>
+
+            <Pressable
+              style={[styles.googleBtn, { borderColor: c.border, backgroundColor: c.card }]}
+              onPress={submitGoogle}
+              disabled={googleBusy}
+            >
+              {googleBusy ? (
+                <ActivityIndicator color={c.foreground} />
+              ) : (
+                <>
+                  <Ionicons name="logo-google" size={20} color="#ea4335" />
+                  <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}>
+                    Continue with Google
+                  </Text>
+                </>
+              )}
+            </Pressable>
+            {error && (
+              <Text style={{ color: c.destructive, fontSize: 13, textAlign: "center" }}>
+                {error}
+              </Text>
+            )}
+          </View>
+        ) : supabaseEnabled ? (
           <View style={styles.form}>
             <View style={[styles.tabs, { backgroundColor: c.secondary }]}>
               <Tab label="Email" active={method === "email"} onPress={() => switchMethod("email")} />
@@ -146,23 +197,6 @@ export default function LoginScreen() {
 
             {method === "email" ? (
               <>
-                {mode === "signup" && (
-                  <>
-                    <Field
-                      icon="person-outline"
-                      placeholder="Display name"
-                      value={displayName}
-                      onChangeText={setDisplayName}
-                    />
-                    <Field
-                      icon="at-outline"
-                      placeholder="Username"
-                      value={username}
-                      onChangeText={setUsername}
-                      autoCapitalize="none"
-                    />
-                  </>
-                )}
                 <Field
                   icon="mail-outline"
                   placeholder="Email"
@@ -189,18 +223,8 @@ export default function LoginScreen() {
                   {busy ? (
                     <ActivityIndicator color="#fff" />
                   ) : (
-                    <Text style={styles.primaryBtnText}>
-                      {mode === "signin" ? "Log In" : "Create Account"}
-                    </Text>
+                    <Text style={styles.primaryBtnText}>Log In</Text>
                   )}
-                </Pressable>
-
-                <Pressable onPress={() => setMode(mode === "signin" ? "signup" : "signin")}>
-                  <Text style={[styles.switchText, { color: c.primary }]}>
-                    {mode === "signin"
-                      ? "Don't have an account? Sign up"
-                      : "Already have an account? Log in"}
-                  </Text>
                 </Pressable>
               </>
             ) : (
@@ -290,6 +314,16 @@ export default function LoginScreen() {
                   </Text>
                 </>
               )}
+            </Pressable>
+
+            <Pressable
+              onPress={() => {
+                setScreen("landing");
+                setError(null);
+                setNotice(null);
+              }}
+            >
+              <Text style={[styles.switchText, { color: c.primary }]}>← Back</Text>
             </Pressable>
           </View>
         ) : (

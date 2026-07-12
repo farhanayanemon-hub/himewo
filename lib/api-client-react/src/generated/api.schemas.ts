@@ -26,6 +26,13 @@ export const ReactionType = {
   angry: 'angry',
 } as const;
 
+export interface GeoCountry {
+  /** @nullable */
+  countryCode: string | null;
+  /** @nullable */
+  countryName?: string | null;
+}
+
 /**
  * @nullable
  */
@@ -51,6 +58,14 @@ export interface Profile {
   bio?: string | null;
   /** @nullable */
   birthday?: string | null;
+  /** @nullable */
+  firstName?: string | null;
+  /** @nullable */
+  lastName?: string | null;
+  /** @nullable */
+  gender?: string | null;
+  /** @nullable */
+  country?: string | null;
   /** @nullable */
   location?: string | null;
   /** @nullable */
@@ -97,6 +112,14 @@ export type FriendSuggestion = Profile & {
   mutualFriendsCount: number;
 };
 
+export type ProfileInputGender = typeof ProfileInputGender[keyof typeof ProfileInputGender];
+
+
+export const ProfileInputGender = {
+  male: 'male',
+  female: 'female',
+} as const;
+
 export interface ProfileInput {
   id: string;
   /** @minLength 1 */
@@ -106,6 +129,17 @@ export interface ProfileInput {
   email?: string;
   phone?: string;
   avatarUrl?: string;
+  /** @maxLength 50 */
+  firstName?: string;
+  /** @maxLength 50 */
+  lastName?: string;
+  gender?: ProfileInputGender;
+  birthday?: string;
+  /**
+     * @minLength 2
+     * @maxLength 2
+     */
+  country?: string;
 }
 
 export interface ProfileUpdate {

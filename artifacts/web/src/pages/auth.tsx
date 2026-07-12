@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { SignupWizard } from "@/components/signup-wizard";
 
 function getErrorMessage(err: unknown): string {
   if (err instanceof Error) return err.message;
@@ -124,92 +125,6 @@ function SignInForm() {
   );
 }
 
-function SignUpForm() {
-  const { signUpWithEmail } = useAuth();
-  const { toast } = useToast();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-    try {
-      await signUpWithEmail({ email, password, username, displayName });
-      toast({
-        title: "Account created",
-        description: "Check your email if confirmation is required.",
-      });
-    } catch (err) {
-      const message = getErrorMessage(err);
-      setError(message);
-      toast({ variant: "destructive", title: "Sign up failed", description: message });
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-3">
-      <Input
-        id="signup-displayName"
-        type="text"
-        aria-label="Full name"
-        autoComplete="name"
-        placeholder="Your name"
-        value={displayName}
-        onChange={(e) => setDisplayName(e.target.value)}
-        required
-        className={inputClass}
-      />
-      <Input
-        id="signup-username"
-        type="text"
-        aria-label="Username"
-        autoComplete="username"
-        placeholder="Username"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-        required
-        className={inputClass}
-      />
-      <Input
-        id="signup-email"
-        type="email"
-        aria-label="Email"
-        autoComplete="email"
-        placeholder="Email address"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-        className={inputClass}
-      />
-      <Input
-        id="signup-password"
-        type="password"
-        aria-label="New password"
-        autoComplete="new-password"
-        placeholder="New password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-        className={inputClass}
-      />
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button
-        type="submit"
-        disabled={loading}
-        className="w-full h-12 text-lg font-bold rounded-lg bg-black hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200"
-      >
-        {loading ? "Creating account…" : "Sign Up"}
-      </Button>
-    </form>
-  );
-}
 
 function PhoneAuth() {
   const { sendPhoneOtp, verifyPhoneOtp } = useAuth();
@@ -322,7 +237,8 @@ function PhoneAuth() {
 function FacebookCard() {
   const { signInWithGoogle } = useAuth();
   const { toast } = useToast();
-  const [mode, setMode] = useState<"login" | "signup" | "phone">("login");
+  const [mode, setMode] = useState<"landing" | "login" | "phone">("landing");
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
   async function handleGoogle() {
@@ -338,32 +254,37 @@ function FacebookCard() {
 
   return (
     <div className="mx-auto w-full max-w-[400px]">
+      {wizardOpen && <SignupWizard onClose={() => setWizardOpen(false)} />}
       <div className="bg-white dark:bg-[#242526] rounded-xl p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1),0_8px_16px_rgba(0,0,0,0.1)] space-y-3">
-        {mode === "login" && (
+        {mode === "landing" && (
           <>
-            <SignInForm />
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() =>
-                  toast({
-                    title: "Coming soon",
-                    description: "Password reset is still being built.",
-                  })
-                }
-                className="text-sm text-primary hover:underline"
-              >
-                Forgotten password?
-              </button>
-            </div>
-            <div className="border-t border-[#dadde1] dark:border-[#3e4042] my-1" />
             <Button
               type="button"
-              onClick={() => setMode("signup")}
-              className="w-full h-12 text-lg font-bold rounded-lg bg-black hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+              onClick={() => setWizardOpen(true)}
+              className="w-full h-12 text-lg font-bold rounded-lg aurora-button text-white"
             >
               Create new account
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setMode("login")}
+              className="w-full h-12 text-lg font-bold rounded-lg"
+            >
+              Login
+            </Button>
+            <button
+              type="button"
+              onClick={() =>
+                toast({
+                  title: "Coming soon",
+                  description: "Find my account is still being built.",
+                })
+              }
+              className="block w-full text-center text-sm text-primary hover:underline pt-1"
+            >
+              Find my account
+            </button>
             <div className="relative py-1">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-[#dadde1] dark:border-[#3e4042]" />
@@ -384,6 +305,27 @@ function FacebookCard() {
               <GoogleIcon />
               {googleLoading ? "Redirecting…" : "Continue with Google"}
             </Button>
+          </>
+        )}
+
+        {mode === "login" && (
+          <>
+            <SignInForm />
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() =>
+                  toast({
+                    title: "Coming soon",
+                    description: "Password reset is still being built.",
+                  })
+                }
+                className="text-sm text-primary hover:underline"
+              >
+                Forgotten password?
+              </button>
+            </div>
+            <div className="border-t border-[#dadde1] dark:border-[#3e4042] my-1" />
             <button
               type="button"
               onClick={() => setMode("phone")}
@@ -391,22 +333,12 @@ function FacebookCard() {
             >
               Log in with phone number
             </button>
-          </>
-        )}
-
-        {mode === "signup" && (
-          <>
-            <div className="text-center pb-3 border-b border-[#dadde1] dark:border-[#3e4042]">
-              <h2 className="text-2xl font-bold">Create a new account</h2>
-              <p className="text-sm text-muted-foreground">It's quick and easy.</p>
-            </div>
-            <SignUpForm />
             <button
               type="button"
-              onClick={() => setMode("login")}
+              onClick={() => setMode("landing")}
               className="block w-full text-center text-sm text-primary hover:underline"
             >
-              Already have an account? Log in
+              ← Back
             </button>
           </>
         )}
@@ -428,7 +360,7 @@ function FacebookCard() {
         )}
       </div>
 
-      {mode === "login" && (
+      {mode === "landing" && (
         <p className="text-center text-sm text-foreground mt-6">
           <span className="font-semibold">Create a Page</span> for a celebrity, brand or business.
         </p>

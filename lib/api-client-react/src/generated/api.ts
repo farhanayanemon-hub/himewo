@@ -80,6 +80,7 @@ import type {
   FriendRequest,
   FriendRequestInput,
   FriendSuggestion,
+  GeoCountry,
   GeocodeLocationParams,
   GeocodeResult,
   GetAdAccountInsightsParams,
@@ -361,6 +362,83 @@ export function useGetCurrentUser<TData = Awaited<ReturnType<typeof getCurrentUs
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetCurrentUserQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDetectCountryUrl = () => {
+
+
+
+
+  return `/api/geo`
+}
+
+/**
+ * @summary Detect the requester's country from their IP (public, best-effort)
+ */
+export const detectCountry = async ( options?: RequestInit): Promise<GeoCountry> => {
+
+  return customFetch<GeoCountry>(getDetectCountryUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDetectCountryQueryKey = () => {
+    return [
+    `/api/geo`
+    ] as const;
+    }
+
+
+export const getDetectCountryQueryOptions = <TData = Awaited<ReturnType<typeof detectCountry>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof detectCountry>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDetectCountryQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof detectCountry>>> = ({ signal }) => detectCountry({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof detectCountry>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DetectCountryQueryResult = NonNullable<Awaited<ReturnType<typeof detectCountry>>>
+export type DetectCountryQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Detect the requester's country from their IP (public, best-effort)
+ */
+
+export function useDetectCountry<TData = Awaited<ReturnType<typeof detectCountry>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof detectCountry>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDetectCountryQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

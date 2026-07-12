@@ -24,6 +24,14 @@ export interface Profile {
   /** @nullable */
   birthday?: string | null;
   /** @nullable */
+  firstName?: string | null;
+  /** @nullable */
+  lastName?: string | null;
+  /** @nullable */
+  gender?: string | null;
+  /** @nullable */
+  country?: string | null;
+  /** @nullable */
   location?: string | null;
   /** @nullable */
   work?: string | null;
