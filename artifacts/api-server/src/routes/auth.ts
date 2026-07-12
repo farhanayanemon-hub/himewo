@@ -4,6 +4,8 @@ import { db, profilesTable } from "@workspace/db";
 import { requireAuth } from "../lib/auth";
 import { buildProfileDetail } from "../lib/serialize";
 import { normalizeUsername, isReservedUsername } from "../lib/username";
+import { getBlockedSignupCountries } from "../lib/flags";
+import { findCountry } from "@workspace/countries";
 import {
   validateFullName,
   validateNamePart,
@@ -253,18 +255,49 @@ router.post("/auth/sync", requireAuth, async (req, res): Promise<void> => {
   // displayName is re-sent on every login re-sync, so only validate when it's
   // a new profile or the name is actually changing — otherwise a legacy user
   // whose stored name predates the policy would be locked out of login.
-  {
-    const existing = await db
-      .select({ displayName: profilesTable.displayName })
-      .from(profilesTable)
-      .where(eq(profilesTable.id, userId))
-      .limit(1);
-    if (existing.length === 0 || existing[0].displayName !== data.displayName) {
-      const err = validateDisplayName(data.displayName);
-      if (err) {
-        res.status(400).json({ error: err });
-        return;
-      }
+  const existing = await db
+    .select({
+      displayName: profilesTable.displayName,
+      phone: profilesTable.phone,
+    })
+    .from(profilesTable)
+    .where(eq(profilesTable.id, userId))
+    .limit(1);
+  const isNewProfile = existing.length === 0;
+  if (isNewProfile || existing[0].displayName !== data.displayName) {
+    const err = validateDisplayName(data.displayName);
+    if (err) {
+      res.status(400).json({ error: err });
+      return;
+    }
+  }
+  // Country access control (block-list) for PHONE signups. Enforced whenever a
+  // phone is being bound for the first time — a brand-new profile, or an
+  // existing account that had no phone yet (closes the "create email account,
+  // then bind a blocked-country phone" bypass). It is NEVER enforced on a
+  // re-sync where the phone is unchanged, so an existing phone user from a
+  // now-blocked country is never locked out of login.
+  //
+  // The country is derived from and validated against the VERIFIED phone's dial
+  // code — a client cannot bypass the block by omitting or spoofing `country`,
+  // and an unknown/mismatched country is rejected outright.
+  const hadPhone = !isNewProfile && !!existing[0].phone;
+  const bindingPhone = !!data.phone && !hadPhone;
+  if (bindingPhone) {
+    const declared = findCountry(data.country ?? null);
+    const normalizedPhone = data.phone!.replace(/\s+/g, "");
+    if (!declared || !normalizedPhone.startsWith(declared.dialCode)) {
+      res.status(400).json({
+        error: "A valid country matching your phone number is required.",
+      });
+      return;
+    }
+    const blocked = await getBlockedSignupCountries();
+    if (blocked.includes(declared.code)) {
+      res.status(403).json({
+        error: "Sign-ups from your country are currently not allowed.",
+      });
+      return;
     }
   }
   const username = await pickAvailableUsername(data.username);
@@ -301,6 +334,14 @@ router.post("/auth/sync", requireAuth, async (req, res): Promise<void> => {
     .returning();
   const profile = await buildProfileDetail(row.id, userId);
   res.json(SyncProfileResponse.parse(profile));
+});
+
+// Public (pre-auth) signup configuration so the web/mobile signup UI can hide
+// blocked countries before the user picks one. Under /auth so it bypasses the
+// maintenance guard like the rest of the signup flow.
+router.get("/auth/signup-config", async (_req, res): Promise<void> => {
+  const blockedCountries = await getBlockedSignupCountries();
+  res.json({ blockedCountries });
 });
 
 export default router;

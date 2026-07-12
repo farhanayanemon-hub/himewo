@@ -12,6 +12,7 @@ import { Verification } from "./pages/Verification";
 import { Announcements } from "./pages/Announcements";
 import { Roles } from "./pages/Roles";
 import { Settings } from "./pages/Settings";
+import { Countries } from "./pages/Countries";
 import { Earnings } from "./pages/Earnings";
 import { Audit } from "./pages/Audit";
 import { Spinner } from "./components/ui";
@@ -91,6 +92,11 @@ export default function App() {
         <Route path="/settings">
           <Guard perm="settings.view">
             <Settings />
+          </Guard>
+        </Route>
+        <Route path="/countries">
+          <Guard perm="settings.view">
+            <Countries />
           </Guard>
         </Route>
         <Route path="/earnings">

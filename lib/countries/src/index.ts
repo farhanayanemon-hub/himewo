@@ -13,6 +13,13 @@ export function countryFlag(code: string): string {
     .replace(/./g, (ch) => String.fromCodePoint(127397 + ch.charCodeAt(0)));
 }
 
+// Flag as a hosted image (works on every platform — unlike emoji flags, which
+// do not render on Windows browsers or Android). Uses flagcdn.com (free, no
+// API key). `width` must be one of flagcdn's supported widths (20/40/80/160…).
+export function countryFlagUrl(code: string, width = 40): string {
+  return `https://flagcdn.com/w${width}/${code.toLowerCase()}.png`;
+}
+
 export const COUNTRIES: Country[] = [
   { name: "Afghanistan", code: "AF", dialCode: "+93" },
   { name: "Albania", code: "AL", dialCode: "+355" },

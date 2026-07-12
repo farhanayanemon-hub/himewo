@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "private": true,
+  "dependencies": {
+    "@workspace/countries": "workspace:*"
+  },
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
