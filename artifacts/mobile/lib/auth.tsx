@@ -139,6 +139,22 @@ function requireSupabase() {
   return supabase;
 }
 
+// A session on a 2FA-enabled account that never passed the TOTP step is only
+// half-authenticated (AAL1). If such a session is restored (app restart after
+// entering the password but before the code) or produced by a non-password
+// login path, drop it instead of treating the user as logged in.
+// Returns true when the session satisfies its required assurance level.
+async function ensureFullAssurance(
+  sb: NonNullable<typeof supabase>,
+): Promise<boolean> {
+  const { data: aal } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (aal && aal.currentLevel !== "aal2" && aal.nextLevel === "aal2") {
+    await sb.auth.signOut();
+    return false;
+  }
+  return true;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -165,7 +181,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (isSupabaseConfigured && supabase) {
         const { data } = await supabase.auth.getSession();
         if (data.session) {
-          await loadUser();
+          // Refuse to restore a half-authenticated (password-only) session on
+          // a 2FA account — restarting mid-challenge must not bypass the code.
+          if (await ensureFullAssurance(supabase)) {
+            await loadUser();
+          }
         }
         if (active) setLoading(false);
 
@@ -454,6 +474,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refresh_token: refreshToken,
       });
       if (sessionError) throw sessionError;
+      if (!(await ensureFullAssurance(sb))) {
+        throw new Error(
+          "This account has two-factor authentication turned on. Log in with your password and authenticator code instead.",
+        );
+      }
       await loadUser();
     }
   }, [loadUser]);
@@ -469,6 +494,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const sb = requireSupabase();
       const { error } = await sb.auth.verifyOtp({ phone, token, type: "sms" });
       if (error) throw error;
+      if (!(await ensureFullAssurance(sb))) {
+        throw new Error(
+          "This account has two-factor authentication turned on. Log in with your password and authenticator code instead.",
+        );
+      }
       await loadUser();
     },
     [loadUser],
