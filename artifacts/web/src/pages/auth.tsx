@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { SignupWizard } from "@/components/signup-wizard";
+import { AccountRecovery, isPhoneLike, normalizePhone } from "@/components/auth-recovery";
 
 function getErrorMessage(err: unknown): string {
   if (err instanceof Error) return err.message;
@@ -67,9 +68,9 @@ function DevLogin() {
 }
 
 function SignInForm() {
-  const { signInWithEmail } = useAuth();
+  const { signInWithEmail, signInWithPhonePassword } = useAuth();
   const { toast } = useToast();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +80,11 @@ function SignInForm() {
     setError(null);
     setLoading(true);
     try {
-      await signInWithEmail(email, password);
+      if (isPhoneLike(identifier)) {
+        await signInWithPhonePassword(normalizePhone(identifier), password);
+      } else {
+        await signInWithEmail(identifier.trim(), password);
+      }
     } catch (err) {
       const message = getErrorMessage(err);
       setError(message);
@@ -92,13 +97,13 @@ function SignInForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <Input
-        id="signin-email"
-        type="email"
+        id="signin-identifier"
+        type="text"
         aria-label="Email address or mobile number"
-        autoComplete="email"
+        autoComplete="username"
         placeholder="Email address or mobile number"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        value={identifier}
+        onChange={(e) => setIdentifier(e.target.value)}
         required
         className={inputClass}
       />
@@ -239,6 +244,7 @@ function FacebookCard() {
   const { toast } = useToast();
   const [mode, setMode] = useState<"landing" | "login" | "phone">("landing");
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [recovery, setRecovery] = useState<"forgot" | "find" | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
 
   async function handleGoogle() {
@@ -255,6 +261,9 @@ function FacebookCard() {
   return (
     <div className="mx-auto w-full max-w-[400px]">
       {wizardOpen && <SignupWizard onClose={() => setWizardOpen(false)} />}
+      {recovery && (
+        <AccountRecovery mode={recovery} onClose={() => setRecovery(null)} />
+      )}
       <div className="bg-white dark:bg-[#242526] rounded-xl p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1),0_8px_16px_rgba(0,0,0,0.1)] space-y-3">
         {mode === "landing" && (
           <>
@@ -275,12 +284,7 @@ function FacebookCard() {
             </Button>
             <button
               type="button"
-              onClick={() =>
-                toast({
-                  title: "Coming soon",
-                  description: "Find my account is still being built.",
-                })
-              }
+              onClick={() => setRecovery("find")}
               className="block w-full text-center text-sm text-primary hover:underline pt-1"
             >
               Find my account
@@ -314,12 +318,7 @@ function FacebookCard() {
             <div className="text-center">
               <button
                 type="button"
-                onClick={() =>
-                  toast({
-                    title: "Coming soon",
-                    description: "Password reset is still being built.",
-                  })
-                }
+                onClick={() => setRecovery("forgot")}
                 className="text-sm text-primary hover:underline"
               >
                 Forgotten password?

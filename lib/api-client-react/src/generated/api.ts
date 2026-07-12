@@ -75,6 +75,8 @@ import type {
   EventDetail,
   EventInput,
   EventRsvpInput,
+  FindAccountInput,
+  FindAccountResult,
   FollowPageParams,
   ForbiddenResponse,
   FriendRequest,
@@ -592,6 +594,76 @@ export const useValidateName = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getValidateNameMutationOptions(options));
+    }
+
+export const getFindAccountUrl = () => {
+
+
+
+
+  return `/api/auth/find-account`
+}
+
+/**
+ * @summary Find an account by email or phone (public, rate-limited, masked preview)
+ */
+export const findAccount = async (findAccountInput: FindAccountInput, options?: RequestInit): Promise<FindAccountResult> => {
+
+  return customFetch<FindAccountResult>(getFindAccountUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(findAccountInput)
+  }
+);}
+
+
+
+
+export const getFindAccountMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof findAccount>>, TError,{data: BodyType<FindAccountInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof findAccount>>, TError,{data: BodyType<FindAccountInput>}, TContext> => {
+
+const mutationKey = ['findAccount'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof findAccount>>, {data: BodyType<FindAccountInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  findAccount(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type FindAccountMutationResult = NonNullable<Awaited<ReturnType<typeof findAccount>>>
+    export type FindAccountMutationBody = BodyType<FindAccountInput>
+    export type FindAccountMutationError = ErrorType<void>
+
+    /**
+ * @summary Find an account by email or phone (public, rate-limited, masked preview)
+ */
+export const useFindAccount = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof findAccount>>, TError,{data: BodyType<FindAccountInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof findAccount>>,
+        TError,
+        {data: BodyType<FindAccountInput>},
+        TContext
+      > => {
+      return useMutation(getFindAccountMutationOptions(options));
     }
 
 export const getSearchUsersUrl = (params?: SearchUsersParams,) => {

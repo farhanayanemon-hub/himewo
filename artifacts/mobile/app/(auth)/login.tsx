@@ -12,8 +12,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Avatar } from "@/components/Avatar";
+import { AccountRecovery } from "@/components/AccountRecovery";
 import { useAuth } from "@/lib/auth";
 import { useColors } from "@/hooks/useColors";
+import { isPhoneLike, normalizePhone } from "@/lib/phone";
 
 type Method = "email" | "phone";
 
@@ -24,14 +26,15 @@ export default function LoginScreen() {
     devUsers,
     signInAsDevUser,
     signInWithEmail,
+    signInWithPhonePassword,
     signInWithGoogle,
     sendPhoneOtp,
     verifyPhoneOtp,
   } = useAuth();
 
-  const [screen, setScreen] = useState<"landing" | "login">("landing");
+  const [screen, setScreen] = useState<"landing" | "login" | "forgot" | "find">("landing");
   const [method, setMethod] = useState<Method>("email");
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
 
   const [phone, setPhone] = useState("");
@@ -44,11 +47,15 @@ export default function LoginScreen() {
   const [notice, setNotice] = useState<string | null>(null);
   const [devBusy, setDevBusy] = useState<string | null>(null);
 
-  const submitEmail = async () => {
+  const submitPassword = async () => {
     setError(null);
     setBusy(true);
     try {
-      await signInWithEmail(email.trim(), password);
+      if (isPhoneLike(identifier)) {
+        await signInWithPhonePassword(normalizePhone(identifier), password);
+      } else {
+        await signInWithEmail(identifier.trim(), password);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
@@ -125,7 +132,16 @@ export default function LoginScreen() {
           </Text>
         </View>
 
-        {supabaseEnabled && screen === "landing" ? (
+        {supabaseEnabled && (screen === "forgot" || screen === "find") ? (
+          <AccountRecovery
+            mode={screen}
+            onClose={() => {
+              setScreen(screen === "find" ? "landing" : "login");
+              setError(null);
+              setNotice(null);
+            }}
+          />
+        ) : supabaseEnabled && screen === "landing" ? (
           <View style={styles.form}>
             <Pressable
               style={[styles.primaryBtn, { backgroundColor: c.primary }]}
@@ -146,9 +162,11 @@ export default function LoginScreen() {
               </Text>
             </Pressable>
             <Pressable
-              onPress={() =>
-                setNotice("Find my account is coming soon — it's still being built.")
-              }
+              onPress={() => {
+                setScreen("find");
+                setError(null);
+                setNotice(null);
+              }}
             >
               <Text style={[styles.switchText, { color: c.primary, marginTop: 4 }]}>
                 Find my account
@@ -198,10 +216,10 @@ export default function LoginScreen() {
             {method === "email" ? (
               <>
                 <Field
-                  icon="mail-outline"
-                  placeholder="Email"
-                  value={email}
-                  onChangeText={setEmail}
+                  icon="person-circle-outline"
+                  placeholder="Email address or mobile number"
+                  value={identifier}
+                  onChangeText={setIdentifier}
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />
@@ -212,12 +230,18 @@ export default function LoginScreen() {
                   onChangeText={setPassword}
                   secureTextEntry
                 />
+                {isPhoneLike(identifier) && (
+                  <Text style={{ color: c.mutedForeground, fontSize: 12 }}>
+                    We'll use {normalizePhone(identifier)} — include your country code if that
+                    looks wrong.
+                  </Text>
+                )}
 
                 {error && <Text style={{ color: c.destructive, fontSize: 13 }}>{error}</Text>}
 
                 <Pressable
                   style={[styles.primaryBtn, { backgroundColor: c.primary }]}
-                  onPress={submitEmail}
+                  onPress={submitPassword}
                   disabled={busy}
                 >
                   {busy ? (
@@ -225,6 +249,17 @@ export default function LoginScreen() {
                   ) : (
                     <Text style={styles.primaryBtnText}>Log In</Text>
                   )}
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    setScreen("forgot");
+                    setError(null);
+                    setNotice(null);
+                  }}
+                >
+                  <Text style={[styles.switchText, { color: c.primary }]}>
+                    Forgotten password?
+                  </Text>
                 </Pressable>
               </>
             ) : (

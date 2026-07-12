@@ -10,6 +10,8 @@ import {
   validateDisplayName,
 } from "../lib/nameValidation";
 import {
+  FindAccountBody,
+  FindAccountResponse,
   GetCurrentUserResponse,
   SyncProfileBody,
   SyncProfileResponse,
@@ -67,6 +69,160 @@ router.post("/auth/validate-name", async (req, res): Promise<void> => {
     parsed.data.lastName,
   );
   res.json(ValidateNameResponse.parse(result));
+});
+
+// ---------------- Find my account (public, rate-limited) ----------------
+
+// Simple in-memory per-IP limiter: FIND_MAX lookups per FIND_WINDOW_MS.
+// Good enough for a single-instance API; protects against contact-list
+// enumeration without any extra infrastructure.
+const FIND_WINDOW_MS = 5 * 60 * 1000;
+const FIND_MAX = 10;
+const findAttempts = new Map<string, { count: number; resetAt: number }>();
+
+function isFindRateLimited(key: string): boolean {
+  const now = Date.now();
+  // Opportunistic prune so the map can't grow unbounded.
+  if (findAttempts.size > 10_000) {
+    for (const [k, v] of findAttempts) {
+      if (v.resetAt <= now) findAttempts.delete(k);
+    }
+  }
+  const entry = findAttempts.get(key);
+  if (!entry || entry.resetAt <= now) {
+    findAttempts.set(key, { count: 1, resetAt: now + FIND_WINDOW_MS });
+    return false;
+  }
+  entry.count += 1;
+  return entry.count > FIND_MAX;
+}
+
+function clientIp(req: { headers: Record<string, unknown>; ip?: string }): string {
+  const fwd = req.headers["x-forwarded-for"];
+  if (typeof fwd === "string" && fwd.length > 0) {
+    // Use the RIGHTMOST hop: it is appended by our trusted edge proxy and
+    // cannot be spoofed by the client (leftmost entries are client-supplied).
+    const hops = fwd.split(",").map((h) => h.trim()).filter(Boolean);
+    if (hops.length > 0) return hops[hops.length - 1];
+  }
+  return req.ip ?? "unknown";
+}
+
+/** j******e@g****.com — never reveals the full local part or domain name. */
+function maskEmail(email: string): string {
+  const at = email.indexOf("@");
+  if (at <= 0) return "***";
+  const local = email.slice(0, at);
+  const domain = email.slice(at + 1);
+  const lastDot = domain.lastIndexOf(".");
+  const domainName = lastDot > 0 ? domain.slice(0, lastDot) : domain;
+  const tld = lastDot > 0 ? domain.slice(lastDot) : "";
+  const maskedLocal =
+    local.length <= 2
+      ? `${local[0] ?? "*"}***`
+      : `${local[0]}${"*".repeat(Math.min(local.length - 2, 6))}${local[local.length - 1]}`;
+  const maskedDomain = `${domainName[0] ?? "*"}${"*".repeat(Math.min(Math.max(domainName.length - 1, 2), 6))}`;
+  return `${maskedLocal}@${maskedDomain}${tld}`;
+}
+
+/** +8801*****89 — keeps the country-code prefix and last two digits only. */
+function maskPhone(phone: string): string {
+  const trimmed = phone.replace(/[^\d+]/g, "");
+  if (trimmed.length <= 6) return "*".repeat(trimmed.length);
+  const head = trimmed.slice(0, 5);
+  const tail = trimmed.slice(-2);
+  return `${head}${"*".repeat(Math.max(trimmed.length - 7, 3))}${tail}`;
+}
+
+router.post("/auth/find-account", async (req, res): Promise<void> => {
+  if (isFindRateLimited(clientIp(req))) {
+    res.status(429).json({ error: "Too many attempts. Please try again in a few minutes." });
+    return;
+  }
+  const parsed = FindAccountBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const identifier = parsed.data.identifier.trim();
+  // Second throttle keyed by the identifier itself so a spoofed/rotating IP
+  // still cannot hammer lookups for the same account.
+  if (isFindRateLimited(`id:${identifier.toLowerCase()}`)) {
+    res.status(429).json({ error: "Too many attempts. Please try again in a few minutes." });
+    return;
+  }
+  const notFound = FindAccountResponse.parse({ found: false });
+
+  let match:
+    | { displayName: string; avatarUrl: string | null; email: string | null; phone: string | null }
+    | undefined;
+
+  if (identifier.includes("@")) {
+    const [row] = await db
+      .select({
+        displayName: profilesTable.displayName,
+        avatarUrl: profilesTable.avatarUrl,
+        email: profilesTable.email,
+        phone: profilesTable.phone,
+      })
+      .from(profilesTable)
+      .where(sql`lower(${profilesTable.email}) = ${identifier.toLowerCase()}`)
+      .limit(1);
+    match = row;
+    if (match) {
+      res.json(
+        FindAccountResponse.parse({
+          found: true,
+          displayName: match.displayName,
+          avatarUrl: match.avatarUrl,
+          maskedEmail: match.email ? maskEmail(match.email) : null,
+          maskedPhone: null,
+          method: "email",
+        }),
+      );
+      return;
+    }
+    res.json(notFound);
+    return;
+  }
+
+  const digits = identifier.replace(/\D/g, "");
+  if (digits.length < 6) {
+    res.json(notFound);
+    return;
+  }
+  // Accept local BD format (01XXXXXXXXX) as well as full +880 numbers.
+  const candidates = [digits];
+  if (digits.startsWith("0")) candidates.push(`880${digits.slice(1)}`);
+  const [row] = await db
+    .select({
+      displayName: profilesTable.displayName,
+      avatarUrl: profilesTable.avatarUrl,
+      email: profilesTable.email,
+      phone: profilesTable.phone,
+    })
+    .from(profilesTable)
+    .where(
+      sql`regexp_replace(coalesce(${profilesTable.phone}, ''), '\\D', '', 'g') IN (${sql.join(
+        candidates.map((c) => sql`${c}`),
+        sql`, `,
+      )})`,
+    )
+    .limit(1);
+  if (row) {
+    res.json(
+      FindAccountResponse.parse({
+        found: true,
+        displayName: row.displayName,
+        avatarUrl: row.avatarUrl,
+        maskedEmail: null,
+        maskedPhone: row.phone ? maskPhone(row.phone) : null,
+        method: "phone",
+      }),
+    );
+    return;
+  }
+  res.json(notFound);
 });
 
 router.post("/auth/sync", requireAuth, async (req, res): Promise<void> => {
