@@ -21,6 +21,9 @@ export const SITE_SETTING_DEFAULTS: Record<string, string> = {
   maintenance_mode: "off",
   maintenance_message:
     "HiMewo is undergoing maintenance. Please check back soon.",
+  // JSON array of ISO 3166-1 alpha-2 codes (uppercase) that are BLOCKED from
+  // phone signup. Empty array = every country allowed (block-list model).
+  blocked_signup_countries: "[]",
 };
 
 type ConfigCache = {
@@ -65,6 +68,26 @@ export async function isFeatureEnabled(key: string): Promise<boolean> {
 export async function isMaintenanceMode(): Promise<boolean> {
   const settings = await getSettings();
   return settings.maintenance_mode === "on";
+}
+
+/**
+ * ISO alpha-2 codes (uppercase) blocked from phone signup. Tolerant of a
+ * missing/garbage setting value — returns [] (all allowed) rather than throwing.
+ */
+export async function getBlockedSignupCountries(): Promise<string[]> {
+  const settings = await getSettings();
+  const raw = settings.blocked_signup_countries;
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((c): c is string => typeof c === "string")
+      .map((c) => c.trim().toUpperCase())
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
 }
 
 /**

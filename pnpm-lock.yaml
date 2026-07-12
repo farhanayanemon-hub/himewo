@@ -168,6 +168,10 @@ importers:
         version: 5.9.3
 
   artifacts/admin:
+    dependencies:
+      '@workspace/countries':
+        specifier: workspace:*
+        version: link:../../lib/countries
     devDependencies:
       '@replit/vite-plugin-cartographer':
         specifier: 'catalog:'
@@ -452,6 +456,9 @@ importers:
       '@workspace/api-zod':
         specifier: workspace:*
         version: link:../../lib/api-zod
+      '@workspace/countries':
+        specifier: workspace:*
+        version: link:../../lib/countries
       '@workspace/db':
         specifier: workspace:*
         version: link:../../lib/db

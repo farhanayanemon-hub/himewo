@@ -16,6 +16,7 @@
     "@aws-sdk/s3-request-presigner": "^3.1075.0",
     "@supabase/supabase-js": "^2.108.2",
     "@workspace/api-zod": "workspace:*",
+    "@workspace/countries": "workspace:*",
     "@workspace/db": "workspace:*",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",

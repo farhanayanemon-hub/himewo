@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Animated,
   FlatList,
+  Image,
   Modal,
   Platform,
   Pressable,
@@ -17,14 +18,26 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { detectCountry, validateName } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
+import { getApiOrigin } from "@/lib/api";
 import { useColors } from "@/hooks/useColors";
 import {
   COUNTRIES,
   DEFAULT_COUNTRY,
-  countryFlag,
+  countryFlagUrl,
   findCountry,
   type Country,
 } from "@/constants/countries";
+
+// Flag as an image — emoji flags do not render on Android.
+function CountryFlag({ code, size = 20 }: { code: string; size?: number }) {
+  return (
+    <Image
+      source={{ uri: countryFlagUrl(code) }}
+      style={{ width: size, height: Math.round(size * 0.72), borderRadius: 2 }}
+      resizeMode="cover"
+    />
+  );
+}
 
 type Step =
   | "name"
@@ -108,6 +121,7 @@ export default function SignupScreen() {
   const [gender, setGender] = useState<"male" | "female" | null>(null);
   const [country, setCountry] = useState<Country>(DEFAULT_COUNTRY);
   const [detected, setDetected] = useState<Country | null>(null);
+  const [blocked, setBlocked] = useState<Set<string>>(new Set());
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerQuery, setPickerQuery] = useState("");
   const [phone, setPhone] = useState("");
@@ -153,6 +167,36 @@ export default function SignupScreen() {
     };
   }, []);
 
+  // Fetch blocked countries so they never appear in the picker.
+  useEffect(() => {
+    let cancelled = false;
+    const origin = getApiOrigin() ?? "";
+    fetch(`${origin}/api/auth/signup-config`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { blockedCountries?: unknown } | null) => {
+        if (cancelled || !d || !Array.isArray(d.blockedCountries)) return;
+        setBlocked(
+          new Set(
+            d.blockedCountries
+              .filter((co): co is string => typeof co === "string")
+              .map((co) => co.toUpperCase()),
+          ),
+        );
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // If the selected country becomes blocked, fall back to the first allowed one.
+  useEffect(() => {
+    if (blocked.size && blocked.has(country.code)) {
+      const firstAllowed = COUNTRIES.find((co) => !blocked.has(co.code));
+      if (firstAllowed) setCountry(firstAllowed);
+    }
+  }, [blocked, country.code]);
+
   useEffect(() => {
     slide.setValue(24);
     Animated.timing(slide, {
@@ -187,15 +231,19 @@ export default function SignupScreen() {
     : `${country.dialCode}${phone.trim().replace(/^0+/, "")}`;
 
   const filteredCountries = useMemo(() => {
+    const base =
+      blocked.size > 0
+        ? COUNTRIES.filter((co) => !blocked.has(co.code))
+        : COUNTRIES;
     const q = pickerQuery.trim().toLowerCase();
-    if (!q) return COUNTRIES;
-    return COUNTRIES.filter(
+    if (!q) return base;
+    return base.filter(
       (co) =>
         co.name.toLowerCase().includes(q) ||
         co.dialCode.includes(q) ||
         co.code.toLowerCase() === q,
     );
-  }, [pickerQuery]);
+  }, [pickerQuery, blocked]);
 
   function goTo(next: Step) {
     historyRef.current.push(step);
@@ -483,7 +531,7 @@ export default function SignupScreen() {
                 onPress={() => setPickerOpen(true)}
                 style={[styles.countryBtn, { borderColor: c.border, backgroundColor: c.card }]}
               >
-                <Text style={{ fontSize: 20 }}>{countryFlag(country.code)}</Text>
+                <CountryFlag code={country.code} size={22} />
                 <Text
                   style={{ flex: 1, color: c.foreground, fontSize: 15 }}
                   numberOfLines={1}
@@ -553,9 +601,12 @@ export default function SignupScreen() {
                 autoCapitalize="none"
               />
               {detected && (
-                <Text style={{ color: c.mutedForeground, fontSize: 13 }}>
-                  {countryFlag(detected.code)} Detected country: {detected.name}
-                </Text>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <CountryFlag code={detected.code} size={16} />
+                  <Text style={{ color: c.mutedForeground, fontSize: 13 }}>
+                    Detected country: {detected.name}
+                  </Text>
+                </View>
               )}
               {error && <ErrText c={c} text={error} />}
               <PrimaryBtn
@@ -686,7 +737,7 @@ export default function SignupScreen() {
                 }}
                 style={[styles.countryRow, { borderBottomColor: c.border }]}
               >
-                <Text style={{ fontSize: 20 }}>{countryFlag(item.code)}</Text>
+                <CountryFlag code={item.code} size={22} />
                 <Text style={{ flex: 1, color: c.foreground, fontSize: 15 }}>{item.name}</Text>
                 <Text style={{ color: c.mutedForeground, fontSize: 15 }}>{item.dialCode}</Text>
               </Pressable>

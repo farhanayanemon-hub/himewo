@@ -6,10 +6,32 @@ import { Input } from "@/components/ui/input";
 import {
   COUNTRIES,
   DEFAULT_COUNTRY,
-  countryFlag,
+  countryFlagUrl,
   findCountry,
   type Country,
 } from "@/lib/countries";
+
+// Signup config (blocked countries) is fetched pre-auth, so resolve the API
+// base the same way the generated client does. Empty = root-relative "/api".
+const SIGNUP_API_BASE = (() => {
+  const raw = import.meta.env.VITE_API_URL as string | undefined;
+  if (!raw) return "";
+  return /^https?:\/\//.test(raw) ? raw : `https://${raw}`;
+})();
+
+// Flag rendered as an image — emoji flags do not render on Windows/Android.
+function Flag({ code, className }: { code: string; className?: string }) {
+  return (
+    <img
+      src={countryFlagUrl(code)}
+      alt=""
+      width={22}
+      height={16}
+      loading="lazy"
+      className={className ?? "inline-block h-4 w-[22px] rounded-sm object-cover align-[-2px] ring-1 ring-black/5"}
+    />
+  );
+}
 
 const inputClass =
   "h-12 rounded-lg border-[#dddfe2] dark:border-[#3e4042] bg-white dark:bg-[#3a3b3c] px-4 text-base placeholder:text-[#90949c] focus-visible:ring-2 focus-visible:ring-primary";
@@ -52,9 +74,11 @@ function getErrorMessage(err: unknown): string {
 function CountryPicker({
   value,
   onChange,
+  blocked,
 }: {
   value: Country;
   onChange: (c: Country) => void;
+  blocked?: Set<string>;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -69,15 +93,19 @@ function CountryPicker({
   }, []);
 
   const filtered = useMemo(() => {
+    const base =
+      blocked && blocked.size
+        ? COUNTRIES.filter((c) => !blocked.has(c.code))
+        : COUNTRIES;
     const q = query.trim().toLowerCase();
-    if (!q) return COUNTRIES;
-    return COUNTRIES.filter(
+    if (!q) return base;
+    return base.filter(
       (c) =>
         c.name.toLowerCase().includes(q) ||
         c.dialCode.includes(q) ||
         c.code.toLowerCase() === q,
     );
-  }, [query]);
+  }, [query, blocked]);
 
   return (
     <div className="relative" ref={ref}>
@@ -88,7 +116,7 @@ function CountryPicker({
         aria-label="Select country"
       >
         <span className="flex items-center gap-2 truncate">
-          <span className="text-xl">{countryFlag(value.code)}</span>
+          <Flag code={value.code} className="h-5 w-[26px] rounded-sm object-cover ring-1 ring-black/5" />
           <span className="truncate">{value.name}</span>
           <span className="text-muted-foreground">{value.dialCode}</span>
         </span>
@@ -117,7 +145,7 @@ function CountryPicker({
                 }}
                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-accent"
               >
-                <span className="text-lg">{countryFlag(c.code)}</span>
+                <Flag code={c.code} className="h-4 w-[22px] rounded-sm object-cover ring-1 ring-black/5" />
                 <span className="flex-1 truncate">{c.name}</span>
                 <span className="text-muted-foreground">{c.dialCode}</span>
               </button>
@@ -190,6 +218,7 @@ export function SignupWizard({ onClose }: { onClose: () => void }) {
   const [gender, setGender] = useState<"male" | "female" | null>(null);
   const [country, setCountry] = useState<Country>(DEFAULT_COUNTRY);
   const [detected, setDetected] = useState<Country | null>(null);
+  const [blocked, setBlocked] = useState<Set<string>>(new Set());
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [contactMethod, setContactMethod] = useState<"phone" | "email">("phone");
@@ -230,6 +259,36 @@ export function SignupWizard({ onClose }: { onClose: () => void }) {
       cancelled = true;
     };
   }, []);
+
+  // Fetch the block-list so blocked countries never appear in the picker.
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${SIGNUP_API_BASE}/api/auth/signup-config`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { blockedCountries?: unknown } | null) => {
+        if (cancelled || !d || !Array.isArray(d.blockedCountries)) return;
+        setBlocked(
+          new Set(
+            d.blockedCountries
+              .filter((c): c is string => typeof c === "string")
+              .map((c) => c.toUpperCase()),
+          ),
+        );
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // If the currently selected/detected country becomes blocked, fall back to
+  // the first allowed country so the phone step is never stuck on a blocked one.
+  useEffect(() => {
+    if (blocked.size && blocked.has(country.code)) {
+      const firstAllowed = COUNTRIES.find((c) => !blocked.has(c.code));
+      if (firstAllowed) setCountry(firstAllowed);
+    }
+  }, [blocked, country.code]);
 
   const age = computeAge(dob);
 
@@ -533,7 +592,7 @@ export function SignupWizard({ onClose }: { onClose: () => void }) {
                   We'll send you a code to confirm it's you.
                 </p>
               </div>
-              <CountryPicker value={country} onChange={setCountry} />
+              <CountryPicker value={country} onChange={setCountry} blocked={blocked} />
               <div className="flex gap-2">
                 <div className="flex h-12 items-center rounded-lg border border-[#dddfe2] dark:border-[#3e4042] bg-muted px-3 text-base text-muted-foreground">
                   {country.dialCode}
@@ -599,8 +658,8 @@ export function SignupWizard({ onClose }: { onClose: () => void }) {
                 className={inputClass}
               />
               {detected && (
-                <p className="text-xs text-muted-foreground">
-                  {countryFlag(detected.code)} Detected country: {detected.name}
+                <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Flag code={detected.code} /> Detected country: {detected.name}
                 </p>
               )}
               {error && <p className="text-sm text-destructive">{error}</p>}
