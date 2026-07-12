@@ -64,7 +64,15 @@ export default function HomeScreen() {
     getNextPageParam: (lastPage: Post[]) =>
       lastPage.length === FEED_LIMIT ? lastPage[lastPage.length - 1].id : undefined,
   });
-  const posts = (data?.pages.flat() ?? []) as Post[];
+  // The first page can contain boosted (hoisted) posts for new users; an old
+  // boosted post may reappear at its natural chronological spot on a later
+  // page, so dedupe by id to keep FlatList keys unique.
+  const seenPostIds = new Set<number>();
+  const posts = ((data?.pages.flat() ?? []) as Post[]).filter((p) => {
+    if (seenPostIds.has(p.id)) return false;
+    seenPostIds.add(p.id);
+    return true;
+  });
 
   const { data: ads } = useServeAds({ placement: "feed", limit: 3 });
   const AD_EVERY = 5;

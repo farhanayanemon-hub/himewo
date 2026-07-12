@@ -327,8 +327,22 @@ export default function HomePage() {
     if (page.length < FEED_PAGE_SIZE) setHasMore(false);
   }, [page, cursor]);
 
-  const posts = pages.flat();
-  const lastId = posts.length ? posts[posts.length - 1].id : undefined;
+  // The first page can contain boosted (hoisted) posts for new users; an old
+  // boosted post may legitimately reappear at its natural chronological spot
+  // on a later page, so dedupe by id to keep list keys unique.
+  const seenIds = new Set<number>();
+  const posts = pages.flat().filter((p) => {
+    if (seenIds.has(p.id)) return false;
+    seenIds.add(p.id);
+    return true;
+  });
+  // Next cursor must come from the RAW last fetched page (not the deduped
+  // render list) — if a page were all duplicates, the deduped list's last id
+  // wouldn't advance and pagination would stall on the same cursor.
+  const lastRawPage = pages.length ? pages[pages.length - 1] : undefined;
+  const lastId = lastRawPage?.length
+    ? lastRawPage[lastRawPage.length - 1].id
+    : undefined;
 
   const { data: ads } = useServeAds({ placement: "feed", limit: 3 });
   const AD_EVERY = 5;
