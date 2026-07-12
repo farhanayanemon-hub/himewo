@@ -16,8 +16,21 @@ import {
   groupsTable,
   pagesTable,
   pageMembersTable,
+  pageFollowersTable,
+  friendRequestsTable,
 } from "@workspace/db";
-import { and, or, eq, ne, lt, asc, desc, inArray, isNull } from "drizzle-orm";
+import {
+  and,
+  or,
+  eq,
+  ne,
+  lt,
+  asc,
+  desc,
+  inArray,
+  isNull,
+  count,
+} from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import {
   toProfile,
@@ -104,6 +117,94 @@ router.get("/feed", requireAuth, async (req, res): Promise<void> => {
   // client treats a short page == end of feed). Scan in batches until we
   // collect a full page or truly run out of rows.
   const pageLimit = limit ?? 20;
+
+  // New-user feed enrichment: while the viewer has few friends, hoist recent
+  // PUBLIC posts from people they've sent (still-pending) friend requests to,
+  // plus recent posts from the platform's biggest pages (by follower count),
+  // onto the FIRST page. First page only (no cursor) and always placed BEFORE
+  // the chronological tail: both clients use the LAST returned id as the next
+  // cursor, so the page's last element must stay chronological or pagination
+  // would skip newer posts. Blends away naturally once the user has real
+  // friends (threshold below).
+  const NEW_USER_FRIEND_THRESHOLD = 5;
+  let boosted: (typeof postsTable.$inferSelect)[] = [];
+  if (
+    !actingAsPage &&
+    cursor == null &&
+    friendIds.length < NEW_USER_FRIEND_THRESHOLD
+  ) {
+    const pendingOut = await db
+      .select({ addresseeId: friendRequestsTable.addresseeId })
+      .from(friendRequestsTable)
+      .where(
+        and(
+          eq(friendRequestsTable.requesterId, viewer),
+          eq(friendRequestsTable.status, "pending"),
+        ),
+      );
+    const requestedIds = pendingOut
+      .map((p) => p.addresseeId)
+      .filter((id) => !friendIds.includes(id));
+    const topPages = await db
+      .select({ id: pagesTable.id })
+      .from(pagesTable)
+      .leftJoin(pageFollowersTable, eq(pageFollowersTable.pageId, pagesTable.id))
+      .groupBy(pagesTable.id)
+      .orderBy(desc(count(pageFollowersTable.id)), desc(pagesTable.id))
+      .limit(5);
+    const topPageIds = topPages.map((p) => p.id);
+    const sources = [];
+    if (requestedIds.length > 0) {
+      sources.push(
+        and(
+          inArray(postsTable.authorId, requestedIds),
+          isNull(postsTable.pageId),
+        ),
+      );
+    }
+    if (topPageIds.length > 0) {
+      sources.push(inArray(postsTable.pageId, topPageIds));
+    }
+    if (sources.length > 0) {
+      const candidates = await db
+        .select()
+        .from(postsTable)
+        .where(
+          and(
+            isNull(postsTable.groupId),
+            // ONLY public posts may be hoisted — requested users are not
+            // friends yet, so friends-only/private content must never leak.
+            eq(postsTable.privacy, "public"),
+            eq(postsTable.pendingApproval, false),
+            ne(postsTable.authorId, viewer),
+            or(...sources),
+          ),
+        )
+        .orderBy(desc(postsTable.id))
+        .limit(30);
+      // Same shared visibility policy as the main feed (author lock /
+      // profileVisibility incl. only_me still apply to public posts).
+      const visible = await filterVisiblePosts(candidates, viewer);
+      // Keep a mix: at most 2 posts per author/page, capped at half the page
+      // AND at pageLimit-1 so at least one slot always remains for the
+      // chronological tail — otherwise a tiny limit (e.g. 1) could return a
+      // boosted-only page whose last id breaks the cursor contract.
+      const perSource = new Map<string, number>();
+      const boostCap = Math.min(
+        Math.floor(pageLimit / 2),
+        Math.max(0, pageLimit - 1),
+      );
+      for (const p of visible) {
+        if (boosted.length >= boostCap) break;
+        const key = p.pageId != null ? `page:${p.pageId}` : `user:${p.authorId}`;
+        const n = perSource.get(key) ?? 0;
+        if (n >= 2) continue;
+        perSource.set(key, n + 1);
+        boosted.push(p);
+      }
+    }
+  }
+  const boostedIds = new Set(boosted.map((p) => p.id));
   const SCAN_BATCH = 50;
   const MAX_SCANS = 8;
   const visibleRows: (typeof postsTable.$inferSelect)[] = [];
@@ -135,11 +236,15 @@ router.get("/feed", requireAuth, async (req, res): Promise<void> => {
     // profileVisibility incl. only_me) AND per-post privacy are honored —
     // e.g. a friend's only_me or private posts must never leak into the feed.
     const vis = await filterVisiblePosts(rows, viewer);
-    visibleRows.push(...vis);
+    // Don't repeat a post that was already hoisted to the top of this page.
+    visibleRows.push(...vis.filter((p) => !boostedIds.has(p.id)));
     if (rows.length < SCAN_BATCH) break;
   }
 
-  const posts = await buildPosts(visibleRows.slice(0, pageLimit), viewer);
+  // Boosted rows (if any) go first; the chronological tail fills the rest so
+  // the page's last element keeps the id-cursor contract intact.
+  const pageRows = [...boosted, ...visibleRows].slice(0, pageLimit);
+  const posts = await buildPosts(pageRows, viewer);
   res.json(GetFeedResponse.parse(posts));
 });
 
