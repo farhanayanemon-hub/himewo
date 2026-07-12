@@ -481,6 +481,10 @@ export interface Conversation {
   members: ConversationMember[];
   lastMessage?: Message | null;
   unreadCount: number;
+  isPinned: boolean;
+  isArchived: boolean;
+  isMuted: boolean;
+  markedUnread: boolean;
   createdAt: string;
   lastMessageAt: string;
 }
@@ -502,6 +506,13 @@ export interface ConversationInput {
 export interface ConversationUpdate {
   title?: string;
   avatarUrl?: string;
+}
+
+export interface ConversationPrefsInput {
+  isPinned?: boolean;
+  isArchived?: boolean;
+  isMuted?: boolean;
+  markedUnread?: boolean;
 }
 
 export type AttachmentInputType = typeof AttachmentInputType[keyof typeof AttachmentInputType];

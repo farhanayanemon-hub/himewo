@@ -73,8 +73,8 @@ export default function SettingsScreen() {
         <Text style={[styles.sectionTitle, { color: c.mutedForeground }]}>YOUR ACCOUNT</Text>
         <View style={[styles.card, { backgroundColor: c.card }, shadow("md")]}>
           <Row c={c} icon="person-circle" iconColor={c.primary} title="Accounts Center"
-            subtitle="Password, security, personal details"
-            onPress={() => router.push("/accounts-center")} last />
+            subtitle="Password, security and personal details in the HiMewo app"
+            onPress={() => openMainApp()} last />
         </View>
 
         <Text style={[styles.sectionTitle, { color: c.mutedForeground }]}>PREFERENCES</Text>
@@ -96,10 +96,22 @@ export default function SettingsScreen() {
             subtitle="Go to the full social app" onPress={() => openMainApp()} />
           <Row c={c} icon="archive" iconColor="#65676b" title="Archived chats"
             onPress={() => router.push("/archive")} />
-          {!supabaseEnabled && (
-            <Row c={c} icon="swap-horizontal" iconColor={c.primary} title="Switch profile"
-              subtitle={`Signed in as ${user?.displayName ?? ""}`} onPress={() => setSwitchOpen(true)} />
-          )}
+          <Row c={c} icon="swap-horizontal" iconColor={c.primary} title="Switch account"
+            subtitle={`Signed in as ${user?.displayName ?? ""}`}
+            onPress={() => {
+              if (supabaseEnabled) {
+                Alert.alert(
+                  "Switch account",
+                  "Log out and sign in with another account?",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    { text: "Continue", onPress: () => void signOut() },
+                  ],
+                );
+              } else {
+                setSwitchOpen(true);
+              }
+            }} />
           <Row c={c} icon="log-out" iconColor={c.destructive} title="Log out"
             titleColor={c.destructive} onPress={confirmLogout} last />
         </View>

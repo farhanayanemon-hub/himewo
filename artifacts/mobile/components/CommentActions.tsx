@@ -93,7 +93,7 @@ export function CommentActionsSheet({
           <View
             style={[
               styles.sheet,
-              { backgroundColor: c.card, paddingBottom: insets.bottom + 10 },
+              { backgroundColor: c.surface, paddingBottom: insets.bottom + 10 },
             ]}
           >
             <View style={[styles.handle, { backgroundColor: c.border }]} />
@@ -138,7 +138,7 @@ export function CommentActionsSheet({
         }}
       >
         <View style={styles.selectBackdrop}>
-          <View style={[styles.selectCard, { backgroundColor: c.card }]}>
+          <View style={[styles.selectCard, { backgroundColor: c.surface }]}>
             <Text style={[styles.selectTitle, { color: c.mutedForeground }]}>
               Select text
             </Text>

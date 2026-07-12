@@ -311,7 +311,7 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
       <Modal visible={menuOpen} transparent animationType="slide" onRequestClose={() => setMenuOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setMenuOpen(false)}>
           <Pressable
-            style={[styles.sheet, { backgroundColor: c.card }]}
+            style={[styles.sheet, { backgroundColor: c.surface }]}
             onPress={(e) => e.stopPropagation()}
           >
             <View style={[styles.handle, { backgroundColor: c.border }]} />
@@ -395,7 +395,7 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
       <Modal visible={editOpen} transparent animationType="fade" onRequestClose={() => setEditOpen(false)}>
         <Pressable style={styles.editBackdrop} onPress={() => setEditOpen(false)}>
           <Pressable
-            style={[styles.editCard, { backgroundColor: c.card }]}
+            style={[styles.editCard, { backgroundColor: c.surface }]}
             onPress={(e) => e.stopPropagation()}
           >
             <Text style={[styles.editTitle, { color: c.foreground }]}>Edit caption</Text>

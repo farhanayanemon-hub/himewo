@@ -109,7 +109,7 @@ export function BoostSheet({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
       <Pressable style={styles.backdrop} onPress={close}>
-        <Pressable style={[styles.sheet, { backgroundColor: c.card }]} onPress={(e) => e.stopPropagation()}>
+        <Pressable style={[styles.sheet, { backgroundColor: c.surface }]} onPress={(e) => e.stopPropagation()}>
           <View style={[styles.handle, { backgroundColor: c.border }]} />
           <ScrollView keyboardShouldPersistTaps="handled">
             <View style={styles.titleRow}>

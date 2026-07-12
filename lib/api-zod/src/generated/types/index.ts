@@ -93,6 +93,7 @@ export * from './conversationInput';
 export * from './conversationInputType';
 export * from './conversationMember';
 export * from './conversationMemberRole';
+export * from './conversationPrefsInput';
 export * from './conversationType';
 export * from './conversationUpdate';
 export * from './earningsRewards';

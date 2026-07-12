@@ -2164,6 +2164,10 @@ export const ListConversationsResponseItem = zod.object({
   "deletedAt": zod.coerce.date().nullish()
 }),zod.null()]).optional(),
   "unreadCount": zod.number(),
+  "isPinned": zod.boolean(),
+  "isArchived": zod.boolean(),
+  "isMuted": zod.boolean(),
+  "markedUnread": zod.boolean(),
   "createdAt": zod.coerce.date(),
   "lastMessageAt": zod.coerce.date()
 })
@@ -2293,6 +2297,10 @@ export const CreateConversationResponse = zod.object({
   "deletedAt": zod.coerce.date().nullish()
 }),zod.null()]).optional(),
   "unreadCount": zod.number(),
+  "isPinned": zod.boolean(),
+  "isArchived": zod.boolean(),
+  "isMuted": zod.boolean(),
+  "markedUnread": zod.boolean(),
   "createdAt": zod.coerce.date(),
   "lastMessageAt": zod.coerce.date()
 })
@@ -2419,6 +2427,10 @@ export const GetConversationResponse = zod.object({
   "deletedAt": zod.coerce.date().nullish()
 }),zod.null()]).optional(),
   "unreadCount": zod.number(),
+  "isPinned": zod.boolean(),
+  "isArchived": zod.boolean(),
+  "isMuted": zod.boolean(),
+  "markedUnread": zod.boolean(),
   "createdAt": zod.coerce.date(),
   "lastMessageAt": zod.coerce.date()
 })
@@ -2550,6 +2562,10 @@ export const UpdateConversationResponse = zod.object({
   "deletedAt": zod.coerce.date().nullish()
 }),zod.null()]).optional(),
   "unreadCount": zod.number(),
+  "isPinned": zod.boolean(),
+  "isArchived": zod.boolean(),
+  "isMuted": zod.boolean(),
+  "markedUnread": zod.boolean(),
   "createdAt": zod.coerce.date(),
   "lastMessageAt": zod.coerce.date()
 })
@@ -2869,6 +2885,10 @@ export const AddConversationMembersResponse = zod.object({
   "deletedAt": zod.coerce.date().nullish()
 }),zod.null()]).optional(),
   "unreadCount": zod.number(),
+  "isPinned": zod.boolean(),
+  "isArchived": zod.boolean(),
+  "isMuted": zod.boolean(),
+  "markedUnread": zod.boolean(),
   "createdAt": zod.coerce.date(),
   "lastMessageAt": zod.coerce.date()
 })
@@ -2880,6 +2900,254 @@ export const RemoveConversationMemberParams = zod.object({
 })
 
 export const RemoveConversationMemberResponse = zod.void()
+
+
+export const UpdateConversationPrefsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateConversationPrefsBody = zod.object({
+  "isPinned": zod.boolean().optional(),
+  "isArchived": zod.boolean().optional(),
+  "isMuted": zod.boolean().optional(),
+  "markedUnread": zod.boolean().optional()
+})
+
+export const UpdateConversationPrefsResponse = zod.object({
+  "id": zod.number(),
+  "type": zod.enum(['direct', 'group']),
+  "title": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "members": zod.array(zod.object({
+  "user": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "role": zod.enum(['member', 'admin']),
+  "lastReadMessageId": zod.number().nullish(),
+  "joinedAt": zod.coerce.date()
+})),
+  "lastMessage": zod.union([zod.object({
+  "id": zod.number(),
+  "conversationId": zod.number(),
+  "sender": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "content": zod.string(),
+  "type": zod.enum(['text', 'image', 'video', 'file', 'audio', 'sticker', 'call']),
+  "replyToId": zod.number().nullish(),
+  "attachments": zod.array(zod.object({
+  "id": zod.number(),
+  "url": zod.string(),
+  "type": zod.enum(['image', 'video', 'file', 'audio']),
+  "name": zod.string().nullish(),
+  "thumbnailUrl": zod.string().nullish(),
+  "sizeBytes": zod.number().nullish(),
+  "width": zod.number().nullish(),
+  "height": zod.number().nullish(),
+  "durationMs": zod.number().nullish()
+})),
+  "reactions": zod.array(zod.object({
+  "emoji": zod.string(),
+  "count": zod.number(),
+  "viewerReacted": zod.boolean().optional()
+})),
+  "story": zod.union([zod.object({
+  "id": zod.number(),
+  "storyType": zod.enum(['media', 'text']),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.string().nullish(),
+  "textContent": zod.string().nullish(),
+  "backgroundStyle": zod.string().nullish(),
+  "authorName": zod.string().nullish(),
+  "expired": zod.boolean().optional()
+}),zod.null()]).optional(),
+  "createdAt": zod.coerce.date(),
+  "editedAt": zod.coerce.date().nullish(),
+  "deletedAt": zod.coerce.date().nullish()
+}),zod.null()]).optional(),
+  "unreadCount": zod.number(),
+  "isPinned": zod.boolean(),
+  "isArchived": zod.boolean(),
+  "isMuted": zod.boolean(),
+  "markedUnread": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date()
+})
+
+
+export const ClearConversationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ClearConversationResponse = zod.void()
+
+
+export const BlockUserParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const BlockUserResponse = zod.void()
+
+
+export const UnblockUserParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UnblockUserResponse = zod.void()
+
+
+export const RestrictUserParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const RestrictUserResponse = zod.void()
+
+
+export const UnrestrictUserParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UnrestrictUserResponse = zod.void()
+
+
+export const ListBlockedUsersResponseItem = zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+})
+export const ListBlockedUsersResponse = zod.array(ListBlockedUsersResponseItem)
+
+
+export const ListRestrictedUsersResponseItem = zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+})
+export const ListRestrictedUsersResponse = zod.array(ListRestrictedUsersResponseItem)
 
 
 export const SetMessageReactionParams = zod.object({

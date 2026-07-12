@@ -736,6 +736,7 @@ export async function buildConversations(
     rows.map(async (row) => {
       const members = membersByConv.get(row.id) ?? [];
       const viewerMember = members.find((m) => m.userId === viewerId);
+      const clearedBefore = viewerMember?.clearedBeforeId ?? 0;
       const [unread] = await db
         .select({ value: count() })
         .from(messagesTable)
@@ -743,9 +744,15 @@ export async function buildConversations(
           and(
             eq(messagesTable.conversationId, row.id),
             ne(messagesTable.senderId, viewerId),
-            gt(messagesTable.id, viewerMember?.lastReadMessageId ?? 0),
+            gt(
+              messagesTable.id,
+              Math.max(viewerMember?.lastReadMessageId ?? 0, clearedBefore),
+            ),
           ),
         );
+      // Hide the last message preview if the viewer cleared the chat after it.
+      const last = builtLastByConv.get(row.id) ?? null;
+      const visibleLast = last && last.id <= clearedBefore ? null : last;
       return {
         id: row.id,
         type: row.type,
@@ -757,8 +764,12 @@ export async function buildConversations(
           lastReadMessageId: m.lastReadMessageId,
           joinedAt: m.joinedAt,
         })),
-        lastMessage: builtLastByConv.get(row.id) ?? null,
+        lastMessage: visibleLast,
         unreadCount: unread?.value ?? 0,
+        isPinned: viewerMember?.isPinned ?? false,
+        isArchived: viewerMember?.isArchived ?? false,
+        isMuted: viewerMember?.isMuted ?? false,
+        markedUnread: viewerMember?.markedUnread ?? false,
         createdAt: row.createdAt,
         lastMessageAt: row.lastMessageAt,
       };

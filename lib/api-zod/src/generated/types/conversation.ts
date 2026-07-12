@@ -19,6 +19,10 @@ export interface Conversation {
   members: ConversationMember[];
   lastMessage?: Message | null;
   unreadCount: number;
+  isPinned: boolean;
+  isArchived: boolean;
+  isMuted: boolean;
+  markedUnread: boolean;
   createdAt: Date;
   lastMessageAt: Date;
 }

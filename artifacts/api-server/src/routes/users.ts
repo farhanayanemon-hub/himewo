@@ -7,6 +7,7 @@ import {
   friendRequestsTable,
   albumsTable,
   albumPhotosTable,
+  userBlocksTable,
 } from "@workspace/db";
 import {
   and,
@@ -51,6 +52,12 @@ import {
   GetUserFriendsQueryParams,
   GetUserFriendsResponse,
   GetTodaysBirthdaysResponse,
+  BlockUserParams,
+  UnblockUserParams,
+  RestrictUserParams,
+  UnrestrictUserParams,
+  ListBlockedUsersResponse,
+  ListRestrictedUsersResponse,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -503,6 +510,128 @@ router.get("/birthdays", requireAuth, async (req, res): Promise<void> => {
     (p) => p.birthday && p.birthday.slice(5) === todayMmDd,
   );
   res.json(GetTodaysBirthdaysResponse.parse(birthdayFriends.map((p) => toProfile(p))));
+});
+
+// ---------------- Block / Restrict ----------------
+
+async function setBlockKind(
+  viewer: string,
+  targetId: string,
+  kind: "block" | "restrict",
+  enabled: boolean,
+): Promise<{ status: number; error?: string }> {
+  if (viewer === targetId) {
+    return { status: 400, error: "You can't do this to yourself" };
+  }
+  const [target] = await db
+    .select({ id: profilesTable.id })
+    .from(profilesTable)
+    .where(eq(profilesTable.id, targetId));
+  if (!target) return { status: 404, error: "User not found" };
+  if (enabled) {
+    await db
+      .insert(userBlocksTable)
+      .values({ userId: viewer, targetId, kind })
+      .onConflictDoNothing();
+  } else {
+    await db
+      .delete(userBlocksTable)
+      .where(
+        and(
+          eq(userBlocksTable.userId, viewer),
+          eq(userBlocksTable.targetId, targetId),
+          eq(userBlocksTable.kind, kind),
+        ),
+      );
+  }
+  return { status: 204 };
+}
+
+router.post("/users/:id/block", requireAuth, async (req, res): Promise<void> => {
+  const params = BlockUserParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const result = await setBlockKind(req.userId!, params.data.id, "block", true);
+  if (result.error) {
+    res.status(result.status).json({ error: result.error });
+    return;
+  }
+  res.sendStatus(204);
+});
+
+router.delete("/users/:id/block", requireAuth, async (req, res): Promise<void> => {
+  const params = UnblockUserParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const result = await setBlockKind(req.userId!, params.data.id, "block", false);
+  if (result.error) {
+    res.status(result.status).json({ error: result.error });
+    return;
+  }
+  res.sendStatus(204);
+});
+
+router.post("/users/:id/restrict", requireAuth, async (req, res): Promise<void> => {
+  const params = RestrictUserParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const result = await setBlockKind(req.userId!, params.data.id, "restrict", true);
+  if (result.error) {
+    res.status(result.status).json({ error: result.error });
+    return;
+  }
+  res.sendStatus(204);
+});
+
+router.delete("/users/:id/restrict", requireAuth, async (req, res): Promise<void> => {
+  const params = UnrestrictUserParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const result = await setBlockKind(req.userId!, params.data.id, "restrict", false);
+  if (result.error) {
+    res.status(result.status).json({ error: result.error });
+    return;
+  }
+  res.sendStatus(204);
+});
+
+async function listBlockKind(viewer: string, kind: "block" | "restrict") {
+  const rows = await db
+    .select({ targetId: userBlocksTable.targetId })
+    .from(userBlocksTable)
+    .where(
+      and(eq(userBlocksTable.userId, viewer), eq(userBlocksTable.kind, kind)),
+    )
+    .orderBy(desc(userBlocksTable.createdAt));
+  const ids = rows.map((r) => r.targetId);
+  if (ids.length === 0) return [];
+  const profiles = await db
+    .select()
+    .from(profilesTable)
+    .where(inArray(profilesTable.id, ids));
+  const byId = new Map(profiles.map((p) => [p.id, p]));
+  return ids
+    .map((id) => byId.get(id))
+    .filter((p): p is NonNullable<typeof p> => Boolean(p))
+    .map((p) => toProfile(p));
+}
+
+router.get("/me/blocked", requireAuth, async (req, res): Promise<void> => {
+  const built = await listBlockKind(req.userId!, "block");
+  res.json(ListBlockedUsersResponse.parse(built));
+});
+
+router.get("/me/restricted", requireAuth, async (req, res): Promise<void> => {
+  const built = await listBlockKind(req.userId!, "restrict");
+  res.json(ListRestrictedUsersResponse.parse(built));
 });
 
 export default router;

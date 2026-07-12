@@ -702,6 +702,85 @@ paths:
         - { name: userId, in: path, required: true, schema: { type: string } }
       responses:
         "204": { description: Removed }
+  /conversations/{id}/prefs:
+    patch:
+      operationId: updateConversationPrefs
+      tags: [messaging]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ConversationPrefsInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Conversation" }
+  /conversations/{id}/clear:
+    post:
+      operationId: clearConversation
+      tags: [messaging]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Cleared for viewer }
+  /users/{id}/block:
+    post:
+      operationId: blockUser
+      tags: [users]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Blocked }
+    delete:
+      operationId: unblockUser
+      tags: [users]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Unblocked }
+  /users/{id}/restrict:
+    post:
+      operationId: restrictUser
+      tags: [users]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Restricted }
+    delete:
+      operationId: unrestrictUser
+      tags: [users]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Unrestricted }
+  /me/blocked:
+    get:
+      operationId: listBlockedUsers
+      tags: [users]
+      responses:
+        "200":
+          description: Blocked users
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Profile" }
+  /me/restricted:
+    get:
+      operationId: listRestrictedUsers
+      tags: [users]
+      responses:
+        "200":
+          description: Restricted users
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Profile" }
   /messages/{id}/reaction:
     put:
       operationId: setMessageReaction
@@ -3896,7 +3975,19 @@ components:
 
     Conversation:
       type: object
-      required: [id, type, members, unreadCount, createdAt, lastMessageAt]
+      required:
+        [
+          id,
+          type,
+          members,
+          unreadCount,
+          createdAt,
+          lastMessageAt,
+          isPinned,
+          isArchived,
+          isMuted,
+          markedUnread,
+        ]
       properties:
         id: { type: integer }
         type: { type: string, enum: [direct, group] }
@@ -3910,6 +4001,10 @@ components:
             - { $ref: "#/components/schemas/Message" }
             - { type: "null" }
         unreadCount: { type: integer }
+        isPinned: { type: boolean }
+        isArchived: { type: boolean }
+        isMuted: { type: boolean }
+        markedUnread: { type: boolean }
         createdAt: { type: string, format: date-time }
         lastMessageAt: { type: string, format: date-time }
     ConversationMember:
@@ -3934,6 +4029,13 @@ components:
       properties:
         title: { type: string }
         avatarUrl: { type: string }
+    ConversationPrefsInput:
+      type: object
+      properties:
+        isPinned: { type: boolean }
+        isArchived: { type: boolean }
+        isMuted: { type: boolean }
+        markedUnread: { type: boolean }
 
     Attachment:
       type: object

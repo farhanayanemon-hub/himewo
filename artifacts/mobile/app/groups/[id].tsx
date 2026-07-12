@@ -73,7 +73,7 @@ function InviteFriendsModal({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalBackdrop}>
-        <View style={[styles.modalCard, { backgroundColor: c.card }]}>
+        <View style={[styles.modalCard, { backgroundColor: c.surface }]}>
           <Text style={[styles.modalTitle, { color: c.foreground }]}>Invite friends</Text>
           <Text style={{ color: c.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 13, marginBottom: 10 }}>
             Invite friends to join {groupName}.
