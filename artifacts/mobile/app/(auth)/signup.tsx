@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { detectCountry } from "@workspace/api-client-react";
+import { detectCountry, validateName } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { useColors } from "@/hooks/useColors";
 import {
@@ -213,6 +213,32 @@ export default function SignupScreen() {
     }
   }
 
+  const [firstNameError, setFirstNameError] = useState<string | null>(null);
+  const [lastNameError, setLastNameError] = useState<string | null>(null);
+
+  async function handleNameNext() {
+    setError(null);
+    setFirstNameError(null);
+    setLastNameError(null);
+    setBusy(true);
+    try {
+      const result = await validateName({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+      });
+      if (result.valid) {
+        goTo("dob");
+      } else {
+        setFirstNameError(result.firstNameError ?? null);
+        setLastNameError(result.lastNameError ?? null);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not check the name");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleSendOtp(method: "phone" | "email") {
     setError(null);
     setBusy(true);
@@ -310,20 +336,62 @@ export default function SignupScreen() {
             <>
               <Title c={c} title="What's your name?" subtitle="Use the name you go by in everyday life." />
               <View style={{ flexDirection: "row", gap: 10 }}>
-                <WizInput
-                  placeholder="First name"
-                  value={firstName}
-                  onChangeText={setFirstName}
-                  style={{ flex: 1 }}
-                />
-                <WizInput
-                  placeholder="Last name"
-                  value={lastName}
-                  onChangeText={setLastName}
-                  style={{ flex: 1 }}
-                />
+                <View style={{ flex: 1 }}>
+                  <WizInput
+                    placeholder="First name"
+                    value={firstName}
+                    onChangeText={(t: string) => {
+                      setFirstName(t);
+                      setFirstNameError(null);
+                    }}
+                  />
+                  {firstNameError && (
+                    <Text style={{ color: c.destructive, fontSize: 12, marginTop: 4, fontFamily: "Inter_400Regular" }}>
+                      {firstNameError}
+                    </Text>
+                  )}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <WizInput
+                    placeholder="Last name"
+                    value={lastName}
+                    onChangeText={(t: string) => {
+                      setLastName(t);
+                      setLastNameError(null);
+                    }}
+                  />
+                  {lastNameError && (
+                    <Text style={{ color: c.destructive, fontSize: 12, marginTop: 4, fontFamily: "Inter_400Regular" }}>
+                      {lastNameError}
+                    </Text>
+                  )}
+                </View>
               </View>
-              <PrimaryBtn label="Next" disabled={!nameValid} onPress={() => goTo("dob")} />
+              <Text
+                style={{
+                  color: c.mutedForeground,
+                  fontSize: 12,
+                  lineHeight: 17,
+                  backgroundColor: c.secondary,
+                  borderRadius: 10,
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  fontFamily: "Inter_400Regular",
+                }}
+              >
+                Make sure it's the name people call you in real life — fake or
+                joke names aren't allowed on HiMewo.
+              </Text>
+              {error && (
+                <Text style={{ color: c.destructive, fontSize: 13, fontFamily: "Inter_400Regular" }}>
+                  {error}
+                </Text>
+              )}
+              <PrimaryBtn
+                label={busy ? "Checking…" : "Next"}
+                disabled={!nameValid || busy}
+                onPress={handleNameNext}
+              />
             </>
           )}
 

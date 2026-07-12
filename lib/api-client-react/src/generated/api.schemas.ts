@@ -166,6 +166,21 @@ export interface ProfileUpdate {
   phone?: string;
 }
 
+export interface NameValidationInput {
+  /** @maxLength 100 */
+  firstName: string;
+  /** @maxLength 100 */
+  lastName: string;
+}
+
+export interface NameValidationResult {
+  valid: boolean;
+  /** @nullable */
+  firstNameError: string | null;
+  /** @nullable */
+  lastNameError: string | null;
+}
+
 export type MediaItemType = typeof MediaItemType[keyof typeof MediaItemType];
 
 

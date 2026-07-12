@@ -85,6 +85,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/Profile"
 
+  /auth/validate-name:
+    post:
+      operationId: validateName
+      tags: [auth]
+      summary: Validate a first/last name pair for signup (public, no auth)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NameValidationInput"
+      responses:
+        "200":
+          description: Validation result (200 even when the name is rejected)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NameValidationResult"
+
   # ---------------- Users ----------------
   /users:
     get:
@@ -3791,6 +3810,20 @@ components:
         website: { type: string }
         email: { type: string }
         phone: { type: string }
+
+    NameValidationInput:
+      type: object
+      required: [firstName, lastName]
+      properties:
+        firstName: { type: string, maxLength: 100 }
+        lastName: { type: string, maxLength: 100 }
+    NameValidationResult:
+      type: object
+      required: [valid, firstNameError, lastNameError]
+      properties:
+        valid: { type: boolean }
+        firstNameError: { type: ["string", "null"] }
+        lastNameError: { type: ["string", "null"] }
 
     MediaItem:
       type: object

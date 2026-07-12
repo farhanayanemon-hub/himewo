@@ -4,10 +4,13 @@ import { db, profilesTable } from "@workspace/db";
 import { requireAuth } from "../lib/auth";
 import { buildProfileDetail } from "../lib/serialize";
 import { normalizeUsername, isReservedUsername } from "../lib/username";
+import { validateFullName, validateNamePart } from "../lib/nameValidation";
 import {
   GetCurrentUserResponse,
   SyncProfileBody,
   SyncProfileResponse,
+  ValidateNameBody,
+  ValidateNameResponse,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -47,6 +50,21 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
   res.json(GetCurrentUserResponse.parse(profile));
 });
 
+// Public (used on the wizard's name step, before any session exists). Always
+// answers 200 with a result — a rejected name is not an HTTP error.
+router.post("/auth/validate-name", async (req, res): Promise<void> => {
+  const parsed = ValidateNameBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const result = validateFullName(
+    parsed.data.firstName,
+    parsed.data.lastName,
+  );
+  res.json(ValidateNameResponse.parse(result));
+});
+
 router.post("/auth/sync", requireAuth, async (req, res): Promise<void> => {
   const parsed = SyncProfileBody.safeParse(req.body);
   if (!parsed.success) {
@@ -55,6 +73,23 @@ router.post("/auth/sync", requireAuth, async (req, res): Promise<void> => {
   }
   const userId = req.userId!;
   const data = parsed.data;
+  // Server-side enforcement of the real-name policy — the wizard validates
+  // via /auth/validate-name, but sync must reject bad names too so the
+  // endpoint can't be used to bypass validation.
+  if (data.firstName !== undefined) {
+    const err = validateNamePart(data.firstName, "First name");
+    if (err) {
+      res.status(400).json({ error: err });
+      return;
+    }
+  }
+  if (data.lastName !== undefined) {
+    const err = validateNamePart(data.lastName, "Last name");
+    if (err) {
+      res.status(400).json({ error: err });
+      return;
+    }
+  }
   const username = await pickAvailableUsername(data.username);
   // Wizard-only fields: never null-out existing values on re-sync — only
   // update when the client actually sends them.

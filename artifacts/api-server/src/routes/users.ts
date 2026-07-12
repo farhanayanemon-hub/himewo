@@ -28,6 +28,7 @@ import {
   isReservedUsername,
   isUniqueViolation,
 } from "../lib/username";
+import { validateDisplayName } from "../lib/nameValidation";
 import {
   toProfile,
   buildProfileDetail,
@@ -257,6 +258,11 @@ router.patch("/users/me", requireAuth, async (req, res): Promise<void> => {
     if (!next.length || next === me.displayName) {
       delete updates.displayName;
     } else {
+      const nameError = validateDisplayName(next);
+      if (nameError) {
+        res.status(400).json({ error: nameError });
+        return;
+      }
       if (me.displayNameChangedAt) {
         const nextAllowed = new Date(
           me.displayNameChangedAt.getTime() +
