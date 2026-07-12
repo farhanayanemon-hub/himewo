@@ -56,6 +56,7 @@
 - [Real-name validation](himewo-name-validation.md) — one server lib; public validate-name always-200 contract; 3 enforcement points (sync validates only provided parts).
 - [New-user feed boost](himewo-feed-boost.md) — first-page-only hoist (requested friends + top pages); boosted ≤ min(limit/2, limit-1) so last item stays chronological (id-cursor contract); clients dedupe by id.
 - [Hashtags + auto-albums](himewo-hashtags-albums.md) — hashtag regex/route contract, post bodies MUST render via mention renderers or tags go dead; albums.kind auto-albums non-deletable; /hashtag route before /:username.
+- [Auth recovery](himewo-auth-recovery.md) — public find-account limiter: RIGHTMOST XFF hop + identifier key (leftmost is spoofable); reset OTP uses shouldCreateUser:false; abandon-after-OTP = legit login.
 - [Story viewer (FB-style)](himewo-story-viewer.md) — photo/text 15s, video≤30s (playToEnd/onEnded early-advance); tap=within person, swipe=change person→first unseen; mobile anchors to tapped author, web scans first-unseen group (DELIBERATE asymmetry).
 - [Page follow self-hide](himewo-page-access.md) — hide page Follow button when acting AS that same page (`actingPage?.id !== page.id`) on web + mobile.
 - [Story creation + gallery-first](himewo-story-creation.md) — stories.audience stored-not-enforced, BOTH serializer paths must emit it, live DB needs additive column pre-deploy; media-intent entries (reel, post photo icon) auto-open picker, text entries don't.
