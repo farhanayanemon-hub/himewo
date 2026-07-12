@@ -56,3 +56,7 @@ silently broken the dev DB / typecheck after a merge:
   must be regenerated; `pnpm --filter @workspace/api-spec run codegen` runs
   orval AND `typecheck:libs` (tsc --build), which rebuilds the lib declarations
   that per-package `tsc -p` consumers (e.g. api-server typecheck) read.
+
+## ghpush helper message + killed-run gotchas
+- The REST push helper takes `--push` as FIRST arg; commit message comes from `PUSH_MSG` env (argv fallback added Jul 2026). Without it a stale fallback message gets committed.
+- A bash tool-timeout (exit -1, no output) does NOT mean the push failed — the node child survives and often completes. ALWAYS verify by re-running the helper (dry run shows "changed files: 0") or checking file presence on main via contents API before retrying, or you may double-commit.
