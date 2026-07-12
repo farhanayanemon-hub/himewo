@@ -30,6 +30,8 @@ export default function LoginScreen() {
     signInWithGoogle,
     sendPhoneOtp,
     verifyPhoneOtp,
+    verifyTotpForLogin,
+    cancelMfaLogin,
   } = useAuth();
 
   const [screen, setScreen] = useState<"landing" | "login" | "forgot" | "find">("landing");
@@ -46,19 +48,50 @@ export default function LoginScreen() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [devBusy, setDevBusy] = useState<string | null>(null);
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
 
   const submitPassword = async () => {
     setError(null);
     setBusy(true);
     try {
-      if (isPhoneLike(identifier)) {
-        await signInWithPhonePassword(normalizePhone(identifier), password);
-      } else {
-        await signInWithEmail(identifier.trim(), password);
+      const result = isPhoneLike(identifier)
+        ? await signInWithPhonePassword(normalizePhone(identifier), password)
+        : await signInWithEmail(identifier.trim(), password);
+      if (result.mfaRequired) {
+        setMfaFactorId(result.factorId);
+        setMfaCode("");
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
+      setBusy(false);
+    }
+  };
+
+  const submitMfaCode = async () => {
+    if (!mfaFactorId) return;
+    setError(null);
+    setBusy(true);
+    try {
+      await verifyTotpForLogin(mfaFactorId, mfaCode.trim());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Invalid code");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const cancelMfa = async () => {
+    setBusy(true);
+    try {
+      await cancelMfaLogin();
+    } catch {
+      // ignore — returning to the password step anyway
+    } finally {
+      setMfaFactorId(null);
+      setMfaCode("");
+      setError(null);
       setBusy(false);
     }
   };
@@ -132,7 +165,47 @@ export default function LoginScreen() {
           </Text>
         </View>
 
-        {supabaseEnabled && (screen === "forgot" || screen === "find") ? (
+        {supabaseEnabled && mfaFactorId ? (
+          <View style={styles.form}>
+            <Text
+              style={{
+                color: c.foreground,
+                fontFamily: "Inter_700Bold",
+                fontSize: 18,
+                textAlign: "center",
+              }}
+            >
+              Two-factor authentication
+            </Text>
+            <Text style={{ color: c.mutedForeground, fontSize: 13, textAlign: "center" }}>
+              Enter the 6-digit code from your authenticator app to finish
+              logging in.
+            </Text>
+            <Field
+              icon="keypad-outline"
+              placeholder="6-digit code"
+              value={mfaCode}
+              onChangeText={setMfaCode}
+              keyboardType="number-pad"
+              autoCapitalize="none"
+            />
+            {error && <Text style={{ color: c.destructive, fontSize: 13 }}>{error}</Text>}
+            <Pressable
+              style={[styles.primaryBtn, { backgroundColor: c.primary }]}
+              onPress={submitMfaCode}
+              disabled={busy || mfaCode.trim().length === 0}
+            >
+              {busy ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.primaryBtnText}>Verify & Log In</Text>
+              )}
+            </Pressable>
+            <Pressable onPress={cancelMfa} disabled={busy}>
+              <Text style={[styles.switchText, { color: c.primary }]}>← Back to login</Text>
+            </Pressable>
+          </View>
+        ) : supabaseEnabled && (screen === "forgot" || screen === "find") ? (
           <AccountRecovery
             mode={screen}
             onClose={() => {

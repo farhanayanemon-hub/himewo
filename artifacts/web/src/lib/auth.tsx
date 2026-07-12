@@ -38,14 +38,44 @@ export interface WizardProfileArgs {
   phone?: string;
 }
 
+export type PasswordSignInResult =
+  | { mfaRequired: false }
+  | { mfaRequired: true; factorId: string };
+
+export interface TotpFactorInfo {
+  id: string;
+  status: "verified" | "unverified";
+}
+
+export interface TotpEnrollment {
+  factorId: string;
+  qrCode: string;
+  secret: string;
+  uri: string;
+}
+
 interface AuthContextValue {
   user: Profile | null;
   loading: boolean;
   isAuthenticated: boolean;
   supabaseEnabled: boolean;
   devUsers: DevUser[];
-  signInWithEmail: (email: string, password: string) => Promise<void>;
-  signInWithPhonePassword: (phone: string, password: string) => Promise<void>;
+  signInWithEmail: (
+    email: string,
+    password: string,
+  ) => Promise<PasswordSignInResult>;
+  signInWithPhonePassword: (
+    phone: string,
+    password: string,
+  ) => Promise<PasswordSignInResult>;
+  /** Complete an MFA-gated login with a 6-digit authenticator code. */
+  verifyTotpForLogin: (factorId: string, code: string) => Promise<void>;
+  /** Abort an MFA-gated login (drops the half-authenticated session). */
+  cancelMfaLogin: () => Promise<void>;
+  listTotpFactors: () => Promise<TotpFactorInfo[]>;
+  enrollTotp: () => Promise<TotpEnrollment>;
+  verifyTotpEnrollment: (factorId: string, code: string) => Promise<void>;
+  unenrollTotp: (factorId: string, code: string) => Promise<void>;
   signUpWithEmail: (args: SignUpArgs) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   sendPhoneOtp: (phone: string) => Promise<void>;
@@ -81,6 +111,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const pendingProfile = useRef<SignUpArgs | null>(null);
   const wizardActive = useRef(false);
+  // True between a password sign-in and the TOTP verification for accounts
+  // with two-factor auth — suppresses the auto-login in onAuthStateChange so
+  // the app doesn't treat the half-authenticated (AAL1) session as logged in.
+  const mfaPending = useRef(false);
 
   const loadUser = useCallback(async () => {
     try {
@@ -111,7 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // During the signup wizard the wizard itself syncs the profile
             // with the full field set — skip the fallback sync so we don't
             // create a half-empty profile from the email prefix.
-            if (wizardActive.current) return;
+            if (wizardActive.current || mfaPending.current) return;
             const pending = pendingProfile.current;
             if (pending && session.user) {
               try {
@@ -177,24 +211,150 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [loadUser]);
 
+  // After a password sign-in: if the account has a verified TOTP factor and
+  // the session is still AAL1, keep the login gated and hand the factor id
+  // back to the login form so it can ask for the 6-digit code.
+  const finishPasswordSignIn = useCallback(async (): Promise<PasswordSignInResult> => {
+    const sb = requireSupabase();
+    const { data: aal } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal && aal.currentLevel !== "aal2" && aal.nextLevel === "aal2") {
+      const { data: factors } = await sb.auth.mfa.listFactors();
+      const totp = (factors?.all ?? []).find(
+        (f) => f.factor_type === "totp" && f.status === "verified",
+      );
+      if (totp) return { mfaRequired: true, factorId: totp.id };
+    }
+    mfaPending.current = false;
+    await loadUser();
+    return { mfaRequired: false };
+  }, [loadUser]);
+
   const signInWithEmail = useCallback(
-    async (email: string, password: string) => {
+    async (email: string, password: string): Promise<PasswordSignInResult> => {
       const sb = requireSupabase();
-      const { error } = await sb.auth.signInWithPassword({ email, password });
+      mfaPending.current = true;
+      try {
+        const { error } = await sb.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        return await finishPasswordSignIn();
+      } catch (e) {
+        mfaPending.current = false;
+        throw e;
+      }
+    },
+    [finishPasswordSignIn],
+  );
+
+  const signInWithPhonePassword = useCallback(
+    async (phone: string, password: string): Promise<PasswordSignInResult> => {
+      const sb = requireSupabase();
+      mfaPending.current = true;
+      try {
+        const { error } = await sb.auth.signInWithPassword({ phone, password });
+        if (error) throw error;
+        return await finishPasswordSignIn();
+      } catch (e) {
+        mfaPending.current = false;
+        throw e;
+      }
+    },
+    [finishPasswordSignIn],
+  );
+
+  const verifyTotpForLogin = useCallback(
+    async (factorId: string, code: string) => {
+      const sb = requireSupabase();
+      const { data: challenge, error: challengeError } =
+        await sb.auth.mfa.challenge({ factorId });
+      if (challengeError) throw challengeError;
+      const { error } = await sb.auth.mfa.verify({
+        factorId,
+        challengeId: challenge.id,
+        code,
+      });
       if (error) throw error;
+      mfaPending.current = false;
       await loadUser();
     },
     [loadUser],
   );
 
-  const signInWithPhonePassword = useCallback(
-    async (phone: string, password: string) => {
+  const cancelMfaLogin = useCallback(async () => {
+    const sb = requireSupabase();
+    await sb.auth.signOut();
+    mfaPending.current = false;
+    setUser(null);
+  }, []);
+
+  const listTotpFactors = useCallback(async (): Promise<TotpFactorInfo[]> => {
+    const sb = requireSupabase();
+    const { data, error } = await sb.auth.mfa.listFactors();
+    if (error) throw error;
+    return (data?.all ?? [])
+      .filter((f) => f.factor_type === "totp")
+      .map((f) => ({
+        id: f.id,
+        status: f.status === "verified" ? "verified" : "unverified",
+      }));
+  }, []);
+
+  const enrollTotp = useCallback(async (): Promise<TotpEnrollment> => {
+    const sb = requireSupabase();
+    // Clean up abandoned enrollments first — a stale unverified factor would
+    // otherwise make the new enroll fail with a friendly-name conflict.
+    const { data: existing } = await sb.auth.mfa.listFactors();
+    for (const f of existing?.all ?? []) {
+      if (f.factor_type === "totp" && f.status !== "verified") {
+        await sb.auth.mfa.unenroll({ factorId: f.id });
+      }
+    }
+    const { data, error } = await sb.auth.mfa.enroll({
+      factorType: "totp",
+      friendlyName: "Authenticator app",
+    });
+    if (error) throw error;
+    return {
+      factorId: data.id,
+      qrCode: data.totp.qr_code,
+      secret: data.totp.secret,
+      uri: data.totp.uri,
+    };
+  }, []);
+
+  const verifyTotpEnrollment = useCallback(
+    async (factorId: string, code: string) => {
       const sb = requireSupabase();
-      const { error } = await sb.auth.signInWithPassword({ phone, password });
+      const { data: challenge, error: challengeError } =
+        await sb.auth.mfa.challenge({ factorId });
+      if (challengeError) throw challengeError;
+      const { error } = await sb.auth.mfa.verify({
+        factorId,
+        challengeId: challenge.id,
+        code,
+      });
       if (error) throw error;
-      await loadUser();
     },
-    [loadUser],
+    [],
+  );
+
+  const unenrollTotp = useCallback(
+    async (factorId: string, code: string) => {
+      const sb = requireSupabase();
+      // Disabling requires a valid current code: verify it first (this also
+      // raises the session to AAL2, which unenroll of a verified factor needs).
+      const { data: challenge, error: challengeError } =
+        await sb.auth.mfa.challenge({ factorId });
+      if (challengeError) throw challengeError;
+      const { error: verifyError } = await sb.auth.mfa.verify({
+        factorId,
+        challengeId: challenge.id,
+        code,
+      });
+      if (verifyError) throw verifyError;
+      const { error } = await sb.auth.mfa.unenroll({ factorId });
+      if (error) throw error;
+    },
+    [],
   );
 
   const signUpWithEmail = useCallback(async (args: SignUpArgs) => {
@@ -360,6 +520,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     devUsers: DEV_USERS,
     signInWithEmail,
     signInWithPhonePassword,
+    verifyTotpForLogin,
+    cancelMfaLogin,
+    listTotpFactors,
+    enrollTotp,
+    verifyTotpEnrollment,
+    unenrollTotp,
     signUpWithEmail,
     signInWithGoogle,
     sendPhoneOtp,

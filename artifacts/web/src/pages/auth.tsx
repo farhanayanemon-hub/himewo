@@ -68,22 +68,31 @@ function DevLogin() {
 }
 
 function SignInForm() {
-  const { signInWithEmail, signInWithPhonePassword } = useAuth();
+  const {
+    signInWithEmail,
+    signInWithPhonePassword,
+    verifyTotpForLogin,
+    cancelMfaLogin,
+  } = useAuth();
   const { toast } = useToast();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      if (isPhoneLike(identifier)) {
-        await signInWithPhonePassword(normalizePhone(identifier), password);
-      } else {
-        await signInWithEmail(identifier.trim(), password);
+      const result = isPhoneLike(identifier)
+        ? await signInWithPhonePassword(normalizePhone(identifier), password)
+        : await signInWithEmail(identifier.trim(), password);
+      if (result.mfaRequired) {
+        setMfaFactorId(result.factorId);
+        setMfaCode("");
       }
     } catch (err) {
       const message = getErrorMessage(err);
@@ -92,6 +101,75 @@ function SignInForm() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleMfaSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!mfaFactorId) return;
+    setError(null);
+    setLoading(true);
+    try {
+      await verifyTotpForLogin(mfaFactorId, mfaCode.trim());
+    } catch (err) {
+      const message = getErrorMessage(err);
+      setError(message);
+      toast({ variant: "destructive", title: "Invalid code", description: message });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleMfaCancel() {
+    setLoading(true);
+    try {
+      await cancelMfaLogin();
+    } catch {
+      // ignore — we're returning to the password step anyway
+    } finally {
+      setMfaFactorId(null);
+      setMfaCode("");
+      setError(null);
+      setLoading(false);
+    }
+  }
+
+  if (mfaFactorId) {
+    return (
+      <form onSubmit={handleMfaSubmit} className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          Two-factor authentication is on for this account. Enter the 6-digit
+          code from your authenticator app.
+        </p>
+        <Input
+          id="signin-mfa-code"
+          type="text"
+          inputMode="numeric"
+          aria-label="Authentication code"
+          autoComplete="one-time-code"
+          placeholder="6-digit code"
+          value={mfaCode}
+          onChange={(e) => setMfaCode(e.target.value)}
+          required
+          autoFocus
+          className={inputClass}
+        />
+        {error && <p className="text-sm text-destructive">{error}</p>}
+        <Button
+          type="submit"
+          disabled={loading || mfaCode.trim().length === 0}
+          className="w-full h-12 text-lg font-bold rounded-lg aurora-button text-white"
+        >
+          {loading ? "Verifying…" : "Verify & log in"}
+        </Button>
+        <button
+          type="button"
+          onClick={handleMfaCancel}
+          className="w-full text-sm text-muted-foreground hover:underline"
+        >
+          Back to login
+        </button>
+      </form>
+    );
   }
 
   return (
