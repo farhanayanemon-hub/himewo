@@ -56,6 +56,15 @@ router.post("/auth/sync", requireAuth, async (req, res): Promise<void> => {
   const userId = req.userId!;
   const data = parsed.data;
   const username = await pickAvailableUsername(data.username);
+  // Wizard-only fields: never null-out existing values on re-sync — only
+  // update when the client actually sends them.
+  const wizardSet: Record<string, unknown> = {};
+  if (data.firstName !== undefined) wizardSet.firstName = data.firstName;
+  if (data.lastName !== undefined) wizardSet.lastName = data.lastName;
+  if (data.gender !== undefined) wizardSet.gender = data.gender;
+  if (data.birthday !== undefined) wizardSet.birthday = data.birthday;
+  if (data.country !== undefined)
+    wizardSet.country = data.country.toUpperCase();
   const [row] = await db
     .insert(profilesTable)
     .values({
@@ -65,6 +74,7 @@ router.post("/auth/sync", requireAuth, async (req, res): Promise<void> => {
       email: data.email ?? null,
       phone: data.phone ?? null,
       avatarUrl: data.avatarUrl ?? null,
+      ...wizardSet,
     })
     .onConflictDoUpdate({
       target: profilesTable.id,
@@ -73,6 +83,7 @@ router.post("/auth/sync", requireAuth, async (req, res): Promise<void> => {
         email: data.email ?? null,
         phone: data.phone ?? null,
         avatarUrl: data.avatarUrl ?? null,
+        ...wizardSet,
       },
     })
     .returning();

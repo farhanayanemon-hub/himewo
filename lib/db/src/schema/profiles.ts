@@ -19,6 +19,13 @@ export const profilesTable = pgTable(
   id: uuid("id").primaryKey(),
   username: text("username").notNull().unique(),
   displayName: text("display_name").notNull(),
+  // Split name parts captured by the signup wizard (displayName stays the
+  // rendered full name everywhere).
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  gender: text("gender"),
+  // ISO 3166-1 alpha-2 country code captured at signup (picker or IP detect).
+  country: text("country"),
   email: text("email"),
   phone: text("phone"),
   avatarUrl: text("avatar_url"),
