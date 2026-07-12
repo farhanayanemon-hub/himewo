@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { detectCountry } from "@workspace/api-client-react";
+import { detectCountry, validateName } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -253,6 +253,32 @@ export function SignupWizard({ onClose }: { onClose: () => void }) {
     ? phone.trim()
     : `${country.dialCode}${phone.trim().replace(/^0+/, "")}`;
 
+  const [firstNameError, setFirstNameError] = useState<string | null>(null);
+  const [lastNameError, setLastNameError] = useState<string | null>(null);
+
+  async function handleNameNext() {
+    setError(null);
+    setFirstNameError(null);
+    setLastNameError(null);
+    setBusy(true);
+    try {
+      const result = await validateName({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+      });
+      if (result.valid) {
+        goTo("dob");
+      } else {
+        setFirstNameError(result.firstNameError ?? null);
+        setLastNameError(result.lastNameError ?? null);
+      }
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleSendOtp() {
     setError(null);
     setBusy(true);
@@ -378,27 +404,48 @@ export function SignupWizard({ onClose }: { onClose: () => void }) {
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Input
-                  aria-label="First name"
-                  placeholder="First name"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  className={inputClass}
-                />
-                <Input
-                  aria-label="Last name"
-                  placeholder="Last name"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className={inputClass}
-                />
+                <div className="space-y-1">
+                  <Input
+                    aria-label="First name"
+                    placeholder="First name"
+                    value={firstName}
+                    onChange={(e) => {
+                      setFirstName(e.target.value);
+                      setFirstNameError(null);
+                    }}
+                    className={`${inputClass}${firstNameError ? " border-destructive focus-visible:ring-destructive" : ""}`}
+                  />
+                  {firstNameError && (
+                    <p className="text-xs text-destructive">{firstNameError}</p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <Input
+                    aria-label="Last name"
+                    placeholder="Last name"
+                    value={lastName}
+                    onChange={(e) => {
+                      setLastName(e.target.value);
+                      setLastNameError(null);
+                    }}
+                    className={`${inputClass}${lastNameError ? " border-destructive focus-visible:ring-destructive" : ""}`}
+                  />
+                  {lastNameError && (
+                    <p className="text-xs text-destructive">{lastNameError}</p>
+                  )}
+                </div>
               </div>
+              <p className="rounded-lg bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
+                Make sure it's the name people call you in real life — fake or
+                joke names aren't allowed on HiMewo.
+              </p>
+              {error && <p className="text-sm text-destructive">{error}</p>}
               <Button
                 className="w-full h-12 text-lg font-bold rounded-lg aurora-button text-white"
-                disabled={!nameValid}
-                onClick={() => goTo("dob")}
+                disabled={!nameValid || busy}
+                onClick={handleNameNext}
               >
-                Next
+                {busy ? "Checking…" : "Next"}
               </Button>
             </div>
           )}

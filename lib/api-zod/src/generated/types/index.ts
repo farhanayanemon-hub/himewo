@@ -179,6 +179,8 @@ export * from './musicTrack';
 export * from './musicTrackInput';
 export * from './musicTrackSource';
 export * from './muteMemberInput';
+export * from './nameValidationInput';
+export * from './nameValidationResult';
 export * from './notFoundResponse';
 export * from './notification';
 export * from './notificationType';

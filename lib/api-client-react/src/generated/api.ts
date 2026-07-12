@@ -124,6 +124,8 @@ import type {
   MusicTrack,
   MusicTrackInput,
   MuteMemberInput,
+  NameValidationInput,
+  NameValidationResult,
   NotFoundResponse,
   Notification,
   Page,
@@ -519,6 +521,76 @@ export const useSyncProfile = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getSyncProfileMutationOptions(options));
+    }
+
+export const getValidateNameUrl = () => {
+
+
+
+
+  return `/api/auth/validate-name`
+}
+
+/**
+ * @summary Validate a first/last name pair for signup (public, no auth)
+ */
+export const validateName = async (nameValidationInput: NameValidationInput, options?: RequestInit): Promise<NameValidationResult> => {
+
+  return customFetch<NameValidationResult>(getValidateNameUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(nameValidationInput)
+  }
+);}
+
+
+
+
+export const getValidateNameMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof validateName>>, TError,{data: BodyType<NameValidationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof validateName>>, TError,{data: BodyType<NameValidationInput>}, TContext> => {
+
+const mutationKey = ['validateName'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof validateName>>, {data: BodyType<NameValidationInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  validateName(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ValidateNameMutationResult = NonNullable<Awaited<ReturnType<typeof validateName>>>
+    export type ValidateNameMutationBody = BodyType<NameValidationInput>
+    export type ValidateNameMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Validate a first/last name pair for signup (public, no auth)
+ */
+export const useValidateName = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof validateName>>, TError,{data: BodyType<NameValidationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof validateName>>,
+        TError,
+        {data: BodyType<NameValidationInput>},
+        TContext
+      > => {
+      return useMutation(getValidateNameMutationOptions(options));
     }
 
 export const getSearchUsersUrl = (params?: SearchUsersParams,) => {

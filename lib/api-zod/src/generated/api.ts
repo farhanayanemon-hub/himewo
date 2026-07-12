@@ -139,6 +139,27 @@ export const SyncProfileResponse = zod.object({
 
 
 /**
+ * @summary Validate a first/last name pair for signup (public, no auth)
+ */
+export const validateNameBodyFirstNameMax = 100;
+
+export const validateNameBodyLastNameMax = 100;
+
+
+
+export const ValidateNameBody = zod.object({
+  "firstName": zod.string().max(validateNameBodyFirstNameMax),
+  "lastName": zod.string().max(validateNameBodyLastNameMax)
+})
+
+export const ValidateNameResponse = zod.object({
+  "valid": zod.boolean(),
+  "firstNameError": zod.string().nullable(),
+  "lastNameError": zod.string().nullable()
+})
+
+
+/**
  * @summary Search users
  */
 export const searchUsersQueryLimitDefault = 20;
