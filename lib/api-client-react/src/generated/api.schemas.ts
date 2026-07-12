@@ -87,6 +87,8 @@ export interface Profile {
   /** @nullable */
   displayNameChangedAt?: string | null;
   /** @nullable */
+  hasCompletedOnboarding?: boolean | null;
+  /** @nullable */
   friendCount?: number | null;
   /** @nullable */
   followerCount?: number | null;
@@ -2703,6 +2705,22 @@ export type SearchUsersParams = {
 q?: string;
 limit?: number;
 };
+
+export type GetFriendSuggestionsParams = {
+/**
+ * "onboarding" returns a randomized batch preferring same-country profiles (for the post-signup flow); default is the ranked PYMK list.
+ */
+mode?: GetFriendSuggestionsMode;
+limit?: number;
+};
+
+export type GetFriendSuggestionsMode = typeof GetFriendSuggestionsMode[keyof typeof GetFriendSuggestionsMode];
+
+
+export const GetFriendSuggestionsMode = {
+  pymk: 'pymk',
+  onboarding: 'onboarding',
+} as const;
 
 export type GetUserPostsParams = {
 cursor?: number;

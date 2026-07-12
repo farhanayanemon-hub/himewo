@@ -52,6 +52,8 @@ export interface Profile {
   /** @nullable */
   displayNameChangedAt?: Date | null;
   /** @nullable */
+  hasCompletedOnboarding?: boolean | null;
+  /** @nullable */
   friendCount?: number | null;
   /** @nullable */
   followerCount?: number | null;

@@ -118,6 +118,8 @@ export * from './getAdAccountInsightsLevel';
 export * from './getAdAccountInsightsParams';
 export * from './getEarningsHistoryParams';
 export * from './getFeedParams';
+export * from './getFriendSuggestionsMode';
+export * from './getFriendSuggestionsParams';
 export * from './getGroupPostsParams';
 export * from './getHashtagPostsParams';
 export * from './getPageParams';

@@ -107,6 +107,10 @@ export function toProfile(
     // Rename-cooldown timestamps are owner-only (shown in Settings).
     usernameChangedAt: includeContact ? row.usernameChangedAt : null,
     displayNameChangedAt: includeContact ? row.displayNameChangedAt : null,
+    // Owner-only: gates the one-time post-signup onboarding flow.
+    hasCompletedOnboarding: includeContact
+      ? row.onboardingCompletedAt !== null
+      : null,
   };
 }
 

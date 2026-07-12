@@ -130,6 +130,16 @@ paths:
       operationId: getFriendSuggestions
       tags: [users]
       summary: Get people-you-may-know suggestions
+      parameters:
+        - name: mode
+          in: query
+          description: >-
+            "onboarding" returns a randomized batch preferring same-country
+            profiles (for the post-signup flow); default is the ranked PYMK list.
+          schema: { type: string, enum: [pymk, onboarding] }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10 }
       responses:
         "200":
           description: Suggestions
@@ -156,6 +166,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Profile"
+  /users/me/onboarding-complete:
+    post:
+      operationId: completeOnboarding
+      tags: [users]
+      summary: Mark the one-time post-signup onboarding as finished (idempotent)
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /birthdays:
     get:
       operationId: getTodaysBirthdays
@@ -3750,6 +3774,9 @@ components:
         createdAt: { type: string, format: date-time }
         usernameChangedAt: { type: ["string", "null"], format: date-time }
         displayNameChangedAt: { type: ["string", "null"], format: date-time }
+        # Owner-only (null for everyone else). False = show the one-time
+        # post-signup onboarding flow.
+        hasCompletedOnboarding: { type: ["boolean", "null"] }
         friendCount: { type: ["integer", "null"] }
         followerCount: { type: ["integer", "null"] }
         followingCount: { type: ["integer", "null"] }

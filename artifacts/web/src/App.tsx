@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from "@/lib/auth";
 import { RealtimeProvider } from "@/lib/realtime";
 import { ActingPageProvider } from "@/lib/acting-page";
 import { CallProvider } from "@/components/call-provider";
+import { OnboardingFlow } from "@/components/onboarding-flow";
 import NotFound from "@/pages/not-found";
 
 import AuthPage from "@/pages/auth";
@@ -47,7 +48,7 @@ import MarketplacePage, {
 const queryClient = new QueryClient();
 
 function AppRoutes() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
 
   if (loading) {
     return (
@@ -61,6 +62,12 @@ function AppRoutes() {
 
   if (!isAuthenticated) {
     return <AuthPage />;
+  }
+
+  // One-time post-signup onboarding takeover (false = explicitly not done;
+  // null/undefined = legacy or non-owner payloads, never show).
+  if (user && user.hasCompletedOnboarding === false) {
+    return <OnboardingFlow />;
   }
 
   return (
