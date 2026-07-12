@@ -140,7 +140,7 @@ export default function PagesScreen() {
 
       <Modal visible={open} transparent animationType="slide" onRequestClose={closeModal}>
         <View style={styles.modalBackdrop}>
-          <View style={[styles.modalCard, { backgroundColor: c.card }]}>
+          <View style={[styles.modalCard, { backgroundColor: c.surface }]}>
             <Text style={[styles.modalTitle, { color: c.foreground }]}>Create Page</Text>
             <TextInput
               value={name}

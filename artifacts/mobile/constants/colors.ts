@@ -36,6 +36,9 @@ const colors = {
     cardForeground: "#0f172a",
     cardBorder: "rgba(15,23,42,0.08)",
 
+    // Opaque surface for modals / sheets / popovers (never translucent)
+    surface: "#ffffff",
+
     // Primary action color (aurora purple)
     primary: AURORA_PURPLE,
     primaryForeground: "#ffffff",
@@ -76,6 +79,9 @@ const colors = {
     card: "rgba(255,255,255,0.04)",
     cardForeground: "#e5e7eb",
     cardBorder: "rgba(255,255,255,0.10)",
+
+    // Opaque surface for modals / sheets / popovers (never translucent)
+    surface: "#16181c",
 
     primary: AURORA_PURPLE,
     primaryForeground: "#ffffff",

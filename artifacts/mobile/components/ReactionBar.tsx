@@ -94,7 +94,7 @@ export function ReactionBar({
               {
                 top: anchor.y,
                 left: anchor.x,
-                backgroundColor: c.card,
+                backgroundColor: c.surface,
                 borderColor: c.border,
               },
             ]}

@@ -356,7 +356,7 @@ function EditPageModal({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalBackdrop}>
-        <View style={[styles.modalCard, { backgroundColor: c.card }]}>
+        <View style={[styles.modalCard, { backgroundColor: c.surface }]}>
           <Text style={[styles.modalTitle, { color: c.foreground }]}>Edit Page</Text>
           <ScrollView style={{ maxHeight: 460 }} contentContainerStyle={{ gap: 12, paddingBottom: 8 }}>
             <TextInput value={name} onChangeText={setName} placeholder="Page name" placeholderTextColor={c.mutedForeground} style={inputStyle} />
@@ -479,7 +479,7 @@ function PageAccessModal({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalBackdrop}>
-        <View style={[styles.modalCard, { backgroundColor: c.card }]}>
+        <View style={[styles.modalCard, { backgroundColor: c.surface }]}>
           <Text style={[styles.modalTitle, { color: c.foreground }]}>Page access</Text>
           <Text style={{ color: c.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 13, marginBottom: 10 }}>
             People with access can post and edit this Page. Only you (the owner) can manage access.
@@ -586,7 +586,7 @@ function PeopleListModal({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalBackdrop}>
-        <View style={[styles.modalCard, { backgroundColor: c.card }]}>
+        <View style={[styles.modalCard, { backgroundColor: c.surface }]}>
           <Text style={[styles.modalTitle, { color: c.foreground }]}>{title}</Text>
           {loading ? (
             <ActivityIndicator color={c.primary} style={{ marginVertical: 24 }} />
@@ -679,7 +679,7 @@ function InviteFriendsModal({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalBackdrop}>
-        <View style={[styles.modalCard, { backgroundColor: c.card }]}>
+        <View style={[styles.modalCard, { backgroundColor: c.surface }]}>
           <Text style={[styles.modalTitle, { color: c.foreground }]}>{title}</Text>
           <Text style={{ color: c.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 13, marginBottom: 10 }}>
             {subtitle}
@@ -764,7 +764,7 @@ function PageMenuModal({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.modalBackdrop} onPress={onClose}>
-        <View style={[styles.modalCard, { backgroundColor: c.card }]}>
+        <View style={[styles.modalCard, { backgroundColor: c.surface }]}>
           <Pressable style={styles.menuRow} onPress={onInvite}>
             <Ionicons name="person-add-outline" size={20} color={c.foreground} />
             <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}>Invite friends</Text>

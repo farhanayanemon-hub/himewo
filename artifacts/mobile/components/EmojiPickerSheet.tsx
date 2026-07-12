@@ -28,7 +28,7 @@ export function EmojiPickerSheet({
     <Modal visible={visible} transparent animationType="slide">
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable
-          style={[styles.sheet, { backgroundColor: c.card }]}
+          style={[styles.sheet, { backgroundColor: c.surface }]}
           onPress={(e) => e.stopPropagation()}
         >
           <View style={[styles.handle, { backgroundColor: c.border }]} />

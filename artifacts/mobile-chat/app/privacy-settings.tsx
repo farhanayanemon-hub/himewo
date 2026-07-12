@@ -97,6 +97,27 @@ export default function PrivacySettingsScreen() {
             ))}
           </View>
 
+          <Text style={[styles.sectionTitle, { color: c.mutedForeground }]}>SAFETY</Text>
+          <View style={[styles.card, { backgroundColor: c.card }, shadow("md")]}>
+            <Touchable
+              style={[styles.optRow, { borderBottomColor: c.border, borderBottomWidth: StyleSheet.hairlineWidth }]}
+              onPress={() => router.push("/blocked-accounts")}
+            >
+              <Ionicons name="remove-circle-outline" size={22} color={c.destructive} style={{ marginRight: 12 }} />
+              <Text style={{ flex: 1, color: c.foreground, fontFamily: "Inter_500Medium", fontSize: fs(15) }}>
+                Blocked accounts
+              </Text>
+              <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
+            </Touchable>
+            <Touchable style={styles.optRow} onPress={() => router.push("/restricted-accounts")}>
+              <Ionicons name="eye-off-outline" size={22} color={c.mutedForeground} style={{ marginRight: 12 }} />
+              <Text style={{ flex: 1, color: c.foreground, fontFamily: "Inter_500Medium", fontSize: fs(15) }}>
+                Restricted accounts
+              </Text>
+              <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
+            </Touchable>
+          </View>
+
           <Text style={[styles.sectionTitle, { color: c.mutedForeground }]}>ACTIVITY</Text>
           <View style={[styles.card, { backgroundColor: c.card }, shadow("md")]}>
             <View style={styles.toggleRow}>

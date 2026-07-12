@@ -7,6 +7,7 @@ import {
   timestamp,
   uniqueIndex,
   index,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { profilesTable } from "./profiles";
 import {
@@ -45,6 +46,14 @@ export const conversationMembersTable = pgTable(
       .references(() => profilesTable.id, { onDelete: "cascade" }),
     role: memberRoleEnum("role").notNull().default("member"),
     lastReadMessageId: integer("last_read_message_id"),
+    // Per-viewer conversation preferences (Messenger-style).
+    isPinned: boolean("is_pinned").notNull().default(false),
+    isArchived: boolean("is_archived").notNull().default(false),
+    isMuted: boolean("is_muted").notNull().default(false),
+    markedUnread: boolean("marked_unread").notNull().default(false),
+    // "Delete chat for me": messages with id <= cleared_before_id are hidden
+    // for this member; the conversation reappears when a new message arrives.
+    clearedBeforeId: integer("cleared_before_id"),
     joinedAt: timestamp("joined_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -135,6 +144,29 @@ export const messageHidesTable = pgTable(
   (t) => [uniqueIndex("message_hides_uniq").on(t.messageId, t.userId)],
 );
 
+// Block / restrict relationships. kind is a plain text column ("block" |
+// "restrict") to avoid an enum migration; enforced by the API layer.
+export const userBlocksTable = pgTable(
+  "user_blocks",
+  {
+    id: serial("id").primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => profilesTable.id, { onDelete: "cascade" }),
+    targetId: uuid("target_id")
+      .notNull()
+      .references(() => profilesTable.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("user_blocks_uniq").on(t.userId, t.targetId, t.kind),
+    index("user_blocks_target_idx").on(t.targetId, t.kind),
+  ],
+);
+
 export const presenceTable = pgTable("presence", {
   userId: uuid("user_id")
     .primaryKey()
@@ -151,4 +183,5 @@ export type Message = typeof messagesTable.$inferSelect;
 export type MessageAttachment = typeof messageAttachmentsTable.$inferSelect;
 export type MessageReaction = typeof messageReactionsTable.$inferSelect;
 export type MessageHide = typeof messageHidesTable.$inferSelect;
+export type UserBlock = typeof userBlocksTable.$inferSelect;
 export type Presence = typeof presenceTable.$inferSelect;

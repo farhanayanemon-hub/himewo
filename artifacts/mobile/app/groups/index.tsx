@@ -214,7 +214,7 @@ export default function GroupsScreen() {
 
       <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
         <View style={styles.modalBackdrop}>
-          <View style={[styles.modalCard, { backgroundColor: c.card }]}>
+          <View style={[styles.modalCard, { backgroundColor: c.surface }]}>
             <Text style={[styles.modalTitle, { color: c.foreground }]}>Create Group</Text>
             <TextInput
               value={name}

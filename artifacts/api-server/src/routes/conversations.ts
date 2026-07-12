@@ -7,8 +7,9 @@ import {
   messageAttachmentsTable,
   messageReactionsTable,
   messageHidesTable,
+  userBlocksTable,
 } from "@workspace/db";
-import { and, eq, lt, desc, inArray, notInArray } from "drizzle-orm";
+import { and, eq, lt, gt, desc, inArray, notInArray, or } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import {
   buildConversations,
@@ -42,6 +43,10 @@ import {
   EditMessageParams,
   EditMessageBody,
   EditMessageResponse,
+  UpdateConversationPrefsParams,
+  UpdateConversationPrefsBody,
+  UpdateConversationPrefsResponse,
+  ClearConversationParams,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -61,6 +66,24 @@ async function getMembership(conversationId: number, userId: string) {
 
 async function isMember(conversationId: number, userId: string) {
   return Boolean(await getMembership(conversationId, userId));
+}
+
+/** True if either user has blocked the other. */
+async function isBlockedBetween(a: string, b: string) {
+  const rows = await db
+    .select({ id: userBlocksTable.id })
+    .from(userBlocksTable)
+    .where(
+      and(
+        eq(userBlocksTable.kind, "block"),
+        or(
+          and(eq(userBlocksTable.userId, a), eq(userBlocksTable.targetId, b)),
+          and(eq(userBlocksTable.userId, b), eq(userBlocksTable.targetId, a)),
+        ),
+      ),
+    )
+    .limit(1);
+  return rows.length > 0;
 }
 
 router.get("/conversations", requireAuth, async (req, res): Promise<void> => {
@@ -93,6 +116,15 @@ router.post("/conversations", requireAuth, async (req, res): Promise<void> => {
   const memberIds = [...new Set([viewer, ...parsed.data.memberIds])];
   const type =
     parsed.data.type ?? (memberIds.length === 2 ? "direct" : "group");
+
+  // Blocked users cannot start direct conversations with each other.
+  if (type === "direct" && memberIds.length === 2) {
+    const other = memberIds.find((id) => id !== viewer)!;
+    if (await isBlockedBetween(viewer, other)) {
+      res.status(403).json({ error: "You can't message this person" });
+      return;
+    }
+  }
 
   // Dedupe existing direct conversation between the same two users.
   if (type === "direct" && memberIds.length === 2) {
@@ -215,6 +247,9 @@ router.get(
       .from(messageHidesTable)
       .where(eq(messageHidesTable.userId, req.userId!));
     const hiddenIds = hiddenRows.map((h) => h.messageId);
+    // Exclude messages cleared via "delete chat for me".
+    const membership = await getMembership(params.data.id, req.userId!);
+    const clearedBefore = membership?.clearedBeforeId ?? 0;
     const rows = await db
       .select()
       .from(messagesTable)
@@ -222,6 +257,7 @@ router.get(
         and(
           eq(messagesTable.conversationId, params.data.id),
           cursor ? lt(messagesTable.id, cursor) : undefined,
+          clearedBefore > 0 ? gt(messagesTable.id, clearedBefore) : undefined,
           hiddenIds.length > 0
             ? notInArray(messagesTable.id, hiddenIds)
             : undefined,
@@ -248,6 +284,26 @@ router.post(
     if (!(await isMember(params.data.id, req.userId!))) {
       res.status(403).json({ error: "Not a member" });
       return;
+    }
+    // Block enforcement for direct conversations.
+    const [convRow] = await db
+      .select()
+      .from(conversationsTable)
+      .where(eq(conversationsTable.id, params.data.id));
+    if (!convRow) {
+      res.status(404).json({ error: "Conversation not found" });
+      return;
+    }
+    if (convRow.type === "direct") {
+      const otherMembers = await db
+        .select({ userId: conversationMembersTable.userId })
+        .from(conversationMembersTable)
+        .where(eq(conversationMembersTable.conversationId, params.data.id));
+      const other = otherMembers.find((m) => m.userId !== req.userId);
+      if (other && (await isBlockedBetween(req.userId!, other.userId))) {
+        res.status(403).json({ error: "You can't message this person" });
+        return;
+      }
     }
     const [message] = await db
       .insert(messagesTable)
@@ -284,13 +340,27 @@ router.post(
       conversationId: params.data.id,
       message: built,
     });
-    // Notify other members.
+    // Notify other members (skip muted conversations and recipients who
+    // restricted the sender).
     const members = await db
-      .select({ userId: conversationMembersTable.userId })
+      .select({
+        userId: conversationMembersTable.userId,
+        isMuted: conversationMembersTable.isMuted,
+      })
       .from(conversationMembersTable)
       .where(eq(conversationMembersTable.conversationId, params.data.id));
+    const restrictedRows = await db
+      .select({ userId: userBlocksTable.userId })
+      .from(userBlocksTable)
+      .where(
+        and(
+          eq(userBlocksTable.targetId, req.userId!),
+          eq(userBlocksTable.kind, "restrict"),
+        ),
+      );
+    const restrictedBy = new Set(restrictedRows.map((r) => r.userId));
     for (const m of members) {
-      if (m.userId !== req.userId) {
+      if (m.userId !== req.userId && !m.isMuted && !restrictedBy.has(m.userId)) {
         await createNotification({
           userId: m.userId,
           actorId: req.userId!,
@@ -320,7 +390,7 @@ router.post(
     }
     await db
       .update(conversationMembersTable)
-      .set({ lastReadMessageId: parsed.data.messageId })
+      .set({ lastReadMessageId: parsed.data.messageId, markedUnread: false })
       .where(
         and(
           eq(conversationMembersTable.conversationId, params.data.id),
@@ -337,6 +407,79 @@ router.post(
       },
       req.userId!,
     );
+    res.sendStatus(204);
+  },
+);
+
+// Per-viewer conversation preferences: pin / archive / mute / mark unread.
+router.patch(
+  "/conversations/:id/prefs",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = UpdateConversationPrefsParams.safeParse(req.params);
+    const parsed = UpdateConversationPrefsBody.safeParse(req.body);
+    if (!params.success || !parsed.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    if (!(await isMember(params.data.id, req.userId!))) {
+      res.status(403).json({ error: "Not a member" });
+      return;
+    }
+    const updates: Record<string, boolean> = {};
+    if (parsed.data.isPinned !== undefined) updates.isPinned = parsed.data.isPinned;
+    if (parsed.data.isArchived !== undefined) updates.isArchived = parsed.data.isArchived;
+    if (parsed.data.isMuted !== undefined) updates.isMuted = parsed.data.isMuted;
+    if (parsed.data.markedUnread !== undefined) updates.markedUnread = parsed.data.markedUnread;
+    if (Object.keys(updates).length > 0) {
+      await db
+        .update(conversationMembersTable)
+        .set(updates)
+        .where(
+          and(
+            eq(conversationMembersTable.conversationId, params.data.id),
+            eq(conversationMembersTable.userId, req.userId!),
+          ),
+        );
+    }
+    const built = await buildConversationById(params.data.id, req.userId!);
+    res.json(UpdateConversationPrefsResponse.parse(built));
+  },
+);
+
+// "Delete chat for me": hides all current messages for the viewer only.
+router.post(
+  "/conversations/:id/clear",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = ClearConversationParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    if (!(await isMember(params.data.id, req.userId!))) {
+      res.status(403).json({ error: "Not a member" });
+      return;
+    }
+    const [latest] = await db
+      .select({ id: messagesTable.id })
+      .from(messagesTable)
+      .where(eq(messagesTable.conversationId, params.data.id))
+      .orderBy(desc(messagesTable.id))
+      .limit(1);
+    await db
+      .update(conversationMembersTable)
+      .set({
+        clearedBeforeId: latest?.id ?? null,
+        markedUnread: false,
+        isPinned: false,
+      })
+      .where(
+        and(
+          eq(conversationMembersTable.conversationId, params.data.id),
+          eq(conversationMembersTable.userId, req.userId!),
+        ),
+      );
     res.sendStatus(204);
   },
 );

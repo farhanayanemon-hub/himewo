@@ -217,7 +217,7 @@ function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
           style={styles.pickerBackdrop}
           onPress={() => setPickerOpen(false)}
         >
-          <View style={[styles.reactionPicker, { backgroundColor: c.card, borderColor: c.border }]}>
+          <View style={[styles.reactionPicker, { backgroundColor: c.surface, borderColor: c.border }]}>
             {reactionOrder.map((t) => (
               <Pressable
                 key={t}
