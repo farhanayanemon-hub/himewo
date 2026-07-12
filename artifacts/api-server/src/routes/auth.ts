@@ -1,10 +1,14 @@
 import { Router, type IRouter } from "express";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 import { db, profilesTable } from "@workspace/db";
 import { requireAuth } from "../lib/auth";
 import { buildProfileDetail } from "../lib/serialize";
 import { normalizeUsername, isReservedUsername } from "../lib/username";
-import { validateFullName, validateNamePart } from "../lib/nameValidation";
+import {
+  validateFullName,
+  validateNamePart,
+  validateDisplayName,
+} from "../lib/nameValidation";
 import {
   GetCurrentUserResponse,
   SyncProfileBody,
@@ -88,6 +92,23 @@ router.post("/auth/sync", requireAuth, async (req, res): Promise<void> => {
     if (err) {
       res.status(400).json({ error: err });
       return;
+    }
+  }
+  // displayName is re-sent on every login re-sync, so only validate when it's
+  // a new profile or the name is actually changing — otherwise a legacy user
+  // whose stored name predates the policy would be locked out of login.
+  {
+    const existing = await db
+      .select({ displayName: profilesTable.displayName })
+      .from(profilesTable)
+      .where(eq(profilesTable.id, userId))
+      .limit(1);
+    if (existing.length === 0 || existing[0].displayName !== data.displayName) {
+      const err = validateDisplayName(data.displayName);
+      if (err) {
+        res.status(400).json({ error: err });
+        return;
+      }
     }
   }
   const username = await pickAvailableUsername(data.username);
