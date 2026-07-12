@@ -183,6 +183,44 @@ export interface NameValidationResult {
   lastNameError: string | null;
 }
 
+export interface FindAccountInput {
+  /**
+     * Email address or phone number to look up.
+     * @minLength 3
+     * @maxLength 320
+     */
+  identifier: string;
+}
+
+/**
+ * Which contact method matched the lookup.
+ * @nullable
+ */
+export type FindAccountResultMethod = typeof FindAccountResultMethod[keyof typeof FindAccountResultMethod] | null;
+
+
+export const FindAccountResultMethod = {
+  email: 'email',
+  phone: 'phone',
+} as const;
+
+export interface FindAccountResult {
+  found: boolean;
+  /** @nullable */
+  displayName?: string | null;
+  /** @nullable */
+  avatarUrl?: string | null;
+  /** @nullable */
+  maskedEmail?: string | null;
+  /** @nullable */
+  maskedPhone?: string | null;
+  /**
+     * Which contact method matched the lookup.
+     * @nullable
+     */
+  method?: FindAccountResultMethod;
+}
+
 export type MediaItemType = typeof MediaItemType[keyof typeof MediaItemType];
 
 

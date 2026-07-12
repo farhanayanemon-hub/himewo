@@ -50,6 +50,7 @@ interface AuthContextValue {
   supabaseEnabled: boolean;
   devUsers: DevUser[];
   signInWithEmail: (email: string, password: string) => Promise<void>;
+  signInWithPhonePassword: (phone: string, password: string) => Promise<void>;
   signUpWithEmail: (args: SignUpArgs) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   sendPhoneOtp: (phone: string) => Promise<void>;
@@ -57,6 +58,9 @@ interface AuthContextValue {
   /** Signup wizard: suppress the auto profile-sync fallback while active. */
   setWizardActive: (active: boolean) => void;
   sendEmailOtp: (email: string) => Promise<void>;
+  /** Password reset: only sends the OTP when the account already exists. */
+  sendResetEmailOtp: (email: string) => Promise<void>;
+  sendResetPhoneOtp: (phone: string) => Promise<void>;
   verifyEmailOtp: (email: string, token: string) => Promise<void>;
   verifyPhoneOtpNoSync: (phone: string, token: string) => Promise<void>;
   setPassword: (password: string) => Promise<void>;
@@ -213,6 +217,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [loadUser],
   );
 
+  const signInWithPhonePassword = useCallback(
+    async (phone: string, password: string) => {
+      const sb = requireSupabase();
+      const { error } = await sb.auth.signInWithPassword({ phone, password });
+      if (error) throw error;
+      await loadUser();
+    },
+    [loadUser],
+  );
+
   const signUpWithEmail = useCallback(
     async (args: SignUpArgs) => {
       const sb = requireSupabase();
@@ -313,6 +327,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   }, []);
 
+  const sendResetEmailOtp = useCallback(async (email: string) => {
+    const sb = requireSupabase();
+    const { error } = await sb.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: false },
+    });
+    if (error) throw error;
+  }, []);
+
+  const sendResetPhoneOtp = useCallback(async (phone: string) => {
+    const sb = requireSupabase();
+    const { error } = await sb.auth.signInWithOtp({
+      phone,
+      options: { shouldCreateUser: false },
+    });
+    if (error) throw error;
+  }, []);
+
   const verifyEmailOtp = useCallback(async (email: string, token: string) => {
     const sb = requireSupabase();
     const { error } = await sb.auth.verifyOtp({ email, token, type: "email" });
@@ -386,12 +418,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabaseEnabled: isSupabaseConfigured,
     devUsers: DEV_USERS,
     signInWithEmail,
+    signInWithPhonePassword,
     signUpWithEmail,
     signInWithGoogle,
     sendPhoneOtp,
     verifyPhoneOtp,
     setWizardActive,
     sendEmailOtp,
+    sendResetEmailOtp,
+    sendResetPhoneOtp,
     verifyEmailOtp,
     verifyPhoneOtpNoSync,
     setPassword,

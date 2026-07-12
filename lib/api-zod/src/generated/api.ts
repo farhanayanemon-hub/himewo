@@ -162,6 +162,28 @@ export const ValidateNameResponse = zod.object({
 
 
 /**
+ * @summary Find an account by email or phone (public, rate-limited, masked preview)
+ */
+export const findAccountBodyIdentifierMin = 3;
+export const findAccountBodyIdentifierMax = 320;
+
+
+
+export const FindAccountBody = zod.object({
+  "identifier": zod.string().min(findAccountBodyIdentifierMin).max(findAccountBodyIdentifierMax).describe('Email address or phone number to look up.')
+})
+
+export const FindAccountResponse = zod.object({
+  "found": zod.boolean(),
+  "displayName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "maskedEmail": zod.string().nullish(),
+  "maskedPhone": zod.string().nullish(),
+  "method": zod.union([zod.literal('email'),zod.literal('phone'),zod.literal(null)]).nullish().describe('Which contact method matched the lookup.')
+})
+
+
+/**
  * @summary Search users
  */
 export const searchUsersQueryLimitDefault = 20;

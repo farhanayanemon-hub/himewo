@@ -104,6 +104,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/NameValidationResult"
 
+  /auth/find-account:
+    post:
+      operationId: findAccount
+      tags: [auth]
+      summary: Find an account by email or phone (public, rate-limited, masked preview)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FindAccountInput"
+      responses:
+        "200":
+          description: Lookup result (200 with found=false when there is no match)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FindAccountResult"
+        "429":
+          description: Too many attempts — try again later
+
   # ---------------- Users ----------------
   /users:
     get:
@@ -3851,6 +3872,29 @@ components:
         valid: { type: boolean }
         firstNameError: { type: ["string", "null"] }
         lastNameError: { type: ["string", "null"] }
+
+    FindAccountInput:
+      type: object
+      required: [identifier]
+      properties:
+        identifier:
+          type: string
+          minLength: 3
+          maxLength: 320
+          description: Email address or phone number to look up.
+    FindAccountResult:
+      type: object
+      required: [found]
+      properties:
+        found: { type: boolean }
+        displayName: { type: ["string", "null"] }
+        avatarUrl: { type: ["string", "null"] }
+        maskedEmail: { type: ["string", "null"] }
+        maskedPhone: { type: ["string", "null"] }
+        method:
+          type: ["string", "null"]
+          enum: [email, phone, null]
+          description: Which contact method matched the lookup.
 
     MediaItem:
       type: object
