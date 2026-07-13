@@ -359,7 +359,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
         </aside>
       </div>
 
-      <MobileNav user={user} />
+      <MobileNav user={user} unreadCount={unreadCount?.count ?? 0} />
     </div>
   );
 }
