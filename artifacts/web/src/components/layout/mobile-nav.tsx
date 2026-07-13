@@ -5,8 +5,9 @@ import { Link, useLocation } from "wouter";
 import {
   Home,
   Users,
-  Video,
-  Store,
+  Film,
+  Bell,
+  UserCircle,
   Menu as MenuIcon,
   Settings,
   LogOut,
@@ -143,13 +144,14 @@ export function MobileMenuButton({
  */
 export function MobileNav({
   user,
+  unreadCount = 0,
 }: {
   user: { displayName?: string | null; avatarUrl?: string | null } | null;
+  unreadCount?: number;
 }) {
   const [location] = useLocation();
   const { actingPage } = useActingPage();
   const profileHref = actingPage ? `/pages/${actingPage.id}` : "/me";
-  const profileAvatar = actingPage ? actingPage.avatarUrl : user?.avatarUrl;
 
   const isActive = (href: string) =>
     href === "/" ? location === "/" : location.startsWith(href);
@@ -164,11 +166,13 @@ export function MobileNav({
     icon: Icon,
     label,
     active,
+    badge,
   }: {
     href: string;
     icon: IconType;
     label: string;
     active: boolean;
+    badge?: number;
   }) => (
     <Link
       href={href}
@@ -180,6 +184,11 @@ export function MobileNav({
         }`}
       >
         <Icon className={`w-6 h-6 ${active ? "text-primary" : "text-muted-foreground"}`} />
+        {badge && badge > 0 ? (
+          <span className="absolute -top-1.5 -right-2 flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-destructive text-white text-[9px] font-bold leading-none border border-background">
+            {badge > 99 ? "99+" : badge}
+          </span>
+        ) : null}
         {active && (
           <span className="absolute -bottom-2 w-1.5 h-1.5 rounded-full bg-primary" />
         )}
@@ -215,7 +224,7 @@ export function MobileNav({
               reelsActive ? "scale-105" : ""
             }`}
           >
-            <Video className="w-7 h-7" />
+            <Film className="w-7 h-7" />
           </span>
           <span
             className={`text-[10px] leading-none ${
@@ -226,37 +235,19 @@ export function MobileNav({
           </span>
         </Link>
 
-        <StdItem href="/marketplace" icon={Store} label="Market" active={isActive("/marketplace")} />
-
-        {/* Profile — avatar */}
-        <Link
+        <StdItem
+          href="/notifications"
+          icon={Bell}
+          label="Alerts"
+          active={isActive("/notifications")}
+          badge={unreadCount}
+        />
+        <StdItem
           href={profileHref}
-          className="flex flex-1 flex-col items-center justify-end h-full gap-1 pb-2 press"
-        >
-          <span
-            className={`relative flex items-center justify-center transition-transform duration-200 ${
-              profileActive ? "-translate-y-0.5" : ""
-            }`}
-          >
-            <img
-              src={avatarSrc(profileAvatar)}
-              alt=""
-              className={`w-6 h-6 rounded-full object-cover ${
-                profileActive ? "ring-2 ring-primary" : ""
-              }`}
-            />
-            {profileActive && (
-              <span className="absolute -bottom-2 w-1.5 h-1.5 rounded-full bg-primary" />
-            )}
-          </span>
-          <span
-            className={`text-[10px] leading-none ${
-              profileActive ? "text-primary font-bold" : "text-muted-foreground font-semibold"
-            }`}
-          >
-            Profile
-          </span>
-        </Link>
+          icon={UserCircle}
+          label="Profile"
+          active={profileActive}
+        />
       </div>
     </nav>
   );
