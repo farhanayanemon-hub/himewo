@@ -1,14 +1,11 @@
 import { Tabs } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { View } from "react-native";
 import {
   useGetUnreadNotificationCount,
   getGetUnreadNotificationCountQueryKey,
 } from "@workspace/api-client-react";
-import { useColors } from "@/hooks/useColors";
+import { SolidDockTabBar } from "@/components/SolidDockTabBar";
 
 export default function TabsLayout() {
-  const c = useColors();
   const { data: unread } = useGetUnreadNotificationCount({
     query: {
       refetchInterval: 30_000,
@@ -19,76 +16,14 @@ export default function TabsLayout() {
 
   return (
     <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: c.primary,
-        tabBarInactiveTintColor: c.mutedForeground,
-        tabBarStyle: {
-          backgroundColor: c.card,
-          borderTopColor: c.border,
-        },
-        tabBarLabelStyle: { fontFamily: "Inter_500Medium", fontSize: 11 },
-      }}
+      screenOptions={{ headerShown: false }}
+      tabBar={(props) => <SolidDockTabBar {...props} unreadCount={unreadCount} />}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="friends"
-        options={{
-          title: "Friends",
-          tabBarIcon: ({ color, size }) => <Ionicons name="people" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="reels"
-        options={{
-          title: "Reels",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="film-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="notifications"
-        options={{
-          title: "Alerts",
-          tabBarIcon: ({ color, size }) => (
-            <View>
-              <Ionicons name="notifications" size={size} color={color} />
-              {unreadCount > 0 && (
-                <View
-                  style={{
-                    position: "absolute",
-                    top: -4,
-                    right: -6,
-                    backgroundColor: c.destructive,
-                    borderRadius: 8,
-                    minWidth: 16,
-                    height: 16,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    paddingHorizontal: 3,
-                  }}
-                />
-              )}
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: "Profile",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-circle" size={size} color={color} />
-          ),
-        }}
-      />
+      <Tabs.Screen name="index" options={{ title: "Home" }} />
+      <Tabs.Screen name="friends" options={{ title: "Friends" }} />
+      <Tabs.Screen name="reels" options={{ title: "Reels" }} />
+      <Tabs.Screen name="notifications" options={{ title: "Alerts" }} />
+      <Tabs.Screen name="profile" options={{ title: "Profile" }} />
       {/* Menu now opens from the header button beside the logo. */}
       <Tabs.Screen name="menu" options={{ href: null }} />
     </Tabs>
