@@ -75,6 +75,7 @@ export function GifPickerModal({
             onChangeText={setQuery}
             placeholder="Search GIFs..."
             placeholderTextColor="#ffffff88"
+            underlineColorAndroid="transparent"
             style={styles.search}
             autoFocus
           />
@@ -130,7 +131,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: "#fff",
     fontFamily: "Inter_500Medium",
-    fontSize: 15,
+    fontSize: 16,
     backgroundColor: "#ffffff1a",
     borderRadius: 20,
     paddingHorizontal: 14,
