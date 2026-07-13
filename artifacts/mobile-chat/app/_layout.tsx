@@ -10,7 +10,7 @@ import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
-import { ActivityIndicator, View, useColorScheme } from "react-native";
+import { ActivityIndicator, Platform, View, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -23,6 +23,25 @@ import { PreferencesProvider, usePreferencesOptional } from "@/lib/preferences";
 import { useColors } from "@/hooks/useColors";
 
 SplashScreen.preventAutoHideAsync();
+
+// Web mirror only: React Native Web renders <TextInput> as real <input>/<textarea>,
+// so focused fields show the browser's default focus *outline* — an ugly black
+// rectangle around inputs (message composer, search, GIF/music pickers, etc).
+// Native-only props like `underlineColorAndroid` can't touch a browser outline, so
+// we strip it globally. This app exports as an SPA (web.output "single"), where
+// `+html.tsx` is ignored, so we inject the stylesheet at runtime instead. No-op on native.
+if (Platform.OS === "web" && typeof document !== "undefined") {
+  const STYLE_ID = "himewo-web-focus-fix";
+  if (!document.getElementById(STYLE_ID)) {
+    const el = document.createElement("style");
+    el.id = STYLE_ID;
+    el.textContent =
+      "*{-webkit-tap-highlight-color:transparent}" +
+      "input,textarea,select,[contenteditable],button{outline:none !important}" +
+      "input:focus,input:focus-visible,textarea:focus,textarea:focus-visible,select:focus,[contenteditable]:focus{outline:none !important}";
+    document.head.appendChild(el);
+  }
+}
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 15_000 } },
