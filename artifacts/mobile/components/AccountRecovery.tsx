@@ -47,6 +47,7 @@ export function AccountRecovery({
   const [password, setPasswordValue] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
   const sessionCreated = useRef(false);
   const completed = useRef(false);
 
@@ -189,16 +190,19 @@ export function AccountRecovery({
               ? "Enter the email address or mobile number linked to your account."
               : "Enter your email address or mobile number and we'll send you a verification code."}
           </Text>
-          <View style={[styles.field, { backgroundColor: c.card, borderColor: c.border }]}>
+          <View style={[styles.field, { backgroundColor: c.card, borderColor: focusedField === "identifier" ? c.primary : c.border }]}>
             <Ionicons name="person-circle-outline" size={20} color={c.mutedForeground} />
             <TextInput
-              style={{ flex: 1, color: c.foreground, fontSize: 15 }}
+              style={{ flex: 1, color: c.foreground, fontSize: 16 }}
               placeholder="Email address or mobile number"
               placeholderTextColor={c.mutedForeground}
+              underlineColorAndroid="transparent"
               value={identifier}
               onChangeText={setIdentifier}
               autoCapitalize="none"
               keyboardType="email-address"
+              onFocus={() => setFocusedField("identifier")}
+              onBlur={() => setFocusedField(null)}
             />
           </View>
           {usePhone && (
@@ -268,16 +272,19 @@ export function AccountRecovery({
           <Text style={{ color: c.mutedForeground, fontSize: 14 }}>
             We sent a verification code to {usePhone ? contact : identifier.trim()}.
           </Text>
-          <View style={[styles.field, { backgroundColor: c.card, borderColor: c.border }]}>
+          <View style={[styles.field, { backgroundColor: c.card, borderColor: focusedField === "otp" ? c.primary : c.border }]}>
             <Ionicons name="keypad-outline" size={20} color={c.mutedForeground} />
             <TextInput
-              style={{ flex: 1, color: c.foreground, fontSize: 15 }}
+              style={{ flex: 1, color: c.foreground, fontSize: 16 }}
               placeholder="Verification code"
               placeholderTextColor={c.mutedForeground}
+              underlineColorAndroid="transparent"
               value={otp}
               onChangeText={setOtp}
               keyboardType="number-pad"
               autoCapitalize="none"
+              onFocus={() => setFocusedField("otp")}
+              onBlur={() => setFocusedField(null)}
             />
           </View>
           {error && <Text style={{ color: c.destructive, fontSize: 13 }}>{error}</Text>}
@@ -317,15 +324,18 @@ export function AccountRecovery({
           <Text style={{ color: c.mutedForeground, fontSize: 14 }}>
             You're verified. Choose a new password (at least 8 characters).
           </Text>
-          <View style={[styles.field, { backgroundColor: c.card, borderColor: c.border }]}>
+          <View style={[styles.field, { backgroundColor: c.card, borderColor: focusedField === "password" ? c.primary : c.border }]}>
             <Ionicons name="lock-closed-outline" size={20} color={c.mutedForeground} />
             <TextInput
-              style={{ flex: 1, color: c.foreground, fontSize: 15 }}
+              style={{ flex: 1, color: c.foreground, fontSize: 16 }}
               placeholder="New password"
               placeholderTextColor={c.mutedForeground}
+              underlineColorAndroid="transparent"
               value={password}
               onChangeText={setPasswordValue}
               secureTextEntry
+              onFocus={() => setFocusedField("password")}
+              onBlur={() => setFocusedField(null)}
             />
           </View>
           {error && <Text style={{ color: c.destructive, fontSize: 13 }}>{error}</Text>}

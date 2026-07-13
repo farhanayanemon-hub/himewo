@@ -778,6 +778,7 @@ function WizInput(props: React.ComponentProps<typeof TextInput>) {
   return (
     <TextInput
       placeholderTextColor={c.mutedForeground}
+      underlineColorAndroid="transparent"
       {...rest}
       style={[
         styles.input,
@@ -911,7 +912,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 14,
     paddingVertical: 13,
-    fontSize: 15,
+    fontSize: 16,
   },
   genderCard: {
     flex: 1,

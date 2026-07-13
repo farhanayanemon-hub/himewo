@@ -202,6 +202,7 @@ export default function CreatePostScreen() {
           onChangeText={setContent}
           placeholder="What's on your mind?"
           placeholderTextColor={c.mutedForeground}
+          underlineColorAndroid="transparent"
           multiline
           autoFocus
           style={{ color: c.foreground, fontSize: 18, minHeight: 120, lineHeight: 24 }}

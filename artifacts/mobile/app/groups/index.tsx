@@ -221,6 +221,7 @@ export default function GroupsScreen() {
               onChangeText={setName}
               placeholder="Group name"
               placeholderTextColor={c.mutedForeground}
+              underlineColorAndroid="transparent"
               style={[styles.input, { color: c.foreground, borderColor: c.border, backgroundColor: c.secondary }]}
             />
             <TextInput
@@ -228,6 +229,7 @@ export default function GroupsScreen() {
               onChangeText={setDescription}
               placeholder="What's this group about?"
               placeholderTextColor={c.mutedForeground}
+              underlineColorAndroid="transparent"
               multiline
               style={[styles.input, styles.textarea, { color: c.foreground, borderColor: c.border, backgroundColor: c.secondary }]}
             />
@@ -303,7 +305,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: "Inter_400Regular",
   },
   textarea: { minHeight: 80, textAlignVertical: "top" },

@@ -427,7 +427,9 @@ export default function ChatThreadScreen() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
         {isLoading ? (
-          <ActivityIndicator color={c.primary} style={{ marginTop: 40 }} />
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+            <ActivityIndicator color={c.primary} />
+          </View>
         ) : (
           <FlatList
             data={messages}
@@ -535,7 +537,8 @@ export default function ChatThreadScreen() {
               placeholder="Message"
               placeholderTextColor={c.mutedForeground}
               multiline
-              style={{ flex: 1, color: c.foreground, fontSize: fs(15), maxHeight: 100, paddingVertical: 0 }}
+              underlineColorAndroid="transparent"
+              style={{ flex: 1, color: c.foreground, fontSize: fs(16), maxHeight: 100, paddingVertical: 0 }}
             />
             <Touchable onPress={() => setEmojiOpen(true)} hitSlop={6}>
               <Ionicons name="happy-outline" size={22} color={c.mutedForeground} />

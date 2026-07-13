@@ -170,7 +170,7 @@ function ReviewsBlock({ page }: { page: Page }) {
             value={body}
             onChangeText={setBody}
             placeholder="Share your experience (optional)"
-            placeholderTextColor={c.mutedForeground}
+            placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent"
             multiline
             style={[
               styles.input,
@@ -359,7 +359,7 @@ function EditPageModal({
         <View style={[styles.modalCard, { backgroundColor: c.surface }]}>
           <Text style={[styles.modalTitle, { color: c.foreground }]}>Edit Page</Text>
           <ScrollView style={{ maxHeight: 460 }} contentContainerStyle={{ gap: 12, paddingBottom: 8 }}>
-            <TextInput value={name} onChangeText={setName} placeholder="Page name" placeholderTextColor={c.mutedForeground} style={inputStyle} />
+            <TextInput value={name} onChangeText={setName} placeholder="Page name" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" style={inputStyle} />
             <Text style={[styles.fieldLabel, { color: c.mutedForeground }]}>Category</Text>
             <View style={styles.chipWrap}>
               {PAGE_CATEGORIES.map((cat: string) => {
@@ -377,12 +377,12 @@ function EditPageModal({
                 );
               })}
             </View>
-            <TextInput value={description} onChangeText={setDescription} placeholder="Description" placeholderTextColor={c.mutedForeground} multiline style={[inputStyle, styles.textarea]} />
-            <TextInput value={contactPhone} onChangeText={setContactPhone} placeholder="Phone" placeholderTextColor={c.mutedForeground} style={inputStyle} keyboardType="phone-pad" />
-            <TextInput value={contactEmail} onChangeText={setContactEmail} placeholder="Email" placeholderTextColor={c.mutedForeground} style={inputStyle} keyboardType="email-address" autoCapitalize="none" />
-            <TextInput value={website} onChangeText={setWebsite} placeholder="Website (https://...)" placeholderTextColor={c.mutedForeground} style={inputStyle} autoCapitalize="none" />
-            <TextInput value={address} onChangeText={setAddress} placeholder="Address" placeholderTextColor={c.mutedForeground} style={inputStyle} />
-            <TextInput value={hours} onChangeText={setHours} placeholder="Hours (e.g. Mon-Fri 9am-6pm)" placeholderTextColor={c.mutedForeground} style={inputStyle} />
+            <TextInput value={description} onChangeText={setDescription} placeholder="Description" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" multiline style={[inputStyle, styles.textarea]} />
+            <TextInput value={contactPhone} onChangeText={setContactPhone} placeholder="Phone" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" style={inputStyle} keyboardType="phone-pad" />
+            <TextInput value={contactEmail} onChangeText={setContactEmail} placeholder="Email" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" style={inputStyle} keyboardType="email-address" autoCapitalize="none" />
+            <TextInput value={website} onChangeText={setWebsite} placeholder="Website (https://...)" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" style={inputStyle} autoCapitalize="none" />
+            <TextInput value={address} onChangeText={setAddress} placeholder="Address" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" style={inputStyle} />
+            <TextInput value={hours} onChangeText={setHours} placeholder="Hours (e.g. Mon-Fri 9am-6pm)" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" style={inputStyle} />
             <Text style={[styles.fieldLabel, { color: c.mutedForeground }]}>Action Button</Text>
             <View style={styles.chipWrap}>
               {CTA_OPTIONS.map((opt) => {
@@ -401,7 +401,7 @@ function EditPageModal({
               })}
             </View>
             {ctaType === "shop" || ctaType === "signup" ? (
-              <TextInput value={ctaUrl} onChangeText={setCtaUrl} placeholder="Button link URL (https://...)" placeholderTextColor={c.mutedForeground} style={inputStyle} autoCapitalize="none" />
+              <TextInput value={ctaUrl} onChangeText={setCtaUrl} placeholder="Button link URL (https://...)" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" style={inputStyle} autoCapitalize="none" />
             ) : null}
             <View style={[styles.switchRow, { borderColor: c.border }]}>
               <View style={{ flex: 1, paddingRight: 10 }}>
@@ -488,7 +488,7 @@ function PageAccessModal({
             value={query}
             onChangeText={setQuery}
             placeholder="Search by name or username..."
-            placeholderTextColor={c.mutedForeground}
+            placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent"
             autoCapitalize="none"
             style={[styles.input, { color: c.foreground, borderColor: c.border, backgroundColor: c.secondary }]}
           />
@@ -1223,7 +1223,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 10,
     fontFamily: "Inter_400Regular",
-    fontSize: 14,
+    fontSize: 16,
   },
   textarea: { minHeight: 60, textAlignVertical: "top" },
   fieldLabel: { fontFamily: "Inter_600SemiBold", fontSize: 13 },

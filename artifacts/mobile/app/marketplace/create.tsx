@@ -161,6 +161,7 @@ export default function MarketplaceCreateScreen() {
             onChangeText={setTitle}
             placeholder="What are you selling?"
             placeholderTextColor={c.mutedForeground}
+            underlineColorAndroid="transparent"
             style={inputStyle}
           />
         </Field>
@@ -172,6 +173,7 @@ export default function MarketplaceCreateScreen() {
             placeholder="0"
             placeholderTextColor={c.mutedForeground}
             keyboardType="numeric"
+            underlineColorAndroid="transparent"
             style={inputStyle}
           />
         </Field>
@@ -224,6 +226,7 @@ export default function MarketplaceCreateScreen() {
             onChangeText={setDescription}
             placeholder="Describe your item..."
             placeholderTextColor={c.mutedForeground}
+            underlineColorAndroid="transparent"
             multiline
             style={[...inputStyle, { height: 110, textAlignVertical: "top", paddingTop: 12 }]}
           />
@@ -314,7 +317,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     height: 48,
     fontFamily: "Inter_400Regular",
-    fontSize: 15,
+    fontSize: 16,
   },
   photoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   photoThumb: {

@@ -330,14 +330,14 @@ export default function MessagesPage() {
                   <Button type="button" variant="ghost" size="icon" className="shrink-0 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                   </Button>
-                  <div className="flex-1 bg-muted/50 rounded-2xl border border-border/50 focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/10 transition-all flex items-center px-4 py-1">
+                  <div className="flex-1 bg-muted/50 rounded-2xl border border-border/50 focus-within:border-ring focus-within:ring-4 focus-within:ring-ring/25 transition-all flex items-center px-4 py-1">
                     <input 
                       type="text" 
                       value={newMessage}
                       onChange={e => handleTyping(e.target.value)}
                       onBlur={stopTyping}
                       placeholder="Aa" 
-                      className="w-full bg-transparent border-none focus:outline-none focus:ring-0 py-2.5 text-base"
+                      className="w-full bg-transparent border-none focus:outline-none focus:ring-0 py-2.5 text-[17px]"
                     />
                     <EmojiPickerButton onSelect={(emoji) => handleTyping(newMessage + emoji)} />
                   </div>

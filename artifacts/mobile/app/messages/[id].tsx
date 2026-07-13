@@ -307,8 +307,9 @@ export default function ChatThreadScreen() {
               onChangeText={onChangeText}
               placeholder="Message"
               placeholderTextColor={c.mutedForeground}
+              underlineColorAndroid="transparent"
               multiline
-              style={{ flex: 1, color: c.foreground, fontSize: 15, maxHeight: 100, paddingVertical: 0 }}
+              style={{ flex: 1, color: c.foreground, fontSize: 16, maxHeight: 100, paddingVertical: 0 }}
             />
             <Pressable onPress={() => setEmojiOpen(true)} hitSlop={6}>
               <Ionicons name="happy-outline" size={22} color={c.mutedForeground} />

@@ -242,7 +242,7 @@ export default function SecuritySettingsScreen() {
   const inputStyle = {
     color: c.foreground,
     fontFamily: "Inter_400Regular" as const,
-    fontSize: 15,
+    fontSize: 16,
     paddingVertical: 6,
   };
   const bodyText = {
@@ -394,7 +394,7 @@ export default function SecuritySettingsScreen() {
                   value={otp}
                   onChangeText={setOtp}
                   placeholder="6-digit code"
-                  placeholderTextColor={c.mutedForeground}
+                  placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent"
                   keyboardType="number-pad"
                   autoCapitalize="none"
                   style={inputStyle}
@@ -418,7 +418,7 @@ export default function SecuritySettingsScreen() {
                   value={password}
                   onChangeText={setPassword}
                   placeholder="At least 6 characters"
-                  placeholderTextColor={c.mutedForeground}
+                  placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent"
                   secureTextEntry
                   style={inputStyle}
                 />
@@ -429,7 +429,7 @@ export default function SecuritySettingsScreen() {
                   value={confirm}
                   onChangeText={setConfirm}
                   placeholder="Same password"
-                  placeholderTextColor={c.mutedForeground}
+                  placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent"
                   secureTextEntry
                   style={inputStyle}
                 />
@@ -477,7 +477,7 @@ export default function SecuritySettingsScreen() {
                       value={disableCode}
                       onChangeText={setDisableCode}
                       placeholder="6-digit code"
-                      placeholderTextColor={c.mutedForeground}
+                      placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent"
                       keyboardType="number-pad"
                       autoCapitalize="none"
                       style={inputStyle}
@@ -568,7 +568,7 @@ export default function SecuritySettingsScreen() {
                   value={enrollCode}
                   onChangeText={setEnrollCode}
                   placeholder="6-digit code"
-                  placeholderTextColor={c.mutedForeground}
+                  placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent"
                   keyboardType="number-pad"
                   autoCapitalize="none"
                   style={inputStyle}

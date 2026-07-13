@@ -368,7 +368,7 @@ function AccountsSection() {
   const inputStyle = {
     color: c.foreground,
     fontFamily: "Inter_400Regular" as const,
-    fontSize: 15,
+    fontSize: 16,
     backgroundColor: c.background,
     borderRadius: 8,
     borderWidth: StyleSheet.hairlineWidth,
@@ -483,6 +483,7 @@ function AccountsSection() {
                 placeholderTextColor={c.mutedForeground}
                 keyboardType={f.keyboard ?? "default"}
                 autoCapitalize="none"
+                underlineColorAndroid="transparent"
                 style={inputStyle}
               />
             </View>
@@ -579,7 +580,7 @@ function WithdrawSection({ summary }: { summary: EarningsSummary }) {
   const inputStyle = {
     color: c.foreground,
     fontFamily: "Inter_400Regular" as const,
-    fontSize: 15,
+    fontSize: 16,
     backgroundColor: c.background,
     borderRadius: 8,
     borderWidth: StyleSheet.hairlineWidth,
@@ -653,6 +654,7 @@ function WithdrawSection({ summary }: { summary: EarningsSummary }) {
               placeholder={`${min}`}
               placeholderTextColor={c.mutedForeground}
               keyboardType="number-pad"
+              underlineColorAndroid="transparent"
               style={inputStyle}
             />
             <Text style={{ color: c.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 12, marginTop: 4 }}>
