@@ -1,20 +1,28 @@
-import { avatarSrc } from "@/lib/avatar";
 import {
   createContext,
   useCallback,
   useContext,
   useEffect,
-  useRef,
+  useMemo,
   useState,
   type ReactNode,
 } from "react";
-import { useRealtime, type RealtimeEvent } from "@/lib/realtime";
-import { Button } from "@/components/ui/button";
-import { Phone, PhoneOff, Mic, MicOff, Video as VideoIcon, VideoOff } from "lucide-react";
-
-const ICE_SERVERS: RTCIceServer[] = [{ urls: "stun:stun.l.google.com:19302" }];
-
-type CallStatus = "idle" | "calling" | "ringing" | "connected";
+import {
+  StreamVideo,
+  StreamVideoClient,
+  StreamCall,
+  StreamTheme,
+  RingingCall,
+  SpeakerLayout,
+  CallControls,
+  CallingState,
+  useCalls,
+  useCallStateHooks,
+} from "@stream-io/video-react-sdk";
+import "@stream-io/video-react-sdk/dist/css/styles.css";
+import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
+import { fetchStreamCredentials, CallsUnavailableError } from "@/lib/calls";
 
 export interface CallPeer {
   id: string;
@@ -28,324 +36,152 @@ interface CallContextValue {
 
 const CallContext = createContext<CallContextValue | null>(null);
 
+/**
+ * Web calling, powered by Stream Video — the SAME service the mobile chat app
+ * uses. Both platforms connect to one Stream app (credentials minted by the API
+ * server's `/api/calls/token`), so a call started on web rings on mobile and
+ * vice-versa. Stream also handles TURN relays and ringing, which the old
+ * hand-rolled WebRTC path could not do reliably across networks.
+ */
 export function CallProvider({ children }: { children: ReactNode }) {
-  const realtime = useRealtime();
+  const { user } = useAuth();
+  const [client, setClient] = useState<StreamVideoClient | null>(null);
 
-  const [status, setStatus] = useState<CallStatus>("idle");
-  const [peer, setPeer] = useState<CallPeer | null>(null);
-  const [withVideo, setWithVideo] = useState(false);
-  const [muted, setMuted] = useState(false);
-  const [cameraOff, setCameraOff] = useState(false);
+  useEffect(() => {
+    if (!user) {
+      setClient(null);
+      return;
+    }
+    let active = true;
+    let created: StreamVideoClient | null = null;
 
-  const pcRef = useRef<RTCPeerConnection | null>(null);
-  const localStreamRef = useRef<MediaStream | null>(null);
-  const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
-  const incomingOfferRef = useRef<RTCSessionDescriptionInit | null>(null);
-  const peerRef = useRef<CallPeer | null>(null);
-
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
-
-  const cleanup = useCallback(() => {
-    pcRef.current?.getSenders().forEach((s) => s.track?.stop());
-    pcRef.current?.close();
-    pcRef.current = null;
-    localStreamRef.current?.getTracks().forEach((t) => t.stop());
-    localStreamRef.current = null;
-    pendingCandidatesRef.current = [];
-    incomingOfferRef.current = null;
-    peerRef.current = null;
-    if (localVideoRef.current) localVideoRef.current.srcObject = null;
-    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
-    setStatus("idle");
-    setPeer(null);
-    setMuted(false);
-    setCameraOff(false);
-  }, []);
-
-  const createPeerConnection = useCallback(
-    (targetId: string) => {
-      const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
-      pc.onicecandidate = (e) => {
-        if (e.candidate) {
-          realtime.sendSignal({
-            type: "call:ice",
-            to: targetId,
-            candidate: e.candidate.toJSON(),
-          });
+    (async () => {
+      try {
+        const creds = await fetchStreamCredentials();
+        if (!active) return;
+        created = StreamVideoClient.getOrCreateInstance({
+          apiKey: creds.apiKey,
+          user: {
+            id: creds.userId,
+            name: user.displayName,
+            image: user.avatarUrl ?? undefined,
+          },
+          token: creds.token,
+        });
+        setClient(created);
+      } catch (err) {
+        if (!(err instanceof CallsUnavailableError)) {
+          console.warn("Could not connect to call service", err);
         }
-      };
-      pc.ontrack = (e) => {
-        if (remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = e.streams[0];
-        }
-      };
-      pc.onconnectionstatechange = () => {
-        if (
-          pc.connectionState === "failed" ||
-          pc.connectionState === "disconnected" ||
-          pc.connectionState === "closed"
-        ) {
-          // leave it to explicit hangup / end events; only clean on failure
-          if (pc.connectionState === "failed") cleanup();
-        }
-      };
-      pcRef.current = pc;
-      return pc;
-    },
-    [realtime, cleanup],
-  );
+      }
+    })();
 
-  const getLocalStream = useCallback(async (video: boolean) => {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
-      video,
-    });
-    localStreamRef.current = stream;
-    if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-    return stream;
-  }, []);
+    return () => {
+      active = false;
+      created?.disconnectUser().catch(() => {});
+      setClient(null);
+    };
+    // Only re-create the Stream client when the *identity* changes, not on every
+    // profile refresh — otherwise a display-name/avatar update would tear down an
+    // in-progress or ringing call. Name/avatar are captured at connect time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const startCall = useCallback(
-    async (target: CallPeer, video: boolean) => {
-      if (status !== "idle") return;
-      setPeer(target);
-      peerRef.current = target;
-      setWithVideo(video);
-      setStatus("calling");
-      try {
-        const pc = createPeerConnection(target.id);
-        const stream = await getLocalStream(video);
-        stream.getTracks().forEach((t) => pc.addTrack(t, stream));
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        realtime.sendSignal({
-          type: "call:offer",
-          to: target.id,
-          sdp: offer,
-          video,
+    (peer: CallPeer, withVideo: boolean) => {
+      if (!client || !user) {
+        toast.error("Calls unavailable", {
+          description: "Could not connect to the call service. Please try again in a moment.",
         });
-      } catch {
-        cleanup();
+        return;
       }
+      void (async () => {
+        try {
+          const callId = `${[user.id, peer.id].sort().join("-")}-${Date.now()}`;
+          const call = client.call("default", callId);
+          await call.getOrCreate({
+            ring: true,
+            data: {
+              members: [{ user_id: user.id }, { user_id: peer.id }],
+            },
+          });
+          if (!withVideo) {
+            await call.camera.disable();
+          }
+        } catch {
+          toast.error("Call failed", {
+            description: "Could not start the call. Please try again.",
+          });
+        }
+      })();
     },
-    [status, createPeerConnection, getLocalStream, realtime, cleanup],
+    [client, user],
   );
 
-  const acceptCall = useCallback(async () => {
-    const offer = incomingOfferRef.current;
-    const target = peerRef.current;
-    if (!offer || !target) return;
-    try {
-      const pc = createPeerConnection(target.id);
-      const stream = await getLocalStream(withVideo);
-      stream.getTracks().forEach((t) => pc.addTrack(t, stream));
-      await pc.setRemoteDescription(new RTCSessionDescription(offer));
-      for (const c of pendingCandidatesRef.current) {
-        await pc.addIceCandidate(new RTCIceCandidate(c));
-      }
-      pendingCandidatesRef.current = [];
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      realtime.sendSignal({ type: "call:answer", to: target.id, sdp: answer });
-      setStatus("connected");
-    } catch {
-      cleanup();
-    }
-  }, [createPeerConnection, getLocalStream, withVideo, realtime, cleanup]);
+  const value = useMemo<CallContextValue>(() => ({ startCall }), [startCall]);
 
-  const rejectCall = useCallback(() => {
-    const target = peerRef.current;
-    if (target) realtime.sendSignal({ type: "call:reject", to: target.id });
-    cleanup();
-  }, [realtime, cleanup]);
-
-  const hangUp = useCallback(() => {
-    const target = peerRef.current;
-    if (target) realtime.sendSignal({ type: "call:end", to: target.id });
-    cleanup();
-  }, [realtime, cleanup]);
-
-  const toggleMute = useCallback(() => {
-    const stream = localStreamRef.current;
-    if (!stream) return;
-    const enabled = !muted;
-    stream.getAudioTracks().forEach((t) => (t.enabled = !enabled));
-    setMuted(enabled);
-  }, [muted]);
-
-  const toggleCamera = useCallback(() => {
-    const stream = localStreamRef.current;
-    if (!stream) return;
-    const off = !cameraOff;
-    stream.getVideoTracks().forEach((t) => (t.enabled = !off));
-    setCameraOff(off);
-  }, [cameraOff]);
-
-  // Signaling event handling
-  useEffect(() => {
-    const unsubscribe = realtime.subscribe((event: RealtimeEvent) => {
-      const from = (event as { from?: string }).from;
-      switch (event.type) {
-        case "call:offer": {
-          if (status !== "idle") {
-            // busy — auto reject
-            if (from) realtime.sendSignal({ type: "call:reject", to: from });
-            return;
-          }
-          if (!from) return;
-          incomingOfferRef.current = (event as unknown as { sdp: RTCSessionDescriptionInit }).sdp;
-          const video = Boolean((event as { video?: boolean }).video);
-          const incomingPeer: CallPeer = {
-            id: from,
-            name: (event as { name?: string }).name,
-          };
-          peerRef.current = incomingPeer;
-          setPeer(incomingPeer);
-          setWithVideo(video);
-          setStatus("ringing");
-          break;
-        }
-        case "call:answer": {
-          const pc = pcRef.current;
-          if (pc) {
-            void pc.setRemoteDescription(
-              new RTCSessionDescription((event as unknown as { sdp: RTCSessionDescriptionInit }).sdp),
-            );
-            setStatus("connected");
-          }
-          break;
-        }
-        case "call:ice": {
-          const candidate = (event as { candidate?: RTCIceCandidateInit }).candidate;
-          if (!candidate) return;
-          const pc = pcRef.current;
-          if (pc && pc.remoteDescription) {
-            void pc.addIceCandidate(new RTCIceCandidate(candidate));
-          } else {
-            pendingCandidatesRef.current.push(candidate);
-          }
-          break;
-        }
-        case "call:end":
-        case "call:reject": {
-          cleanup();
-          break;
-        }
-        default:
-          break;
-      }
-    });
-    return unsubscribe;
-  }, [realtime, status, cleanup]);
-
-  // Attach remote stream when refs mount
-  useEffect(() => {
-    if (status === "connected" && remoteVideoRef.current && pcRef.current) {
-      const receivers = pcRef.current.getReceivers();
-      const stream = new MediaStream();
-      receivers.forEach((r) => r.track && stream.addTrack(r.track));
-      if (stream.getTracks().length) remoteVideoRef.current.srcObject = stream;
-    }
-  }, [status]);
+  if (!client) {
+    return <CallContext.Provider value={value}>{children}</CallContext.Provider>;
+  }
 
   return (
-    <CallContext.Provider value={{ startCall }}>
-      {children}
-      {status !== "idle" && peer && (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center">
-          <div className="relative w-full h-full max-w-4xl max-h-[90vh] m-4 rounded-2xl overflow-hidden bg-neutral-900 flex flex-col items-center justify-center">
-            {/* Remote video / avatar */}
-            {withVideo && status === "connected" ? (
-              <video
-                ref={remoteVideoRef}
-                autoPlay
-                playsInline
-                className="absolute inset-0 w-full h-full object-cover bg-neutral-800"
-              />
-            ) : (
-              <div className="flex flex-col items-center gap-4 text-white">
-                {peer.avatarUrl ? (
-                  <img src={avatarSrc(peer.avatarUrl)} className="w-28 h-28 rounded-full object-cover" alt="" />
-                ) : (
-                  <div className="w-28 h-28 rounded-full bg-primary/30 flex items-center justify-center text-4xl font-bold">
-                    {(peer.name || "?").charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <div className="text-2xl font-semibold">{peer.name || "Unknown"}</div>
-                <div className="text-white/70">
-                  {status === "calling" && "Calling..."}
-                  {status === "ringing" && `Incoming ${withVideo ? "video" : "voice"} call`}
-                  {status === "connected" && "Connected"}
-                </div>
-              </div>
-            )}
-
-            {/* Local preview */}
-            {withVideo && (
-              <video
-                ref={localVideoRef}
-                autoPlay
-                playsInline
-                muted
-                className="absolute bottom-24 right-4 w-32 h-44 object-cover rounded-xl border-2 border-white/30 bg-neutral-800 z-10"
-              />
-            )}
-
-            {/* Controls */}
-            <div className="absolute bottom-6 left-0 right-0 flex items-center justify-center gap-4 z-20">
-              {status === "ringing" ? (
-                <>
-                  <Button
-                    onClick={acceptCall}
-                    size="icon"
-                    className="w-14 h-14 rounded-full bg-green-500 hover:bg-green-600 text-white"
-                  >
-                    <Phone className="w-6 h-6" />
-                  </Button>
-                  <Button
-                    onClick={rejectCall}
-                    size="icon"
-                    className="w-14 h-14 rounded-full bg-red-500 hover:bg-red-600 text-white"
-                  >
-                    <PhoneOff className="w-6 h-6" />
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button
-                    onClick={toggleMute}
-                    size="icon"
-                    variant="secondary"
-                    className="w-12 h-12 rounded-full"
-                  >
-                    {muted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-                  </Button>
-                  {withVideo && (
-                    <Button
-                      onClick={toggleCamera}
-                      size="icon"
-                      variant="secondary"
-                      className="w-12 h-12 rounded-full"
-                    >
-                      {cameraOff ? <VideoOff className="w-5 h-5" /> : <VideoIcon className="w-5 h-5" />}
-                    </Button>
-                  )}
-                  <Button
-                    onClick={hangUp}
-                    size="icon"
-                    className="w-14 h-14 rounded-full bg-red-500 hover:bg-red-600 text-white"
-                  >
-                    <PhoneOff className="w-6 h-6" />
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+    <CallContext.Provider value={value}>
+      <StreamVideo client={client}>
+        {children}
+        <CallOverlay />
+      </StreamVideo>
     </CallContext.Provider>
   );
+}
+
+/**
+ * Renders the active/ringing call over the whole app. Stream's `useCalls`
+ * surfaces both incoming (ringing) and outgoing calls; we show the first one.
+ */
+function CallOverlay() {
+  const calls = useCalls();
+  const call = calls.find((c) => c.ringing) ?? calls[0];
+  if (!call) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm">
+      <StreamTheme className="w-full h-full">
+        <StreamCall call={call}>
+          <CallStage />
+        </StreamCall>
+      </StreamTheme>
+    </div>
+  );
+}
+
+function CallStage() {
+  const { useCallCallingState } = useCallStateHooks();
+  const callingState = useCallCallingState();
+
+  // Ringing (incoming or outgoing) shows the accept/reject screen; once joined
+  // we show the live video/audio grid with call controls.
+  if (callingState === CallingState.RINGING) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <RingingCall />
+      </div>
+    );
+  }
+
+  if (callingState === CallingState.JOINED) {
+    return (
+      <div className="w-full h-full flex flex-col">
+        <div className="flex-1 min-h-0">
+          <SpeakerLayout />
+        </div>
+        <div className="p-4 flex justify-center">
+          <CallControls />
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 }
 
 export function useCall(): CallContextValue {
