@@ -42,7 +42,7 @@ function StoryRow() {
       >
         <div className="h-2/3 overflow-hidden">
           <img
-            src={avatarSrc(actingPage?.avatarUrl ?? user?.avatarUrl)}
+            src={avatarSrc(actingPage ? actingPage.avatarUrl : user?.avatarUrl)}
             className="w-full h-full object-cover"
             alt=""
           />

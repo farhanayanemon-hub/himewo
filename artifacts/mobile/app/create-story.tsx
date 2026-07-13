@@ -41,7 +41,7 @@ export default function CreateStoryScreen() {
   const { actingPage } = useActingPage();
   const pageFields = actingPage ? { pageId: actingPage.id } : {};
   const identityName = actingPage?.name ?? user?.displayName ?? "";
-  const identityAvatar = actingPage?.avatarUrl ?? user?.avatarUrl ?? null;
+  const identityAvatar = actingPage ? actingPage.avatarUrl ?? null : user?.avatarUrl ?? null;
 
   const [mode, setMode] = useState<"media" | "text">("media");
   const [audience, setAudience] = useState<StoryInputAudience>(
