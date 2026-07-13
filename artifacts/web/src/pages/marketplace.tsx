@@ -50,6 +50,8 @@ import {
 import { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
+import { uploadMedia, UploadUnavailableError } from "@/lib/upload";
+import { toast } from "@/hooks/use-toast";
 
 function useDebounced<T>(value: T, delay = 400): T {
   const [debounced, setDebounced] = useState(value);
@@ -643,19 +645,36 @@ export function MarketplaceCreatePage() {
   const [location, setLocation] = useState("");
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [photos, setPhotos] = useState<string[]>([]);
-  const [photoInput, setPhotoInput] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const addPhoto = () => {
-    const url = photoInput.trim();
-    if (!url) return;
-    setPhotos((p) => [...p, url]);
-    setPhotoInput("");
+  const handleFiles = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setUploading(true);
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith("image")) continue;
+      try {
+        const uploaded = await uploadMedia(file);
+        setPhotos((prev) => [...prev, uploaded.url]);
+      } catch (err) {
+        if (err instanceof UploadUnavailableError) {
+          const url = window.prompt(
+            "Direct upload isn't available in this environment. Paste an image URL instead:",
+          );
+          if (url) setPhotos((prev) => [...prev, url]);
+        } else {
+          toast({ title: "Upload failed", description: "Please try again." });
+        }
+      }
+    }
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const canSubmit = title.trim().length > 0 && price.trim().length > 0;
 
   const handleSubmit = () => {
-    if (!canSubmit) return;
+    if (!canSubmit || uploading) return;
     createListing.mutate(
       {
         data: {
@@ -693,7 +712,7 @@ export function MarketplaceCreatePage() {
         <div className="space-y-4">
           <div>
             <Label className="mb-1.5 block">Photos</Label>
-            <div className="grid grid-cols-4 gap-2 mb-2">
+            <div className="grid grid-cols-4 gap-2">
               {photos.map((p, i) => (
                 <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
                   <img src={p} alt="" className="w-full h-full object-cover" />
@@ -705,23 +724,33 @@ export function MarketplaceCreatePage() {
                   </button>
                 </div>
               ))}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="aspect-square rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-foreground hover:border-primary transition-colors press disabled:opacity-60"
+              >
+                {uploading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    <ImagePlus className="w-5 h-5" />
+                    <span className="text-[11px] font-medium">Add photos</span>
+                  </>
+                )}
+              </button>
             </div>
-            <div className="flex gap-2">
-              <Input
-                value={photoInput}
-                onChange={(e) => setPhotoInput(e.target.value)}
-                placeholder="Photo image URL"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    addPhoto();
-                  }
-                }}
-              />
-              <Button type="button" variant="secondary" onClick={addPhoto} className="press">
-                <ImagePlus className="w-4 h-4 mr-1" /> Add
-              </Button>
-            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => handleFiles(e.target.files)}
+            />
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              Upload straight from your gallery — you can add multiple photos.
+            </p>
           </div>
 
           <div>
@@ -806,11 +835,13 @@ export function MarketplaceCreatePage() {
 
           <Button
             onClick={handleSubmit}
-            disabled={!canSubmit || createListing.isPending}
+            disabled={!canSubmit || createListing.isPending || uploading}
             className="w-full press"
           >
-            {createListing.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-            Publish listing
+            {(createListing.isPending || uploading) && (
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            )}
+            {uploading ? "Uploading photos…" : "Publish listing"}
           </Button>
         </div>
       </div>
