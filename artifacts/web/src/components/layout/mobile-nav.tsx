@@ -136,7 +136,11 @@ export function MobileMenuButton({
   );
 }
 
-/** Bottom tab bar (mobile only): Home / Friends / Reels / Market / Profile. */
+/**
+ * Bottom tab bar (mobile only): Home / Friends / Reels(raised) / Market / Profile.
+ * "Solid Dock" style — a solid docked bar with a label under every item and a
+ * raised squircle center button (Reels) that lifts above the bar.
+ */
 export function MobileNav({
   user,
 }: {
@@ -147,74 +151,108 @@ export function MobileNav({
   const profileHref = actingPage ? `/pages/${actingPage.id}` : "/me";
   const profileAvatar = actingPage ? actingPage.avatarUrl : user?.avatarUrl;
 
-  const bottomItems: (MobileNavItem & { color: string })[] = [
-    { href: "/", icon: Home, label: "Home", color: "text-teal-500" },
-    { href: "/friends", icon: Users, label: "Friends", color: "text-purple-500" },
-    { href: "/reels", icon: Video, label: "Reels", color: "text-pink-500" },
-    { href: "/marketplace", icon: Store, label: "Market", color: "text-amber-500" },
-  ];
+  const isActive = (href: string) =>
+    href === "/" ? location === "/" : location.startsWith(href);
 
   const profileActive =
     location === profileHref ||
     location === "/me" ||
     location.startsWith("/profile/");
 
+  const StdItem = ({
+    href,
+    icon: Icon,
+    label,
+    active,
+  }: {
+    href: string;
+    icon: IconType;
+    label: string;
+    active: boolean;
+  }) => (
+    <Link
+      href={href}
+      className="flex flex-1 flex-col items-center justify-end h-full gap-1 pb-2 press"
+    >
+      <span
+        className={`relative flex items-center justify-center transition-transform duration-200 ${
+          active ? "-translate-y-0.5" : ""
+        }`}
+      >
+        <Icon className={`w-6 h-6 ${active ? "text-primary" : "text-muted-foreground"}`} />
+        {active && (
+          <span className="absolute -bottom-2 w-1.5 h-1.5 rounded-full bg-primary" />
+        )}
+      </span>
+      <span
+        className={`text-[10px] leading-none ${
+          active ? "text-primary font-bold" : "text-muted-foreground font-semibold"
+        }`}
+      >
+        {label}
+      </span>
+    </Link>
+  );
+
+  const reelsActive = isActive("/reels");
+
   return (
     <nav
-      className="md:hidden fixed bottom-0 inset-x-0 z-50 aurora-glass-header"
+      className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-background/95 backdrop-blur-md border-t border-border shadow-[0_-12px_40px_rgba(0,0,0,0.10)]"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="flex items-stretch justify-around h-16">
-        {bottomItems.map((item) => {
-          const Icon = item.icon;
-          const isActive =
-            item.href === "/"
-              ? location === "/"
-              : location.startsWith(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex flex-1 flex-col items-center justify-center gap-1 press"
-            >
-              <span
-                className={`relative flex items-center justify-center w-9 h-9 rounded-[12px] transition-all duration-200 ${
-                  isActive
-                    ? "aurora-glass scale-110 -translate-y-0.5"
-                    : "opacity-80"
-                }`}
-              >
-                <Icon className={`relative w-[20px] h-[20px] ${isActive ? item.color : "text-muted-foreground"}`} />
-              </span>
-              <span
-                className={`text-[10px] font-medium ${isActive ? "text-primary" : "text-muted-foreground"}`}
-              >
-                {item.label}
-              </span>
-            </Link>
-          );
-        })}
+      <div className="relative flex items-end justify-around h-16 px-1">
+        <StdItem href="/" icon={Home} label="Home" active={isActive("/")} />
+        <StdItem href="/friends" icon={Users} label="Friends" active={isActive("/friends")} />
+
+        {/* Reels — raised center button */}
         <Link
-          href={profileHref}
-          className="flex flex-1 flex-col items-center justify-center gap-1 press"
+          href="/reels"
+          className="relative flex flex-1 flex-col items-center justify-end h-full pb-2 press"
         >
           <span
-            className={`relative flex items-center justify-center w-9 h-9 rounded-[12px] transition-all duration-200 ${
-              profileActive
-                ? "aurora-glass scale-110 -translate-y-0.5"
-                : "opacity-80"
+            className={`absolute bottom-[22px] flex items-center justify-center w-14 h-14 rounded-[18px] bg-primary text-primary-foreground shadow-[0_12px_28px_-6px_rgba(0,0,0,0.35)] ring-4 ring-background transition-transform duration-200 ${
+              reelsActive ? "scale-105" : ""
+            }`}
+          >
+            <Video className="w-7 h-7" />
+          </span>
+          <span
+            className={`text-[10px] leading-none ${
+              reelsActive ? "text-primary font-bold" : "text-muted-foreground font-semibold"
+            }`}
+          >
+            Reels
+          </span>
+        </Link>
+
+        <StdItem href="/marketplace" icon={Store} label="Market" active={isActive("/marketplace")} />
+
+        {/* Profile — avatar */}
+        <Link
+          href={profileHref}
+          className="flex flex-1 flex-col items-center justify-end h-full gap-1 pb-2 press"
+        >
+          <span
+            className={`relative flex items-center justify-center transition-transform duration-200 ${
+              profileActive ? "-translate-y-0.5" : ""
             }`}
           >
             <img
               src={avatarSrc(profileAvatar)}
               alt=""
-              className={`w-[24px] h-[24px] rounded-full object-cover ${
+              className={`w-6 h-6 rounded-full object-cover ${
                 profileActive ? "ring-2 ring-primary" : ""
               }`}
             />
+            {profileActive && (
+              <span className="absolute -bottom-2 w-1.5 h-1.5 rounded-full bg-primary" />
+            )}
           </span>
           <span
-            className={`text-[10px] font-medium ${profileActive ? "text-primary" : "text-muted-foreground"}`}
+            className={`text-[10px] leading-none ${
+              profileActive ? "text-primary font-bold" : "text-muted-foreground font-semibold"
+            }`}
           >
             Profile
           </span>
