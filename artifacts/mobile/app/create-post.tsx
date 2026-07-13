@@ -157,7 +157,7 @@ export default function CreatePostScreen() {
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 }}>
           <Avatar
-            uri={actingPage?.avatarUrl ?? user?.avatarUrl}
+            uri={actingPage ? actingPage.avatarUrl : user?.avatarUrl}
             name={actingPage?.name ?? user?.displayName}
             size={44}
           />

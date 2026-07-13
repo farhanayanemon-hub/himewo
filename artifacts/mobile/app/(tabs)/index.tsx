@@ -176,7 +176,7 @@ export default function HomeScreen() {
                 onPress={() => router.push("/create-post")}
               >
                 <Avatar
-                  uri={actingPage?.avatarUrl ?? user?.avatarUrl}
+                  uri={actingPage ? actingPage.avatarUrl : user?.avatarUrl}
                   name={actingPage?.name ?? user?.displayName}
                   size={40}
                 />

@@ -28,7 +28,7 @@ export function StoryBar() {
           onPress={() => router.push("/create-story")}
         >
           <View style={styles.createTop}>
-            <Avatar uri={actingPage?.avatarUrl ?? user?.avatarUrl} />
+            <Avatar uri={actingPage ? actingPage.avatarUrl : user?.avatarUrl} />
           </View>
           <View style={[styles.createBottom, { backgroundColor: c.card }]}>
             <View style={[styles.plus, { backgroundColor: c.primary, borderColor: c.card }]}>
