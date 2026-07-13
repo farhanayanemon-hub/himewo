@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
   Text,
@@ -12,6 +13,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import { uploadMedia, UploadUnavailableError } from "@/lib/upload";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useCreateMarketplaceListing,
@@ -36,19 +39,42 @@ export default function MarketplaceCreateScreen() {
   const [location, setLocation] = useState("");
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [photos, setPhotos] = useState<string[]>([]);
-  const [photoInput, setPhotoInput] = useState("");
+  const [uploading, setUploading] = useState(false);
 
-  const addPhoto = () => {
-    const url = photoInput.trim();
-    if (!url) return;
-    setPhotos((p) => [...p, url]);
-    setPhotoInput("");
+  const pickPhotos = async () => {
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsMultipleSelection: true,
+      quality: 0.8,
+      selectionLimit: 10,
+    });
+    if (res.canceled || !res.assets?.length) return;
+    setUploading(true);
+    try {
+      for (const asset of res.assets) {
+        try {
+          const uploaded = await uploadMedia(asset);
+          setPhotos((prev) => [...prev, uploaded.url]);
+        } catch (err) {
+          if (err instanceof UploadUnavailableError) {
+            Alert.alert(
+              "Upload unavailable",
+              "Direct upload isn't available in this environment.",
+            );
+          } else {
+            Alert.alert("Upload failed", "Please try again.");
+          }
+        }
+      }
+    } finally {
+      setUploading(false);
+    }
   };
 
   const canSubmit = title.trim().length > 0 && price.trim().length > 0;
 
   const handleSubmit = () => {
-    if (!canSubmit) return;
+    if (!canSubmit || uploading) return;
     createListing.mutate(
       {
         data: {
@@ -94,23 +120,39 @@ export default function MarketplaceCreateScreen() {
                 </Pressable>
               </View>
             ))}
-          </View>
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <TextInput
-              value={photoInput}
-              onChangeText={setPhotoInput}
-              placeholder="Photo image URL"
-              placeholderTextColor={c.mutedForeground}
-              style={[...inputStyle, { flex: 1 }]}
-              autoCapitalize="none"
-            />
             <Pressable
-              style={[styles.addBtn, { backgroundColor: c.secondary }]}
-              onPress={addPhoto}
+              style={[styles.photoAdd, { borderColor: c.border, backgroundColor: c.card }]}
+              onPress={pickPhotos}
+              disabled={uploading}
             >
-              <Ionicons name="add" size={20} color={c.foreground} />
+              {uploading ? (
+                <ActivityIndicator color={c.mutedForeground} size="small" />
+              ) : (
+                <>
+                  <Ionicons name="images-outline" size={22} color={c.mutedForeground} />
+                  <Text
+                    style={{
+                      color: c.mutedForeground,
+                      fontFamily: "Inter_600SemiBold",
+                      fontSize: 11,
+                      marginTop: 2,
+                    }}
+                  >
+                    Add photos
+                  </Text>
+                </>
+              )}
             </Pressable>
           </View>
+          <Text
+            style={{
+              color: c.mutedForeground,
+              fontFamily: "Inter_400Regular",
+              fontSize: 12,
+            }}
+          >
+            Upload from your gallery — add multiple photos.
+          </Text>
         </View>
 
         <Field label="Title" c={c}>
@@ -194,9 +236,9 @@ export default function MarketplaceCreateScreen() {
             canSubmit ? glow(c.primary) : null,
           ]}
           onPress={handleSubmit}
-          disabled={!canSubmit || createListing.isPending}
+          disabled={!canSubmit || createListing.isPending || uploading}
         >
-          {createListing.isPending ? (
+          {createListing.isPending || uploading ? (
             <ActivityIndicator color="#fff" size="small" />
           ) : (
             <Text
@@ -292,10 +334,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  addBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+  photoAdd: {
+    width: 76,
+    height: 76,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderStyle: "dashed",
     alignItems: "center",
     justifyContent: "center",
   },
