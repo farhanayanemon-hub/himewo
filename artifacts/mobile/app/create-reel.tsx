@@ -151,6 +151,7 @@ export default function CreateReelScreen() {
               onChangeText={setCaption}
               placeholder="Add a caption..."
               placeholderTextColor="#ffffffaa"
+              underlineColorAndroid="transparent"
               style={styles.captionInput}
               multiline
             />

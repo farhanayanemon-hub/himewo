@@ -130,7 +130,7 @@ export function BoostSheet({
                   onChangeText={setBudget}
                   keyboardType="decimal-pad"
                   style={[styles.input, { color: c.foreground, backgroundColor: c.secondary }]}
-                  placeholderTextColor={c.mutedForeground}
+                  placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent"
                 />
               </View>
               <View style={{ flex: 1 }}>
@@ -140,7 +140,7 @@ export function BoostSheet({
                   onChangeText={setDays}
                   keyboardType="number-pad"
                   style={[styles.input, { color: c.foreground, backgroundColor: c.secondary }]}
-                  placeholderTextColor={c.mutedForeground}
+                  placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent"
                 />
               </View>
             </View>
@@ -150,7 +150,7 @@ export function BoostSheet({
               value={headline}
               onChangeText={setHeadline}
               placeholder="Say something catchy"
-              placeholderTextColor={c.mutedForeground}
+              placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent"
               style={[styles.input, { color: c.foreground, backgroundColor: c.secondary }]}
             />
 
@@ -186,7 +186,7 @@ export function BoostSheet({
               value={destinationUrl}
               onChangeText={setDestinationUrl}
               placeholder="https://..."
-              placeholderTextColor={c.mutedForeground}
+              placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent"
               autoCapitalize="none"
               keyboardType="url"
               style={[styles.input, { color: c.foreground, backgroundColor: c.secondary }]}
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, fontFamily: "Inter_700Bold" },
   subtitle: { fontSize: 13, marginTop: 4, marginBottom: 12 },
   label: { fontSize: 13, fontFamily: "Inter_600SemiBold", marginTop: 12, marginBottom: 6 },
-  input: { borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15 },
+  input: { borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16 },
   ctaRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18 },
   error: { fontSize: 13, marginTop: 12 },

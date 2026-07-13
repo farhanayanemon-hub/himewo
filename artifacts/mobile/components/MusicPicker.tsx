@@ -95,6 +95,7 @@ export function MusicPickerModal({
             onChangeText={setQuery}
             placeholder="Search songs, artists, moods..."
             placeholderTextColor="#ffffff88"
+            underlineColorAndroid="transparent"
             style={styles.search}
           />
         </View>
@@ -167,7 +168,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: "#fff",
     fontFamily: "Inter_500Medium",
-    fontSize: 15,
+    fontSize: 16,
     backgroundColor: "#ffffff1a",
     borderRadius: 20,
     paddingHorizontal: 14,

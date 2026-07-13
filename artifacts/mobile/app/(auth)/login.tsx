@@ -503,13 +503,23 @@ function Field({
   ...props
 }: { icon: keyof typeof Ionicons.glyphMap } & React.ComponentProps<typeof TextInput>) {
   const c = useColors();
+  const [isFocused, setIsFocused] = useState(false);
   return (
-    <View style={[styles.field, { backgroundColor: c.card, borderColor: c.border }]}>
+    <View style={[styles.field, { backgroundColor: c.card, borderColor: isFocused ? c.primary : c.border }]}>
       <Ionicons name={icon} size={20} color={c.mutedForeground} />
       <TextInput
-        style={{ flex: 1, color: c.foreground, fontSize: 15 }}
+        style={{ flex: 1, color: c.foreground, fontSize: 16 }}
         placeholderTextColor={c.mutedForeground}
+        underlineColorAndroid="transparent"
         {...props}
+        onFocus={(e) => {
+          setIsFocused(true);
+          props.onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          setIsFocused(false);
+          props.onBlur?.(e);
+        }}
       />
     </View>
   );
@@ -544,7 +554,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     paddingHorizontal: 14,
     paddingVertical: 12,

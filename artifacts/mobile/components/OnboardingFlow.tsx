@@ -314,6 +314,7 @@ export function OnboardingFlow() {
               onChangeText={setBio}
               placeholder="What's your story?"
               placeholderTextColor={c.mutedForeground}
+              underlineColorAndroid="transparent"
               multiline
               maxLength={300}
               style={[
@@ -581,7 +582,7 @@ const styles = StyleSheet.create({
     padding: 14,
     minHeight: 110,
     textAlignVertical: "top",
-    fontSize: 15,
+    fontSize: 16,
   },
   counterPill: {
     flexDirection: "row",

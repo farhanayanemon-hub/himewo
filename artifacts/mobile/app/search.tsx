@@ -51,6 +51,7 @@ export default function SearchScreen() {
             placeholderTextColor={c.mutedForeground}
             autoFocus
             returnKeyType="search"
+            underlineColorAndroid="transparent"
             style={[styles.input, { color: c.foreground }]}
           />
           {query.length > 0 && (
@@ -137,7 +138,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
-  input: { flex: 1, fontFamily: "Inter_400Regular", fontSize: 15, padding: 0 },
+  input: { flex: 1, fontFamily: "Inter_400Regular", fontSize: 16, padding: 0 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, padding: 32 },
   emptyText: { fontFamily: "Inter_500Medium", fontSize: 15, textAlign: "center" },
   row: {

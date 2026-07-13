@@ -75,6 +75,7 @@ export function ShareSheet({ postId, visible, onClose, onShared }: ShareSheetPro
               onChangeText={setCaption}
               placeholder="Say something about this..."
               placeholderTextColor={c.mutedForeground}
+              underlineColorAndroid="transparent"
               multiline
               style={[
                 styles.input,
@@ -119,7 +120,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
     padding: 12,
-    fontSize: 15,
+    fontSize: 16,
     textAlignVertical: "top",
   },
   actions: { flexDirection: "row", gap: 10, marginTop: 16 },

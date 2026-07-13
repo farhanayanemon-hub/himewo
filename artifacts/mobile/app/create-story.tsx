@@ -278,6 +278,7 @@ export default function CreateStoryScreen() {
               onChangeText={setTextContent}
               placeholder="Start typing... (@ to mention)"
               placeholderTextColor="#ffffffaa"
+              underlineColorAndroid="transparent"
               style={styles.textStoryInput}
               multiline
               maxLength={700}
@@ -352,6 +353,7 @@ export default function CreateStoryScreen() {
               onChangeText={setCaption}
               placeholder="Add a caption... (@ to mention)"
               placeholderTextColor="#ffffffaa"
+              underlineColorAndroid="transparent"
               style={styles.captionInput}
               multiline
             />

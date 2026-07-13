@@ -577,6 +577,7 @@ export default function StoryViewerScreen() {
                     onChangeText={setReplyText}
                     placeholder="Send message…"
                     placeholderTextColor="#ffffffaa"
+                    underlineColorAndroid="transparent"
                     style={styles.replyInput}
                     onFocus={() => setComposing(true)}
                     onBlur={() => setComposing(false)}
@@ -788,7 +789,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: "#fff",
     fontFamily: "Inter_500Medium",
-    fontSize: 15,
+    fontSize: 16,
     padding: 0,
   },
   reactBtn: {

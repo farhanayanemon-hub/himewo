@@ -66,6 +66,7 @@ export function LocationAutocomplete({
           }}
           placeholder={placeholder ?? "Search a city or area"}
           placeholderTextColor={c.mutedForeground}
+          underlineColorAndroid="transparent"
           style={[styles.textInput, { color: c.foreground }]}
           autoCapitalize="words"
         />
@@ -118,7 +119,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     height: 48,
   },
-  textInput: { flex: 1, fontFamily: "Inter_400Regular", fontSize: 15 },
+  textInput: { flex: 1, fontFamily: "Inter_400Regular", fontSize: 16 },
   dropdown: {
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 12,

@@ -405,6 +405,7 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
               multiline
               placeholder="What's on your mind?"
               placeholderTextColor={c.mutedForeground}
+              underlineColorAndroid="transparent"
               style={[
                 styles.editInput,
                 { color: c.foreground, backgroundColor: c.secondary },
@@ -514,7 +515,7 @@ const styles = StyleSheet.create({
     minHeight: 96,
     borderRadius: 12,
     padding: 12,
-    fontSize: 15,
+    fontSize: 16,
     textAlignVertical: "top",
   },
   editActions: {

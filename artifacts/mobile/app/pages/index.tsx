@@ -147,6 +147,7 @@ export default function PagesScreen() {
               onChangeText={setName}
               placeholder="Page name"
               placeholderTextColor={c.mutedForeground}
+              underlineColorAndroid="transparent"
               style={[styles.input, { color: c.foreground, borderColor: c.border, backgroundColor: c.secondary }]}
             />
             <Text style={{ color: c.mutedForeground, fontFamily: "Inter_600SemiBold", fontSize: 13 }}>
@@ -187,6 +188,7 @@ export default function PagesScreen() {
               onChangeText={setDescription}
               placeholder="What's this page about?"
               placeholderTextColor={c.mutedForeground}
+              underlineColorAndroid="transparent"
               multiline
               style={[styles.input, styles.textarea, { color: c.foreground, borderColor: c.border, backgroundColor: c.secondary }]}
             />
@@ -246,7 +248,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: "Inter_400Regular",
   },
   textarea: { minHeight: 80, textAlignVertical: "top" },

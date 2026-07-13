@@ -85,6 +85,7 @@ export default function MarketplaceBrowseScreen() {
                 onChangeText={setSearch}
                 placeholder="Search Marketplace"
                 placeholderTextColor={c.mutedForeground}
+                underlineColorAndroid="transparent"
                 style={[styles.searchInput, { color: c.foreground }]}
               />
             </View>
@@ -284,7 +285,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     borderWidth: StyleSheet.hairlineWidth,
   },
-  searchInput: { flex: 1, fontFamily: "Inter_400Regular", fontSize: 15 },
+  searchInput: { flex: 1, fontFamily: "Inter_400Regular", fontSize: 16 },
   actionsRow: { flexDirection: "row", gap: 10 },
   actionBtn: {
     flex: 1,

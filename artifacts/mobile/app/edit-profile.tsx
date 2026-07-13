@@ -178,48 +178,48 @@ export default function EditProfileScreen() {
         <Text style={[styles.sectionTitle, { color: c.mutedForeground }]}>BASIC</Text>
         <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
           <Field label="Name" c={c}>
-            <TextInput value={displayName} onChangeText={setDisplayName} placeholder="Your name" placeholderTextColor={c.mutedForeground} style={[styles.input, { color: c.foreground }]} />
+            <TextInput value={displayName} onChangeText={setDisplayName} placeholder="Your name" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" style={[styles.input, { color: c.foreground }]} />
           </Field>
           <Field label="Bio / Intro" c={c} last>
-            <TextInput value={bio} onChangeText={setBio} placeholder="Write something about yourself" placeholderTextColor={c.mutedForeground} multiline style={[styles.input, { color: c.foreground, minHeight: 60, textAlignVertical: "top" }]} />
+            <TextInput value={bio} onChangeText={setBio} placeholder="Write something about yourself" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" multiline style={[styles.input, { color: c.foreground, minHeight: 60, textAlignVertical: "top" }]} />
           </Field>
         </View>
 
         <Text style={[styles.sectionTitle, { color: c.mutedForeground }]}>ABOUT YOU</Text>
         <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
           <Field label="Birthday (YYYY-MM-DD)" c={c}>
-            <TextInput value={birthday} onChangeText={setBirthday} placeholder="1998-06-28" placeholderTextColor={c.mutedForeground} autoCapitalize="none" style={[styles.input, { color: c.foreground }]} />
+            <TextInput value={birthday} onChangeText={setBirthday} placeholder="1998-06-28" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" autoCapitalize="none" style={[styles.input, { color: c.foreground }]} />
           </Field>
           <Field label="Work" c={c}>
-            <TextInput value={work} onChangeText={setWork} placeholder="Where do you work?" placeholderTextColor={c.mutedForeground} style={[styles.input, { color: c.foreground }]} />
+            <TextInput value={work} onChangeText={setWork} placeholder="Where do you work?" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" style={[styles.input, { color: c.foreground }]} />
           </Field>
           <Field label="Education" c={c}>
-            <TextInput value={education} onChangeText={setEducation} placeholder="Where did you study?" placeholderTextColor={c.mutedForeground} style={[styles.input, { color: c.foreground }]} />
+            <TextInput value={education} onChangeText={setEducation} placeholder="Where did you study?" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" style={[styles.input, { color: c.foreground }]} />
           </Field>
           <Field label="Current city" c={c}>
-            <TextInput value={location} onChangeText={setLocation} placeholder="Where do you live now?" placeholderTextColor={c.mutedForeground} style={[styles.input, { color: c.foreground }]} />
+            <TextInput value={location} onChangeText={setLocation} placeholder="Where do you live now?" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" style={[styles.input, { color: c.foreground }]} />
           </Field>
           <Field label="Hometown" c={c}>
-            <TextInput value={hometown} onChangeText={setHometown} placeholder="Your hometown" placeholderTextColor={c.mutedForeground} style={[styles.input, { color: c.foreground }]} />
+            <TextInput value={hometown} onChangeText={setHometown} placeholder="Your hometown" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" style={[styles.input, { color: c.foreground }]} />
           </Field>
           <Field label="Hobbies" c={c}>
-            <TextInput value={hobbies} onChangeText={setHobbies} placeholder="Cricket, music, cooking..." placeholderTextColor={c.mutedForeground} style={[styles.input, { color: c.foreground }]} />
+            <TextInput value={hobbies} onChangeText={setHobbies} placeholder="Cricket, music, cooking..." placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" style={[styles.input, { color: c.foreground }]} />
           </Field>
           <Field label="Interests" c={c} last>
-            <TextInput value={interests} onChangeText={setInterests} placeholder="Travel, technology..." placeholderTextColor={c.mutedForeground} style={[styles.input, { color: c.foreground }]} />
+            <TextInput value={interests} onChangeText={setInterests} placeholder="Travel, technology..." placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" style={[styles.input, { color: c.foreground }]} />
           </Field>
         </View>
 
         <Text style={[styles.sectionTitle, { color: c.mutedForeground }]}>CONTACT INFO</Text>
         <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
           <Field label="Email" c={c}>
-            <TextInput value={email} onChangeText={setEmail} placeholder="you@example.com" placeholderTextColor={c.mutedForeground} autoCapitalize="none" keyboardType="email-address" style={[styles.input, { color: c.foreground }]} />
+            <TextInput value={email} onChangeText={setEmail} placeholder="you@example.com" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" autoCapitalize="none" keyboardType="email-address" style={[styles.input, { color: c.foreground }]} />
           </Field>
           <Field label="Phone" c={c}>
-            <TextInput value={phone} onChangeText={setPhone} placeholder="01XXXXXXXXX" placeholderTextColor={c.mutedForeground} keyboardType="phone-pad" style={[styles.input, { color: c.foreground }]} />
+            <TextInput value={phone} onChangeText={setPhone} placeholder="01XXXXXXXXX" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" keyboardType="phone-pad" style={[styles.input, { color: c.foreground }]} />
           </Field>
           <Field label="Website" c={c} last>
-            <TextInput value={website} onChangeText={setWebsite} placeholder="https://..." placeholderTextColor={c.mutedForeground} autoCapitalize="none" style={[styles.input, { color: c.foreground }]} />
+            <TextInput value={website} onChangeText={setWebsite} placeholder="https://..." placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" autoCapitalize="none" style={[styles.input, { color: c.foreground }]} />
           </Field>
         </View>
       </ScrollView>
@@ -298,5 +298,5 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   field: { paddingHorizontal: 14, paddingVertical: 10 },
-  input: { fontFamily: "Inter_400Regular", fontSize: 15, padding: 0 },
+  input: { fontFamily: "Inter_400Regular", fontSize: 16, padding: 0 },
 });

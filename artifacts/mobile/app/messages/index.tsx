@@ -223,7 +223,8 @@ function NewMessageModal({ visible, onClose }: { visible: boolean; onClose: () =
               placeholder="Search people"
               placeholderTextColor={c.mutedForeground}
               autoFocus
-              style={{ flex: 1, color: c.foreground, fontSize: 15, paddingVertical: 0 }}
+              underlineColorAndroid="transparent"
+              style={{ flex: 1, color: c.foreground, fontSize: 16, paddingVertical: 0 }}
             />
           </View>
         </View>

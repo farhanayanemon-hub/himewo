@@ -136,7 +136,8 @@ export default function ConversationsScreen() {
             onChangeText={setSearch}
             placeholder="Search chats"
             placeholderTextColor={c.mutedForeground}
-            style={{ flex: 1, color: c.foreground, fontSize: fs(15), paddingVertical: 0 }}
+            underlineColorAndroid="transparent"
+            style={{ flex: 1, color: c.foreground, fontSize: fs(16), paddingVertical: 0 }}
           />
           {search.length > 0 && (
             <Touchable onPress={() => setSearch("")} hitSlop={8}>
@@ -633,7 +634,8 @@ function NewMessageModal({ visible, onClose }: { visible: boolean; onClose: () =
               placeholder="Search people"
               placeholderTextColor={c.mutedForeground}
               autoFocus
-              style={{ flex: 1, color: c.foreground, fontSize: fs(15), paddingVertical: 0 }}
+              underlineColorAndroid="transparent"
+              style={{ flex: 1, color: c.foreground, fontSize: fs(16), paddingVertical: 0 }}
             />
           </View>
         </View>

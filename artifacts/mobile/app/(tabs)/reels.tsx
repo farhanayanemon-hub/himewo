@@ -417,6 +417,7 @@ function ReelCommentsSheet({
                 onChangeText={setText}
                 placeholder="Write a comment..."
                 placeholderTextColor={c.mutedForeground}
+                underlineColorAndroid="transparent"
                 style={[styles.input, { backgroundColor: c.secondary, color: c.foreground }]}
                 multiline
               />
@@ -557,6 +558,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     maxHeight: 100,
-    fontSize: 15,
+    fontSize: 16,
   },
 });
