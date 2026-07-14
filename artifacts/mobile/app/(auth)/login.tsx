@@ -505,7 +505,7 @@ function Field({
   const c = useColors();
   const [isFocused, setIsFocused] = useState(false);
   return (
-    <View style={[styles.field, { backgroundColor: c.card, borderColor: isFocused ? c.primary : c.border }]}>
+    <View style={[styles.field, { backgroundColor: c.card, borderColor: c.border }]}>
       <Ionicons name={icon} size={20} color={c.mutedForeground} />
       <TextInput
         style={{ flex: 1, color: c.foreground, fontSize: 16 }}
