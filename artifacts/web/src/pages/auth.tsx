@@ -37,7 +37,7 @@ function GoogleIcon() {
 }
 
 const inputClass =
-  "h-14 rounded-xl border-[#dddfe2] dark:border-[#3e4042] bg-white dark:bg-[#3a3b3c] px-4 text-[17px] placeholder:text-[#90949c] focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/25";
+  "h-14 rounded-xl border-[#dddfe2] dark:border-[#3e4042] bg-white dark:bg-[#3a3b3c] px-4 text-[17px] placeholder:text-[#90949c] focus:outline-none focus-visible:outline-none focus-visible:border-[#dddfe2] dark:focus-visible:border-[#3e4042]";
 
 function DevLogin() {
   const { devUsers, signInAsDevUser } = useAuth();

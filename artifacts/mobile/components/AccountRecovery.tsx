@@ -190,7 +190,7 @@ export function AccountRecovery({
               ? "Enter the email address or mobile number linked to your account."
               : "Enter your email address or mobile number and we'll send you a verification code."}
           </Text>
-          <View style={[styles.field, { backgroundColor: c.card, borderColor: focusedField === "identifier" ? c.primary : c.border }]}>
+          <View style={[styles.field, { backgroundColor: c.card, borderColor: c.border }]}>
             <Ionicons name="person-circle-outline" size={20} color={c.mutedForeground} />
             <TextInput
               style={{ flex: 1, color: c.foreground, fontSize: 16 }}
@@ -272,7 +272,7 @@ export function AccountRecovery({
           <Text style={{ color: c.mutedForeground, fontSize: 14 }}>
             We sent a verification code to {usePhone ? contact : identifier.trim()}.
           </Text>
-          <View style={[styles.field, { backgroundColor: c.card, borderColor: focusedField === "otp" ? c.primary : c.border }]}>
+          <View style={[styles.field, { backgroundColor: c.card, borderColor: c.border }]}>
             <Ionicons name="keypad-outline" size={20} color={c.mutedForeground} />
             <TextInput
               style={{ flex: 1, color: c.foreground, fontSize: 16 }}
@@ -324,7 +324,7 @@ export function AccountRecovery({
           <Text style={{ color: c.mutedForeground, fontSize: 14 }}>
             You're verified. Choose a new password (at least 8 characters).
           </Text>
-          <View style={[styles.field, { backgroundColor: c.card, borderColor: focusedField === "password" ? c.primary : c.border }]}>
+          <View style={[styles.field, { backgroundColor: c.card, borderColor: c.border }]}>
             <Ionicons name="lock-closed-outline" size={20} color={c.mutedForeground} />
             <TextInput
               style={{ flex: 1, color: c.foreground, fontSize: 16 }}

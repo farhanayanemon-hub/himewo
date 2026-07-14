@@ -36,14 +36,13 @@ if (Platform.OS === "web" && typeof document !== "undefined") {
   if (!document.getElementById(STYLE_ID)) {
     const el = document.createElement("style");
     el.id = STYLE_ID;
-    // Only strip the browser default outline on text-entry fields (the ugly black
-    // box users saw on tap). Buttons/selects keep their default focus outline for
-    // accessibility. Keyboard users still get a visible brand-purple focus ring on
-    // inputs via :focus-visible (which does NOT fire on touch/mouse, so no ugly box).
+    // Apple-style: strip the browser default focus outline AND any box-shadow on
+    // text-entry fields entirely — no border/ring appears on tap or focus. Buttons
+    // keep their default outline for accessibility.
     el.textContent =
       "*{-webkit-tap-highlight-color:transparent}" +
-      "input,textarea{outline:none !important}" +
-      "input:focus-visible,textarea:focus-visible{outline:2px solid rgba(192,132,252,0.9) !important;outline-offset:1px}";
+      "input,textarea,select,[contenteditable]{outline:none !important;box-shadow:none !important}" +
+      "input:focus,input:focus-visible,textarea:focus,textarea:focus-visible,select:focus,[contenteditable]:focus{outline:none !important;box-shadow:none !important}";
     document.head.appendChild(el);
   }
 }
