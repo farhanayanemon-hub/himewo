@@ -33,6 +33,7 @@ import EarningsPage from "@/pages/earnings";
 import StoriesPage from "@/pages/stories";
 import MemoriesPage from "@/pages/memories";
 import SavedPage from "@/pages/saved";
+import VerifiedPage from "@/pages/verified";
 import AlbumPage from "@/pages/album";
 import EventsPage, { EventDetailPage } from "@/pages/events";
 import LivePage, { LiveStreamPage } from "@/pages/live";
@@ -104,6 +105,7 @@ function AppRoutes() {
       <Route path="/stories" component={StoriesPage} />
       <Route path="/memories" component={MemoriesPage} />
       <Route path="/saved" component={SavedPage} />
+      <Route path="/verified" component={VerifiedPage} />
       <Route path="/albums/:id" component={AlbumPage} />
       <Route path="/events" component={EventsPage} />
       <Route path="/events/:id" component={EventDetailPage} />
