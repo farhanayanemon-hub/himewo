@@ -32,6 +32,7 @@ import {
   Store,
   Clock,
   Bookmark,
+  BadgeCheck,
   CalendarDays,
   Radio,
   MonitorPlay,
@@ -222,6 +223,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
     { href: "/stories", icon: Clapperboard, label: "Stories", color: "text-purple-500" },
     { href: "/memories", icon: Clock, label: "Memories", color: "text-cyan-500" },
     { href: "/saved", icon: Bookmark, label: "Saved", color: "text-pink-500" },
+    { href: "/verified", icon: BadgeCheck, label: "Verified Badge", color: "text-blue-500" },
   ];
 
   return (
