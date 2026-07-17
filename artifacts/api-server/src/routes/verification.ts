@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, verificationRequestsTable, profilesTable } from "@workspace/db";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod/v4";
 import { requireAuth } from "../lib/auth";
 
@@ -70,26 +70,39 @@ router.post(
       res.status(400).json({ error: "You are already verified" });
       return;
     }
-    const [latest] = await db
-      .select({ status: verificationRequestsTable.status })
+    const [pending] = await db
+      .select({ id: verificationRequestsTable.id })
       .from(verificationRequestsTable)
-      .where(eq(verificationRequestsTable.userId, userId))
-      .orderBy(desc(verificationRequestsTable.createdAt))
+      .where(
+        and(
+          eq(verificationRequestsTable.userId, userId),
+          eq(verificationRequestsTable.status, "pending"),
+        ),
+      )
       .limit(1);
-    if (latest?.status === "pending") {
+    if (pending) {
       res.status(409).json({ error: "You already have a pending request" });
       return;
     }
-    const [created] = await db
-      .insert(verificationRequestsTable)
-      .values({ userId, note: parsed.data.note || null })
-      .returning();
-    res.status(201).json({
-      id: created.id,
-      status: created.status,
-      note: created.note,
-      createdAt: created.createdAt,
-    });
+    try {
+      const [created] = await db
+        .insert(verificationRequestsTable)
+        .values({ userId, note: parsed.data.note || null })
+        .returning();
+      res.status(201).json({
+        id: created.id,
+        status: created.status,
+        note: created.note,
+        createdAt: created.createdAt,
+      });
+    } catch (err) {
+      // Partial unique index (one pending per user) — double-submit race.
+      if ((err as { code?: string }).code === "23505") {
+        res.status(409).json({ error: "You already have a pending request" });
+        return;
+      }
+      throw err;
+    }
   },
 );
 

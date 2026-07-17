@@ -64,7 +64,7 @@ export default function VerifiedPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["verification-request"],
     queryFn: fetchVerificationState,
   });
@@ -106,6 +106,17 @@ export default function VerifiedPage() {
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : isError ? (
+          <div className="rounded-2xl border bg-card p-6 text-center">
+            <XCircle className="w-10 h-10 text-destructive mx-auto mb-3" />
+            <h2 className="font-semibold text-lg">Couldn't load your status</h2>
+            <p className="text-muted-foreground text-sm mt-1 mb-4">
+              Please check your connection and try again.
+            </p>
+            <Button variant="outline" onClick={() => refetch()}>
+              Retry
+            </Button>
           </div>
         ) : status === "verified" ? (
           <div className="rounded-2xl border bg-card p-6 text-center">
