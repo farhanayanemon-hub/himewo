@@ -69,7 +69,7 @@ export default function VerifiedScreen() {
   const [note, setNote] = useState("");
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["verification-request"],
     queryFn: fetchVerificationState,
   });
@@ -118,6 +118,17 @@ export default function VerifiedScreen() {
 
         {isLoading ? (
           <ActivityIndicator style={{ marginTop: 32 }} color={c.muted} />
+        ) : isError ? (
+          <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+            <Ionicons name="close-circle" size={36} color="#dc2626" style={styles.cardIcon} />
+            <Text style={[styles.cardTitle, { color: c.text }]}>Couldn't load your status</Text>
+            <Text style={[styles.cardSub, { color: c.muted }]}>
+              Please check your connection and try again.
+            </Text>
+            <Pressable style={[styles.button, { marginTop: 12, alignSelf: "stretch" }]} onPress={() => refetch()}>
+              <Text style={styles.buttonText}>Retry</Text>
+            </Pressable>
+          </View>
         ) : status === "verified" ? (
           <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
             <Ionicons name="checkmark-circle" size={36} color="#1877f2" style={styles.cardIcon} />

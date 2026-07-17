@@ -7,7 +7,9 @@ import {
   timestamp,
   jsonb,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { profilesTable } from "./profiles";
 import {
   reportStatusEnum,
@@ -119,25 +121,35 @@ export const announcementsTable = pgTable("announcements", {
 // ---------------------------------------------------------------------------
 // Verification requests (J). Blue-tick queue.
 // ---------------------------------------------------------------------------
-export const verificationRequestsTable = pgTable("verification_requests", {
-  id: serial("id").primaryKey(),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => profilesTable.id, { onDelete: "cascade" }),
-  note: text("note"),
-  status: verificationStatusEnum("status").notNull().default("pending"),
-  handledBy: uuid("handled_by").references(() => profilesTable.id, {
-    onDelete: "set null",
-  }),
-  reviewNote: text("review_note"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date()),
-});
+export const verificationRequestsTable = pgTable(
+  "verification_requests",
+  {
+    id: serial("id").primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => profilesTable.id, { onDelete: "cascade" }),
+    note: text("note"),
+    status: verificationStatusEnum("status").notNull().default("pending"),
+    handledBy: uuid("handled_by").references(() => profilesTable.id, {
+      onDelete: "set null",
+    }),
+    reviewNote: text("review_note"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    // At most ONE pending request per user — the POST route's pre-check is
+    // advisory; this is the real guard against double-submit races.
+    uniqueIndex("verification_requests_one_pending_idx")
+      .on(t.userId)
+      .where(sql`status = 'pending'`),
+  ],
+);
 
 // ---------------------------------------------------------------------------
 // RBAC (H). Per-role permission lists. The "admin" role implicitly has all

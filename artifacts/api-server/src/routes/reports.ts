@@ -3,6 +3,7 @@ import {
   db,
   reportsTable,
   verificationRequestsTable,
+  profilesTable,
   announcementsTable,
 } from "@workspace/db";
 import { and, eq, desc, gt, or, isNull } from "drizzle-orm";
@@ -51,6 +52,15 @@ router.post(
     const parsed = VerificationBody.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    // Align with /verification/request: already-verified users can't apply.
+    const [profile] = await db
+      .select({ isVerified: profilesTable.isVerified })
+      .from(profilesTable)
+      .where(eq(profilesTable.id, req.userId!));
+    if (profile?.isVerified) {
+      res.status(400).json({ error: "You are already verified" });
       return;
     }
     const [existing] = await db
