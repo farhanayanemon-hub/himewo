@@ -28,6 +28,7 @@
 - [Watch feed](himewo-watch-feed.md) — filtered feeds MUST batch-scan until page full: filterVisiblePosts after SQL limit → short page → client falsely ends feed.
 - [GIF comments](himewo-gif-comments.md) — Tenor v1 demo key `LIVDSRZULELA` works (GIPHY beta key banned); comment mediaUrl needs http(s) guard; GIF-only comments allowed.
 - [PYMK](himewo-pymk.md) — FriendSuggestion = allOf Profile+mutualFriendsCount (Orval-safe); MUST exclude pending requests both directions; friends-of-friends rank + random backfill.
+- [Verified badge request flow](himewo-verified-badge.md) — user apply flow via raw fetch (no codegen); legacy dup endpoint in reports.ts kept aligned; one-pending enforced by partial unique index + 23505→409.
 - [Dark mode + verified badge](himewo-darkmode-verified.md) — theme init MUST run in main.tsx pre-render (localStorage `himewo-theme`); isVerified already in Profile contract, only UI badge was missing; follow UI already existed.
 - [api-zod codegen ambiguity](himewo-api-zod-codegen.md) — new OpenAPI path+query endpoint needs a manual *Params re-export in lib/api-zod/src/index.ts or codegen typecheck fails (TS2308).
 - [Comment replies & mentions](himewo-comment-mentions.md) — one-level threads (server flattens reply-to-reply); mention token `@[Name](user:<uuid>)` shared contract; UUID-guard before profiles lookup.
