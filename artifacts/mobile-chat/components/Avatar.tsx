@@ -8,6 +8,7 @@ interface AvatarProps {
   uri?: string | null;
   name?: string;
   size?: number;
+  /** undefined = no presence dot; true = green (online); false = grey (offline) */
   online?: boolean;
   ring?: boolean;
 }

@@ -81,7 +81,7 @@ export default function ChatThreadScreen() {
     ? conversation?.title || "Group chat"
     : peer?.displayName || "Chat";
   const headerAvatar = isGroup ? conversation?.avatarUrl : peer?.avatarUrl;
-  const online = !isGroup && peer ? isOnline(peer.id) : false;
+  const online = !isGroup && peer ? isOnline(peer.id) : undefined;
 
   const { data: msgData, isLoading } = useListMessages(convId);
   const messages = useMemo(() => {

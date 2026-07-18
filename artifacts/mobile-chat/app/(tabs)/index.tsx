@@ -191,7 +191,7 @@ export default function ConversationsScreen() {
               ? item.title || "Group chat"
               : peer?.displayName || "Unknown";
             const avatarUri = isGroup ? item.avatarUrl : peer?.avatarUrl;
-            const online = !isGroup && peer ? isOnline(peer.id) : false;
+            const online = !isGroup && peer ? isOnline(peer.id) : undefined;
             const last = item.lastMessage;
             const preview = last
               ? last.type === "text"
