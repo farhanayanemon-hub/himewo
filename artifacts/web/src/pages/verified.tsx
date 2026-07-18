@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
-import { BadgeCheck, Clock, XCircle, Loader2 } from "lucide-react";
+import { BadgeCheck, Clock, XCircle, Loader2, CheckCircle2, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -23,8 +23,27 @@ async function getAuthToken(): Promise<string | null> {
   return devId ? `dev:${devId}` : null;
 }
 
+interface VerificationRequirements {
+  minAccountAgeDays: number;
+  minPosts: number;
+  minReels: number;
+  regularPostDays: number;
+  monthlyFee: number;
+}
+
+interface VerificationProgress {
+  accountAgeDays: number;
+  postCount: number;
+  reelCount: number;
+  lastPostDaysAgo: number | null;
+}
+
 interface VerificationState {
   isVerified: boolean;
+  requirements: VerificationRequirements;
+  progress: VerificationProgress | null;
+  eligible: boolean;
+  missing: string[];
   request: {
     id: number;
     status: "pending" | "approved" | "rejected";
@@ -57,6 +76,21 @@ async function submitVerificationRequest(note: string): Promise<void> {
     const body = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(body.error || `Could not submit request (${res.status})`);
   }
+}
+
+function RequirementRow({ met, label, detail }: { met: boolean; label: string; detail: string }) {
+  return (
+    <li className="flex items-start gap-2">
+      {met ? (
+        <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+      ) : (
+        <Circle className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+      )}
+      <span className={met ? "" : "text-muted-foreground"}>
+        {label} <span className="text-xs text-muted-foreground">({detail})</span>
+      </span>
+    </li>
+  );
 }
 
 export default function VerifiedPage() {
@@ -136,6 +170,45 @@ export default function VerifiedPage() {
           </div>
         ) : (
           <div className="rounded-2xl border bg-card p-6 space-y-4">
+            {data && data.progress && (
+              <div className="rounded-xl bg-muted/50 p-4">
+                <p className="text-sm font-semibold mb-3">Requirements</p>
+                <ul className="space-y-2 text-sm">
+                  <RequirementRow
+                    met={data.progress.accountAgeDays >= data.requirements.minAccountAgeDays}
+                    label={`Account at least ${data.requirements.minAccountAgeDays} days old`}
+                    detail={`${data.progress.accountAgeDays} days`}
+                  />
+                  <RequirementRow
+                    met={data.progress.postCount >= data.requirements.minPosts}
+                    label={`At least ${data.requirements.minPosts} posts`}
+                    detail={`${data.progress.postCount} posts`}
+                  />
+                  <RequirementRow
+                    met={data.progress.reelCount >= data.requirements.minReels}
+                    label={`At least ${data.requirements.minReels} reels`}
+                    detail={`${data.progress.reelCount} reels`}
+                  />
+                  {data.requirements.regularPostDays > 0 && (
+                    <RequirementRow
+                      met={
+                        data.progress.lastPostDaysAgo !== null &&
+                        data.progress.lastPostDaysAgo <= data.requirements.regularPostDays
+                      }
+                      label={`Posted within the last ${data.requirements.regularPostDays} days`}
+                      detail={
+                        data.progress.lastPostDaysAgo === null
+                          ? "no posts yet"
+                          : `last post ${data.progress.lastPostDaysAgo}d ago`
+                      }
+                    />
+                  )}
+                </ul>
+                <p className="text-xs text-muted-foreground mt-3">
+                  Verified badge costs ৳{data.requirements.monthlyFee}/month after approval.
+                </p>
+              </div>
+            )}
             {status === "rejected" && (
               <div className="rounded-xl bg-destructive/10 p-4 flex gap-3">
                 <XCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
@@ -162,13 +235,15 @@ export default function VerifiedPage() {
             </div>
             <Button
               className="w-full"
-              disabled={submit.isPending}
+              disabled={submit.isPending || !data?.eligible}
               onClick={() => submit.mutate()}
             >
               {submit.isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
+              ) : data?.eligible ? (
                 "Submit request"
+              ) : (
+                "Requirements not met yet"
               )}
             </Button>
           </div>

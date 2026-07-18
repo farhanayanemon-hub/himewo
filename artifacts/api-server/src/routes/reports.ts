@@ -10,6 +10,11 @@ import { and, eq, desc, gt, or, isNull } from "drizzle-orm";
 import { z } from "zod/v4";
 import { requireAuth } from "../lib/auth";
 import { getFlags, getSettings } from "../lib/flags";
+import {
+  getVerificationRequirements,
+  getVerificationProgress,
+  unmetRequirements,
+} from "../lib/verification";
 
 const router: IRouter = Router();
 
@@ -61,6 +66,19 @@ router.post(
       .where(eq(profilesTable.id, req.userId!));
     if (profile?.isVerified) {
       res.status(400).json({ error: "You are already verified" });
+      return;
+    }
+    // Same eligibility policy as /verification/request.
+    const [vreq, vprog] = await Promise.all([
+      getVerificationRequirements(),
+      getVerificationProgress(req.userId!),
+    ]);
+    const vmissing = vprog ? unmetRequirements(vreq, vprog) : [];
+    if (!vprog || vmissing.length > 0) {
+      res.status(400).json({
+        error: `You don't meet the requirements yet: ${vmissing.join("; ")}`,
+        missing: vmissing,
+      });
       return;
     }
     const [existing] = await db
