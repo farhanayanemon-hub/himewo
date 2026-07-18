@@ -58,7 +58,7 @@ export function Avatar({ uri, name, size = 40, online, ring }: AvatarProps) {
           </Text>
         )}
       </View>
-      {online && (
+      {online !== undefined && (
         <View
           style={[
             styles.dot,
@@ -67,7 +67,7 @@ export function Avatar({ uri, name, size = 40, online, ring }: AvatarProps) {
               height: size * 0.28,
               borderRadius: size * 0.14,
               borderColor: c.card,
-              backgroundColor: "#31a24c",
+              backgroundColor: online ? "#31a24c" : "#9ca3af",
             },
           ]}
         />
