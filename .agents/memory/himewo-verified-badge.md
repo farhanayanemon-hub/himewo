@@ -61,3 +61,11 @@ NOT Orval codegen — deliberate, to avoid OpenAPI churn for a tiny surface.
  else default).
 Counts include all authored posts/reels (hidden/moderated not excluded —
 open product question).
+
+**Notifications:** type "verification" (already in enum) with entityType
+discriminator: verification_pending (self-notify on submit, both routes),
+verification_approved / verification_rejected (admin PATCH — actorId
+deliberately omitted so the reviewing admin isn't exposed). All 3 clients
+(web, mobile, chat) map these entityTypes to text/icon; web+mobile navigate
+to /verified. Older rows may have plain entityType "verification" → generic
+"was reviewed" fallback.
