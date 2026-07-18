@@ -96,11 +96,22 @@ router.post(
         .json({ error: "You already have a pending verification request" });
       return;
     }
-    const [row] = await db
-      .insert(verificationRequestsTable)
-      .values({ userId: req.userId!, note: parsed.data.note ?? null })
-      .returning();
-    res.status(201).json({ id: row.id, status: row.status });
+    try {
+      const [row] = await db
+        .insert(verificationRequestsTable)
+        .values({ userId: req.userId!, note: parsed.data.note ?? null })
+        .returning();
+      res.status(201).json({ id: row.id, status: row.status });
+    } catch (err) {
+      // Partial unique index (one pending per user) — double-submit race.
+      if ((err as { code?: string }).code === "23505") {
+        res
+          .status(409)
+          .json({ error: "You already have a pending verification request" });
+        return;
+      }
+      throw err;
+    }
   },
 );
 
