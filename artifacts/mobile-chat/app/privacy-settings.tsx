@@ -4,7 +4,6 @@ import { shadow } from "@/constants/shadows";
 import {
   ActivityIndicator,
   ScrollView,
-  Switch,
   Text,
   View,
   StyleSheet,
@@ -118,24 +117,6 @@ export default function PrivacySettingsScreen() {
             </Touchable>
           </View>
 
-          <Text style={[styles.sectionTitle, { color: c.mutedForeground }]}>ACTIVITY</Text>
-          <View style={[styles.card, { backgroundColor: c.card }, shadow("md")]}>
-            <View style={styles.toggleRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: fs(15) }}>
-                  Show online status
-                </Text>
-                <Text style={{ color: c.mutedForeground, fontSize: fs(12), marginTop: 2 }}>
-                  Let people see when you're active
-                </Text>
-              </View>
-              <Switch
-                value={settings.showOnlineStatus}
-                onValueChange={(v) => save({ showOnlineStatus: v })}
-                trackColor={{ true: c.primary }}
-              />
-            </View>
-          </View>
         </ScrollView>
       )}
     </SafeAreaView>
