@@ -17,6 +17,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { CallProvider } from "@/components/CallProvider";
+import { ChatHeads } from "@/components/ChatHeads";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { RealtimeProvider } from "@/lib/realtime";
 import { PreferencesProvider, usePreferencesOptional } from "@/lib/preferences";
@@ -100,6 +101,7 @@ function ThemedRoot() {
         <RealtimeProvider>
           <CallProvider>
             <RootNavigator />
+            <ChatHeads />
           </CallProvider>
         </RealtimeProvider>
       </AuthProvider>

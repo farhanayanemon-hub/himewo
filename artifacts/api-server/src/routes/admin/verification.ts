@@ -84,11 +84,14 @@ router.patch(
         .set({ isVerified: true })
         .where(eq(profilesTable.id, updated.userId));
     }
+    // No actorId: decision notifications shouldn't expose the reviewing admin.
     await createNotification({
       userId: updated.userId,
-      actorId: req.userId!,
       type: "verification",
-      entityType: "verification",
+      entityType:
+        parsed.data.status === "approved"
+          ? "verification_approved"
+          : "verification_rejected",
       entityId: updated.id,
     });
     await writeAudit({
