@@ -95,6 +95,29 @@ export function ChatHeads() {
     return () => pan.removeListener(id);
   }, [pan]);
 
+  // Clear the banner auto-hide timer on unmount (logout, etc).
+  useEffect(() => {
+    return () => {
+      if (bannerTimer.current) clearTimeout(bannerTimer.current);
+    };
+  }, []);
+
+  // Keep the head on-screen after rotation / window resize.
+  useEffect(() => {
+    const sub = Dimensions.addEventListener("change", ({ window }) => {
+      const x = Math.min(
+        Math.max(panPos.current.x, 12),
+        window.width - HEAD_SIZE - 12,
+      );
+      const y = Math.min(
+        Math.max(panPos.current.y, 80),
+        window.height - HEAD_SIZE - 120,
+      );
+      pan.setValue({ x, y });
+    });
+    return () => sub.remove();
+  }, [pan]);
+
   const hideBanner = useCallback(() => {
     Animated.timing(bannerY, {
       toValue: -120,

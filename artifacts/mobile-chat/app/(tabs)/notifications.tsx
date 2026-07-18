@@ -53,6 +53,8 @@ function iconFor(type: Notification["type"]): { name: IconName; color: string } 
       return { name: "arrow-redo", color: "#31a24c" };
     case "story_view":
       return { name: "eye", color: brandAlt };
+    case "verification":
+      return { name: "checkmark-circle", color: "#1877f2" };
     default:
       return { name: "notifications", color: brand };
   }
@@ -83,6 +85,14 @@ function messageFor(n: Notification): string {
       return `${who} shared your post`;
     case "story_view":
       return `${who} viewed your story`;
+    case "verification":
+      if (n.entityType === "verification_pending")
+        return "Your verified badge request was submitted and is pending review";
+      if (n.entityType === "verification_approved")
+        return "Congratulations! Your verified badge request has been approved 🎉";
+      if (n.entityType === "verification_rejected")
+        return "Your verified badge request was not approved this time";
+      return "Your verified badge request was reviewed";
     default:
       return `${who} sent you a notification`;
   }
