@@ -17,8 +17,27 @@ import { useColors } from "@/hooks/useColors";
 import { getApiOrigin } from "@/lib/api";
 import { supabase, isSupabaseConfigured, getDevUserId } from "@/lib/supabase";
 
+interface VerificationRequirements {
+  minAccountAgeDays: number;
+  minPosts: number;
+  minReels: number;
+  regularPostDays: number;
+  monthlyFee: number;
+}
+
+interface VerificationProgress {
+  accountAgeDays: number;
+  postCount: number;
+  reelCount: number;
+  lastPostDaysAgo: number | null;
+}
+
 interface VerificationState {
   isVerified: boolean;
+  requirements: VerificationRequirements;
+  progress: VerificationProgress | null;
+  eligible: boolean;
+  missing: string[];
   request: {
     id: number;
     status: "pending" | "approved" | "rejected";
@@ -62,6 +81,31 @@ async function submitVerificationRequest(note: string): Promise<void> {
     const body = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(body.error || `Could not submit (${res.status})`);
   }
+}
+
+function RequirementRow({
+  met,
+  label,
+  detail,
+  c,
+}: {
+  met: boolean;
+  label: string;
+  detail: string;
+  c: ReturnType<typeof useColors>;
+}) {
+  return (
+    <View style={styles.reqRow}>
+      <Ionicons
+        name={met ? "checkmark-circle" : "ellipse-outline"}
+        size={18}
+        color={met ? "#16a34a" : c.muted}
+      />
+      <Text style={[styles.reqText, { color: met ? c.text : c.muted }]}>
+        {label} <Text style={{ color: c.muted, fontSize: 12 }}>({detail})</Text>
+      </Text>
+    </View>
+  );
 }
 
 export default function VerifiedScreen() {
@@ -147,6 +191,47 @@ export default function VerifiedScreen() {
           </View>
         ) : (
           <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border, alignItems: "stretch" }]}>
+            {!!data?.progress && (
+              <View style={[styles.reqBox, { borderColor: c.border }]}>
+                <Text style={[styles.label, { color: c.text }]}>Requirements</Text>
+                <RequirementRow
+                  met={data.progress.accountAgeDays >= data.requirements.minAccountAgeDays}
+                  label={`Account at least ${data.requirements.minAccountAgeDays} days old`}
+                  detail={`${data.progress.accountAgeDays} days`}
+                  c={c}
+                />
+                <RequirementRow
+                  met={data.progress.postCount >= data.requirements.minPosts}
+                  label={`At least ${data.requirements.minPosts} posts`}
+                  detail={`${data.progress.postCount} posts`}
+                  c={c}
+                />
+                <RequirementRow
+                  met={data.progress.reelCount >= data.requirements.minReels}
+                  label={`At least ${data.requirements.minReels} reels`}
+                  detail={`${data.progress.reelCount} reels`}
+                  c={c}
+                />
+                {data.requirements.regularPostDays > 0 && (
+                  <RequirementRow
+                    met={
+                      data.progress.lastPostDaysAgo !== null &&
+                      data.progress.lastPostDaysAgo <= data.requirements.regularPostDays
+                    }
+                    label={`Posted within the last ${data.requirements.regularPostDays} days`}
+                    detail={
+                      data.progress.lastPostDaysAgo === null
+                        ? "no posts yet"
+                        : `last post ${data.progress.lastPostDaysAgo}d ago`
+                    }
+                    c={c}
+                  />
+                )}
+                <Text style={[styles.feeNote, { color: c.muted }]}>
+                  Verified badge costs ৳{data.requirements.monthlyFee}/month after approval.
+                </Text>
+              </View>
+            )}
             {status === "rejected" && (
               <View style={styles.rejectedBox}>
                 <Ionicons name="close-circle" size={20} color="#dc2626" />
@@ -180,14 +265,16 @@ export default function VerifiedScreen() {
               textAlignVertical="top"
             />
             <Pressable
-              style={[styles.button, { opacity: submit.isPending ? 0.6 : 1 }]}
-              disabled={submit.isPending}
+              style={[styles.button, { opacity: submit.isPending || !data?.eligible ? 0.5 : 1 }]}
+              disabled={submit.isPending || !data?.eligible}
               onPress={() => submit.mutate()}
             >
               {submit.isPending ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.buttonText}>Submit request</Text>
+                <Text style={styles.buttonText}>
+                  {data?.eligible ? "Submit request" : "Requirements not met yet"}
+                </Text>
               )}
             </Pressable>
           </View>
@@ -228,6 +315,20 @@ const styles = StyleSheet.create({
   cardIcon: { marginBottom: 8 },
   cardTitle: { fontSize: 17, fontWeight: "700" },
   cardSub: { fontSize: 13, textAlign: "left", marginTop: 4, lineHeight: 18 },
+  reqBox: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+  },
+  reqRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    marginTop: 8,
+  },
+  reqText: { fontSize: 13, flex: 1, lineHeight: 18 },
+  feeNote: { fontSize: 12, marginTop: 12 },
   rejectedBox: {
     flexDirection: "row",
     gap: 10,

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Save, MapPin } from "lucide-react";
+import { AlertTriangle, Save, MapPin, BadgeCheck } from "lucide-react";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import type { SettingsResponse } from "../lib/types";
@@ -51,14 +51,31 @@ export function Settings() {
   const [siteName, setSiteName] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [maintMsg, setMaintMsg] = useState("");
+  const [verif, setVerif] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (query.data) {
       setSiteName(query.data.settings.site_name ?? "");
       setLogoUrl(query.data.settings.logo_url ?? "");
       setMaintMsg(query.data.settings.maintenance_message ?? "");
+      const s = query.data.settings;
+      setVerif({
+        verification_min_account_age_days: s.verification_min_account_age_days ?? "15",
+        verification_min_posts: s.verification_min_posts ?? "15",
+        verification_min_reels: s.verification_min_reels ?? "5",
+        verification_regular_post_days: s.verification_regular_post_days ?? "7",
+        verification_monthly_fee: s.verification_monthly_fee ?? "299",
+      });
     }
   }, [query.data]);
+
+  const VERIF_FIELDS: { key: string; label: string; hint: string }[] = [
+    { key: "verification_min_account_age_days", label: "Minimum account age (days)", hint: "New accounts must wait this many days before applying." },
+    { key: "verification_min_posts", label: "Minimum posts", hint: "Total posts required before applying." },
+    { key: "verification_min_reels", label: "Minimum reels", hint: "Total reels required before applying." },
+    { key: "verification_regular_post_days", label: "Regular posting window (days)", hint: "Must have posted within the last N days. 0 disables this check." },
+    { key: "verification_monthly_fee", label: "Monthly fee (৳)", hint: "Shown to users on the apply page." },
+  ];
 
   const maintenanceOn = query.data?.settings.maintenance_mode === "on";
 
@@ -138,6 +155,42 @@ export function Settings() {
                   </Button>
                 </div>
               </div>
+            </div>
+          </Card>
+
+          <Card>
+            <CardHeader
+              title="Verified badge requirements"
+              subtitle="Facebook-style eligibility rules users must meet before they can apply for the blue badge."
+            />
+            <div className="space-y-4 px-5 py-4">
+              <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                <BadgeCheck className="h-5 w-5 shrink-0" />
+                <span>Users who don't meet these rules see the checklist and can't submit a request.</span>
+              </div>
+              {VERIF_FIELDS.map((f) => (
+                <div key={f.key} className="space-y-1">
+                  <label className="text-xs font-medium text-slate-600">{f.label}</label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      min={0}
+                      value={verif[f.key] ?? ""}
+                      onChange={(e) => setVerif((v) => ({ ...v, [f.key]: e.target.value }))}
+                      disabled={!canManage}
+                    />
+                    <Button
+                      variant="secondary"
+                      disabled={!canManage || !/^\d+$/.test(verif[f.key] ?? "")}
+                      loading={setSetting.isPending}
+                      onClick={() => setSetting.mutate({ key: f.key, value: verif[f.key] })}
+                    >
+                      <Save className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-slate-400">{f.hint}</p>
+                </div>
+              ))}
             </div>
           </Card>
 

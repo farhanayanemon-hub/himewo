@@ -3,6 +3,11 @@ import { db, verificationRequestsTable, profilesTable } from "@workspace/db";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod/v4";
 import { requireAuth } from "../lib/auth";
+import {
+  getVerificationRequirements,
+  getVerificationProgress,
+  unmetRequirements,
+} from "../lib/verification";
 
 const router: IRouter = Router();
 
@@ -18,7 +23,7 @@ router.get(
   requireAuth,
   async (req, res): Promise<void> => {
     const userId = req.userId!;
-    const [[profile], [latest]] = await Promise.all([
+    const [[profile], [latest], requirements, progress] = await Promise.all([
       db
         .select({ isVerified: profilesTable.isVerified })
         .from(profilesTable)
@@ -29,9 +34,16 @@ router.get(
         .where(eq(verificationRequestsTable.userId, userId))
         .orderBy(desc(verificationRequestsTable.createdAt))
         .limit(1),
+      getVerificationRequirements(),
+      getVerificationProgress(req.userId!),
     ]);
+    const missing = progress ? unmetRequirements(requirements, progress) : [];
     res.json({
       isVerified: profile?.isVerified ?? false,
+      requirements,
+      progress,
+      eligible: progress !== null && missing.length === 0,
+      missing,
       request: latest
         ? {
             id: latest.id,
@@ -68,6 +80,18 @@ router.post(
     }
     if (profile.isVerified) {
       res.status(400).json({ error: "You are already verified" });
+      return;
+    }
+    const [requirements, progress] = await Promise.all([
+      getVerificationRequirements(),
+      getVerificationProgress(userId),
+    ]);
+    const missing = progress ? unmetRequirements(requirements, progress) : [];
+    if (!progress || missing.length > 0) {
+      res.status(400).json({
+        error: `You don't meet the requirements yet: ${missing.join("; ")}`,
+        missing,
+      });
       return;
     }
     const [pending] = await db

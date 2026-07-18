@@ -24,6 +24,12 @@ export const SITE_SETTING_DEFAULTS: Record<string, string> = {
   // JSON array of ISO 3166-1 alpha-2 codes (uppercase) that are BLOCKED from
   // phone signup. Empty array = every country allowed (block-list model).
   blocked_signup_countries: "[]",
+  // Verified-badge eligibility (Facebook-style). Numbers stored as strings.
+  verification_min_account_age_days: "15",
+  verification_min_posts: "15",
+  verification_min_reels: "5",
+  verification_regular_post_days: "7",
+  verification_monthly_fee: "299",
 };
 
 type ConfigCache = {
