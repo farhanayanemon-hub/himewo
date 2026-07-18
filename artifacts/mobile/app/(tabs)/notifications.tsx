@@ -52,6 +52,14 @@ function notificationText(n: Notification): string {
       return `${actor} shared your post.`;
     case NotificationType.story_view:
       return `${actor} viewed your story.`;
+    case NotificationType.verification:
+      if (n.entityType === "verification_pending")
+        return "Your verified badge request was submitted and is pending review.";
+      if (n.entityType === "verification_approved")
+        return "Congratulations! Your verified badge request has been approved. 🎉";
+      if (n.entityType === "verification_rejected")
+        return "Your verified badge request was not approved this time.";
+      return "Your verified badge request was reviewed.";
     default:
       return `${actor} sent you a notification.`;
   }
@@ -79,6 +87,8 @@ function notificationIcon(type: NotificationType): keyof typeof Ionicons.glyphMa
       return "arrow-redo";
     case NotificationType.story_view:
       return "eye";
+    case NotificationType.verification:
+      return "checkmark-circle";
     default:
       return "notifications";
   }
@@ -111,7 +121,9 @@ export default function NotificationsScreen() {
   };
 
   const navigateTarget = (n: Notification) => {
-    if (n.entityType === "post" && n.entityId != null) {
+    if (n.type === NotificationType.verification) {
+      router.push("/verified");
+    } else if (n.entityType === "post" && n.entityId != null) {
       router.push(`/post/${n.entityId}`);
     } else if (n.entityType === "page" && n.entityId != null) {
       router.push(`/pages/${n.entityId}`);

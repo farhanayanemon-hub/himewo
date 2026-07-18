@@ -9,6 +9,7 @@ import {
 import { and, eq, desc, gt, or, isNull } from "drizzle-orm";
 import { z } from "zod/v4";
 import { requireAuth } from "../lib/auth";
+import { createNotification } from "../lib/notify";
 import { getFlags, getSettings } from "../lib/flags";
 import {
   getVerificationRequirements,
@@ -101,6 +102,13 @@ router.post(
         .insert(verificationRequestsTable)
         .values({ userId: req.userId!, note: parsed.data.note ?? null })
         .returning();
+      // Confirmation notification: request received and pending review.
+      await createNotification({
+        userId: req.userId!,
+        type: "verification",
+        entityType: "verification_pending",
+        entityId: row.id,
+      });
       res.status(201).json({ id: row.id, status: row.status });
     } catch (err) {
       // Partial unique index (one pending per user) — double-submit race.

@@ -3,6 +3,7 @@ import { db, verificationRequestsTable, profilesTable } from "@workspace/db";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod/v4";
 import { requireAuth } from "../lib/auth";
+import { createNotification } from "../lib/notify";
 import {
   getVerificationRequirements,
   getVerificationProgress,
@@ -113,6 +114,13 @@ router.post(
         .insert(verificationRequestsTable)
         .values({ userId, note: parsed.data.note || null })
         .returning();
+      // Confirmation notification: request received and pending review.
+      await createNotification({
+        userId,
+        type: "verification",
+        entityType: "verification_pending",
+        entityId: created.id,
+      });
       res.status(201).json({
         id: created.id,
         status: created.status,

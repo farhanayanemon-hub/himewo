@@ -23,6 +23,7 @@ import {
   AtSign,
   Share2,
   Eye,
+  BadgeCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
@@ -57,6 +58,14 @@ function notificationText(n: Notification): string {
       return `${actor} shared your post.`;
     case NotificationType.story_view:
       return `${actor} viewed your story.`;
+    case NotificationType.verification:
+      if (n.entityType === "verification_pending")
+        return "Your verified badge request was submitted and is pending review.";
+      if (n.entityType === "verification_approved")
+        return "Congratulations! Your verified badge request has been approved. 🎉";
+      if (n.entityType === "verification_rejected")
+        return "Your verified badge request was not approved this time.";
+      return "Your verified badge request was reviewed.";
     default:
       return `${actor} interacted with you.`;
   }
@@ -88,6 +97,8 @@ function NotificationIcon({ type }: { type: NotificationType }) {
       return <Share2 className={cls} />;
     case NotificationType.story_view:
       return <Eye className={cls} />;
+    case NotificationType.verification:
+      return <BadgeCheck className={cls} />;
     default:
       return <Bell className={cls} />;
   }
@@ -115,7 +126,9 @@ export default function NotificationsPage() {
     if (!n.isRead) {
       markRead.mutate({ id: n.id }, { onSuccess: invalidate });
     }
-    if (n.entityType === "post" && n.entityId != null) {
+    if (n.type === NotificationType.verification) {
+      navigate("/verified");
+    } else if (n.entityType === "post" && n.entityId != null) {
       navigate(`/post/${n.entityId}`);
     } else if (n.entityType === "album" && n.entityId != null) {
       navigate(`/albums/${n.entityId}`);
