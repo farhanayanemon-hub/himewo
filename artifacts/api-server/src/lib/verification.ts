@@ -28,8 +28,9 @@ export interface VerificationProgress {
 }
 
 function toInt(raw: string | undefined, fallback: number): number {
-  const n = Number.parseInt(raw ?? "", 10);
-  return Number.isFinite(n) && n >= 0 ? n : fallback;
+  // Strict: whole non-negative integer only ("15abc" falls back, not 15).
+  if (!raw || !/^\d{1,9}$/.test(raw.trim())) return fallback;
+  return Number.parseInt(raw.trim(), 10);
 }
 
 export async function getVerificationRequirements(): Promise<VerificationRequirements> {
