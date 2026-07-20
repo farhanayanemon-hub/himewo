@@ -5,6 +5,9 @@ description: Why inputs showed a black border on focus, and the two-place fix; p
 
 # Input focus "black border" + premium input styling
 
+## Web `--primary` is still BLACK — hardcode purple for app-parity UI
+Only `--ring` was repointed to purple; light `--primary` remains `0 0% 0%`. Any web UI that must visually match the mobile app's aurora purple (`#c084fc`) — e.g. the mobile bottom tab bar — must hardcode the purple instead of `text-primary`/`bg-primary`, or it renders black.
+
 ## The black-border-on-click root cause
 In `artifacts/web/src/index.css` the LIGHT-mode `--ring` AND `--primary` tokens are pure black (`0 0% 0%`). So any focus style using `ring-primary`/`border-primary` or the default `ring-ring` renders a **black** focus ring in light mode — this is the "kalo border ashe click korle" complaint.
 
