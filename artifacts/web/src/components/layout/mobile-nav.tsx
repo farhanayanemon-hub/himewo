@@ -5,7 +5,6 @@ import { Link, useLocation } from "wouter";
 import {
   Home,
   Users,
-  Film,
   Bell,
   UserCircle,
   Menu as MenuIcon,
@@ -195,7 +194,7 @@ export function MobileNav({
       </span>
       <span
         className={`text-[10px] leading-none ${
-          active ? "text-[#c084fc] font-bold" : "text-muted-foreground font-semibold"
+          active ? "text-[#c084fc] font-bold" : "text-muted-foreground font-medium"
         }`}
       >
         {label}
@@ -220,15 +219,18 @@ export function MobileNav({
           className="relative flex flex-1 flex-col items-center justify-end h-full pb-2 press"
         >
           <span
-            className={`absolute bottom-[22px] flex items-center justify-center w-14 h-14 rounded-[18px] bg-[#c084fc] text-white shadow-[0_12px_28px_-6px_rgba(192,132,252,0.6)] ring-4 ring-background transition-transform duration-200 ${
+            className={`absolute bottom-[18px] flex items-center justify-center w-[58px] h-[58px] rounded-[20px] bg-[#c084fc] text-white shadow-[0_12px_28px_-6px_rgba(192,132,252,0.6)] ring-4 ring-background transition-transform duration-200 ${
               reelsActive ? "scale-105" : ""
             }`}
           >
-            <Film className="w-7 h-7" />
+            {/* Ionicons "film" — same glyph as the mobile app's raised Reels button */}
+            <svg width="28" height="28" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true">
+              <path d="M436 80H76a44.05 44.05 0 00-44 44v264a44.05 44.05 0 0044 44h360a44.05 44.05 0 0044-44V124a44.05 44.05 0 00-44-44zM112 388a12 12 0 01-12 12H76a12 12 0 01-12-12v-24a12 12 0 0112-12h24a12 12 0 0112 12zm0-80a12 12 0 01-12 12H76a12 12 0 01-12-12v-24a12 12 0 0112-12h24a12 12 0 0112 12zm0-80a12 12 0 01-12 12H76a12 12 0 01-12-12v-24a12 12 0 0112-12h24a12 12 0 0112 12zm0-80a12 12 0 01-12 12H76a12 12 0 01-12-12v-24a12 12 0 0112-12h24a12 12 0 0112 12zm241.68 124H158.32a16 16 0 010-32h195.36a16 16 0 110 32zM448 388a12 12 0 01-12 12h-24a12 12 0 01-12-12v-24a12 12 0 0112-12h24a12 12 0 0112 12zm0-80a12 12 0 01-12 12h-24a12 12 0 01-12-12v-24a12 12 0 0112-12h24a12 12 0 0112 12zm0-80a12 12 0 01-12 12h-24a12 12 0 01-12-12v-24a12 12 0 0112-12h24a12 12 0 0112 12zm0-80a12 12 0 01-12 12h-24a12 12 0 01-12-12v-24a12 12 0 0112-12h24a12 12 0 0112 12z" />
+            </svg>
           </span>
           <span
             className={`text-[10px] leading-none ${
-              reelsActive ? "text-[#c084fc] font-bold" : "text-muted-foreground font-semibold"
+              reelsActive ? "text-[#c084fc] font-bold" : "text-muted-foreground font-medium"
             }`}
           >
             Reels
