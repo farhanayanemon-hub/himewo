@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, isSupabaseConfigured, DEV_USER_STORAGE_KEY } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 
-const rawApiBaseUrl = import.meta.env.VITE_API_URL as string | undefined;
+const rawApiBaseUrl = import.meta.env.DEV ? undefined : (import.meta.env.VITE_API_URL as string | undefined);
 const apiBaseUrl = rawApiBaseUrl
   ? /^https?:\/\//.test(rawApiBaseUrl)
     ? rawApiBaseUrl
@@ -17,7 +17,9 @@ const apiBaseUrl = rawApiBaseUrl
 async function getAuthToken(): Promise<string | null> {
   if (isSupabaseConfigured && supabase) {
     const { data } = await supabase.auth.getSession();
-    return data.session?.access_token ?? null;
+    if (data.session?.access_token) return data.session.access_token;
+    if (!import.meta.env.DEV) return null;
+    // Dev-only: fall through to the dev bypass token below.
   }
   const devId = localStorage.getItem(DEV_USER_STORAGE_KEY);
   return devId ? `dev:${devId}` : null;

@@ -14,7 +14,7 @@ import {
 // Signup config (blocked countries) is fetched pre-auth, so resolve the API
 // base the same way the generated client does. Empty = root-relative "/api".
 const SIGNUP_API_BASE = (() => {
-  const raw = import.meta.env.VITE_API_URL as string | undefined;
+  const raw = import.meta.env.DEV ? undefined : (import.meta.env.VITE_API_URL as string | undefined);
   if (!raw) return "";
   return /^https?:\/\//.test(raw) ? raw : `https://${raw}`;
 })();

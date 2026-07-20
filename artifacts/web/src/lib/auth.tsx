@@ -153,13 +153,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (await ensureFullAssurance(supabase)) {
             await loadUser();
           }
+        } else if (
+          import.meta.env.DEV &&
+          localStorage.getItem(DEV_USER_STORAGE_KEY)
+        ) {
+          // Dev bypass: no Supabase session but a seeded dev user is selected.
+          // Harmless in production — the API rejects "dev:" tokens there.
+          await loadUser();
         }
         if (active) setLoading(false);
 
         const { data: sub } = supabase.auth.onAuthStateChange(
           async (_event, session) => {
             if (!session) {
-              setUser(null);
+              // Keep the dev-bypass user (no Supabase session by design).
+              if (
+                !import.meta.env.DEV ||
+                !localStorage.getItem(DEV_USER_STORAGE_KEY)
+              ) {
+                setUser(null);
+              }
               return;
             }
             // During the signup wizard the wizard itself syncs the profile
