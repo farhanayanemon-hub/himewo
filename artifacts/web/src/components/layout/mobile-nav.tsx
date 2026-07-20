@@ -19,7 +19,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 
-type IconType = ComponentType<{ className?: string }>;
+type IconType = ComponentType<{ className?: string; fill?: string }>;
 export type MobileNavItem = { href: string; icon: IconType; label: string; color?: string };
 
 function NavIcon({ icon: Icon, color }: { icon: IconType; color?: string }) {
@@ -180,18 +180,18 @@ export function MobileNav({
     >
       <span
         className={`relative flex items-center justify-center transition-transform duration-200 ${
-          active ? "-translate-y-0.5" : ""
+          active ? "-translate-y-[3px]" : ""
         }`}
       >
-        <Icon className={`w-6 h-6 ${active ? "text-primary" : "text-muted-foreground"}`} />
+        <Icon
+          className={`w-6 h-6 ${active ? "text-primary" : "text-muted-foreground"}`}
+          {...(active ? { fill: "currentColor" } : {})}
+        />
         {badge && badge > 0 ? (
           <span className="absolute -top-1.5 -right-2 flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-destructive text-white text-[9px] font-bold leading-none border border-background">
             {badge > 99 ? "99+" : badge}
           </span>
         ) : null}
-        {active && (
-          <span className="absolute -bottom-2 w-1.5 h-1.5 rounded-full bg-primary" />
-        )}
       </span>
       <span
         className={`text-[10px] leading-none ${
