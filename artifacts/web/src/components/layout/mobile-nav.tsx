@@ -184,7 +184,7 @@ export function MobileNav({
         }`}
       >
         <Icon
-          className={`w-6 h-6 ${active ? "text-primary" : "text-muted-foreground"}`}
+          className={`w-6 h-6 ${active ? "text-[#c084fc]" : "text-muted-foreground"}`}
           {...(active ? { fill: "currentColor" } : {})}
         />
         {badge && badge > 0 ? (
@@ -195,7 +195,7 @@ export function MobileNav({
       </span>
       <span
         className={`text-[10px] leading-none ${
-          active ? "text-primary font-bold" : "text-muted-foreground font-semibold"
+          active ? "text-[#c084fc] font-bold" : "text-muted-foreground font-semibold"
         }`}
       >
         {label}
@@ -220,7 +220,7 @@ export function MobileNav({
           className="relative flex flex-1 flex-col items-center justify-end h-full pb-2 press"
         >
           <span
-            className={`absolute bottom-[22px] flex items-center justify-center w-14 h-14 rounded-[18px] bg-primary text-primary-foreground shadow-[0_12px_28px_-6px_rgba(0,0,0,0.35)] ring-4 ring-background transition-transform duration-200 ${
+            className={`absolute bottom-[22px] flex items-center justify-center w-14 h-14 rounded-[18px] bg-[#c084fc] text-white shadow-[0_12px_28px_-6px_rgba(192,132,252,0.6)] ring-4 ring-background transition-transform duration-200 ${
               reelsActive ? "scale-105" : ""
             }`}
           >
@@ -228,7 +228,7 @@ export function MobileNav({
           </span>
           <span
             className={`text-[10px] leading-none ${
-              reelsActive ? "text-primary font-bold" : "text-muted-foreground font-semibold"
+              reelsActive ? "text-[#c084fc] font-bold" : "text-muted-foreground font-semibold"
             }`}
           >
             Reels
