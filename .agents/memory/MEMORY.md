@@ -1,3 +1,4 @@
+- [Dev e2e testing](himewo-dev-e2e-testing.md) — dev clients use relative /api + DEV-gated dev-token fallback; empty dev DB → push-force+seed; Expo apps: test via localhost Metro port, not shared expo domain.
 - [Page access/members](himewo-page-access.md) — page_members editor model (owner-only manages), boost only page posts, ad-account transfer, web→ads SSO hash handoff (accepted risk).
 - [Act as a Page](himewo-act-as-page.md) — post/react/comment AS a managed page; pageId is DISPLAY-ONLY (actor stays userId), client pageId MUST pass canManagePage guard, authorPage render routes to /pages/:id.
 - [Page about/CTA/reviews](himewo-page-features.md) — pages contact/CTA(none|message|call|shop|signup)/one-per-user reviews; user-supplied URL fields (website/ctaUrl) MUST be http(s)-allowlisted both sides (stored XSS guard).
