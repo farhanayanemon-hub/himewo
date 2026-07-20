@@ -100,13 +100,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data } = await supabase.auth.getSession();
         if (data.session) {
           await loadUser();
+        } else if (
+          import.meta.env.DEV &&
+          localStorage.getItem(DEV_USER_STORAGE_KEY)
+        ) {
+          // Dev bypass: seeded dev user, no Supabase session (inert in prod).
+          await loadUser();
         }
         if (active) setLoading(false);
 
         const { data: sub } = supabase.auth.onAuthStateChange(
           async (_event, session) => {
             if (!session) {
-              setUser(null);
+              if (
+                !import.meta.env.DEV ||
+                !localStorage.getItem(DEV_USER_STORAGE_KEY)
+              ) {
+                setUser(null);
+              }
               return;
             }
             const pending = pendingProfile.current;

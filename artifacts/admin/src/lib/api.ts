@@ -10,12 +10,16 @@ function normalizeBase(raw?: string): string {
 // In Replit dev leave this empty so requests are root-relative ("/api/...")
 // and the shared proxy routes them to the API server. In production point it
 // at the API origin, e.g. VITE_API_URL=https://api.himewo.com
-export const API_BASE = normalizeBase(import.meta.env.VITE_API_URL as string);
+export const API_BASE = import.meta.env.DEV
+  ? ""
+  : normalizeBase(import.meta.env.VITE_API_URL as string);
 
 export async function getAuthToken(): Promise<string | null> {
   if (isSupabaseConfigured && supabase) {
     const { data } = await supabase.auth.getSession();
     if (data.session?.access_token) return data.session.access_token;
+    if (!import.meta.env.DEV) return null;
+    // Dev-only: fall through to the dev bypass token below.
   }
   const devId = getDevUserId();
   return devId ? `dev:${devId}` : null;
