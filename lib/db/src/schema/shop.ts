@@ -226,6 +226,40 @@ export const shopWithdrawalsTable = pgTable(
   ],
 );
 
+/**
+ * A buyer's product review, allowed once per COMPLETED order (unique orderId).
+ * `productId`/`stallId` are denormalized for fast aggregate lookups; rating is
+ * 1..5 (CHECK enforced at the route layer + DB constraint added via DDL).
+ */
+export const shopReviewsTable = pgTable(
+  "shop_reviews",
+  {
+    id: serial("id").primaryKey(),
+    orderId: integer("order_id")
+      .notNull()
+      .references(() => shopOrdersTable.id, { onDelete: "cascade" }),
+    productId: integer("product_id")
+      .notNull()
+      .references(() => shopProductsTable.id, { onDelete: "cascade" }),
+    stallId: integer("stall_id")
+      .notNull()
+      .references(() => shopStallsTable.id, { onDelete: "cascade" }),
+    buyerId: uuid("buyer_id")
+      .notNull()
+      .references(() => profilesTable.id, { onDelete: "cascade" }),
+    rating: integer("rating").notNull(),
+    body: text("body").notNull().default(""),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("shop_reviews_order_uniq").on(t.orderId),
+    index("shop_reviews_product_idx").on(t.productId, t.id),
+    index("shop_reviews_stall_idx").on(t.stallId, t.id),
+  ],
+);
+
 export const insertShopProductSchema = createInsertSchema(
   shopProductsTable,
 ).omit({ id: true, createdAt: true, updatedAt: true });
@@ -236,3 +270,4 @@ export type ShopProduct = typeof shopProductsTable.$inferSelect;
 export type ShopOrder = typeof shopOrdersTable.$inferSelect;
 export type ShopLedgerEntry = typeof shopLedgerTable.$inferSelect;
 export type ShopWithdrawal = typeof shopWithdrawalsTable.$inferSelect;
+export type ShopReview = typeof shopReviewsTable.$inferSelect;

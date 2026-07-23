@@ -17,4 +17,7 @@ export interface ShopStall {
   productCount?: number;
   isOwner?: boolean;
   createdAt: Date;
+  /** @nullable */
+  ratingAvg?: number | null;
+  ratingCount?: number;
 }

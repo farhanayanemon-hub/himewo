@@ -6,11 +6,13 @@ import {
   shopOrdersTable,
   shopLedgerTable,
   shopWithdrawalsTable,
+  shopReviewsTable,
   pagesTable,
   profilesTable,
   type ShopStall,
   type ShopProduct,
   type ShopOrder,
+  type ShopReview,
 } from "@workspace/db";
 import { and, eq, lt, desc, ilike, count, gt, sql, inArray } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
@@ -53,6 +55,11 @@ import {
   ListShopWithdrawalsResponse,
   CreateShopWithdrawalBody,
   CreateShopWithdrawalResponse,
+  CreateShopReviewParams,
+  CreateShopReviewBody,
+  CreateShopReviewResponse,
+  GetProductReviewsParams,
+  GetProductReviewsResponse,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -82,6 +89,7 @@ function toStallDto(
   page: PageRef | undefined,
   viewerId: string,
   productCount?: number,
+  rating?: { avg: number | null; count: number },
 ) {
   return {
     id: stall.id,
@@ -93,10 +101,46 @@ function toStallDto(
     productCount,
     isOwner: stall.userId === viewerId,
     createdAt: stall.createdAt,
+    ratingAvg: rating?.avg ?? null,
+    ratingCount: rating?.count ?? 0,
   };
 }
 
-function toProductDto(product: ShopProduct, stallName?: string | null) {
+type RatingAgg = { avg: number | null; count: number };
+
+/** Per-product review aggregates (avg + count). */
+async function ratingsByProduct(ids: number[]): Promise<Map<number, RatingAgg>> {
+  const unique = [...new Set(ids)];
+  if (unique.length === 0) return new Map();
+  const rows = await db
+    .select({
+      productId: shopReviewsTable.productId,
+      avg: sql<number>`round(avg(${shopReviewsTable.rating})::numeric, 2)::float8`,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(shopReviewsTable)
+    .where(inArray(shopReviewsTable.productId, unique))
+    .groupBy(shopReviewsTable.productId);
+  return new Map(rows.map((r) => [r.productId, { avg: r.avg, count: r.count }]));
+}
+
+/** A stall's aggregate rating across all its product reviews. */
+async function ratingForStall(stallId: number): Promise<RatingAgg> {
+  const [row] = await db
+    .select({
+      avg: sql<number | null>`round(avg(${shopReviewsTable.rating})::numeric, 2)::float8`,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(shopReviewsTable)
+    .where(eq(shopReviewsTable.stallId, stallId));
+  return { avg: row?.avg ?? null, count: row?.count ?? 0 };
+}
+
+function toProductDto(
+  product: ShopProduct,
+  stallName?: string | null,
+  rating?: RatingAgg,
+) {
   return {
     id: product.id,
     stallId: product.stallId,
@@ -108,6 +152,24 @@ function toProductDto(product: ShopProduct, stallName?: string | null) {
     stockQty: product.stockQty,
     active: product.active,
     createdAt: product.createdAt,
+    ratingAvg: rating?.avg ?? null,
+    ratingCount: rating?.count ?? 0,
+  };
+}
+
+function toReviewDto(
+  review: ShopReview,
+  reviewer: ReturnType<typeof toProfile> | null,
+) {
+  return {
+    id: review.id,
+    orderId: review.orderId,
+    productId: review.productId,
+    stallId: review.stallId,
+    rating: review.rating,
+    body: review.body,
+    createdAt: review.createdAt,
+    reviewer,
   };
 }
 
@@ -173,16 +235,35 @@ async function enrichOrders(orders: ShopOrder[], viewerId: string) {
     .from(profilesTable)
     .where(inArray(profilesTable.id, counterpartIds));
   const profileMap = new Map(profileRows.map((p) => [p.id, toProfile(p)]));
+  // The viewer's own review rating (buyer side) so clients can hide "Rate".
+  const buyerOrderIds = orders
+    .filter((o) => o.buyerId === viewerId)
+    .map((o) => o.id);
+  const myReviews = buyerOrderIds.length
+    ? await db
+        .select({
+          orderId: shopReviewsTable.orderId,
+          rating: shopReviewsTable.rating,
+        })
+        .from(shopReviewsTable)
+        .where(inArray(shopReviewsTable.orderId, buyerOrderIds))
+    : [];
+  const ratingByOrder = new Map(myReviews.map((r) => [r.orderId, r.rating]));
   return Promise.all(
-    orders.map((o) => {
+    orders.map(async (o) => {
       const pageId = pageIdByStall.get(o.stallId);
       const stallName = pageId != null ? (pageRefs.get(pageId)?.name ?? null) : null;
       const counterId = o.buyerId === viewerId ? o.sellerId : o.buyerId;
-      return toOrderDto(o, {
+      const dto = await toOrderDto(o, {
         stallName,
         productPhoto: photoByProduct.get(o.productId) ?? null,
         counterpart: profileMap.get(counterId) ?? null,
       });
+      return {
+        ...dto,
+        myReviewRating:
+          o.buyerId === viewerId ? (ratingByOrder.get(o.id) ?? null) : null,
+      };
     }),
   );
 }
@@ -328,18 +409,27 @@ router.get("/shop/stalls/:id", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   const pageRefs = await loadPageRefs([stall.pageId]);
-  const [productCount] = await db
-    .select({ value: count() })
-    .from(shopProductsTable)
-    .where(
-      and(
-        eq(shopProductsTable.stallId, stall.id),
-        eq(shopProductsTable.active, true),
+  const [[productCount], rating] = await Promise.all([
+    db
+      .select({ value: count() })
+      .from(shopProductsTable)
+      .where(
+        and(
+          eq(shopProductsTable.stallId, stall.id),
+          eq(shopProductsTable.active, true),
+        ),
       ),
-    );
+    ratingForStall(stall.id),
+  ]);
   res.json(
     GetStallResponse.parse(
-      toStallDto(stall, pageRefs.get(stall.pageId), req.userId!, productCount?.value ?? 0),
+      toStallDto(
+        stall,
+        pageRefs.get(stall.pageId),
+        req.userId!,
+        productCount?.value ?? 0,
+        rating,
+      ),
     ),
   );
 });
@@ -376,11 +466,14 @@ router.get(
       )
       .orderBy(desc(shopProductsTable.id))
       .limit(limit ?? 30);
-    const pageRefs = await loadPageRefs([stall.pageId]);
+    const [pageRefs, ratings] = await Promise.all([
+      loadPageRefs([stall.pageId]),
+      ratingsByProduct(rows.map((p) => p.id)),
+    ]);
     const stallName = pageRefs.get(stall.pageId)?.name ?? null;
     res.json(
       GetStallProductsResponse.parse(
-        rows.map((p) => toProductDto(p, stallName)),
+        rows.map((p) => toProductDto(p, stallName, ratings.get(p.id))),
       ),
     );
   },
@@ -418,13 +511,16 @@ router.get("/shop/products", requireAuth, async (req, res): Promise<void> => {
         .where(inArray(shopStallsTable.id, stallIds))
     : [];
   const pageIdByStall = new Map(stalls.map((s) => [s.id, s.pageId]));
-  const pageRefs = await loadPageRefs([...pageIdByStall.values()]);
+  const [pageRefs, ratings] = await Promise.all([
+    loadPageRefs([...pageIdByStall.values()]),
+    ratingsByProduct(rows.map((p) => p.id)),
+  ]);
   res.json(
     BrowseProductsResponse.parse(
       rows.map((p) => {
         const pageId = pageIdByStall.get(p.stallId);
         const stallName = pageId != null ? (pageRefs.get(pageId)?.name ?? null) : null;
-        return toProductDto(p, stallName);
+        return toProductDto(p, stallName, ratings.get(p.id));
       }),
     ),
   );
@@ -480,10 +576,64 @@ router.get("/shop/products/:id", requireAuth, async (req, res): Promise<void> =>
     .select({ pageId: shopStallsTable.pageId })
     .from(shopStallsTable)
     .where(eq(shopStallsTable.id, product.stallId));
-  const pageRefs = stall ? await loadPageRefs([stall.pageId]) : new Map();
+  const [pageRefs, ratings] = await Promise.all([
+    stall ? loadPageRefs([stall.pageId]) : Promise.resolve(new Map()),
+    ratingsByProduct([product.id]),
+  ]);
   const stallName = stall ? (pageRefs.get(stall.pageId)?.name ?? null) : null;
-  res.json(GetProductResponse.parse(toProductDto(product, stallName)));
+  res.json(
+    GetProductResponse.parse(
+      toProductDto(product, stallName, ratings.get(product.id)),
+    ),
+  );
 });
+
+router.get(
+  "/shop/products/:id/reviews",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = GetProductReviewsParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const [product] = await db
+      .select({ id: shopProductsTable.id })
+      .from(shopProductsTable)
+      .where(eq(shopProductsTable.id, params.data.id));
+    if (!product) {
+      res.status(404).json({ error: "Product not found" });
+      return;
+    }
+    const [ratings, reviews] = await Promise.all([
+      ratingsByProduct([product.id]),
+      db
+        .select()
+        .from(shopReviewsTable)
+        .where(eq(shopReviewsTable.productId, product.id))
+        .orderBy(desc(shopReviewsTable.id))
+        .limit(100),
+    ]);
+    const reviewerIds = [...new Set(reviews.map((r) => r.buyerId))];
+    const profileRows = reviewerIds.length
+      ? await db
+          .select()
+          .from(profilesTable)
+          .where(inArray(profilesTable.id, reviewerIds))
+      : [];
+    const profileMap = new Map(profileRows.map((p) => [p.id, toProfile(p)]));
+    const agg = ratings.get(product.id);
+    res.json(
+      GetProductReviewsResponse.parse({
+        ratingAvg: agg?.avg ?? null,
+        ratingCount: agg?.count ?? 0,
+        reviews: reviews.map((r) =>
+          toReviewDto(r, profileMap.get(r.buyerId) ?? null),
+        ),
+      }),
+    );
+  },
+);
 
 router.patch(
   "/shop/products/:id",
@@ -826,6 +976,75 @@ router.post(
     });
     const [enriched] = await enrichOrders([done[0]], userId);
     res.json(UpdateOrderStatusResponse.parse(enriched));
+  },
+);
+
+// Leave a review on a completed order (buyer only, once per order).
+router.post(
+  "/shop/orders/:id/review",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = CreateShopReviewParams.safeParse(req.params);
+    const body = CreateShopReviewBody.safeParse(req.body);
+    if (!params.success || !body.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    const userId = req.userId!;
+    const [order] = await db
+      .select()
+      .from(shopOrdersTable)
+      .where(eq(shopOrdersTable.id, params.data.id));
+    if (!order) {
+      res.status(404).json({ error: "Order not found" });
+      return;
+    }
+    if (order.buyerId !== userId) {
+      res.status(403).json({ error: "Only the buyer can review this order" });
+      return;
+    }
+    if (order.status !== "completed") {
+      res
+        .status(400)
+        .json({ error: "You can review an order after it is completed" });
+      return;
+    }
+    let review: ShopReview;
+    try {
+      [review] = await db
+        .insert(shopReviewsTable)
+        .values({
+          orderId: order.id,
+          productId: order.productId,
+          stallId: order.stallId,
+          buyerId: userId,
+          rating: body.data.rating,
+          body: (body.data.body ?? "").trim(),
+        })
+        .returning();
+    } catch {
+      res.status(409).json({ error: "You already reviewed this order" });
+      return;
+    }
+    // Notify the seller of the new review.
+    await createNotification({
+      userId: order.sellerId,
+      actorId: userId,
+      type: "shop_order",
+      entityType: "shop_order",
+      entityId: order.id,
+    });
+    const [me] = await db
+      .select()
+      .from(profilesTable)
+      .where(eq(profilesTable.id, userId));
+    res
+      .status(201)
+      .json(
+        CreateShopReviewResponse.parse(
+          toReviewDto(review, me ? toProfile(me) : null),
+        ),
+      );
   },
 );
 

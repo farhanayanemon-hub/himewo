@@ -10215,7 +10215,9 @@ export const GetMyStallResponse = zod.object({
   "active": zod.boolean(),
   "productCount": zod.number().optional(),
   "isOwner": zod.boolean().optional(),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "ratingAvg": zod.number().nullish(),
+  "ratingCount": zod.number().optional()
 })
 
 
@@ -10235,7 +10237,9 @@ export const CreateStallResponse = zod.object({
   "active": zod.boolean(),
   "productCount": zod.number().optional(),
   "isOwner": zod.boolean().optional(),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "ratingAvg": zod.number().nullish(),
+  "ratingCount": zod.number().optional()
 })
 
 
@@ -10262,7 +10266,9 @@ export const BrowseStallsResponseItem = zod.object({
   "active": zod.boolean(),
   "productCount": zod.number().optional(),
   "isOwner": zod.boolean().optional(),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "ratingAvg": zod.number().nullish(),
+  "ratingCount": zod.number().optional()
 })
 export const BrowseStallsResponse = zod.array(BrowseStallsResponseItem)
 
@@ -10283,7 +10289,9 @@ export const GetStallResponse = zod.object({
   "active": zod.boolean(),
   "productCount": zod.number().optional(),
   "isOwner": zod.boolean().optional(),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "ratingAvg": zod.number().nullish(),
+  "ratingCount": zod.number().optional()
 })
 
 
@@ -10315,7 +10323,9 @@ export const GetStallProductsResponseItem = zod.object({
   "description": zod.string(),
   "stockQty": zod.number(),
   "active": zod.boolean(),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "ratingAvg": zod.number().nullish(),
+  "ratingCount": zod.number().optional()
 })
 export const GetStallProductsResponse = zod.array(GetStallProductsResponseItem)
 
@@ -10345,7 +10355,9 @@ export const BrowseProductsResponseItem = zod.object({
   "description": zod.string(),
   "stockQty": zod.number(),
   "active": zod.boolean(),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "ratingAvg": zod.number().nullish(),
+  "ratingCount": zod.number().optional()
 })
 export const BrowseProductsResponse = zod.array(BrowseProductsResponseItem)
 
@@ -10381,7 +10393,9 @@ export const CreateProductResponse = zod.object({
   "description": zod.string(),
   "stockQty": zod.number(),
   "active": zod.boolean(),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "ratingAvg": zod.number().nullish(),
+  "ratingCount": zod.number().optional()
 })
 
 
@@ -10402,7 +10416,9 @@ export const GetProductResponse = zod.object({
   "description": zod.string(),
   "stockQty": zod.number(),
   "active": zod.boolean(),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "ratingAvg": zod.number().nullish(),
+  "ratingCount": zod.number().optional()
 })
 
 
@@ -10442,7 +10458,9 @@ export const UpdateProductResponse = zod.object({
   "description": zod.string(),
   "stockQty": zod.number(),
   "active": zod.boolean(),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "ratingAvg": zod.number().nullish(),
+  "ratingCount": zod.number().optional()
 })
 
 
@@ -10529,7 +10547,8 @@ export const ListOrdersResponseItem = zod.object({
   "status": zod.string().optional(),
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
-}),zod.null()]).optional()
+}),zod.null()]).optional(),
+  "myReviewRating": zod.number().nullish()
 })
 export const ListOrdersResponse = zod.array(ListOrdersResponseItem)
 
@@ -10613,7 +10632,8 @@ export const CreateOrderResponse = zod.object({
   "status": zod.string().optional(),
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
-}),zod.null()]).optional()
+}),zod.null()]).optional(),
+  "myReviewRating": zod.number().nullish()
 })
 
 
@@ -10682,7 +10702,8 @@ export const GetOrderResponse = zod.object({
   "status": zod.string().optional(),
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
-}),zod.null()]).optional()
+}),zod.null()]).optional(),
+  "myReviewRating": zod.number().nullish()
 })
 
 
@@ -10755,7 +10776,139 @@ export const UpdateOrderStatusResponse = zod.object({
   "status": zod.string().optional(),
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
+}),zod.null()]).optional(),
+  "myReviewRating": zod.number().nullish()
+})
+
+
+/**
+ * @summary Leave a 1-5 star review on your completed order (once per order)
+ */
+export const CreateShopReviewParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const createShopReviewBodyRatingMax = 5;
+
+export const createShopReviewBodyBodyMax = 2000;
+
+
+
+export const CreateShopReviewBody = zod.object({
+  "rating": zod.number().min(1).max(createShopReviewBodyRatingMax),
+  "body": zod.string().max(createShopReviewBodyBodyMax).optional()
+})
+
+export const CreateShopReviewResponse = zod.object({
+  "id": zod.number(),
+  "orderId": zod.number(),
+  "productId": zod.number(),
+  "stallId": zod.number(),
+  "rating": zod.number(),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "reviewer": zod.union([zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "gender": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "hasCompletedOnboarding": zod.boolean().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
 }),zod.null()]).optional()
+})
+
+
+/**
+ * @summary A product's reviews with rating summary
+ */
+export const GetProductReviewsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetProductReviewsResponse = zod.object({
+  "ratingAvg": zod.number().nullable(),
+  "ratingCount": zod.number(),
+  "reviews": zod.array(zod.object({
+  "id": zod.number(),
+  "orderId": zod.number(),
+  "productId": zod.number(),
+  "stallId": zod.number(),
+  "rating": zod.number(),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "reviewer": zod.union([zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "gender": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "hasCompletedOnboarding": zod.boolean().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),zod.null()]).optional()
+}))
 })
 
 
@@ -10903,7 +11056,9 @@ export const ListAdminStallProductsResponseItem = zod.object({
   "description": zod.string(),
   "stockQty": zod.number(),
   "active": zod.boolean(),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "ratingAvg": zod.number().nullish(),
+  "ratingCount": zod.number().optional()
 })
 export const ListAdminStallProductsResponse = zod.array(ListAdminStallProductsResponseItem)
 
@@ -10982,7 +11137,8 @@ export const ListAdminOrdersResponseItem = zod.object({
   "status": zod.string().optional(),
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
-}),zod.null()]).optional()
+}),zod.null()]).optional(),
+  "myReviewRating": zod.number().nullish()
 })
 export const ListAdminOrdersResponse = zod.array(ListAdminOrdersResponseItem)
 
@@ -11056,7 +11212,8 @@ export const AdminUpdateOrderResponse = zod.object({
   "status": zod.string().optional(),
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
-}),zod.null()]).optional()
+}),zod.null()]).optional(),
+  "myReviewRating": zod.number().nullish()
 })
 
 
@@ -11130,7 +11287,8 @@ export const VerifyOrderPaymentResponse = zod.object({
   "status": zod.string().optional(),
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
-}),zod.null()]).optional()
+}),zod.null()]).optional(),
+  "myReviewRating": zod.number().nullish()
 })
 
 
@@ -11206,7 +11364,8 @@ export const ListAdminPaymentsResponseItem = zod.object({
   "status": zod.string().optional(),
   "lastSeenAt": zod.coerce.date().nullish()
 }).nullish()
-}),zod.null()]).optional()
+}),zod.null()]).optional(),
+  "myReviewRating": zod.number().nullish()
 })
 export const ListAdminPaymentsResponse = zod.array(ListAdminPaymentsResponseItem)
 

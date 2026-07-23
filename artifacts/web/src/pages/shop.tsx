@@ -19,6 +19,9 @@ import {
   useListShopWithdrawals,
   useGetShopSettings,
   useListPages,
+  useGetProductReviews,
+  useCreateShopReview,
+  getGetProductReviewsQueryKey,
   getBrowseProductsQueryKey,
   getGetProductQueryKey,
   getGetStallQueryKey,
@@ -68,6 +71,7 @@ import {
   Wallet,
   Package,
   ClipboardList,
+  Star,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -117,6 +121,48 @@ function StatusBadge({ status }: { status: ShopOrderStatus }) {
       className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${STATUS_CLASSES[status]}`}
     >
       {STATUS_LABELS[status]}
+    </span>
+  );
+}
+
+/** Row of 5 stars, filled according to `rating` (supports halves via rounding). */
+function Stars({ rating, size = 4 }: { rating: number; size?: number }) {
+  const cls = size === 3 ? "w-3 h-3" : size === 5 ? "w-5 h-5" : "w-4 h-4";
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Star
+          key={i}
+          className={`${cls} ${
+            i <= Math.round(rating)
+              ? "text-amber-500 fill-amber-500"
+              : "text-muted-foreground/40"
+          }`}
+        />
+      ))}
+    </span>
+  );
+}
+
+function RatingSummary({
+  avg,
+  count,
+  size = 4,
+}: {
+  avg: number | null | undefined;
+  count: number | undefined;
+  size?: number;
+}) {
+  if (!count) {
+    return <span className="text-xs text-muted-foreground">No reviews yet</span>;
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <Stars rating={avg ?? 0} size={size} />
+      <span className="text-sm font-semibold">{(avg ?? 0).toFixed(1)}</span>
+      <span className="text-xs text-muted-foreground">
+        ({count} review{count === 1 ? "" : "s"})
+      </span>
     </span>
   );
 }
@@ -229,6 +275,17 @@ function ProductCard({ product }: { product: ShopProduct }) {
         <div className="p-3">
           <p className="font-extrabold text-[15px]">{formatTaka(product.priceCents)}</p>
           <p className="text-sm line-clamp-1">{product.name}</p>
+          {(product.ratingCount ?? 0) > 0 && (
+            <p className="flex items-center gap-1 mt-0.5">
+              <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+              <span className="text-xs font-semibold">
+                {(product.ratingAvg ?? 0).toFixed(1)}
+              </span>
+              <span className="text-[11px] text-muted-foreground">
+                ({product.ratingCount})
+              </span>
+            </p>
+          )}
           {product.stallName && (
             <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5 flex items-center gap-1">
               <Store className="w-3 h-3" /> {product.stallName}
@@ -288,6 +345,9 @@ export function ShopStallPage() {
           <p className="text-sm text-muted-foreground">
             {stall.productCount ?? products?.length ?? 0} products
           </p>
+          <div className="mt-0.5">
+            <RatingSummary avg={stall.ratingAvg} count={stall.ratingCount} size={3} />
+          </div>
           <Link
             href={`/pages/${stall.pageId}`}
             className="text-xs text-primary hover:underline"
@@ -394,6 +454,9 @@ export function ShopProductPage() {
         <div>
           <div className="bg-card border border-border rounded-2xl p-5 card-depth">
             <h1 className="text-2xl font-extrabold">{product.name}</h1>
+            <div className="mt-1">
+              <RatingSummary avg={product.ratingAvg} count={product.ratingCount} />
+            </div>
             <p className="text-2xl font-extrabold text-primary mt-1">
               {formatTaka(product.priceCents)}
             </p>
@@ -469,6 +532,8 @@ export function ShopProductPage() {
         </div>
       </div>
 
+      <ProductReviewsSection productId={product.id} />
+
       <CheckoutDialog
         open={checkoutOpen}
         onOpenChange={setCheckoutOpen}
@@ -477,6 +542,59 @@ export function ShopProductPage() {
         buyerPhone={user?.phone ?? ""}
       />
     </MainLayout>
+  );
+}
+
+function ProductReviewsSection({ productId }: { productId: number }) {
+  const { data, isLoading } = useGetProductReviews(productId);
+
+  return (
+    <div className="bg-card border border-border rounded-2xl p-5 card-depth mt-5">
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <h2 className="font-bold text-lg">Reviews</h2>
+        {data && <RatingSummary avg={data.ratingAvg} count={data.ratingCount} />}
+      </div>
+      {isLoading ? (
+        <div className="py-8 flex justify-center">
+          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+        </div>
+      ) : !data || data.reviews.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          No reviews yet. Buyers can review a product after their order is
+          completed.
+        </p>
+      ) : (
+        <div className="divide-y divide-border">
+          {data.reviews.map((r) => (
+            <div key={r.id} className="py-3 first:pt-0 last:pb-0">
+              <div className="flex items-center gap-2">
+                {r.reviewer && (
+                  <img
+                    src={avatarSrc(r.reviewer.avatarUrl)}
+                    alt=""
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                )}
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold line-clamp-1">
+                    {r.reviewer?.displayName ?? "HiMewo user"}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Stars rating={r.rating} size={3} />
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(r.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              {r.body && (
+                <p className="text-sm mt-2 whitespace-pre-wrap">{r.body}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -743,6 +861,7 @@ function OrdersList({ role }: { role: "buyer" | "seller" }) {
 function OrderRow({ order, role }: { order: ShopOrder; role: "buyer" | "seller" }) {
   const queryClient = useQueryClient();
   const updateStatus = useUpdateOrderStatus();
+  const [reviewOpen, setReviewOpen] = useState(false);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: getListOrdersQueryKey({ role: "buyer" }) });
@@ -816,8 +935,9 @@ function OrderRow({ order, role }: { order: ShopOrder; role: "buyer" | "seller" 
         </div>
       </div>
 
-      {actions.length > 0 && (
-        <div className="flex gap-2 mt-3 flex-wrap">
+      {(actions.length > 0 ||
+        (role === "buyer" && order.status === "completed")) && (
+        <div className="flex gap-2 mt-3 flex-wrap items-center">
           {actions.map((a) => (
             <Button
               key={a.status + a.label}
@@ -831,9 +951,144 @@ function OrderRow({ order, role }: { order: ShopOrder; role: "buyer" | "seller" 
               {a.label}
             </Button>
           ))}
+          {role === "buyer" &&
+            order.status === "completed" &&
+            (order.myReviewRating != null ? (
+              <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                You rated <Stars rating={order.myReviewRating} size={3} />
+              </span>
+            ) : (
+              <Button
+                size="sm"
+                variant="secondary"
+                className="press"
+                onClick={() => setReviewOpen(true)}
+              >
+                <Star className="w-3.5 h-3.5 mr-1.5" /> Rate product
+              </Button>
+            ))}
         </div>
       )}
+
+      {role === "buyer" && (
+        <ReviewDialog
+          open={reviewOpen}
+          onOpenChange={setReviewOpen}
+          order={order}
+        />
+      )}
     </div>
+  );
+}
+
+function ReviewDialog({
+  open,
+  onOpenChange,
+  order,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  order: ShopOrder;
+}) {
+  const queryClient = useQueryClient();
+  const createReview = useCreateShopReview();
+  const [rating, setRating] = useState(0);
+  const [body, setBody] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setRating(0);
+      setBody("");
+    }
+  }, [open]);
+
+  const submit = () => {
+    if (rating < 1 || createReview.isPending) return;
+    createReview.mutate(
+      { id: order.id, data: { rating, body: body.trim() } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({
+            queryKey: getListOrdersQueryKey({ role: "buyer" }),
+          });
+          queryClient.invalidateQueries({
+            queryKey: getGetProductReviewsQueryKey(order.productId),
+          });
+          queryClient.invalidateQueries({
+            queryKey: getGetProductQueryKey(order.productId),
+          });
+          queryClient.invalidateQueries({
+            queryKey: getGetStallQueryKey(order.stallId),
+          });
+          onOpenChange(false);
+          toast({ title: "Thanks for your review!" });
+        },
+        onError: (err) => {
+          toast({
+            title: "Could not submit review",
+            description: apiErrorMessage(err, "Please try again."),
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Rate "{order.productName}"</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="flex justify-center gap-1.5 py-2">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setRating(i)}
+                className="press"
+                aria-label={`${i} star${i === 1 ? "" : "s"}`}
+              >
+                <Star
+                  className={`w-8 h-8 transition-colors ${
+                    i <= rating
+                      ? "text-amber-500 fill-amber-500"
+                      : "text-muted-foreground/40 hover:text-amber-400"
+                  }`}
+                />
+              </button>
+            ))}
+          </div>
+          <div>
+            <Label htmlFor="rev-body" className="mb-1.5 block">
+              Your review{" "}
+              <span className="text-muted-foreground font-normal">(optional)</span>
+            </Label>
+            <Textarea
+              id="rev-body"
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder="How was the product and delivery?"
+              rows={4}
+              maxLength={2000}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button
+            className="w-full press"
+            disabled={rating < 1 || createReview.isPending}
+            onClick={submit}
+          >
+            {createReview.isPending && (
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            )}
+            Submit review
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

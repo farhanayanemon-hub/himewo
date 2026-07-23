@@ -63,6 +63,22 @@ export default function StallScreen() {
                 <Text style={{ color: c.mutedForeground, fontSize: 13 }}>
                   {stall?.productCount ?? products?.length ?? 0} products
                 </Text>
+                {(stall?.ratingCount ?? 0) > 0 ? (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 4,
+                      marginTop: 2,
+                    }}
+                  >
+                    <Ionicons name="star" size={13} color="#f59e0b" />
+                    <Text style={{ color: c.mutedForeground, fontSize: 12 }}>
+                      {(stall?.ratingAvg ?? 0).toFixed(1)} ({stall?.ratingCount}{" "}
+                      review{stall?.ratingCount === 1 ? "" : "s"})
+                    </Text>
+                  </View>
+                ) : null}
               </View>
             </View>
             <Text style={[styles.sectionTitle, { color: c.foreground }]}>Products</Text>

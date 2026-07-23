@@ -18,4 +18,7 @@ export interface ShopProduct {
   stockQty: number;
   active: boolean;
   createdAt: Date;
+  /** @nullable */
+  ratingAvg?: number | null;
+  ratingCount?: number;
 }
