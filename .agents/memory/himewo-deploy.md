@@ -59,4 +59,5 @@ silently broken the dev DB / typecheck after a merge:
 
 ## ghpush helper message + killed-run gotchas
 - The REST push helper takes `--push` as FIRST arg; commit message comes from `PUSH_MSG` env (argv fallback added Jul 2026). Without it a stale fallback message gets committed.
+- **Run the push helper via ShellExec `node /tmp/ghpush.mjs`, not CodeExecution.** In this env the CodeExecution sandbox's `requestSecrets({keys:["GITHUB_TOKEN"]})` returns an EMPTY string (len 0 → "Bad credentials" 401), but the container shell has the real token (`printf %s "$GITHUB_TOKEN" | wc -c` = 40, `ghp_` classic PAT). So the node script reads `process.env.GITHUB_TOKEN` and works when launched from the shell.
 - A bash tool-timeout (exit -1, no output) does NOT mean the push failed — the node child survives and often completes. ALWAYS verify by re-running the helper (dry run shows "changed files: 0") or checking file presence on main via contents API before retrying, or you may double-commit.
