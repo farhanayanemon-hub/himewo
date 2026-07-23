@@ -32,4 +32,6 @@ export interface ShopOrder {
   status: ShopOrderStatus;
   createdAt: Date;
   counterpart?: Profile | null;
+  /** @nullable */
+  myReviewRating?: number | null;
 }

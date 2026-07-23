@@ -78,6 +78,7 @@ import type {
   ConversationUpdate,
   CreateOrderInput,
   CreateProductInput,
+  CreateShopReviewInput,
   CreateShopWithdrawalInput,
   CreateStallInput,
   EarningsSummary,
@@ -198,6 +199,8 @@ import type {
   ShareInput,
   ShopOrder,
   ShopProduct,
+  ShopProductReviews,
+  ShopReview,
   ShopSettings,
   ShopSettingsInput,
   ShopStall,
@@ -17374,6 +17377,154 @@ export const useUpdateOrderStatus = <TError = ErrorType<BadRequestResponse | Una
       > => {
       return useMutation(getUpdateOrderStatusMutationOptions(options));
     }
+
+export const getCreateShopReviewUrl = (id: number,) => {
+
+
+
+
+  return `/api/shop/orders/${id}/review`
+}
+
+/**
+ * @summary Leave a 1-5 star review on your completed order (once per order)
+ */
+export const createShopReview = async (id: number,
+    createShopReviewInput: CreateShopReviewInput, options?: RequestInit): Promise<ShopReview> => {
+
+  return customFetch<ShopReview>(getCreateShopReviewUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createShopReviewInput)
+  }
+);}
+
+
+
+
+export const getCreateShopReviewMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createShopReview>>, TError,{id: number;data: BodyType<CreateShopReviewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createShopReview>>, TError,{id: number;data: BodyType<CreateShopReviewInput>}, TContext> => {
+
+const mutationKey = ['createShopReview'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createShopReview>>, {id: number;data: BodyType<CreateShopReviewInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createShopReview(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateShopReviewMutationResult = NonNullable<Awaited<ReturnType<typeof createShopReview>>>
+    export type CreateShopReviewMutationBody = BodyType<CreateShopReviewInput>
+    export type CreateShopReviewMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Leave a 1-5 star review on your completed order (once per order)
+ */
+export const useCreateShopReview = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createShopReview>>, TError,{id: number;data: BodyType<CreateShopReviewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createShopReview>>,
+        TError,
+        {id: number;data: BodyType<CreateShopReviewInput>},
+        TContext
+      > => {
+      return useMutation(getCreateShopReviewMutationOptions(options));
+    }
+
+export const getGetProductReviewsUrl = (id: number,) => {
+
+
+
+
+  return `/api/shop/products/${id}/reviews`
+}
+
+/**
+ * @summary A product's reviews with rating summary
+ */
+export const getProductReviews = async (id: number, options?: RequestInit): Promise<ShopProductReviews> => {
+
+  return customFetch<ShopProductReviews>(getGetProductReviewsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetProductReviewsQueryKey = (id: number,) => {
+    return [
+    `/api/shop/products/${id}/reviews`
+    ] as const;
+    }
+
+
+export const getGetProductReviewsQueryOptions = <TData = Awaited<ReturnType<typeof getProductReviews>>, TError = ErrorType<UnauthorizedResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProductReviews>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetProductReviewsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProductReviews>>> = ({ signal }) => getProductReviews(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProductReviews>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetProductReviewsQueryResult = NonNullable<Awaited<ReturnType<typeof getProductReviews>>>
+export type GetProductReviewsQueryError = ErrorType<UnauthorizedResponse | NotFoundResponse>
+
+
+/**
+ * @summary A product's reviews with rating summary
+ */
+
+export function useGetProductReviews<TData = Awaited<ReturnType<typeof getProductReviews>>, TError = ErrorType<UnauthorizedResponse | NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProductReviews>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetProductReviewsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetShopWalletUrl = () => {
 

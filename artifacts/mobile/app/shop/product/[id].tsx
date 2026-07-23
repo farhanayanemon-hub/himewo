@@ -18,10 +18,13 @@ import {
   useGetProduct,
   useGetShopSettings,
   useCreateOrder,
+  useGetProductReviews,
   getGetProductQueryKey,
+  getGetProductReviewsQueryKey,
   getListOrdersQueryKey,
   type CreateOrderInputPaymentMethod,
 } from "@workspace/api-client-react";
+import { Avatar } from "@/components/Avatar";
 import { useColors } from "@/hooks/useColors";
 import { formatTaka } from "@/constants/shop";
 import { shadow, glow } from "@/constants/shadows";
@@ -37,6 +40,9 @@ export default function ProductScreen() {
     query: { enabled: valid, queryKey: getGetProductQueryKey(productId) },
   });
   const { data: settings } = useGetShopSettings();
+  const { data: reviewData } = useGetProductReviews(productId, {
+    query: { enabled: valid, queryKey: getGetProductReviewsQueryKey(productId) },
+  });
   const createOrder = useCreateOrder();
 
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -152,6 +158,15 @@ export default function ProductScreen() {
               <Text style={{ color: c.mutedForeground, fontSize: 13 }}>
                 Sold by {product.stallName}
               </Text>
+            ) : null}
+            {(product.ratingCount ?? 0) > 0 ? (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <StarsRow rating={product.ratingAvg ?? 0} size={14} c={c} />
+                <Text style={{ color: c.mutedForeground, fontSize: 13 }}>
+                  {(product.ratingAvg ?? 0).toFixed(1)} ({product.ratingCount}{" "}
+                  review{product.ratingCount === 1 ? "" : "s"})
+                </Text>
+              </View>
             ) : null}
             <Text
               style={{
@@ -293,9 +308,81 @@ export default function ProductScreen() {
               </Pressable>
             </View>
           ) : null}
+
+          <View style={[styles.divider, { backgroundColor: c.border }]} />
+          <Text style={[styles.sectionTitle, { color: c.foreground }]}>
+            Reviews{reviewData?.ratingCount ? ` (${reviewData.ratingCount})` : ""}
+          </Text>
+          {!reviewData || reviewData.reviews.length === 0 ? (
+            <Text style={{ color: c.mutedForeground, fontSize: 14 }}>
+              No reviews yet. Buyers can review after their order is completed.
+            </Text>
+          ) : (
+            <View style={{ gap: 14 }}>
+              {reviewData.reviews.map((r) => (
+                <View key={r.id} style={{ gap: 6 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <Avatar
+                      uri={r.reviewer?.avatarUrl}
+                      name={r.reviewer?.displayName}
+                      size={30}
+                    />
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={{
+                          color: c.foreground,
+                          fontFamily: "Inter_600SemiBold",
+                          fontSize: 13,
+                        }}
+                        numberOfLines={1}
+                      >
+                        {r.reviewer?.displayName ?? "HiMewo user"}
+                      </Text>
+                      <View
+                        style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+                      >
+                        <StarsRow rating={r.rating} size={12} c={c} />
+                        <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
+                          {new Date(r.createdAt).toLocaleDateString()}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                  {r.body ? (
+                    <Text style={{ color: c.foreground, fontSize: 14, lineHeight: 20 }}>
+                      {r.body}
+                    </Text>
+                  ) : null}
+                </View>
+              ))}
+            </View>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+export function StarsRow({
+  rating,
+  size,
+  c,
+}: {
+  rating: number;
+  size: number;
+  c: ReturnType<typeof useColors>;
+}) {
+  return (
+    <View style={{ flexDirection: "row", gap: 1 }}>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Ionicons
+          key={i}
+          name={i <= Math.round(rating) ? "star" : "star-outline"}
+          size={size}
+          color={i <= Math.round(rating) ? "#f59e0b" : c.mutedForeground}
+        />
+      ))}
+    </View>
   );
 }
 

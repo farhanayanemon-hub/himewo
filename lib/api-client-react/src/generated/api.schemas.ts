@@ -2744,6 +2744,9 @@ export interface ShopStall {
   productCount?: number;
   isOwner?: boolean;
   createdAt: string;
+  /** @nullable */
+  ratingAvg?: number | null;
+  ratingCount?: number;
 }
 
 export interface CreateStallInput {
@@ -2762,6 +2765,9 @@ export interface ShopProduct {
   stockQty: number;
   active: boolean;
   createdAt: string;
+  /** @nullable */
+  ratingAvg?: number | null;
+  ratingCount?: number;
 }
 
 export interface CreateProductInput {
@@ -2838,6 +2844,8 @@ export interface ShopOrder {
   status: ShopOrderStatus;
   createdAt: string;
   counterpart?: Profile | null;
+  /** @nullable */
+  myReviewRating?: number | null;
 }
 
 export type CreateOrderInputPaymentMethod = typeof CreateOrderInputPaymentMethod[keyof typeof CreateOrderInputPaymentMethod];
@@ -2881,6 +2889,34 @@ export const UpdateOrderStatusInputStatus = {
 
 export interface UpdateOrderStatusInput {
   status: UpdateOrderStatusInputStatus;
+}
+
+export interface ShopReview {
+  id: number;
+  orderId: number;
+  productId: number;
+  stallId: number;
+  rating: number;
+  body: string;
+  createdAt: string;
+  reviewer?: Profile | null;
+}
+
+export interface CreateShopReviewInput {
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  rating: number;
+  /** @maxLength 2000 */
+  body?: string;
+}
+
+export interface ShopProductReviews {
+  /** @nullable */
+  ratingAvg: number | null;
+  ratingCount: number;
+  reviews: ShopReview[];
 }
 
 export type ShopLedgerEntryKind = typeof ShopLedgerEntryKind[keyof typeof ShopLedgerEntryKind];

@@ -214,4 +214,86 @@ describe("shop backend smoke", () => {
     expect(r.status).toBe(200);
     expect(r.body.commissionPercent).toBe(5);
   });
+
+  it("blocks reviews from non-buyers and on non-completed orders", async () => {
+    // Non-buyer (other) cannot review
+    let r = await api(`/shop/orders/${orderId}/review`, other, {
+      method: "POST",
+      body: JSON.stringify({ rating: 5 }),
+    });
+    expect(r.status).toBe(403);
+    // Seller cannot review either
+    r = await api(`/shop/orders/${orderId}/review`, seller, {
+      method: "POST",
+      body: JSON.stringify({ rating: 5 }),
+    });
+    expect(r.status).toBe(403);
+    // A fresh pending order cannot be reviewed
+    const pendingOrder = await api("/shop/orders", buyer, {
+      method: "POST",
+      body: JSON.stringify({
+        productId,
+        quantity: 1,
+        deliveryAddress: "123 St",
+        phone: "0170000",
+        paymentMethod: "cod",
+      }),
+    });
+    expect(pendingOrder.status).toBe(201);
+    r = await api(`/shop/orders/${pendingOrder.body.id}/review`, buyer, {
+      method: "POST",
+      body: JSON.stringify({ rating: 5 }),
+    });
+    expect(r.status).toBe(400);
+  });
+
+  it("rejects an out-of-range rating", async () => {
+    const r = await api(`/shop/orders/${orderId}/review`, buyer, {
+      method: "POST",
+      body: JSON.stringify({ rating: 6 }),
+    });
+    expect(r.status).toBe(400);
+  });
+
+  it("lets the buyer review a completed order once", async () => {
+    let r = await api(`/shop/orders/${orderId}/review`, buyer, {
+      method: "POST",
+      body: JSON.stringify({ rating: 4, body: "Solid widget" }),
+    });
+    expect(r.status).toBe(201);
+    expect(r.body.rating).toBe(4);
+    expect(r.body.body).toBe("Solid widget");
+    expect(r.body.reviewer?.id).toBe(buyer);
+
+    // Second review on the same order -> 409
+    r = await api(`/shop/orders/${orderId}/review`, buyer, {
+      method: "POST",
+      body: JSON.stringify({ rating: 5 }),
+    });
+    expect(r.status).toBe(409);
+  });
+
+  it("exposes aggregates on product, product reviews, order, and stall", async () => {
+    const p = await api(`/shop/products/${productId}`, buyer);
+    expect(p.body.ratingAvg).toBe(4);
+    expect(p.body.ratingCount).toBe(1);
+
+    const rev = await api(`/shop/products/${productId}/reviews`, buyer);
+    expect(rev.status).toBe(200);
+    expect(rev.body.ratingAvg).toBe(4);
+    expect(rev.body.ratingCount).toBe(1);
+    expect(rev.body.reviews.length).toBe(1);
+
+    const orders = await api("/shop/orders?role=buyer", buyer);
+    const mine = orders.body.find((o: any) => o.id === orderId);
+    expect(mine.myReviewRating).toBe(4);
+
+    const [orderRow] = await db
+      .select({ stallId: shopOrdersTable.stallId })
+      .from(shopOrdersTable)
+      .where(eq(shopOrdersTable.id, orderId));
+    const s = await api(`/shop/stalls/${orderRow.stallId}`, buyer);
+    expect(s.body.ratingAvg).toBe(4);
+    expect(s.body.ratingCount).toBe(1);
+  });
 });

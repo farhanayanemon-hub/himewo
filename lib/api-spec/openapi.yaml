@@ -4015,6 +4015,51 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+  /shop/orders/{id}/review:
+    post:
+      operationId: createShopReview
+      tags: [shop]
+      summary: Leave a 1-5 star review on your completed order (once per order)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateShopReviewInput" }
+      responses:
+        "201":
+          description: Created review
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShopReview" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /shop/products/{id}/reviews:
+    get:
+      operationId: getProductReviews
+      tags: [shop]
+      summary: A product's reviews with rating summary
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Reviews
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShopProductReviews" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /shop/wallet:
     get:
       operationId: getShopWallet
@@ -6403,6 +6448,8 @@ components:
         productCount: { type: integer }
         isOwner: { type: boolean }
         createdAt: { type: string, format: date-time }
+        ratingAvg: { type: ["number", "null"] }
+        ratingCount: { type: integer }
     CreateStallInput:
       type: object
       required: [pageId]
@@ -6424,6 +6471,8 @@ components:
         stockQty: { type: integer }
         active: { type: boolean }
         createdAt: { type: string, format: date-time }
+        ratingAvg: { type: ["number", "null"] }
+        ratingCount: { type: integer }
     CreateProductInput:
       type: object
       required: [name, priceCents]
@@ -6491,6 +6540,7 @@ components:
           oneOf:
             - { $ref: "#/components/schemas/Profile" }
             - { type: "null" }
+        myReviewRating: { type: ["integer", "null"] }
     CreateOrderInput:
       type: object
       required: [productId, quantity, deliveryAddress, phone, paymentMethod]
@@ -6508,6 +6558,36 @@ components:
         status:
           type: string
           enum: [awaiting_verification, pending, confirmed, delivered, completed, cancelled]
+    ShopReview:
+      type: object
+      required: [id, orderId, productId, stallId, rating, body, createdAt]
+      properties:
+        id: { type: integer }
+        orderId: { type: integer }
+        productId: { type: integer }
+        stallId: { type: integer }
+        rating: { type: integer }
+        body: { type: string }
+        createdAt: { type: string, format: date-time }
+        reviewer:
+          oneOf:
+            - { $ref: "#/components/schemas/Profile" }
+            - { type: "null" }
+    CreateShopReviewInput:
+      type: object
+      required: [rating]
+      properties:
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        body: { type: string, maxLength: 2000 }
+    ShopProductReviews:
+      type: object
+      required: [ratingAvg, ratingCount, reviews]
+      properties:
+        ratingAvg: { type: ["number", "null"] }
+        ratingCount: { type: integer }
+        reviews:
+          type: array
+          items: { $ref: "#/components/schemas/ShopReview" }
     ShopLedgerEntry:
       type: object
       required: [id, kind, amountCents, createdAt]
