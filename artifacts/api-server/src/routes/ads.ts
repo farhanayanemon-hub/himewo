@@ -2719,11 +2719,11 @@ router.post("/pages/:id/boost", requireAuth, async (req, res): Promise<void> => 
     .from(pagesTable)
     .where(eq(pagesTable.id, params.data.id));
   if (!page) {
-    res.status(404).json({ error: "Page not found" });
+    res.status(404).json({ error: "Hub not found" });
     return;
   }
   if (page.createdBy !== req.userId!) {
-    res.status(403).json({ error: "You can only boost your own pages" });
+    res.status(403).json({ error: "You can only boost your own hubs" });
     return;
   }
   const ad = await createBoostAd({
@@ -2731,7 +2731,7 @@ router.post("/pages/:id/boost", requireAuth, async (req, res): Promise<void> => 
     objective: "page_boost",
     budgetCents: body.data.budgetCents,
     days: body.data.days,
-    name: `Boosted page #${page.id}`,
+    name: `Boosted hub #${page.id}`,
     headline: body.data.headline?.trim() || page.name,
     primaryText: page.description ?? null,
     callToAction: body.data.callToAction ?? "learn_more",

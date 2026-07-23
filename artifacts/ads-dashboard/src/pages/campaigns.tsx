@@ -82,6 +82,11 @@ function statusVariant(status: string) {
   return "outline" as const;
 }
 
+function objectiveLabel(objective: string) {
+  if (objective === "page_boost") return "hub boost";
+  return objective.replace(/_/g, " ");
+}
+
 export function CampaignsPanel() {
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -251,7 +256,7 @@ export function CampaignsPanel() {
                     </Link>
                   </TableCell>
                   <TableCell className="capitalize">
-                    {c.objective.replace(/_/g, " ")}
+                    {objectiveLabel(c.objective)}
                   </TableCell>
                   <TableCell>
                     <Badge variant={statusVariant(c.status)}>{c.status}</Badge>
@@ -366,7 +371,7 @@ export function CampaignsPanel() {
                   <SelectContent>
                     {OBJECTIVES.map((o) => (
                       <SelectItem key={o} value={o}>
-                        {o.replace(/_/g, " ")}
+                        {objectiveLabel(o)}
                       </SelectItem>
                     ))}
                   </SelectContent>

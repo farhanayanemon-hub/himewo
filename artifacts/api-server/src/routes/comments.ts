@@ -101,7 +101,7 @@ router.put(
     ) {
       res
         .status(403)
-        .json({ error: "You don't have access to react as this page." });
+        .json({ error: "You don't have access to react as this hub." });
       return;
     }
     await db

@@ -178,7 +178,7 @@ export default function GroupDetailScreen() {
       {
         onSuccess: () => {
           setInviteOpen(false);
-          Alert.alert("Invites sent", "Your friends have been invited to join this group.");
+          Alert.alert("Invites sent", "Your friends have been invited to join this circle.");
         },
         onError: () => Alert.alert("Could not send invites", "Please try again."),
       },
@@ -188,7 +188,7 @@ export default function GroupDetailScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={[styles.center, { backgroundColor: c.background }]}>
-        <Stack.Screen options={{ title: "Group" }} />
+        <Stack.Screen options={{ title: "Circle" }} />
         <ActivityIndicator color={c.primary} size="large" />
       </SafeAreaView>
     );
@@ -197,8 +197,8 @@ export default function GroupDetailScreen() {
   if (!group) {
     return (
       <SafeAreaView style={[styles.center, { backgroundColor: c.background }]}>
-        <Stack.Screen options={{ title: "Group" }} />
-        <Text style={{ color: c.mutedForeground, fontFamily: "Inter_500Medium" }}>Group not found</Text>
+        <Stack.Screen options={{ title: "Circle" }} />
+        <Text style={{ color: c.mutedForeground, fontFamily: "Inter_500Medium" }}>Circle not found</Text>
       </SafeAreaView>
     );
   }
@@ -224,7 +224,7 @@ export default function GroupDetailScreen() {
               <View style={styles.metaRow}>
                 <Ionicons name="people" size={14} color={c.mutedForeground} />
                 <Text style={[styles.meta, { color: c.mutedForeground }]}>
-                  {group.privacy} group · {group.memberCount} members
+                  {group.privacy} circle · {group.memberCount} members
                 </Text>
               </View>
               {group.description ? (
@@ -248,7 +248,7 @@ export default function GroupDetailScreen() {
                         fontFamily: "Inter_700Bold",
                       }}
                     >
-                      {group.viewerIsMember ? "Joined" : "Join Group"}
+                      {group.viewerIsMember ? "Joined" : "Join Circle"}
                     </Text>
                   )}
                 </Pressable>

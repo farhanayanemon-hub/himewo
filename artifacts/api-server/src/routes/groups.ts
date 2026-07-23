@@ -152,12 +152,12 @@ router.get("/groups/:id", requireAuth, async (req, res): Promise<void> => {
     .from(groupsTable)
     .where(eq(groupsTable.id, params.data.id));
   if (!group) {
-    res.status(404).json({ error: "Group not found" });
+    res.status(404).json({ error: "Circle not found" });
     return;
   }
   const built = await buildGroup(group, req.userId);
   if (built.privacy === "hidden" && !built.viewerIsMember) {
-    res.status(404).json({ error: "Group not found" });
+    res.status(404).json({ error: "Circle not found" });
     return;
   }
   res.json(GetGroupResponse.parse(built));
@@ -172,7 +172,7 @@ router.patch("/groups/:id", requireAuth, async (req, res): Promise<void> => {
   }
   const membership = await getMembership(params.data.id, req.userId!);
   if (!isActiveAdmin(membership)) {
-    res.status(403).json({ error: "Only admins can edit this group" });
+    res.status(403).json({ error: "Only admins can edit this circle" });
     return;
   }
   const d = body.data;
@@ -193,7 +193,7 @@ router.patch("/groups/:id", requireAuth, async (req, res): Promise<void> => {
     .where(eq(groupsTable.id, params.data.id))
     .returning();
   if (!group) {
-    res.status(404).json({ error: "Group not found" });
+    res.status(404).json({ error: "Circle not found" });
     return;
   }
   res.json(UpdateGroupResponse.parse(await buildGroup(group, req.userId)));
@@ -211,12 +211,12 @@ router.post("/groups/:id/join", requireAuth, async (req, res): Promise<void> => 
     .from(groupsTable)
     .where(eq(groupsTable.id, params.data.id));
   if (!group) {
-    res.status(404).json({ error: "Group not found" });
+    res.status(404).json({ error: "Circle not found" });
     return;
   }
   const existing = await getMembership(params.data.id, req.userId!);
   if (existing?.status === "banned") {
-    res.status(403).json({ error: "You are banned from this group" });
+    res.status(403).json({ error: "You are banned from this circle" });
     return;
   }
   if (existing?.status === "active") {
@@ -278,7 +278,7 @@ router.post(
       .from(groupsTable)
       .where(eq(groupsTable.id, params.data.id));
     if (!group) {
-      res.status(404).json({ error: "Group not found" });
+      res.status(404).json({ error: "Circle not found" });
       return;
     }
     const membership = await getMembership(params.data.id, req.userId!);
@@ -390,7 +390,7 @@ router.get(
       .from(groupsTable)
       .where(eq(groupsTable.id, params.data.id));
     if (!group) {
-      res.status(404).json({ error: "Group not found" });
+      res.status(404).json({ error: "Circle not found" });
       return;
     }
     if (group.privacy !== "public") {
@@ -512,7 +512,7 @@ router.post(
       .from(groupsTable)
       .where(eq(groupsTable.id, params.data.id));
     if (!group) {
-      res.status(404).json({ error: "Group not found" });
+      res.status(404).json({ error: "Circle not found" });
       return;
     }
     const actor = await getMembership(params.data.id, req.userId!);
@@ -552,7 +552,7 @@ router.post(
       .from(groupsTable)
       .where(eq(groupsTable.id, params.data.id));
     if (!group) {
-      res.status(404).json({ error: "Group not found" });
+      res.status(404).json({ error: "Circle not found" });
       return;
     }
     const actor = await getMembership(params.data.id, req.userId!);
@@ -597,7 +597,7 @@ router.post(
       .from(groupsTable)
       .where(eq(groupsTable.id, params.data.id));
     if (!group) {
-      res.status(404).json({ error: "Group not found" });
+      res.status(404).json({ error: "Circle not found" });
       return;
     }
     const actor = await getMembership(params.data.id, req.userId!);
@@ -642,7 +642,7 @@ router.delete(
       .from(groupsTable)
       .where(eq(groupsTable.id, params.data.id));
     if (!group) {
-      res.status(404).json({ error: "Group not found" });
+      res.status(404).json({ error: "Circle not found" });
       return;
     }
     const actor = await getMembership(params.data.id, req.userId!);
@@ -773,7 +773,7 @@ router.get(
       .from(groupsTable)
       .where(eq(groupsTable.id, params.data.id));
     if (!group) {
-      res.status(404).json({ error: "Group not found" });
+      res.status(404).json({ error: "Circle not found" });
       return;
     }
     // Posts in private/hidden groups are only readable by active members;
@@ -783,7 +783,7 @@ router.get(
       const isActiveMember = membership?.status === "active";
       if (!isActiveMember) {
         if (group.privacy === "hidden") {
-          res.status(404).json({ error: "Group not found" });
+          res.status(404).json({ error: "Circle not found" });
         } else {
           res.status(403).json({ error: "Members only" });
         }

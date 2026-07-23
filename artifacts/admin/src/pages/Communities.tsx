@@ -23,22 +23,32 @@ import { PageHeader } from "../components/Layout";
 
 type Tab = "groups" | "pages";
 
+const TAB_LABELS: Record<Tab, string> = {
+  groups: "Circles",
+  pages: "Hubs",
+};
+
+const KIND_LABELS: Record<Tab, string> = {
+  groups: "circles",
+  pages: "hubs",
+};
+
 export function Communities() {
   const [tab, setTab] = useState<Tab>("groups");
   return (
     <div>
-      <PageHeader title="Communities" description="Moderate groups and pages." />
+      <PageHeader title="Communities" description="Moderate circles and hubs." />
       <div className="mb-4 flex gap-1 rounded-xl border border-slate-200 bg-white p-1">
         {(["groups", "pages"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={
-              "flex-1 rounded-lg px-3 py-2 text-sm font-medium capitalize transition-colors " +
+              "flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors " +
               (tab === t ? "bg-brand-50 text-brand-700" : "text-slate-500 hover:bg-slate-50")
             }
           >
-            {t}
+            {TAB_LABELS[t]}
           </button>
         ))}
       </div>
@@ -77,13 +87,13 @@ function CommunityTab({ kind }: { kind: Tab }) {
       <Card className="mb-4 p-3">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <Input value={q} onChange={(e) => { setQ(e.target.value); setOffset(0); }} placeholder={`Search ${kind} by name`} className="pl-9" />
+          <Input value={q} onChange={(e) => { setQ(e.target.value); setOffset(0); }} placeholder={`Search ${KIND_LABELS[kind]} by name`} className="pl-9" />
         </div>
       </Card>
       <Card>
         {query.isLoading && <Loading />}
         <ErrorNote error={query.error || patch.error || remove.error} />
-        {query.data?.items.length === 0 && <EmptyState title={`No ${kind}`} />}
+        {query.data?.items.length === 0 && <EmptyState title={`No ${KIND_LABELS[kind]}`} />}
         {query.data && query.data.items.length > 0 && (
           <>
             <Table>

@@ -176,14 +176,14 @@ function PageList() {
     <MainLayout>
       <div className="bg-card border border-border rounded-xl p-4 shadow-sm animate-in fade-in">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-xl font-bold">Pages</h1>
-          <Button onClick={() => setOpen(true)}>Create Page</Button>
+          <h1 className="text-xl font-bold">Hubs</h1>
+          <Button onClick={() => setOpen(true)}>Create Hub</Button>
         </div>
 
         {isLoading ? (
           <div className="py-10 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
         ) : pages?.length === 0 ? (
-          <div className="py-10 text-center text-muted-foreground">No pages found.</div>
+          <div className="py-10 text-center text-muted-foreground">No hubs found.</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {pages?.map(page => (
@@ -221,7 +221,7 @@ function PageList() {
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create Page</DialogTitle>
+            <DialogTitle>Create Hub</DialogTitle>
             <p className="text-sm text-muted-foreground">Step {step} of 3</p>
           </DialogHeader>
           <div className="flex gap-1.5 mb-2">
@@ -234,12 +234,12 @@ function PageList() {
           </div>
           {step === 1 && (
             <div className="space-y-2">
-              <Label htmlFor="page-name">Page name</Label>
+              <Label htmlFor="page-name">Hub name</Label>
               <Input
                 id="page-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Page name"
+                placeholder="Hub name"
                 autoFocus
               />
               <p className="text-xs text-muted-foreground">
@@ -251,7 +251,7 @@ function PageList() {
             <div className="space-y-2">
               <Label>Category</Label>
               <p className="text-xs text-muted-foreground">
-                Choose the category that best describes your Page.
+                Choose the category that best describes your Hub.
               </p>
               <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1">
                 {PAGE_CATEGORIES.map((cat) => (
@@ -278,11 +278,11 @@ function PageList() {
                 id="page-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="What's this page about?"
+                placeholder="What's this hub about?"
                 autoFocus
               />
               <p className="text-xs text-muted-foreground">
-                Tell people a little about what your Page does.
+                Tell people a little about what your Hub does.
               </p>
             </div>
           )}
@@ -301,7 +301,7 @@ function PageList() {
             {step === 3 && (
               <Button onClick={handleCreate} disabled={!name.trim() || !category || createPage.isPending}>
                 {createPage.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                Create Page
+                Create Hub
               </Button>
             )}
           </DialogFooter>
@@ -609,7 +609,7 @@ function EditPageDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Page</DialogTitle>
+          <DialogTitle>Edit Hub</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
@@ -681,7 +681,7 @@ function EditPageDialog({
           <div className="flex items-center justify-between border border-border rounded-lg p-3">
             <div>
               <Label>Reviews</Label>
-              <p className="text-xs text-muted-foreground mt-0.5">Let people rate and review this Page.</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Let people rate and review this Hub.</p>
             </div>
             <Switch checked={reviewsEnabled} onCheckedChange={setReviewsEnabled} />
           </div>
@@ -760,11 +760,11 @@ function PageAccessDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Page access</DialogTitle>
+          <DialogTitle>Hub access</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            People with access can post and edit this Page. Only you (the
+            People with access can post and edit this Hub. Only you (the
             owner) can manage access.
           </p>
           <div className="space-y-2">
@@ -809,7 +809,7 @@ function PageAccessDialog({
               </div>
             ) : !members || members.length === 0 ? (
               <p className="text-sm text-muted-foreground py-2">
-                Only you have access to this Page.
+                Only you have access to this Hub.
               </p>
             ) : (
               <div className="border border-border rounded-lg divide-y divide-border">
@@ -943,7 +943,7 @@ function PageFollowingDialog({
         {isLoading ? (
           <div className="py-6 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
         ) : following?.length === 0 ? (
-          <div className="py-6 text-center text-muted-foreground text-sm">Not following any pages.</div>
+          <div className="py-6 text-center text-muted-foreground text-sm">Not following any hubs.</div>
         ) : (
           <div className="space-y-1">
             {following?.map((pg) => (
@@ -1105,7 +1105,7 @@ function PageDetail({ id }: { id: number }) {
   }
 
   if (!page) {
-    return <MainLayout><div className="py-10 text-center text-muted-foreground">Page not found</div></MainLayout>;
+    return <MainLayout><div className="py-10 text-center text-muted-foreground">Hub not found</div></MainLayout>;
   }
 
   const followParams = actingPage ? { asPageId: actingPage.id } : undefined;
@@ -1167,12 +1167,12 @@ function PageDetail({ id }: { id: number }) {
               )}
               <PageCTA page={page} />
               {page.viewerCanPost && (
-                <Button variant="secondary" size="icon" onClick={() => setEditOpen(true)} aria-label="Edit page">
+                <Button variant="secondary" size="icon" onClick={() => setEditOpen(true)} aria-label="Edit hub">
                   <Pencil className="w-4 h-4" />
                 </Button>
               )}
               {user?.id === page.ownerId && (
-                <Button variant="secondary" size="icon" onClick={() => setAccessOpen(true)} aria-label="Page settings" data-testid="page-settings-button">
+                <Button variant="secondary" size="icon" onClick={() => setAccessOpen(true)} aria-label="Hub settings" data-testid="page-settings-button">
                   <Settings className="w-4 h-4" />
                 </Button>
               )}
@@ -1189,7 +1189,7 @@ function PageDetail({ id }: { id: number }) {
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/groups?create=1")}>
                     <Users className="w-4 h-4 mr-2" />
-                    Create group
+                    Create circle
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

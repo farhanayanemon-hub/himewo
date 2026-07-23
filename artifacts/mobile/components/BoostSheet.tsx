@@ -115,7 +115,7 @@ export function BoostSheet({
             <View style={styles.titleRow}>
               <Ionicons name="rocket" size={20} color={c.primary} />
               <Text style={[styles.title, { color: c.foreground }]}>
-                Boost {type === "post" ? "post" : "page"}
+                Boost {type === "post" ? "post" : "hub"}
               </Text>
             </View>
             <Text style={[styles.subtitle, { color: c.mutedForeground }]}>

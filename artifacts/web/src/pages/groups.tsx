@@ -285,7 +285,7 @@ function GroupList() {
     <MainLayout>
       {invites && invites.length > 0 && (
         <div className="bg-card border border-border rounded-xl p-4 shadow-sm mb-4 animate-in fade-in">
-          <h2 className="text-lg font-bold mb-3">Group invites</h2>
+          <h2 className="text-lg font-bold mb-3">Circle invites</h2>
           <div className="space-y-3">
             {invites.map((invite) => (
               <GroupInviteRow key={invite.id} group={invite} />
@@ -295,8 +295,8 @@ function GroupList() {
       )}
       <div className="bg-card border border-border rounded-xl p-4 shadow-sm animate-in fade-in">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-xl font-bold">Groups</h1>
-          <Button onClick={() => setOpen(true)}>Create Group</Button>
+          <h1 className="text-xl font-bold">Circles</h1>
+          <Button onClick={() => setOpen(true)}>Create Circle</Button>
         </div>
 
         {isLoading ? (
@@ -305,7 +305,7 @@ function GroupList() {
           </div>
         ) : groups?.length === 0 ? (
           <div className="py-10 text-center text-muted-foreground">
-            No groups found.
+            No circles found.
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -351,7 +351,7 @@ function GroupList() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create Group</DialogTitle>
+            <DialogTitle>Create Circle</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
             <div className="space-y-2">
@@ -360,7 +360,7 @@ function GroupList() {
                 id="group-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Group name"
+                placeholder="Circle name"
               />
             </div>
             <div className="space-y-2">
@@ -369,7 +369,7 @@ function GroupList() {
                 id="group-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="What's this group about?"
+                placeholder="What's this circle about?"
               />
             </div>
             <div className="space-y-2">
@@ -398,7 +398,7 @@ function GroupList() {
                 id="group-rules"
                 value={rules}
                 onChange={(e) => setRules(e.target.value)}
-                placeholder="Group rules members should follow"
+                placeholder="Circle rules members should follow"
               />
             </div>
             <div className="space-y-2">
@@ -476,7 +476,7 @@ function GroupDetail({ id }: { id: number }) {
     return (
       <MainLayout>
         <div className="py-10 text-center text-muted-foreground">
-          Group not found
+          Circle not found
         </div>
       </MainLayout>
     );
@@ -544,7 +544,7 @@ function GroupDetail({ id }: { id: number }) {
         {joinGroup.isPending && (
           <Loader2 className="w-4 h-4 animate-spin mr-2" />
         )}
-        {group.privacy === "public" ? "Join Group" : "Request to Join"}
+        {group.privacy === "public" ? "Join Circle" : "Request to Join"}
       </Button>
     );
   };
@@ -568,7 +568,7 @@ function GroupDetail({ id }: { id: number }) {
             <div className="min-w-0">
               <h1 className="text-3xl font-extrabold">{group.name}</h1>
               <div className="text-muted-foreground flex items-center gap-2 mt-1 font-medium capitalize">
-                {privacyIcon(group.privacy)} {group.privacy} group •{" "}
+                {privacyIcon(group.privacy)} {group.privacy} circle •{" "}
                 {group.memberCount} members
                 {group.viewerRole && group.viewerRole !== "member" && (
                   <Badge variant="secondary" className="capitalize ml-1">
@@ -612,14 +612,14 @@ function GroupDetail({ id }: { id: number }) {
           {group.viewerIsMember ? (
             group.viewerIsMuted ? (
               <div className="py-4 text-center bg-card border border-border rounded-xl text-muted-foreground text-sm">
-                You are muted in this group and cannot post.
+                You are muted in this circle and cannot post.
               </div>
             ) : (
               <PostComposer groupId={id} />
             )
           ) : (
             <div className="py-4 text-center bg-card border border-border rounded-xl text-muted-foreground text-sm">
-              Join this group to post.
+              Join this circle to post.
             </div>
           )}
           {postsLoading ? (

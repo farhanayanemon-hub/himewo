@@ -439,7 +439,7 @@ function FacebookCard() {
 
       {mode === "landing" && (
         <p className="text-center text-sm text-foreground mt-6">
-          <span className="font-semibold">Create a Page</span> for a celebrity, brand or business.
+          <span className="font-semibold">Create a Hub</span> for a celebrity, brand or business.
         </p>
       )}
     </div>

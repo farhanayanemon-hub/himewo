@@ -278,7 +278,7 @@ export function ProfileBody({
                       >
                         <Ionicons name="people-outline" size={18} color={c.foreground} />
                         <Text style={[styles.actionLabel, { color: c.foreground }]}>
-                          Create Group
+                          Create Circle
                         </Text>
                       </Pressable>
                     </>

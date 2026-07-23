@@ -113,7 +113,7 @@ export function BoostDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Rocket className="w-5 h-5 text-primary" />
-            Boost {type === "post" ? "post" : "page"}
+            Boost {type === "post" ? "post" : "hub"}
           </DialogTitle>
           <DialogDescription>
             Reach more people. Your boost goes for admin review before it runs.

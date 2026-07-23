@@ -46,11 +46,11 @@ function notificationText(n: Notification): string {
     case NotificationType.message:
       return `${actor} sent you a message.`;
     case NotificationType.group_invite:
-      return `${actor} invited you to a group.`;
+      return `${actor} invited you to a circle.`;
     case NotificationType.page_invite:
-      return `${actor} invited you to follow a page.`;
+      return `${actor} invited you to follow a hub.`;
     case NotificationType.page_follow:
-      return `${actor} followed your page.`;
+      return `${actor} followed your hub.`;
     case NotificationType.mention:
       if (n.entityType === "album") return `${actor} tagged you in a photo.`;
       return `${actor} mentioned you.`;

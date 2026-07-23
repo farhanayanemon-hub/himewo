@@ -60,7 +60,7 @@ export default function WatchPage() {
           </div>
           <div>
             <h1 className="text-lg font-bold">Watch</h1>
-            <p className="text-sm text-muted-foreground">Videos from people and pages</p>
+            <p className="text-sm text-muted-foreground">Videos from people and hubs</p>
           </div>
         </div>
 
