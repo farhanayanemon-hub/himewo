@@ -2733,6 +2733,14 @@ export interface ShopSettingsInput {
   paymentInstructions?: string;
 }
 
+export type ShopStallProductType = typeof ShopStallProductType[keyof typeof ShopStallProductType];
+
+
+export const ShopStallProductType = {
+  physical: 'physical',
+  digital: 'digital',
+} as const;
+
 export interface ShopStall {
   id: number;
   userId: string;
@@ -2740,6 +2748,10 @@ export interface ShopStall {
   name: string;
   /** @nullable */
   avatarUrl?: string | null;
+  address?: string;
+  productType: ShopStallProductType;
+  contactPhone?: string;
+  contactEmail?: string;
   active: boolean;
   productCount?: number;
   isOwner?: boolean;
@@ -2749,8 +2761,62 @@ export interface ShopStall {
   ratingCount?: number;
 }
 
+export type CreateStallInputProductType = typeof CreateStallInputProductType[keyof typeof CreateStallInputProductType];
+
+
+export const CreateStallInputProductType = {
+  physical: 'physical',
+  digital: 'digital',
+} as const;
+
 export interface CreateStallInput {
   pageId: number;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  address: string;
+  productType: CreateStallInputProductType;
+  /**
+     * @minLength 1
+     * @maxLength 30
+     */
+  contactPhone: string;
+  /** @maxLength 200 */
+  contactEmail?: string;
+}
+
+export interface ShopCategory {
+  id: number;
+  name: string;
+  icon: string;
+  sortOrder: number;
+  active: boolean;
+  productCount?: number;
+}
+
+export interface UpsertShopCategoryInput {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  name: string;
+  /** @maxLength 20 */
+  icon?: string;
+  sortOrder?: number;
+  active?: boolean;
+}
+
+export interface UpdateShopCategoryInput {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  name?: string;
+  /** @maxLength 20 */
+  icon?: string;
+  sortOrder?: number;
+  active?: boolean;
 }
 
 export interface ShopProduct {
@@ -2764,6 +2830,10 @@ export interface ShopProduct {
   description: string;
   stockQty: number;
   active: boolean;
+  /** @nullable */
+  categoryId?: number | null;
+  /** @nullable */
+  categoryName?: string | null;
   createdAt: string;
   /** @nullable */
   ratingAvg?: number | null;
@@ -2782,6 +2852,7 @@ export interface CreateProductInput {
   description?: string;
   /** @minimum 0 */
   stockQty?: number;
+  categoryId: number;
   photos?: string[];
 }
 
@@ -2798,6 +2869,7 @@ export interface UpdateProductInput {
   /** @minimum 0 */
   stockQty?: number;
   active?: boolean;
+  categoryId?: number;
   photos?: string[];
 }
 
@@ -3324,6 +3396,10 @@ limit?: number;
 
 export type BrowseProductsParams = {
 search?: string;
+/**
+ * @minimum 1
+ */
+categoryId?: number;
 /**
  * @minimum 1
  */

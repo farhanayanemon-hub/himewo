@@ -5,6 +5,7 @@
  * HiMewo social platform + Messenger API
  * OpenAPI spec version: 0.1.0
  */
+import type { ShopStallProductType } from './shopStallProductType';
 
 export interface ShopStall {
   id: number;
@@ -13,6 +14,10 @@ export interface ShopStall {
   name: string;
   /** @nullable */
   avatarUrl?: string | null;
+  address?: string;
+  productType: ShopStallProductType;
+  contactPhone?: string;
+  contactEmail?: string;
   active: boolean;
   productCount?: number;
   isOwner?: boolean;

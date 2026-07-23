@@ -17,6 +17,10 @@ export interface ShopProduct {
   description: string;
   stockQty: number;
   active: boolean;
+  /** @nullable */
+  categoryId?: number | null;
+  /** @nullable */
+  categoryName?: string | null;
   createdAt: Date;
   /** @nullable */
   ratingAvg?: number | null;

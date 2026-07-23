@@ -27,12 +27,15 @@ import {
   useCreateShopWithdrawal,
   useListShopWithdrawals,
   useListPages,
+  useListShopCategories,
   getGetMyStallQueryKey,
   getGetStallProductsQueryKey,
   getGetShopWalletQueryKey,
   getListShopWithdrawalsQueryKey,
   getBrowseProductsQueryKey,
+  getListShopCategoriesQueryKey,
   type ShopProduct,
+  type CreateStallInputProductType,
 } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
 import { uploadMedia, UploadUnavailableError } from "@/lib/upload";
@@ -75,13 +78,30 @@ function StallSetup({ c }: { c: Colors }) {
   const { data: pages, isLoading } = useListPages({ mine: true });
   const createStall = useCreateStall();
   const [selected, setSelected] = useState<number | null>(null);
+  const [address, setAddress] = useState("");
+  const [productType, setProductType] =
+    useState<CreateStallInputProductType>("physical");
+  const [contactPhone, setContactPhone] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
 
   const hasPages = !!pages && pages.length > 0;
+  const canCreate =
+    selected != null &&
+    address.trim().length > 0 &&
+    contactPhone.trim().length > 0;
 
   const handleCreate = () => {
-    if (selected == null || createStall.isPending) return;
+    if (!canCreate || selected == null || createStall.isPending) return;
     createStall.mutate(
-      { data: { pageId: selected } },
+      {
+        data: {
+          pageId: selected,
+          address: address.trim(),
+          productType,
+          contactPhone: contactPhone.trim(),
+          ...(contactEmail.trim() ? { contactEmail: contactEmail.trim() } : {}),
+        },
+      },
       {
         onSuccess: () => {
           qc.invalidateQueries({ queryKey: getGetMyStallQueryKey() });
@@ -90,6 +110,11 @@ function StallSetup({ c }: { c: Colors }) {
       },
     );
   };
+
+  const inputStyle = [
+    styles.input,
+    { backgroundColor: c.card, borderColor: c.border, color: c.foreground },
+  ];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["bottom"]}>
@@ -138,21 +163,91 @@ function StallSetup({ c }: { c: Colors }) {
                 );
               })}
             </View>
+
+            <View style={{ gap: 8 }}>
+              <Text style={[styles.label, { color: c.foreground }]}>Product type</Text>
+              <View style={styles.chipWrap}>
+                {(["physical", "digital"] as const).map((t) => {
+                  const on = productType === t;
+                  return (
+                    <Pressable
+                      key={t}
+                      onPress={() => setProductType(t)}
+                      style={[
+                        styles.selectChip,
+                        {
+                          backgroundColor: on ? c.primary : c.secondary,
+                          borderColor: on ? c.primary : c.border,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={{
+                          color: on ? "#fff" : c.foreground,
+                          fontFamily: "Inter_600SemiBold",
+                          fontSize: 13,
+                        }}
+                      >
+                        {t === "physical" ? "Physical" : "Digital"}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+
+            <Field label="Address" c={c}>
+              <TextInput
+                value={address}
+                onChangeText={setAddress}
+                placeholder="Stall / business address"
+                placeholderTextColor={c.mutedForeground}
+                underlineColorAndroid="transparent"
+                multiline
+                style={[...inputStyle, { height: 80, textAlignVertical: "top", paddingTop: 12 }]}
+              />
+            </Field>
+
+            <Field label="Contact phone" c={c}>
+              <TextInput
+                value={contactPhone}
+                onChangeText={setContactPhone}
+                placeholder="01XXXXXXXXX"
+                placeholderTextColor={c.mutedForeground}
+                keyboardType="phone-pad"
+                underlineColorAndroid="transparent"
+                style={inputStyle}
+              />
+            </Field>
+
+            <Field label="Contact email (optional)" c={c}>
+              <TextInput
+                value={contactEmail}
+                onChangeText={setContactEmail}
+                placeholder="you@example.com"
+                placeholderTextColor={c.mutedForeground}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                underlineColorAndroid="transparent"
+                style={inputStyle}
+              />
+            </Field>
+
             <Pressable
               style={[
                 styles.submit,
-                { backgroundColor: selected != null ? c.primary : c.secondary },
-                selected != null ? glow(c.primary) : null,
+                { backgroundColor: canCreate ? c.primary : c.secondary },
+                canCreate ? glow(c.primary) : null,
               ]}
               onPress={handleCreate}
-              disabled={selected == null || createStall.isPending}
+              disabled={!canCreate || createStall.isPending}
             >
               {createStall.isPending ? (
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
                 <Text
                   style={{
-                    color: selected != null ? "#fff" : c.mutedForeground,
+                    color: canCreate ? "#fff" : c.mutedForeground,
                     fontFamily: "Inter_700Bold",
                     fontSize: 16,
                   }}
@@ -392,6 +487,7 @@ function SellerDashboard({
                   </Text>
                   <Text style={{ color: c.mutedForeground, fontSize: 12 }}>
                     Stock {p.stockQty} · {p.active ? "Active" : "Hidden"}
+                    {p.categoryName ? ` · ${p.categoryName}` : ""}
                   </Text>
                 </View>
                 <Pressable
@@ -470,6 +566,9 @@ function ProductEditor({
 }) {
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
+  const { data: categories } = useListShopCategories({
+    query: { queryKey: getListShopCategoriesQueryKey() },
+  });
 
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
@@ -477,6 +576,7 @@ function ProductEditor({
   const [stock, setStock] = useState("0");
   const [active, setActive] = useState(true);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [categoryId, setCategoryId] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
   const [ready, setReady] = useState(false);
 
@@ -488,6 +588,7 @@ function ProductEditor({
     setStock(String(product?.stockQty ?? 0));
     setActive(product?.active ?? true);
     setPhotos(product?.photos ?? []);
+    setCategoryId(product?.categoryId ?? null);
     setReady(true);
   }
   if (!visible && ready) setReady(false);
@@ -519,11 +620,12 @@ function ProductEditor({
     }
   };
 
-  const canSubmit = name.trim().length > 0 && price.trim().length > 0;
+  const canSubmit =
+    name.trim().length > 0 && price.trim().length > 0 && categoryId != null;
   const pending = createProduct.isPending || updateProduct.isPending;
 
   const handleSubmit = () => {
-    if (!canSubmit || pending || uploading) return;
+    if (!canSubmit || categoryId == null || pending || uploading) return;
     const priceCents = takaToCents(price);
     const stockQty = Math.max(0, Math.round(Number(stock) || 0));
     if (product) {
@@ -537,6 +639,7 @@ function ProductEditor({
             stockQty,
             active,
             photos,
+            categoryId,
           },
         },
         { onSuccess: onSaved, onError: () => Alert.alert("Save failed", "Please try again.") },
@@ -550,6 +653,7 @@ function ProductEditor({
             description: description.trim(),
             stockQty,
             photos,
+            categoryId,
           },
         },
         { onSuccess: onSaved, onError: () => Alert.alert("Save failed", "Please try again.") },
@@ -612,6 +716,47 @@ function ProductEditor({
               style={inputStyle}
             />
           </Field>
+
+          <View style={{ gap: 8 }}>
+            <Text style={[styles.label, { color: c.foreground }]}>Category</Text>
+            {categories && categories.length > 0 ? (
+              <View style={styles.chipWrap}>
+                {categories.map((cat) => {
+                  const on = categoryId === cat.id;
+                  return (
+                    <Pressable
+                      key={cat.id}
+                      onPress={() => setCategoryId(cat.id)}
+                      style={[
+                        styles.selectChip,
+                        {
+                          flexDirection: "row",
+                          gap: 6,
+                          backgroundColor: on ? c.primary : c.secondary,
+                          borderColor: on ? c.primary : c.border,
+                        },
+                      ]}
+                    >
+                      <Text style={{ fontSize: 14 }}>{cat.icon}</Text>
+                      <Text
+                        style={{
+                          color: on ? "#fff" : c.foreground,
+                          fontFamily: "Inter_600SemiBold",
+                          fontSize: 13,
+                        }}
+                      >
+                        {cat.name}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ) : (
+              <Text style={{ color: c.mutedForeground, fontSize: 13 }}>
+                No categories available yet.
+              </Text>
+            )}
+          </View>
 
           <Field label="Price (৳ taka)" c={c}>
             <TextInput

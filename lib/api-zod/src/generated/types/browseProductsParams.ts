@@ -11,6 +11,10 @@ search?: string;
 /**
  * @minimum 1
  */
+categoryId?: number;
+/**
+ * @minimum 1
+ */
 cursor?: number;
 /**
  * @minimum 1

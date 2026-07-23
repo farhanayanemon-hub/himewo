@@ -459,3 +459,12 @@ export interface ShopSettings {
   commissionPercent: number;
   paymentInstructions: string;
 }
+
+export interface ShopCategoryRow {
+  id: number;
+  name: string;
+  icon: string;
+  sortOrder: number;
+  active: boolean;
+  productCount: number;
+}

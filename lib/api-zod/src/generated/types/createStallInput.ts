@@ -5,7 +5,21 @@
  * HiMewo social platform + Messenger API
  * OpenAPI spec version: 0.1.0
  */
+import type { CreateStallInputProductType } from './createStallInputProductType';
 
 export interface CreateStallInput {
   pageId: number;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  address: string;
+  productType: CreateStallInputProductType;
+  /**
+     * @minLength 1
+     * @maxLength 30
+     */
+  contactPhone: string;
+  /** @maxLength 200 */
+  contactEmail?: string;
 }

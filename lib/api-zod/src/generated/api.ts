@@ -10212,6 +10212,10 @@ export const GetMyStallResponse = zod.object({
   "pageId": zod.number(),
   "name": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "address": zod.string().optional(),
+  "productType": zod.enum(['physical', 'digital']),
+  "contactPhone": zod.string().optional(),
+  "contactEmail": zod.string().optional(),
   "active": zod.boolean(),
   "productCount": zod.number().optional(),
   "isOwner": zod.boolean().optional(),
@@ -10224,8 +10228,20 @@ export const GetMyStallResponse = zod.object({
 /**
  * @summary Open a stall connected to a Hub (page) you manage
  */
+export const createStallBodyAddressMax = 500;
+
+export const createStallBodyContactPhoneMax = 30;
+
+export const createStallBodyContactEmailMax = 200;
+
+
+
 export const CreateStallBody = zod.object({
-  "pageId": zod.number()
+  "pageId": zod.number(),
+  "address": zod.string().min(1).max(createStallBodyAddressMax),
+  "productType": zod.enum(['physical', 'digital']),
+  "contactPhone": zod.string().min(1).max(createStallBodyContactPhoneMax),
+  "contactEmail": zod.string().max(createStallBodyContactEmailMax).optional()
 })
 
 export const CreateStallResponse = zod.object({
@@ -10234,6 +10250,10 @@ export const CreateStallResponse = zod.object({
   "pageId": zod.number(),
   "name": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "address": zod.string().optional(),
+  "productType": zod.enum(['physical', 'digital']),
+  "contactPhone": zod.string().optional(),
+  "contactEmail": zod.string().optional(),
   "active": zod.boolean(),
   "productCount": zod.number().optional(),
   "isOwner": zod.boolean().optional(),
@@ -10263,6 +10283,10 @@ export const BrowseStallsResponseItem = zod.object({
   "pageId": zod.number(),
   "name": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "address": zod.string().optional(),
+  "productType": zod.enum(['physical', 'digital']),
+  "contactPhone": zod.string().optional(),
+  "contactEmail": zod.string().optional(),
   "active": zod.boolean(),
   "productCount": zod.number().optional(),
   "isOwner": zod.boolean().optional(),
@@ -10286,6 +10310,10 @@ export const GetStallResponse = zod.object({
   "pageId": zod.number(),
   "name": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "address": zod.string().optional(),
+  "productType": zod.enum(['physical', 'digital']),
+  "contactPhone": zod.string().optional(),
+  "contactEmail": zod.string().optional(),
   "active": zod.boolean(),
   "productCount": zod.number().optional(),
   "isOwner": zod.boolean().optional(),
@@ -10323,6 +10351,8 @@ export const GetStallProductsResponseItem = zod.object({
   "description": zod.string(),
   "stockQty": zod.number(),
   "active": zod.boolean(),
+  "categoryId": zod.number().nullish(),
+  "categoryName": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "ratingAvg": zod.number().nullish(),
   "ratingCount": zod.number().optional()
@@ -10331,8 +10361,23 @@ export const GetStallProductsResponse = zod.array(GetStallProductsResponseItem)
 
 
 /**
+ * @summary List active shop categories (grid on shop landing)
+ */
+export const ListShopCategoriesResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "icon": zod.string(),
+  "sortOrder": zod.number(),
+  "active": zod.boolean(),
+  "productCount": zod.number().optional()
+})
+export const ListShopCategoriesResponse = zod.array(ListShopCategoriesResponseItem)
+
+
+/**
  * @summary Browse products (active, in-stock)
  */
+
 
 export const browseProductsQueryLimitDefault = 20;
 export const browseProductsQueryLimitMax = 50;
@@ -10341,6 +10386,7 @@ export const browseProductsQueryLimitMax = 50;
 
 export const BrowseProductsQueryParams = zod.object({
   "search": zod.coerce.string().optional(),
+  "categoryId": zod.coerce.number().min(1).optional(),
   "cursor": zod.coerce.number().min(1).optional(),
   "limit": zod.coerce.number().min(1).max(browseProductsQueryLimitMax).default(browseProductsQueryLimitDefault)
 })
@@ -10355,6 +10401,8 @@ export const BrowseProductsResponseItem = zod.object({
   "description": zod.string(),
   "stockQty": zod.number(),
   "active": zod.boolean(),
+  "categoryId": zod.number().nullish(),
+  "categoryName": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "ratingAvg": zod.number().nullish(),
   "ratingCount": zod.number().optional()
@@ -10380,6 +10428,7 @@ export const CreateProductBody = zod.object({
   "priceCents": zod.number().min(createProductBodyPriceCentsMin),
   "description": zod.string().max(createProductBodyDescriptionMax).optional(),
   "stockQty": zod.number().min(createProductBodyStockQtyMin).optional(),
+  "categoryId": zod.number(),
   "photos": zod.array(zod.string()).optional()
 })
 
@@ -10393,6 +10442,8 @@ export const CreateProductResponse = zod.object({
   "description": zod.string(),
   "stockQty": zod.number(),
   "active": zod.boolean(),
+  "categoryId": zod.number().nullish(),
+  "categoryName": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "ratingAvg": zod.number().nullish(),
   "ratingCount": zod.number().optional()
@@ -10416,6 +10467,8 @@ export const GetProductResponse = zod.object({
   "description": zod.string(),
   "stockQty": zod.number(),
   "active": zod.boolean(),
+  "categoryId": zod.number().nullish(),
+  "categoryName": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "ratingAvg": zod.number().nullish(),
   "ratingCount": zod.number().optional()
@@ -10445,6 +10498,7 @@ export const UpdateProductBody = zod.object({
   "description": zod.string().max(updateProductBodyDescriptionMax).optional(),
   "stockQty": zod.number().min(updateProductBodyStockQtyMin).optional(),
   "active": zod.boolean().optional(),
+  "categoryId": zod.number().optional(),
   "photos": zod.array(zod.string()).optional()
 })
 
@@ -10458,6 +10512,8 @@ export const UpdateProductResponse = zod.object({
   "description": zod.string(),
   "stockQty": zod.number(),
   "active": zod.boolean(),
+  "categoryId": zod.number().nullish(),
+  "categoryName": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "ratingAvg": zod.number().nullish(),
   "ratingCount": zod.number().optional()
@@ -11056,6 +11112,8 @@ export const ListAdminStallProductsResponseItem = zod.object({
   "description": zod.string(),
   "stockQty": zod.number(),
   "active": zod.boolean(),
+  "categoryId": zod.number().nullish(),
+  "categoryName": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
   "ratingAvg": zod.number().nullish(),
   "ratingCount": zod.number().optional()
@@ -11549,5 +11607,85 @@ export const UpdateAdminShopSettingsResponse = zod.object({
   "commissionPercent": zod.number(),
   "paymentInstructions": zod.string()
 })
+
+
+/**
+ * @summary List all shop categories incl. inactive (admin)
+ */
+export const ListAdminShopCategoriesResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "icon": zod.string(),
+  "sortOrder": zod.number(),
+  "active": zod.boolean(),
+  "productCount": zod.number().optional()
+})
+export const ListAdminShopCategoriesResponse = zod.array(ListAdminShopCategoriesResponseItem)
+
+
+/**
+ * @summary Create a shop category (admin)
+ */
+export const createAdminShopCategoryBodyNameMax = 100;
+
+export const createAdminShopCategoryBodyIconMax = 20;
+
+
+
+export const CreateAdminShopCategoryBody = zod.object({
+  "name": zod.string().min(1).max(createAdminShopCategoryBodyNameMax),
+  "icon": zod.string().max(createAdminShopCategoryBodyIconMax).optional(),
+  "sortOrder": zod.number().optional(),
+  "active": zod.boolean().optional()
+})
+
+export const CreateAdminShopCategoryResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "icon": zod.string(),
+  "sortOrder": zod.number(),
+  "active": zod.boolean(),
+  "productCount": zod.number().optional()
+})
+
+
+/**
+ * @summary Update a shop category (admin)
+ */
+export const UpdateAdminShopCategoryParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const updateAdminShopCategoryBodyNameMax = 100;
+
+export const updateAdminShopCategoryBodyIconMax = 20;
+
+
+
+export const UpdateAdminShopCategoryBody = zod.object({
+  "name": zod.string().min(1).max(updateAdminShopCategoryBodyNameMax).optional(),
+  "icon": zod.string().max(updateAdminShopCategoryBodyIconMax).optional(),
+  "sortOrder": zod.number().optional(),
+  "active": zod.boolean().optional()
+})
+
+export const UpdateAdminShopCategoryResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "icon": zod.string(),
+  "sortOrder": zod.number(),
+  "active": zod.boolean(),
+  "productCount": zod.number().optional()
+})
+
+
+/**
+ * @summary Delete a shop category (admin; products keep null category)
+ */
+export const DeleteAdminShopCategoryParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteAdminShopCategoryResponse = zod.void()
 
 

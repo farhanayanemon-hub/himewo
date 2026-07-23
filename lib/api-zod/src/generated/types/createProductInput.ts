@@ -18,5 +18,6 @@ export interface CreateProductInput {
   description?: string;
   /** @minimum 0 */
   stockQty?: number;
+  categoryId: number;
   photos?: string[];
 }

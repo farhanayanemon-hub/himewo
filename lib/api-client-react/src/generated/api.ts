@@ -197,6 +197,7 @@ import type {
   SetDefaultCardInput,
   SetMemberRoleInput,
   ShareInput,
+  ShopCategory,
   ShopOrder,
   ShopProduct,
   ShopProductReviews,
@@ -216,8 +217,10 @@ import type {
   UnreadCount,
   UpdateOrderStatusInput,
   UpdateProductInput,
+  UpdateShopCategoryInput,
   UploadUrlInput,
   UploadUrlResponse,
+  UpsertShopCategoryInput,
   UserSettings,
   UserSettingsUpdate,
   VerifyPaymentInput,
@@ -16704,6 +16707,83 @@ export function useGetStallProducts<TData = Awaited<ReturnType<typeof getStallPr
 
 
 
+export const getListShopCategoriesUrl = () => {
+
+
+
+
+  return `/api/shop/categories`
+}
+
+/**
+ * @summary List active shop categories (grid on shop landing)
+ */
+export const listShopCategories = async ( options?: RequestInit): Promise<ShopCategory[]> => {
+
+  return customFetch<ShopCategory[]>(getListShopCategoriesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListShopCategoriesQueryKey = () => {
+    return [
+    `/api/shop/categories`
+    ] as const;
+    }
+
+
+export const getListShopCategoriesQueryOptions = <TData = Awaited<ReturnType<typeof listShopCategories>>, TError = ErrorType<UnauthorizedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listShopCategories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListShopCategoriesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listShopCategories>>> = ({ signal }) => listShopCategories({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listShopCategories>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListShopCategoriesQueryResult = NonNullable<Awaited<ReturnType<typeof listShopCategories>>>
+export type ListShopCategoriesQueryError = ErrorType<UnauthorizedResponse>
+
+
+/**
+ * @summary List active shop categories (grid on shop landing)
+ */
+
+export function useListShopCategories<TData = Awaited<ReturnType<typeof listShopCategories>>, TError = ErrorType<UnauthorizedResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listShopCategories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListShopCategoriesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getBrowseProductsUrl = (params?: BrowseProductsParams,) => {
   const normalizedParams = new URLSearchParams();
 
@@ -18598,5 +18678,293 @@ export const useUpdateAdminShopSettings = <TError = ErrorType<BadRequestResponse
         TContext
       > => {
       return useMutation(getUpdateAdminShopSettingsMutationOptions(options));
+    }
+
+export const getListAdminShopCategoriesUrl = () => {
+
+
+
+
+  return `/api/admin/shop/categories`
+}
+
+/**
+ * @summary List all shop categories incl. inactive (admin)
+ */
+export const listAdminShopCategories = async ( options?: RequestInit): Promise<ShopCategory[]> => {
+
+  return customFetch<ShopCategory[]>(getListAdminShopCategoriesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminShopCategoriesQueryKey = () => {
+    return [
+    `/api/admin/shop/categories`
+    ] as const;
+    }
+
+
+export const getListAdminShopCategoriesQueryOptions = <TData = Awaited<ReturnType<typeof listAdminShopCategories>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminShopCategories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminShopCategoriesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminShopCategories>>> = ({ signal }) => listAdminShopCategories({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminShopCategories>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminShopCategoriesQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminShopCategories>>>
+export type ListAdminShopCategoriesQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary List all shop categories incl. inactive (admin)
+ */
+
+export function useListAdminShopCategories<TData = Awaited<ReturnType<typeof listAdminShopCategories>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminShopCategories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminShopCategoriesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateAdminShopCategoryUrl = () => {
+
+
+
+
+  return `/api/admin/shop/categories`
+}
+
+/**
+ * @summary Create a shop category (admin)
+ */
+export const createAdminShopCategory = async (upsertShopCategoryInput: UpsertShopCategoryInput, options?: RequestInit): Promise<ShopCategory> => {
+
+  return customFetch<ShopCategory>(getCreateAdminShopCategoryUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(upsertShopCategoryInput)
+  }
+);}
+
+
+
+
+export const getCreateAdminShopCategoryMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdminShopCategory>>, TError,{data: BodyType<UpsertShopCategoryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAdminShopCategory>>, TError,{data: BodyType<UpsertShopCategoryInput>}, TContext> => {
+
+const mutationKey = ['createAdminShopCategory'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAdminShopCategory>>, {data: BodyType<UpsertShopCategoryInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createAdminShopCategory(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAdminShopCategoryMutationResult = NonNullable<Awaited<ReturnType<typeof createAdminShopCategory>>>
+    export type CreateAdminShopCategoryMutationBody = BodyType<UpsertShopCategoryInput>
+    export type CreateAdminShopCategoryMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | ConflictResponse>
+
+    /**
+ * @summary Create a shop category (admin)
+ */
+export const useCreateAdminShopCategory = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdminShopCategory>>, TError,{data: BodyType<UpsertShopCategoryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAdminShopCategory>>,
+        TError,
+        {data: BodyType<UpsertShopCategoryInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAdminShopCategoryMutationOptions(options));
+    }
+
+export const getUpdateAdminShopCategoryUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/shop/categories/${id}`
+}
+
+/**
+ * @summary Update a shop category (admin)
+ */
+export const updateAdminShopCategory = async (id: number,
+    updateShopCategoryInput: UpdateShopCategoryInput, options?: RequestInit): Promise<ShopCategory> => {
+
+  return customFetch<ShopCategory>(getUpdateAdminShopCategoryUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateShopCategoryInput)
+  }
+);}
+
+
+
+
+export const getUpdateAdminShopCategoryMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdminShopCategory>>, TError,{id: number;data: BodyType<UpdateShopCategoryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAdminShopCategory>>, TError,{id: number;data: BodyType<UpdateShopCategoryInput>}, TContext> => {
+
+const mutationKey = ['updateAdminShopCategory'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAdminShopCategory>>, {id: number;data: BodyType<UpdateShopCategoryInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateAdminShopCategory(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAdminShopCategoryMutationResult = NonNullable<Awaited<ReturnType<typeof updateAdminShopCategory>>>
+    export type UpdateAdminShopCategoryMutationBody = BodyType<UpdateShopCategoryInput>
+    export type UpdateAdminShopCategoryMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>
+
+    /**
+ * @summary Update a shop category (admin)
+ */
+export const useUpdateAdminShopCategory = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdminShopCategory>>, TError,{id: number;data: BodyType<UpdateShopCategoryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAdminShopCategory>>,
+        TError,
+        {id: number;data: BodyType<UpdateShopCategoryInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateAdminShopCategoryMutationOptions(options));
+    }
+
+export const getDeleteAdminShopCategoryUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/shop/categories/${id}`
+}
+
+/**
+ * @summary Delete a shop category (admin; products keep null category)
+ */
+export const deleteAdminShopCategory = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteAdminShopCategoryUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteAdminShopCategoryMutationOptions = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdminShopCategory>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAdminShopCategory>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteAdminShopCategory'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAdminShopCategory>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteAdminShopCategory(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAdminShopCategoryMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAdminShopCategory>>>
+
+    export type DeleteAdminShopCategoryMutationError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Delete a shop category (admin; products keep null category)
+ */
+export const useDeleteAdminShopCategory = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdminShopCategory>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAdminShopCategory>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteAdminShopCategoryMutationOptions(options));
     }
 

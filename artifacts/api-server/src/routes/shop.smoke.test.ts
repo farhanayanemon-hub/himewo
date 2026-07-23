@@ -8,6 +8,7 @@ import {
   profilesTable,
   pagesTable,
   shopStallsTable,
+  shopCategoriesTable,
   shopLedgerTable,
   shopOrdersTable,
 } from "@workspace/db";
@@ -19,8 +20,16 @@ const buyer = randomUUID();
 const other = randomUUID();
 const everyUser = [seller, buyer, other];
 let pageId: number;
+let categoryId: number;
 let server: Server;
 let baseUrl: string;
+
+const stallBody = (pid: number) => ({
+  pageId: pid,
+  address: "Test Bazaar, Dhaka",
+  productType: "physical",
+  contactPhone: "01700000000",
+});
 
 async function api(
   path: string,
@@ -52,6 +61,11 @@ beforeAll(async () => {
     .values({ name: "Seller Hub", createdBy: seller })
     .returning();
   pageId = page.id;
+  const [category] = await db
+    .insert(shopCategoriesTable)
+    .values({ name: `Test Cat ${randomUUID().slice(0, 8)}`, icon: "🧪" })
+    .returning();
+  categoryId = category.id;
   server = createServer(app);
   await new Promise<void>((resolve) => server.listen(0, resolve));
   const { port } = server.address() as AddressInfo;
@@ -61,6 +75,9 @@ beforeAll(async () => {
 afterAll(async () => {
   await new Promise<void>((resolve) => server.close(() => resolve()));
   await db.delete(profilesTable).where(inArray(profilesTable.id, everyUser));
+  await db
+    .delete(shopCategoriesTable)
+    .where(eq(shopCategoriesTable.id, categoryId));
   await pool.end();
 });
 
@@ -71,7 +88,7 @@ describe("shop backend smoke", () => {
   it("blocks opening a stall for a Hub you don't manage", async () => {
     const r = await api("/shop/stall", other, {
       method: "POST",
-      body: JSON.stringify({ pageId }),
+      body: JSON.stringify(stallBody(pageId)),
     });
     expect(r.status).toBe(403);
   });
@@ -79,7 +96,7 @@ describe("shop backend smoke", () => {
   it("opens a stall for a Hub you manage, name = page name", async () => {
     const r = await api("/shop/stall", seller, {
       method: "POST",
-      body: JSON.stringify({ pageId }),
+      body: JSON.stringify(stallBody(pageId)),
     });
     expect(r.status).toBe(201);
     expect(r.body.name).toBe("Seller Hub");
@@ -89,7 +106,7 @@ describe("shop backend smoke", () => {
   it("rejects a second stall (409)", async () => {
     const r = await api("/shop/stall", seller, {
       method: "POST",
-      body: JSON.stringify({ pageId }),
+      body: JSON.stringify(stallBody(pageId)),
     });
     expect(r.status).toBe(409);
   });
@@ -102,6 +119,7 @@ describe("shop backend smoke", () => {
         priceCents: 10000,
         description: "A widget",
         stockQty: 3,
+        categoryId,
         photos: ["p.jpg"],
       }),
     });
