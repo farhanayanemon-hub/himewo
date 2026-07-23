@@ -82,6 +82,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "story_view",
   "announcement",
   "verification",
+  "shop_order",
+  "shop_withdrawal",
 ]);
 
 // ---------------------------------------------------------------------------

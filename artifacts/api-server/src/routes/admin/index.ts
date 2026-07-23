@@ -13,6 +13,7 @@ import rolesRouter from "./roles";
 import auditRouter from "./audit";
 import verificationRouter from "./verification";
 import adsRouter from "./ads";
+import shopRouter from "./shop";
 
 const router: IRouter = Router();
 
@@ -40,5 +41,6 @@ router.use("/admin", rolesRouter);
 router.use("/admin", auditRouter);
 router.use("/admin", verificationRouter);
 router.use("/admin", adsRouter);
+router.use("/admin", shopRouter);
 
 export default router;

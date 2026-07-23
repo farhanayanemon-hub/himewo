@@ -2719,6 +2719,298 @@ export interface AdminEarningsSummary {
   outstandingDollars: number;
 }
 
+export interface ShopSettings {
+  commissionPercent: number;
+  paymentInstructions: string;
+}
+
+export interface ShopSettingsInput {
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  commissionPercent?: number;
+  paymentInstructions?: string;
+}
+
+export interface ShopStall {
+  id: number;
+  userId: string;
+  pageId: number;
+  name: string;
+  /** @nullable */
+  avatarUrl?: string | null;
+  active: boolean;
+  productCount?: number;
+  isOwner?: boolean;
+  createdAt: string;
+}
+
+export interface CreateStallInput {
+  pageId: number;
+}
+
+export interface ShopProduct {
+  id: number;
+  stallId: number;
+  /** @nullable */
+  stallName?: string | null;
+  photos: string[];
+  name: string;
+  priceCents: number;
+  description: string;
+  stockQty: number;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface CreateProductInput {
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  name: string;
+  /** @minimum 0 */
+  priceCents: number;
+  /** @maxLength 5000 */
+  description?: string;
+  /** @minimum 0 */
+  stockQty?: number;
+  photos?: string[];
+}
+
+export interface UpdateProductInput {
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  name?: string;
+  /** @minimum 0 */
+  priceCents?: number;
+  /** @maxLength 5000 */
+  description?: string;
+  /** @minimum 0 */
+  stockQty?: number;
+  active?: boolean;
+  photos?: string[];
+}
+
+export type ShopOrderPaymentMethod = typeof ShopOrderPaymentMethod[keyof typeof ShopOrderPaymentMethod];
+
+
+export const ShopOrderPaymentMethod = {
+  cod: 'cod',
+  direct: 'direct',
+} as const;
+
+export type ShopOrderStatus = typeof ShopOrderStatus[keyof typeof ShopOrderStatus];
+
+
+export const ShopOrderStatus = {
+  awaiting_verification: 'awaiting_verification',
+  pending: 'pending',
+  confirmed: 'confirmed',
+  delivered: 'delivered',
+  completed: 'completed',
+  cancelled: 'cancelled',
+} as const;
+
+export interface ShopOrder {
+  id: number;
+  productId: number;
+  stallId: number;
+  sellerId: string;
+  buyerId: string;
+  quantity: number;
+  unitPriceCents: number;
+  totalCents: number;
+  productName: string;
+  /** @nullable */
+  productPhoto?: string | null;
+  /** @nullable */
+  stallName?: string | null;
+  deliveryAddress: string;
+  phone: string;
+  paymentMethod: ShopOrderPaymentMethod;
+  /** @nullable */
+  paymentRef?: string | null;
+  heldCents: number;
+  status: ShopOrderStatus;
+  createdAt: string;
+  counterpart?: Profile | null;
+}
+
+export type CreateOrderInputPaymentMethod = typeof CreateOrderInputPaymentMethod[keyof typeof CreateOrderInputPaymentMethod];
+
+
+export const CreateOrderInputPaymentMethod = {
+  cod: 'cod',
+  direct: 'direct',
+} as const;
+
+export interface CreateOrderInput {
+  productId: number;
+  /** @minimum 1 */
+  quantity: number;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  deliveryAddress: string;
+  /**
+     * @minLength 1
+     * @maxLength 40
+     */
+  phone: string;
+  paymentMethod: CreateOrderInputPaymentMethod;
+  /** @maxLength 200 */
+  paymentRef?: string;
+}
+
+export type UpdateOrderStatusInputStatus = typeof UpdateOrderStatusInputStatus[keyof typeof UpdateOrderStatusInputStatus];
+
+
+export const UpdateOrderStatusInputStatus = {
+  awaiting_verification: 'awaiting_verification',
+  pending: 'pending',
+  confirmed: 'confirmed',
+  delivered: 'delivered',
+  completed: 'completed',
+  cancelled: 'cancelled',
+} as const;
+
+export interface UpdateOrderStatusInput {
+  status: UpdateOrderStatusInputStatus;
+}
+
+export type ShopLedgerEntryKind = typeof ShopLedgerEntryKind[keyof typeof ShopLedgerEntryKind];
+
+
+export const ShopLedgerEntryKind = {
+  sale_credit: 'sale_credit',
+  cod_commission: 'cod_commission',
+  withdraw: 'withdraw',
+  withdraw_refund: 'withdraw_refund',
+  admin_adjust: 'admin_adjust',
+} as const;
+
+export interface ShopLedgerEntry {
+  id: number;
+  /** @nullable */
+  orderId?: number | null;
+  /** @nullable */
+  withdrawalId?: number | null;
+  kind: ShopLedgerEntryKind;
+  amountCents: number;
+  /** @nullable */
+  note?: string | null;
+  createdAt: string;
+}
+
+export interface ShopWallet {
+  balanceCents: number;
+  pendingWithdrawCents: number;
+  ledger: ShopLedgerEntry[];
+}
+
+export type ShopWithdrawalDetails = {[key: string]: string};
+
+export type ShopWithdrawalStatus = typeof ShopWithdrawalStatus[keyof typeof ShopWithdrawalStatus];
+
+
+export const ShopWithdrawalStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface ShopWithdrawal {
+  id: number;
+  amountCents: number;
+  method: string;
+  details: ShopWithdrawalDetails;
+  status: ShopWithdrawalStatus;
+  /** @nullable */
+  adminNote?: string | null;
+  createdAt: string;
+  /** @nullable */
+  processedAt?: string | null;
+}
+
+export type CreateShopWithdrawalInputDetails = {[key: string]: string};
+
+export interface CreateShopWithdrawalInput {
+  /** @minimum 1 */
+  amountCents: number;
+  /** @minLength 1 */
+  method: string;
+  details: CreateShopWithdrawalInputDetails;
+}
+
+export interface VerifyPaymentInput {
+  approve: boolean;
+  note?: string;
+}
+
+export interface ProcessShopWithdrawalInput {
+  approve: boolean;
+  note?: string;
+}
+
+export interface AdminShopStall {
+  id: number;
+  userId: string;
+  pageId: number;
+  name: string;
+  /** @nullable */
+  avatarUrl?: string | null;
+  active: boolean;
+  productCount: number;
+  orderCount: number;
+  createdAt: string;
+  owner?: Profile | null;
+}
+
+export type AdminShopWithdrawalDetails = {[key: string]: string};
+
+export type AdminShopWithdrawalStatus = typeof AdminShopWithdrawalStatus[keyof typeof AdminShopWithdrawalStatus];
+
+
+export const AdminShopWithdrawalStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface AdminShopWithdrawal {
+  id: number;
+  sellerId: string;
+  stallId: number;
+  amountCents: number;
+  method: string;
+  details: AdminShopWithdrawalDetails;
+  status: AdminShopWithdrawalStatus;
+  /** @nullable */
+  adminNote?: string | null;
+  /** @nullable */
+  processedBy?: string | null;
+  createdAt: string;
+  /** @nullable */
+  processedAt?: string | null;
+  seller?: Profile | null;
+  /** @nullable */
+  stallName?: string | null;
+}
+
+export interface AdminShopSummary {
+  platformProfitCents: number;
+  heldFundsCents: number;
+  stallCount: number;
+  orderCount: number;
+  pendingPaymentCount: number;
+  pendingWithdrawalCount: number;
+}
+
 /**
  * Unauthorized
  */
@@ -2738,6 +3030,11 @@ export type BadRequestResponse = Error;
  * Forbidden
  */
 export type ForbiddenResponse = Error;
+
+/**
+ * Conflict
+ */
+export type ConflictResponse = Error;
 
 export type SearchUsersParams = {
 q?: string;
@@ -2962,6 +3259,144 @@ export const ListAdminWithdrawalsStatus = {
   pending: 'pending',
   approved: 'approved',
   paid: 'paid',
+  rejected: 'rejected',
+} as const;
+
+export type BrowseStallsParams = {
+/**
+ * @minimum 1
+ */
+cursor?: number;
+/**
+ * @minimum 1
+ * @maximum 50
+ */
+limit?: number;
+};
+
+export type GetStallProductsParams = {
+/**
+ * @minimum 1
+ */
+cursor?: number;
+/**
+ * @minimum 1
+ * @maximum 50
+ */
+limit?: number;
+};
+
+export type BrowseProductsParams = {
+search?: string;
+/**
+ * @minimum 1
+ */
+cursor?: number;
+/**
+ * @minimum 1
+ * @maximum 50
+ */
+limit?: number;
+};
+
+export type ListOrdersParams = {
+role: ListOrdersRole;
+/**
+ * @minimum 1
+ */
+cursor?: number;
+/**
+ * @minimum 1
+ * @maximum 50
+ */
+limit?: number;
+};
+
+export type ListOrdersRole = typeof ListOrdersRole[keyof typeof ListOrdersRole];
+
+
+export const ListOrdersRole = {
+  buyer: 'buyer',
+  seller: 'seller',
+} as const;
+
+export type ListAdminStallsParams = {
+/**
+ * @minimum 1
+ */
+cursor?: number;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+};
+
+export type ListAdminOrdersParams = {
+status?: ListAdminOrdersStatus;
+paymentMethod?: ListAdminOrdersPaymentMethod;
+/**
+ * @minimum 1
+ */
+cursor?: number;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+};
+
+export type ListAdminOrdersStatus = typeof ListAdminOrdersStatus[keyof typeof ListAdminOrdersStatus];
+
+
+export const ListAdminOrdersStatus = {
+  awaiting_verification: 'awaiting_verification',
+  pending: 'pending',
+  confirmed: 'confirmed',
+  delivered: 'delivered',
+  completed: 'completed',
+  cancelled: 'cancelled',
+} as const;
+
+export type ListAdminOrdersPaymentMethod = typeof ListAdminOrdersPaymentMethod[keyof typeof ListAdminOrdersPaymentMethod];
+
+
+export const ListAdminOrdersPaymentMethod = {
+  cod: 'cod',
+  direct: 'direct',
+} as const;
+
+export type ListAdminPaymentsParams = {
+/**
+ * @minimum 1
+ */
+cursor?: number;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+};
+
+export type ListAdminShopWithdrawalsParams = {
+status?: ListAdminShopWithdrawalsStatus;
+/**
+ * @minimum 1
+ */
+cursor?: number;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+};
+
+export type ListAdminShopWithdrawalsStatus = typeof ListAdminShopWithdrawalsStatus[keyof typeof ListAdminShopWithdrawalsStatus];
+
+
+export const ListAdminShopWithdrawalsStatus = {
+  pending: 'pending',
+  approved: 'approved',
   rejected: 'rejected',
 } as const;
 

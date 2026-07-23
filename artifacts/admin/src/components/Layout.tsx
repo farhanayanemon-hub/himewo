@@ -15,6 +15,7 @@ import {
   ScrollText,
   Coins,
   Target,
+  ShoppingBag,
   LogOut,
 } from "lucide-react";
 import { useAuth } from "../lib/auth";
@@ -58,6 +59,7 @@ const NAV: NavItem[] = [
     perm: "announcements.view",
   },
   { href: "/earnings", label: "Earnings", icon: Coins, perm: "earnings.view" },
+  { href: "/shop", label: "Shop", icon: ShoppingBag, perm: "shop.view" },
   { href: "/ads", label: "Ads Review", icon: Target, perm: "ads.view" },
   { href: "/roles", label: "Roles", icon: ShieldCheck, perm: "roles.view" },
   { href: "/settings", label: "Settings", icon: Settings, perm: "settings.view" },

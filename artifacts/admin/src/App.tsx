@@ -14,6 +14,7 @@ import { Roles } from "./pages/Roles";
 import { Settings } from "./pages/Settings";
 import { Countries } from "./pages/Countries";
 import { Earnings } from "./pages/Earnings";
+import { Shop } from "./pages/Shop";
 import { Audit } from "./pages/Audit";
 import { Spinner } from "./components/ui";
 import type { Permission } from "./lib/types";
@@ -102,6 +103,11 @@ export default function App() {
         <Route path="/earnings">
           <Guard perm="earnings.view">
             <Earnings />
+          </Guard>
+        </Route>
+        <Route path="/shop">
+          <Guard perm="shop.view">
+            <Shop />
           </Guard>
         </Route>
         <Route path="/audit">

@@ -9,6 +9,7 @@ export * from "./albums";
 export * from "./events";
 export * from "./live";
 export * from "./marketplace";
+export * from "./shop";
 export * from "./settings";
 export * from "./saved";
 export * from "./earnings";

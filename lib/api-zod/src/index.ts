@@ -20,4 +20,6 @@ export {
   ListAdAccountConversionsQueryParams,
   GetHashtagPostsParams,
   GetHashtagPostsQueryParams,
+  GetStallProductsParams,
+  GetStallProductsQueryParams,
 } from "./generated/api";

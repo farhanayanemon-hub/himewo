@@ -25,6 +25,8 @@ export const PERMISSIONS = [
   "earnings.manage",
   "ads.view",
   "ads.manage",
+  "shop.view",
+  "shop.manage",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -364,4 +366,96 @@ export interface AdRow {
   campaignName: string | null;
   objective: string | null;
   creative: AdCreativeRow | null;
+}
+
+/* --------------------------------- Shop -------------------------------- */
+
+export type ShopOrderStatus =
+  | "awaiting_verification"
+  | "pending"
+  | "confirmed"
+  | "delivered"
+  | "completed"
+  | "cancelled";
+
+export type ShopPaymentMethod = "cod" | "direct";
+
+export type ShopWithdrawalStatus = "pending" | "approved" | "rejected";
+
+export interface ShopStallRow {
+  id: number;
+  userId: string;
+  pageId: number;
+  name: string;
+  avatarUrl: string | null;
+  active: boolean;
+  productCount: number;
+  orderCount: number;
+  createdAt: string;
+  owner: AdminProfile | null;
+}
+
+export interface ShopProductRow {
+  id: number;
+  stallId: number;
+  stallName: string | null;
+  photos: string[];
+  name: string;
+  priceCents: number;
+  description: string;
+  stockQty: number;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface ShopOrderRow {
+  id: number;
+  productId: number;
+  stallId: number;
+  sellerId: string;
+  buyerId: string;
+  quantity: number;
+  unitPriceCents: number;
+  totalCents: number;
+  productName: string;
+  productPhoto: string | null;
+  stallName: string | null;
+  deliveryAddress: string;
+  phone: string;
+  paymentMethod: ShopPaymentMethod;
+  paymentRef: string | null;
+  heldCents: number;
+  status: ShopOrderStatus;
+  createdAt: string;
+  counterpart: AdminProfile | null;
+}
+
+export interface ShopWithdrawalRow {
+  id: number;
+  sellerId: string;
+  stallId: number;
+  amountCents: number;
+  method: string;
+  details: Record<string, string>;
+  status: ShopWithdrawalStatus;
+  adminNote: string | null;
+  processedBy: string | null;
+  createdAt: string;
+  processedAt: string | null;
+  seller: AdminProfile | null;
+  stallName: string | null;
+}
+
+export interface ShopSummary {
+  platformProfitCents: number;
+  heldFundsCents: number;
+  stallCount: number;
+  orderCount: number;
+  pendingPaymentCount: number;
+  pendingWithdrawalCount: number;
+}
+
+export interface ShopSettings {
+  commissionPercent: number;
+  paymentInstructions: string;
 }

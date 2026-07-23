@@ -10194,3 +10194,1201 @@ export const ResetUserPointsResponse = zod.object({
 })
 
 
+/**
+ * @summary Public shop settings (commission %, payment instructions)
+ */
+export const GetShopSettingsResponse = zod.object({
+  "commissionPercent": zod.number(),
+  "paymentInstructions": zod.string()
+})
+
+
+/**
+ * @summary Get the authenticated user's stall
+ */
+export const GetMyStallResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "pageId": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "active": zod.boolean(),
+  "productCount": zod.number().optional(),
+  "isOwner": zod.boolean().optional(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Open a stall connected to a Hub (page) you manage
+ */
+export const CreateStallBody = zod.object({
+  "pageId": zod.number()
+})
+
+export const CreateStallResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "pageId": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "active": zod.boolean(),
+  "productCount": zod.number().optional(),
+  "isOwner": zod.boolean().optional(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Browse stalls
+ */
+
+export const browseStallsQueryLimitDefault = 20;
+export const browseStallsQueryLimitMax = 50;
+
+
+
+export const BrowseStallsQueryParams = zod.object({
+  "cursor": zod.coerce.number().min(1).optional(),
+  "limit": zod.coerce.number().min(1).max(browseStallsQueryLimitMax).default(browseStallsQueryLimitDefault)
+})
+
+export const BrowseStallsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "pageId": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "active": zod.boolean(),
+  "productCount": zod.number().optional(),
+  "isOwner": zod.boolean().optional(),
+  "createdAt": zod.coerce.date()
+})
+export const BrowseStallsResponse = zod.array(BrowseStallsResponseItem)
+
+
+/**
+ * @summary Get a public stall
+ */
+export const GetStallParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetStallResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "pageId": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "active": zod.boolean(),
+  "productCount": zod.number().optional(),
+  "isOwner": zod.boolean().optional(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary List a stall's products (active only unless you own the stall)
+ */
+export const GetStallProductsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+export const getStallProductsQueryLimitDefault = 30;
+export const getStallProductsQueryLimitMax = 50;
+
+
+
+export const GetStallProductsQueryParams = zod.object({
+  "cursor": zod.coerce.number().min(1).optional(),
+  "limit": zod.coerce.number().min(1).max(getStallProductsQueryLimitMax).default(getStallProductsQueryLimitDefault)
+})
+
+export const GetStallProductsResponseItem = zod.object({
+  "id": zod.number(),
+  "stallId": zod.number(),
+  "stallName": zod.string().nullish(),
+  "photos": zod.array(zod.string()),
+  "name": zod.string(),
+  "priceCents": zod.number(),
+  "description": zod.string(),
+  "stockQty": zod.number(),
+  "active": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+export const GetStallProductsResponse = zod.array(GetStallProductsResponseItem)
+
+
+/**
+ * @summary Browse products (active, in-stock)
+ */
+
+export const browseProductsQueryLimitDefault = 20;
+export const browseProductsQueryLimitMax = 50;
+
+
+
+export const BrowseProductsQueryParams = zod.object({
+  "search": zod.coerce.string().optional(),
+  "cursor": zod.coerce.number().min(1).optional(),
+  "limit": zod.coerce.number().min(1).max(browseProductsQueryLimitMax).default(browseProductsQueryLimitDefault)
+})
+
+export const BrowseProductsResponseItem = zod.object({
+  "id": zod.number(),
+  "stallId": zod.number(),
+  "stallName": zod.string().nullish(),
+  "photos": zod.array(zod.string()),
+  "name": zod.string(),
+  "priceCents": zod.number(),
+  "description": zod.string(),
+  "stockQty": zod.number(),
+  "active": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+export const BrowseProductsResponse = zod.array(BrowseProductsResponseItem)
+
+
+/**
+ * @summary Create a product in your stall
+ */
+export const createProductBodyNameMax = 200;
+
+export const createProductBodyPriceCentsMin = 0;
+
+export const createProductBodyDescriptionMax = 5000;
+
+export const createProductBodyStockQtyMin = 0;
+
+
+
+export const CreateProductBody = zod.object({
+  "name": zod.string().min(1).max(createProductBodyNameMax),
+  "priceCents": zod.number().min(createProductBodyPriceCentsMin),
+  "description": zod.string().max(createProductBodyDescriptionMax).optional(),
+  "stockQty": zod.number().min(createProductBodyStockQtyMin).optional(),
+  "photos": zod.array(zod.string()).optional()
+})
+
+export const CreateProductResponse = zod.object({
+  "id": zod.number(),
+  "stallId": zod.number(),
+  "stallName": zod.string().nullish(),
+  "photos": zod.array(zod.string()),
+  "name": zod.string(),
+  "priceCents": zod.number(),
+  "description": zod.string(),
+  "stockQty": zod.number(),
+  "active": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Get a product
+ */
+export const GetProductParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetProductResponse = zod.object({
+  "id": zod.number(),
+  "stallId": zod.number(),
+  "stallName": zod.string().nullish(),
+  "photos": zod.array(zod.string()),
+  "name": zod.string(),
+  "priceCents": zod.number(),
+  "description": zod.string(),
+  "stockQty": zod.number(),
+  "active": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update your product
+ */
+export const UpdateProductParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const updateProductBodyNameMax = 200;
+
+export const updateProductBodyPriceCentsMin = 0;
+
+export const updateProductBodyDescriptionMax = 5000;
+
+export const updateProductBodyStockQtyMin = 0;
+
+
+
+export const UpdateProductBody = zod.object({
+  "name": zod.string().min(1).max(updateProductBodyNameMax).optional(),
+  "priceCents": zod.number().min(updateProductBodyPriceCentsMin).optional(),
+  "description": zod.string().max(updateProductBodyDescriptionMax).optional(),
+  "stockQty": zod.number().min(updateProductBodyStockQtyMin).optional(),
+  "active": zod.boolean().optional(),
+  "photos": zod.array(zod.string()).optional()
+})
+
+export const UpdateProductResponse = zod.object({
+  "id": zod.number(),
+  "stallId": zod.number(),
+  "stallName": zod.string().nullish(),
+  "photos": zod.array(zod.string()),
+  "name": zod.string(),
+  "priceCents": zod.number(),
+  "description": zod.string(),
+  "stockQty": zod.number(),
+  "active": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete your product (soft-delete if it has orders)
+ */
+export const DeleteProductParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteProductResponse = zod.void()
+
+
+/**
+ * @summary List my orders as buyer or seller
+ */
+
+export const listOrdersQueryLimitDefault = 20;
+export const listOrdersQueryLimitMax = 50;
+
+
+
+export const ListOrdersQueryParams = zod.object({
+  "role": zod.enum(['buyer', 'seller']),
+  "cursor": zod.coerce.number().min(1).optional(),
+  "limit": zod.coerce.number().min(1).max(listOrdersQueryLimitMax).default(listOrdersQueryLimitDefault)
+})
+
+export const ListOrdersResponseItem = zod.object({
+  "id": zod.number(),
+  "productId": zod.number(),
+  "stallId": zod.number(),
+  "sellerId": zod.string(),
+  "buyerId": zod.string(),
+  "quantity": zod.number(),
+  "unitPriceCents": zod.number(),
+  "totalCents": zod.number(),
+  "productName": zod.string(),
+  "productPhoto": zod.string().nullish(),
+  "stallName": zod.string().nullish(),
+  "deliveryAddress": zod.string(),
+  "phone": zod.string(),
+  "paymentMethod": zod.enum(['cod', 'direct']),
+  "paymentRef": zod.string().nullish(),
+  "heldCents": zod.number(),
+  "status": zod.enum(['awaiting_verification', 'pending', 'confirmed', 'delivered', 'completed', 'cancelled']),
+  "createdAt": zod.coerce.date(),
+  "counterpart": zod.union([zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "gender": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "hasCompletedOnboarding": zod.boolean().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),zod.null()]).optional()
+})
+export const ListOrdersResponse = zod.array(ListOrdersResponseItem)
+
+
+/**
+ * @summary Place an order on a product
+ */
+
+export const createOrderBodyDeliveryAddressMax = 2000;
+
+export const createOrderBodyPhoneMax = 40;
+
+export const createOrderBodyPaymentRefMax = 200;
+
+
+
+export const CreateOrderBody = zod.object({
+  "productId": zod.number(),
+  "quantity": zod.number().min(1),
+  "deliveryAddress": zod.string().min(1).max(createOrderBodyDeliveryAddressMax),
+  "phone": zod.string().min(1).max(createOrderBodyPhoneMax),
+  "paymentMethod": zod.enum(['cod', 'direct']),
+  "paymentRef": zod.string().max(createOrderBodyPaymentRefMax).optional()
+})
+
+export const CreateOrderResponse = zod.object({
+  "id": zod.number(),
+  "productId": zod.number(),
+  "stallId": zod.number(),
+  "sellerId": zod.string(),
+  "buyerId": zod.string(),
+  "quantity": zod.number(),
+  "unitPriceCents": zod.number(),
+  "totalCents": zod.number(),
+  "productName": zod.string(),
+  "productPhoto": zod.string().nullish(),
+  "stallName": zod.string().nullish(),
+  "deliveryAddress": zod.string(),
+  "phone": zod.string(),
+  "paymentMethod": zod.enum(['cod', 'direct']),
+  "paymentRef": zod.string().nullish(),
+  "heldCents": zod.number(),
+  "status": zod.enum(['awaiting_verification', 'pending', 'confirmed', 'delivered', 'completed', 'cancelled']),
+  "createdAt": zod.coerce.date(),
+  "counterpart": zod.union([zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "gender": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "hasCompletedOnboarding": zod.boolean().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),zod.null()]).optional()
+})
+
+
+/**
+ * @summary Get an order (buyer, seller, or admin only)
+ */
+export const GetOrderParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetOrderResponse = zod.object({
+  "id": zod.number(),
+  "productId": zod.number(),
+  "stallId": zod.number(),
+  "sellerId": zod.string(),
+  "buyerId": zod.string(),
+  "quantity": zod.number(),
+  "unitPriceCents": zod.number(),
+  "totalCents": zod.number(),
+  "productName": zod.string(),
+  "productPhoto": zod.string().nullish(),
+  "stallName": zod.string().nullish(),
+  "deliveryAddress": zod.string(),
+  "phone": zod.string(),
+  "paymentMethod": zod.enum(['cod', 'direct']),
+  "paymentRef": zod.string().nullish(),
+  "heldCents": zod.number(),
+  "status": zod.enum(['awaiting_verification', 'pending', 'confirmed', 'delivered', 'completed', 'cancelled']),
+  "createdAt": zod.coerce.date(),
+  "counterpart": zod.union([zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "gender": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "hasCompletedOnboarding": zod.boolean().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),zod.null()]).optional()
+})
+
+
+/**
+ * @summary Advance an order's status (role-gated transitions)
+ */
+export const UpdateOrderStatusParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateOrderStatusBody = zod.object({
+  "status": zod.enum(['awaiting_verification', 'pending', 'confirmed', 'delivered', 'completed', 'cancelled'])
+})
+
+export const UpdateOrderStatusResponse = zod.object({
+  "id": zod.number(),
+  "productId": zod.number(),
+  "stallId": zod.number(),
+  "sellerId": zod.string(),
+  "buyerId": zod.string(),
+  "quantity": zod.number(),
+  "unitPriceCents": zod.number(),
+  "totalCents": zod.number(),
+  "productName": zod.string(),
+  "productPhoto": zod.string().nullish(),
+  "stallName": zod.string().nullish(),
+  "deliveryAddress": zod.string(),
+  "phone": zod.string(),
+  "paymentMethod": zod.enum(['cod', 'direct']),
+  "paymentRef": zod.string().nullish(),
+  "heldCents": zod.number(),
+  "status": zod.enum(['awaiting_verification', 'pending', 'confirmed', 'delivered', 'completed', 'cancelled']),
+  "createdAt": zod.coerce.date(),
+  "counterpart": zod.union([zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "gender": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "hasCompletedOnboarding": zod.boolean().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),zod.null()]).optional()
+})
+
+
+/**
+ * @summary Seller wallet balance and ledger
+ */
+export const GetShopWalletResponse = zod.object({
+  "balanceCents": zod.number(),
+  "pendingWithdrawCents": zod.number(),
+  "ledger": zod.array(zod.object({
+  "id": zod.number(),
+  "orderId": zod.number().nullish(),
+  "withdrawalId": zod.number().nullish(),
+  "kind": zod.enum(['sale_credit', 'cod_commission', 'withdraw', 'withdraw_refund', 'admin_adjust']),
+  "amountCents": zod.number(),
+  "note": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary List my withdrawal requests
+ */
+export const ListShopWithdrawalsResponseItem = zod.object({
+  "id": zod.number(),
+  "amountCents": zod.number(),
+  "method": zod.string(),
+  "details": zod.record(zod.string(), zod.string()),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "adminNote": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "processedAt": zod.coerce.date().nullish()
+})
+export const ListShopWithdrawalsResponse = zod.array(ListShopWithdrawalsResponseItem)
+
+
+/**
+ * @summary Request a withdrawal from your wallet
+ */
+
+
+
+
+export const CreateShopWithdrawalBody = zod.object({
+  "amountCents": zod.number().min(1),
+  "method": zod.string().min(1),
+  "details": zod.record(zod.string(), zod.string())
+})
+
+export const CreateShopWithdrawalResponse = zod.object({
+  "id": zod.number(),
+  "amountCents": zod.number(),
+  "method": zod.string(),
+  "details": zod.record(zod.string(), zod.string()),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "adminNote": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "processedAt": zod.coerce.date().nullish()
+})
+
+
+/**
+ * @summary List all stalls with owner, page, and counts
+ */
+
+export const listAdminStallsQueryLimitDefault = 30;
+export const listAdminStallsQueryLimitMax = 100;
+
+
+
+export const ListAdminStallsQueryParams = zod.object({
+  "cursor": zod.coerce.number().min(1).optional(),
+  "limit": zod.coerce.number().min(1).max(listAdminStallsQueryLimitMax).default(listAdminStallsQueryLimitDefault)
+})
+
+export const ListAdminStallsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "pageId": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "active": zod.boolean(),
+  "productCount": zod.number(),
+  "orderCount": zod.number(),
+  "createdAt": zod.coerce.date(),
+  "owner": zod.union([zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "gender": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "hasCompletedOnboarding": zod.boolean().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),zod.null()]).optional()
+})
+export const ListAdminStallsResponse = zod.array(ListAdminStallsResponseItem)
+
+
+/**
+ * @summary List a stall's products (admin)
+ */
+export const ListAdminStallProductsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListAdminStallProductsResponseItem = zod.object({
+  "id": zod.number(),
+  "stallId": zod.number(),
+  "stallName": zod.string().nullish(),
+  "photos": zod.array(zod.string()),
+  "name": zod.string(),
+  "priceCents": zod.number(),
+  "description": zod.string(),
+  "stockQty": zod.number(),
+  "active": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+export const ListAdminStallProductsResponse = zod.array(ListAdminStallProductsResponseItem)
+
+
+/**
+ * @summary List all orders (filterable)
+ */
+
+export const listAdminOrdersQueryLimitDefault = 30;
+export const listAdminOrdersQueryLimitMax = 100;
+
+
+
+export const ListAdminOrdersQueryParams = zod.object({
+  "status": zod.enum(['awaiting_verification', 'pending', 'confirmed', 'delivered', 'completed', 'cancelled']).optional(),
+  "paymentMethod": zod.enum(['cod', 'direct']).optional(),
+  "cursor": zod.coerce.number().min(1).optional(),
+  "limit": zod.coerce.number().min(1).max(listAdminOrdersQueryLimitMax).default(listAdminOrdersQueryLimitDefault)
+})
+
+export const ListAdminOrdersResponseItem = zod.object({
+  "id": zod.number(),
+  "productId": zod.number(),
+  "stallId": zod.number(),
+  "sellerId": zod.string(),
+  "buyerId": zod.string(),
+  "quantity": zod.number(),
+  "unitPriceCents": zod.number(),
+  "totalCents": zod.number(),
+  "productName": zod.string(),
+  "productPhoto": zod.string().nullish(),
+  "stallName": zod.string().nullish(),
+  "deliveryAddress": zod.string(),
+  "phone": zod.string(),
+  "paymentMethod": zod.enum(['cod', 'direct']),
+  "paymentRef": zod.string().nullish(),
+  "heldCents": zod.number(),
+  "status": zod.enum(['awaiting_verification', 'pending', 'confirmed', 'delivered', 'completed', 'cancelled']),
+  "createdAt": zod.coerce.date(),
+  "counterpart": zod.union([zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "gender": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "hasCompletedOnboarding": zod.boolean().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),zod.null()]).optional()
+})
+export const ListAdminOrdersResponse = zod.array(ListAdminOrdersResponseItem)
+
+
+/**
+ * @summary Set any order status (restores stock when cancelling)
+ */
+export const AdminUpdateOrderParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AdminUpdateOrderBody = zod.object({
+  "status": zod.enum(['awaiting_verification', 'pending', 'confirmed', 'delivered', 'completed', 'cancelled'])
+})
+
+export const AdminUpdateOrderResponse = zod.object({
+  "id": zod.number(),
+  "productId": zod.number(),
+  "stallId": zod.number(),
+  "sellerId": zod.string(),
+  "buyerId": zod.string(),
+  "quantity": zod.number(),
+  "unitPriceCents": zod.number(),
+  "totalCents": zod.number(),
+  "productName": zod.string(),
+  "productPhoto": zod.string().nullish(),
+  "stallName": zod.string().nullish(),
+  "deliveryAddress": zod.string(),
+  "phone": zod.string(),
+  "paymentMethod": zod.enum(['cod', 'direct']),
+  "paymentRef": zod.string().nullish(),
+  "heldCents": zod.number(),
+  "status": zod.enum(['awaiting_verification', 'pending', 'confirmed', 'delivered', 'completed', 'cancelled']),
+  "createdAt": zod.coerce.date(),
+  "counterpart": zod.union([zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "gender": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "hasCompletedOnboarding": zod.boolean().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),zod.null()]).optional()
+})
+
+
+/**
+ * @summary Approve or reject a direct-payment order
+ */
+export const VerifyOrderPaymentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const VerifyOrderPaymentBody = zod.object({
+  "approve": zod.boolean(),
+  "note": zod.string().optional()
+})
+
+export const VerifyOrderPaymentResponse = zod.object({
+  "id": zod.number(),
+  "productId": zod.number(),
+  "stallId": zod.number(),
+  "sellerId": zod.string(),
+  "buyerId": zod.string(),
+  "quantity": zod.number(),
+  "unitPriceCents": zod.number(),
+  "totalCents": zod.number(),
+  "productName": zod.string(),
+  "productPhoto": zod.string().nullish(),
+  "stallName": zod.string().nullish(),
+  "deliveryAddress": zod.string(),
+  "phone": zod.string(),
+  "paymentMethod": zod.enum(['cod', 'direct']),
+  "paymentRef": zod.string().nullish(),
+  "heldCents": zod.number(),
+  "status": zod.enum(['awaiting_verification', 'pending', 'confirmed', 'delivered', 'completed', 'cancelled']),
+  "createdAt": zod.coerce.date(),
+  "counterpart": zod.union([zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "gender": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "hasCompletedOnboarding": zod.boolean().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),zod.null()]).optional()
+})
+
+
+/**
+ * @summary Orders awaiting payment verification
+ */
+
+export const listAdminPaymentsQueryLimitDefault = 30;
+export const listAdminPaymentsQueryLimitMax = 100;
+
+
+
+export const ListAdminPaymentsQueryParams = zod.object({
+  "cursor": zod.coerce.number().min(1).optional(),
+  "limit": zod.coerce.number().min(1).max(listAdminPaymentsQueryLimitMax).default(listAdminPaymentsQueryLimitDefault)
+})
+
+export const ListAdminPaymentsResponseItem = zod.object({
+  "id": zod.number(),
+  "productId": zod.number(),
+  "stallId": zod.number(),
+  "sellerId": zod.string(),
+  "buyerId": zod.string(),
+  "quantity": zod.number(),
+  "unitPriceCents": zod.number(),
+  "totalCents": zod.number(),
+  "productName": zod.string(),
+  "productPhoto": zod.string().nullish(),
+  "stallName": zod.string().nullish(),
+  "deliveryAddress": zod.string(),
+  "phone": zod.string(),
+  "paymentMethod": zod.enum(['cod', 'direct']),
+  "paymentRef": zod.string().nullish(),
+  "heldCents": zod.number(),
+  "status": zod.enum(['awaiting_verification', 'pending', 'confirmed', 'delivered', 'completed', 'cancelled']),
+  "createdAt": zod.coerce.date(),
+  "counterpart": zod.union([zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "gender": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "hasCompletedOnboarding": zod.boolean().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),zod.null()]).optional()
+})
+export const ListAdminPaymentsResponse = zod.array(ListAdminPaymentsResponseItem)
+
+
+/**
+ * @summary List withdrawals across all stalls
+ */
+
+export const listAdminShopWithdrawalsQueryLimitDefault = 30;
+export const listAdminShopWithdrawalsQueryLimitMax = 100;
+
+
+
+export const ListAdminShopWithdrawalsQueryParams = zod.object({
+  "status": zod.enum(['pending', 'approved', 'rejected']).optional(),
+  "cursor": zod.coerce.number().min(1).optional(),
+  "limit": zod.coerce.number().min(1).max(listAdminShopWithdrawalsQueryLimitMax).default(listAdminShopWithdrawalsQueryLimitDefault)
+})
+
+export const ListAdminShopWithdrawalsResponseItem = zod.object({
+  "id": zod.number(),
+  "sellerId": zod.string(),
+  "stallId": zod.number(),
+  "amountCents": zod.number(),
+  "method": zod.string(),
+  "details": zod.record(zod.string(), zod.string()),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "adminNote": zod.string().nullish(),
+  "processedBy": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "processedAt": zod.coerce.date().nullish(),
+  "seller": zod.union([zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "gender": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "hasCompletedOnboarding": zod.boolean().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),zod.null()]).optional(),
+  "stallName": zod.string().nullish()
+})
+export const ListAdminShopWithdrawalsResponse = zod.array(ListAdminShopWithdrawalsResponseItem)
+
+
+/**
+ * @summary Approve (mark paid) or reject (refund) a withdrawal
+ */
+export const ProcessShopWithdrawalParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ProcessShopWithdrawalBody = zod.object({
+  "approve": zod.boolean(),
+  "note": zod.string().optional()
+})
+
+export const ProcessShopWithdrawalResponse = zod.object({
+  "id": zod.number(),
+  "sellerId": zod.string(),
+  "stallId": zod.number(),
+  "amountCents": zod.number(),
+  "method": zod.string(),
+  "details": zod.record(zod.string(), zod.string()),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "adminNote": zod.string().nullish(),
+  "processedBy": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "processedAt": zod.coerce.date().nullish(),
+  "seller": zod.union([zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "gender": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "hasCompletedOnboarding": zod.boolean().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),zod.null()]).optional(),
+  "stallName": zod.string().nullish()
+})
+
+
+/**
+ * @summary Platform profit, held funds, counts
+ */
+export const GetAdminShopSummaryResponse = zod.object({
+  "platformProfitCents": zod.number(),
+  "heldFundsCents": zod.number(),
+  "stallCount": zod.number(),
+  "orderCount": zod.number(),
+  "pendingPaymentCount": zod.number(),
+  "pendingWithdrawalCount": zod.number()
+})
+
+
+/**
+ * @summary Get shop settings (admin)
+ */
+export const GetAdminShopSettingsResponse = zod.object({
+  "commissionPercent": zod.number(),
+  "paymentInstructions": zod.string()
+})
+
+
+/**
+ * @summary Update shop settings (admin)
+ */
+export const updateAdminShopSettingsBodyCommissionPercentMin = 0;
+export const updateAdminShopSettingsBodyCommissionPercentMax = 100;
+
+
+
+export const UpdateAdminShopSettingsBody = zod.object({
+  "commissionPercent": zod.number().min(updateAdminShopSettingsBodyCommissionPercentMin).max(updateAdminShopSettingsBodyCommissionPercentMax).optional(),
+  "paymentInstructions": zod.string().optional()
+})
+
+export const UpdateAdminShopSettingsResponse = zod.object({
+  "commissionPercent": zod.number(),
+  "paymentInstructions": zod.string()
+})
+
+

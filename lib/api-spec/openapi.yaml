@@ -24,6 +24,8 @@ tags:
   - name: settings
   - name: earnings
   - name: earnings-admin
+  - name: shop
+  - name: shop-admin
 
 paths:
   /healthz:
@@ -3722,6 +3724,584 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  # ---------------- Shop (user) ----------------
+  /shop/settings:
+    get:
+      operationId: getShopSettings
+      tags: [shop]
+      summary: Public shop settings (commission %, payment instructions)
+      responses:
+        "200":
+          description: Shop settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShopSettings" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /shop/stall:
+    get:
+      operationId: getMyStall
+      tags: [shop]
+      summary: Get the authenticated user's stall
+      responses:
+        "200":
+          description: My stall
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShopStall" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: createStall
+      tags: [shop]
+      summary: Open a stall connected to a Hub (page) you manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateStallInput" }
+      responses:
+        "201":
+          description: Created stall
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShopStall" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /shop/stalls:
+    get:
+      operationId: browseStalls
+      tags: [shop]
+      summary: Browse stalls
+      parameters:
+        - { name: cursor, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, default: 20, minimum: 1, maximum: 50 } }
+      responses:
+        "200":
+          description: Stalls
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ShopStall" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /shop/stalls/{id}:
+    get:
+      operationId: getStall
+      tags: [shop]
+      summary: Get a public stall
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Stall
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShopStall" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /shop/stalls/{id}/products:
+    get:
+      operationId: getStallProducts
+      tags: [shop]
+      summary: List a stall's products (active only unless you own the stall)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: cursor, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, default: 30, minimum: 1, maximum: 50 } }
+      responses:
+        "200":
+          description: Products
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ShopProduct" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /shop/products:
+    get:
+      operationId: browseProducts
+      tags: [shop]
+      summary: Browse products (active, in-stock)
+      parameters:
+        - { name: search, in: query, schema: { type: string } }
+        - { name: cursor, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, default: 20, minimum: 1, maximum: 50 } }
+      responses:
+        "200":
+          description: Products
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ShopProduct" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createProduct
+      tags: [shop]
+      summary: Create a product in your stall
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateProductInput" }
+      responses:
+        "201":
+          description: Created product
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShopProduct" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /shop/products/{id}:
+    get:
+      operationId: getProduct
+      tags: [shop]
+      summary: Get a product
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Product
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShopProduct" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateProduct
+      tags: [shop]
+      summary: Update your product
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateProductInput" }
+      responses:
+        "200":
+          description: Updated product
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShopProduct" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteProduct
+      tags: [shop]
+      summary: Delete your product (soft-delete if it has orders)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /shop/orders:
+    get:
+      operationId: listOrders
+      tags: [shop]
+      summary: List my orders as buyer or seller
+      parameters:
+        - { name: role, in: query, required: true, schema: { type: string, enum: [buyer, seller] } }
+        - { name: cursor, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, default: 20, minimum: 1, maximum: 50 } }
+      responses:
+        "200":
+          description: Orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ShopOrder" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createOrder
+      tags: [shop]
+      summary: Place an order on a product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateOrderInput" }
+      responses:
+        "201":
+          description: Created order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShopOrder" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /shop/orders/{id}:
+    get:
+      operationId: getOrder
+      tags: [shop]
+      summary: Get an order (buyer, seller, or admin only)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShopOrder" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /shop/orders/{id}/status:
+    post:
+      operationId: updateOrderStatus
+      tags: [shop]
+      summary: Advance an order's status (role-gated transitions)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateOrderStatusInput" }
+      responses:
+        "200":
+          description: Updated order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShopOrder" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /shop/wallet:
+    get:
+      operationId: getShopWallet
+      tags: [shop]
+      summary: Seller wallet balance and ledger
+      responses:
+        "200":
+          description: Wallet
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShopWallet" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /shop/withdrawals:
+    get:
+      operationId: listShopWithdrawals
+      tags: [shop]
+      summary: List my withdrawal requests
+      responses:
+        "200":
+          description: Withdrawals
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ShopWithdrawal" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createShopWithdrawal
+      tags: [shop]
+      summary: Request a withdrawal from your wallet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateShopWithdrawalInput" }
+      responses:
+        "201":
+          description: Created withdrawal
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShopWithdrawal" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ---------------- Shop admin ----------------
+  /admin/shop/stalls:
+    get:
+      operationId: listAdminStalls
+      tags: [shop-admin]
+      summary: List all stalls with owner, page, and counts
+      parameters:
+        - { name: cursor, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, default: 30, minimum: 1, maximum: 100 } }
+      responses:
+        "200":
+          description: Stalls
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdminShopStall" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /admin/shop/stalls/{id}/products:
+    get:
+      operationId: listAdminStallProducts
+      tags: [shop-admin]
+      summary: List a stall's products (admin)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Products
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ShopProduct" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /admin/shop/orders:
+    get:
+      operationId: listAdminOrders
+      tags: [shop-admin]
+      summary: List all orders (filterable)
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [awaiting_verification, pending, confirmed, delivered, completed, cancelled] } }
+        - { name: paymentMethod, in: query, schema: { type: string, enum: [cod, direct] } }
+        - { name: cursor, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, default: 30, minimum: 1, maximum: 100 } }
+      responses:
+        "200":
+          description: Orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ShopOrder" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /admin/shop/orders/{id}:
+    patch:
+      operationId: adminUpdateOrder
+      tags: [shop-admin]
+      summary: Set any order status (restores stock when cancelling)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateOrderStatusInput" }
+      responses:
+        "200":
+          description: Updated order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShopOrder" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /admin/shop/orders/{id}/verify-payment:
+    post:
+      operationId: verifyOrderPayment
+      tags: [shop-admin]
+      summary: Approve or reject a direct-payment order
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VerifyPaymentInput" }
+      responses:
+        "200":
+          description: Updated order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShopOrder" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /admin/shop/payments:
+    get:
+      operationId: listAdminPayments
+      tags: [shop-admin]
+      summary: Orders awaiting payment verification
+      parameters:
+        - { name: cursor, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, default: 30, minimum: 1, maximum: 100 } }
+      responses:
+        "200":
+          description: Orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ShopOrder" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /admin/shop/withdrawals:
+    get:
+      operationId: listAdminShopWithdrawals
+      tags: [shop-admin]
+      summary: List withdrawals across all stalls
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [pending, approved, rejected] } }
+        - { name: cursor, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, default: 30, minimum: 1, maximum: 100 } }
+      responses:
+        "200":
+          description: Withdrawals
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdminShopWithdrawal" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /admin/shop/withdrawals/{id}:
+    post:
+      operationId: processShopWithdrawal
+      tags: [shop-admin]
+      summary: Approve (mark paid) or reject (refund) a withdrawal
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProcessShopWithdrawalInput" }
+      responses:
+        "200":
+          description: Updated withdrawal
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminShopWithdrawal" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /admin/shop/summary:
+    get:
+      operationId: getAdminShopSummary
+      tags: [shop-admin]
+      summary: Platform profit, held funds, counts
+      responses:
+        "200":
+          description: Summary
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminShopSummary" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /admin/shop/settings:
+    get:
+      operationId: getAdminShopSettings
+      tags: [shop-admin]
+      summary: Get shop settings (admin)
+      responses:
+        "200":
+          description: Shop settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShopSettings" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    patch:
+      operationId: updateAdminShopSettings
+      tags: [shop-admin]
+      summary: Update shop settings (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ShopSettingsInput" }
+      responses:
+        "200":
+          description: Updated shop settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShopSettings" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
 components:
   responses:
     Unauthorized:
@@ -3741,6 +4321,11 @@ components:
           schema: { $ref: "#/components/schemas/Error" }
     Forbidden:
       description: Forbidden
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Conflict:
+      description: Conflict
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
@@ -5792,3 +6377,240 @@ components:
         outstandingDollars:
           type: number
           description: USD value of outstanding points at the current conversion rate.
+
+    # ---------------- Shop ----------------
+    ShopSettings:
+      type: object
+      required: [commissionPercent, paymentInstructions]
+      properties:
+        commissionPercent: { type: integer }
+        paymentInstructions: { type: string }
+    ShopSettingsInput:
+      type: object
+      properties:
+        commissionPercent: { type: integer, minimum: 0, maximum: 100 }
+        paymentInstructions: { type: string }
+    ShopStall:
+      type: object
+      required: [id, userId, pageId, name, active, createdAt]
+      properties:
+        id: { type: integer }
+        userId: { type: string }
+        pageId: { type: integer }
+        name: { type: string }
+        avatarUrl: { type: ["string", "null"] }
+        active: { type: boolean }
+        productCount: { type: integer }
+        isOwner: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    CreateStallInput:
+      type: object
+      required: [pageId]
+      properties:
+        pageId: { type: integer }
+    ShopProduct:
+      type: object
+      required: [id, stallId, photos, name, priceCents, description, stockQty, active, createdAt]
+      properties:
+        id: { type: integer }
+        stallId: { type: integer }
+        stallName: { type: ["string", "null"] }
+        photos:
+          type: array
+          items: { type: string }
+        name: { type: string }
+        priceCents: { type: integer }
+        description: { type: string }
+        stockQty: { type: integer }
+        active: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    CreateProductInput:
+      type: object
+      required: [name, priceCents]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        priceCents: { type: integer, minimum: 0 }
+        description: { type: string, maxLength: 5000 }
+        stockQty: { type: integer, minimum: 0 }
+        photos:
+          type: array
+          items: { type: string }
+    UpdateProductInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        priceCents: { type: integer, minimum: 0 }
+        description: { type: string, maxLength: 5000 }
+        stockQty: { type: integer, minimum: 0 }
+        active: { type: boolean }
+        photos:
+          type: array
+          items: { type: string }
+    ShopOrder:
+      type: object
+      required:
+        [
+          id,
+          productId,
+          stallId,
+          sellerId,
+          buyerId,
+          quantity,
+          unitPriceCents,
+          totalCents,
+          productName,
+          deliveryAddress,
+          phone,
+          paymentMethod,
+          heldCents,
+          status,
+          createdAt,
+        ]
+      properties:
+        id: { type: integer }
+        productId: { type: integer }
+        stallId: { type: integer }
+        sellerId: { type: string }
+        buyerId: { type: string }
+        quantity: { type: integer }
+        unitPriceCents: { type: integer }
+        totalCents: { type: integer }
+        productName: { type: string }
+        productPhoto: { type: ["string", "null"] }
+        stallName: { type: ["string", "null"] }
+        deliveryAddress: { type: string }
+        phone: { type: string }
+        paymentMethod: { type: string, enum: [cod, direct] }
+        paymentRef: { type: ["string", "null"] }
+        heldCents: { type: integer }
+        status:
+          type: string
+          enum: [awaiting_verification, pending, confirmed, delivered, completed, cancelled]
+        createdAt: { type: string, format: date-time }
+        counterpart:
+          oneOf:
+            - { $ref: "#/components/schemas/Profile" }
+            - { type: "null" }
+    CreateOrderInput:
+      type: object
+      required: [productId, quantity, deliveryAddress, phone, paymentMethod]
+      properties:
+        productId: { type: integer }
+        quantity: { type: integer, minimum: 1 }
+        deliveryAddress: { type: string, minLength: 1, maxLength: 2000 }
+        phone: { type: string, minLength: 1, maxLength: 40 }
+        paymentMethod: { type: string, enum: [cod, direct] }
+        paymentRef: { type: string, maxLength: 200 }
+    UpdateOrderStatusInput:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [awaiting_verification, pending, confirmed, delivered, completed, cancelled]
+    ShopLedgerEntry:
+      type: object
+      required: [id, kind, amountCents, createdAt]
+      properties:
+        id: { type: integer }
+        orderId: { type: ["integer", "null"] }
+        withdrawalId: { type: ["integer", "null"] }
+        kind:
+          type: string
+          enum: [sale_credit, cod_commission, withdraw, withdraw_refund, admin_adjust]
+        amountCents: { type: integer }
+        note: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+    ShopWallet:
+      type: object
+      required: [balanceCents, pendingWithdrawCents, ledger]
+      properties:
+        balanceCents: { type: integer }
+        pendingWithdrawCents: { type: integer }
+        ledger:
+          type: array
+          items: { $ref: "#/components/schemas/ShopLedgerEntry" }
+    ShopWithdrawal:
+      type: object
+      required: [id, amountCents, method, details, status, createdAt]
+      properties:
+        id: { type: integer }
+        amountCents: { type: integer }
+        method: { type: string }
+        details:
+          type: object
+          additionalProperties: { type: string }
+        status: { type: string, enum: [pending, approved, rejected] }
+        adminNote: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        processedAt: { type: ["string", "null"], format: date-time }
+    CreateShopWithdrawalInput:
+      type: object
+      required: [amountCents, method, details]
+      properties:
+        amountCents: { type: integer, minimum: 1 }
+        method: { type: string, minLength: 1 }
+        details:
+          type: object
+          additionalProperties: { type: string }
+    VerifyPaymentInput:
+      type: object
+      required: [approve]
+      properties:
+        approve: { type: boolean }
+        note: { type: string }
+    ProcessShopWithdrawalInput:
+      type: object
+      required: [approve]
+      properties:
+        approve: { type: boolean }
+        note: { type: string }
+    AdminShopStall:
+      type: object
+      required: [id, userId, pageId, name, active, productCount, orderCount, createdAt]
+      properties:
+        id: { type: integer }
+        userId: { type: string }
+        pageId: { type: integer }
+        name: { type: string }
+        avatarUrl: { type: ["string", "null"] }
+        active: { type: boolean }
+        productCount: { type: integer }
+        orderCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+        owner:
+          oneOf:
+            - { $ref: "#/components/schemas/Profile" }
+            - { type: "null" }
+    AdminShopWithdrawal:
+      type: object
+      required: [id, sellerId, stallId, amountCents, method, details, status, createdAt]
+      properties:
+        id: { type: integer }
+        sellerId: { type: string }
+        stallId: { type: integer }
+        amountCents: { type: integer }
+        method: { type: string }
+        details:
+          type: object
+          additionalProperties: { type: string }
+        status: { type: string, enum: [pending, approved, rejected] }
+        adminNote: { type: ["string", "null"] }
+        processedBy: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        processedAt: { type: ["string", "null"], format: date-time }
+        seller:
+          oneOf:
+            - { $ref: "#/components/schemas/Profile" }
+            - { type: "null" }
+        stallName: { type: ["string", "null"] }
+    AdminShopSummary:
+      type: object
+      required: [platformProfitCents, heldFundsCents, stallCount, orderCount, pendingPaymentCount, pendingWithdrawalCount]
+      properties:
+        platformProfitCents: { type: integer }
+        heldFundsCents: { type: integer }
+        stallCount: { type: integer }
+        orderCount: { type: integer }
+        pendingPaymentCount: { type: integer }
+        pendingWithdrawalCount: { type: integer }

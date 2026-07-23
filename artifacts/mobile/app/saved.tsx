@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
   useListSavedItems,
@@ -136,7 +136,6 @@ export default function SavedScreen() {
                             { backgroundColor: c.card, borderColor: c.border },
                             shadow("sm"),
                           ]}
-                          onPress={() => router.push(`/marketplace/${item.id}`)}
                         >
                           <View style={[styles.cardImage, { backgroundColor: c.secondary }]}>
                             {item.photos[0] ? (
