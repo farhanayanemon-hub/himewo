@@ -301,7 +301,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
         </div>
       </header>
 
-      <div className="flex-1 container mx-auto px-4 flex gap-6 pt-6">
+      <div className="flex-1 w-full px-4 flex gap-6 pt-6">
         {/* Left Sidebar */}
         <aside className="hidden lg:block w-[280px] shrink-0 sticky top-[88px] h-[calc(100vh-88px)] overflow-y-auto pb-6">
           <nav className="space-y-1">

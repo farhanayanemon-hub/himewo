@@ -7,6 +7,7 @@ import {
   pool,
   profilesTable,
   pagesTable,
+  shopCategoriesTable,
   shopLedgerTable,
 } from "@workspace/db";
 import { eq, inArray } from "drizzle-orm";
@@ -17,6 +18,7 @@ const buyer = randomUUID();
 const admin = randomUUID();
 const everyUser = [seller, buyer, admin];
 let pageId: number;
+let categoryId: number;
 let server: Server;
 let baseUrl: string;
 
@@ -47,6 +49,11 @@ beforeAll(async () => {
     .values({ name: "Direct Hub", createdBy: seller })
     .returning();
   pageId = page.id;
+  const [category] = await db
+    .insert(shopCategoriesTable)
+    .values({ name: `Test Cat ${randomUUID().slice(0, 8)}`, icon: "🧪" })
+    .returning();
+  categoryId = category.id;
   server = createServer(app);
   await new Promise<void>((resolve) => server.listen(0, resolve));
   const { port } = server.address() as AddressInfo;
@@ -56,6 +63,9 @@ beforeAll(async () => {
 afterAll(async () => {
   await new Promise<void>((resolve) => server.close(() => resolve()));
   await db.delete(profilesTable).where(inArray(profilesTable.id, everyUser));
+  await db
+    .delete(shopCategoriesTable)
+    .where(eq(shopCategoriesTable.id, categoryId));
   await pool.end();
 });
 
@@ -66,11 +76,21 @@ describe("shop admin + direct flow", () => {
   it("full direct-payment flow with admin verify and completion credit", async () => {
     await api("/shop/stall", seller, {
       method: "POST",
-      body: JSON.stringify({ pageId }),
+      body: JSON.stringify({
+        pageId,
+        address: "Test Bazaar, Dhaka",
+        productType: "physical",
+        contactPhone: "01700000000",
+      }),
     });
     let r = await api("/shop/products", seller, {
       method: "POST",
-      body: JSON.stringify({ name: "Gadget", priceCents: 50000, stockQty: 5 }),
+      body: JSON.stringify({
+        name: "Gadget",
+        priceCents: 50000,
+        stockQty: 5,
+        categoryId,
+      }),
     });
     productId = r.body.id;
 

@@ -21,6 +21,8 @@ import {
   useListPages,
   useGetProductReviews,
   useCreateShopReview,
+  useListShopCategories,
+  getListShopCategoriesQueryKey,
   getGetProductReviewsQueryKey,
   getBrowseProductsQueryKey,
   getGetProductQueryKey,
@@ -36,6 +38,8 @@ import {
   type ShopOrder,
   type ShopOrderStatus,
   type ShopWithdrawal,
+  type ShopCategory,
+  CreateStallInputProductType,
 } from "@workspace/api-client-react";
 import { useParams, Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -179,15 +183,21 @@ function apiErrorMessage(err: unknown, fallback: string) {
 export default function ShopPage() {
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
+  const [activeCategory, setActiveCategory] = useState<ShopCategory | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search.trim()), 400);
     return () => clearTimeout(t);
   }, [search]);
 
-  const { data: products, isLoading } = useBrowseProducts(
-    debounced ? { search: debounced } : {},
-  );
+  const { data: categories } = useListShopCategories({
+    query: { queryKey: getListShopCategoriesQueryKey() },
+  });
+
+  const { data: products, isLoading } = useBrowseProducts({
+    ...(debounced ? { search: debounced } : {}),
+    ...(activeCategory ? { categoryId: activeCategory.id } : {}),
+  });
 
   return (
     <MainLayout>
@@ -229,8 +239,59 @@ export default function ShopPage() {
         </div>
       </div>
 
+      {!activeCategory && categories && categories.length > 0 && (
+        <div className="mb-5">
+          <h2 className="font-bold text-lg px-1 mb-3">Categories</h2>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setActiveCategory(cat)}
+                className="bg-card border border-border rounded-2xl p-4 card-depth lift-on-hover press flex flex-col items-center justify-center gap-1.5 text-center"
+              >
+                <span className="text-3xl leading-none" aria-hidden>
+                  {cat.icon}
+                </span>
+                <span className="text-sm font-semibold line-clamp-1">{cat.name}</span>
+                {cat.productCount != null && (
+                  <span className="text-[11px] text-muted-foreground">
+                    {cat.productCount} item{cat.productCount === 1 ? "" : "s"}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {activeCategory && (
+        <div className="flex items-center gap-2 px-1 mb-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="press"
+            onClick={() => setActiveCategory(null)}
+          >
+            <ArrowLeft className="w-4 h-4 mr-1.5" /> All categories
+          </Button>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-semibold">
+            <span aria-hidden>{activeCategory.icon}</span>
+            {activeCategory.name}
+            <button
+              type="button"
+              onClick={() => setActiveCategory(null)}
+              className="ml-0.5 hover:opacity-70"
+              aria-label="Clear category filter"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </span>
+        </div>
+      )}
+
       <h2 className="font-bold text-lg px-1 mb-3">
-        {debounced ? "Results" : "Featured products"}
+        {debounced || activeCategory ? "Results" : "Featured products"}
       </h2>
 
       {isLoading ? (
@@ -275,6 +336,11 @@ function ProductCard({ product }: { product: ShopProduct }) {
         <div className="p-3">
           <p className="font-extrabold text-[15px]">{formatTaka(product.priceCents)}</p>
           <p className="text-sm line-clamp-1">{product.name}</p>
+          {product.categoryName && (
+            <span className="inline-block mt-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+              {product.categoryName}
+            </span>
+          )}
           {(product.ratingCount ?? 0) > 0 && (
             <p className="flex items-center gap-1 mt-0.5">
               <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
@@ -357,6 +423,39 @@ export function ShopStallPage() {
         </div>
       </div>
 
+      {(stall.address || stall.contactPhone || stall.contactEmail || stall.productType) && (
+        <div className="bg-card border border-border rounded-2xl p-5 card-depth mb-5 space-y-1.5 text-sm">
+          {stall.productType && (
+            <p>
+              <span className="text-muted-foreground">Sells: </span>
+              <span className="font-semibold">
+                {stall.productType === "digital"
+                  ? "Digital products"
+                  : "Physical products"}
+              </span>
+            </p>
+          )}
+          {stall.address && (
+            <p>
+              <span className="text-muted-foreground">Address: </span>
+              {stall.address}
+            </p>
+          )}
+          {stall.contactPhone && (
+            <p>
+              <span className="text-muted-foreground">Phone: </span>
+              {stall.contactPhone}
+            </p>
+          )}
+          {stall.contactEmail && (
+            <p>
+              <span className="text-muted-foreground">Email: </span>
+              {stall.contactEmail}
+            </p>
+          )}
+        </div>
+      )}
+
       {productsLoading ? (
         <div className="py-16 flex justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -384,6 +483,12 @@ export function ShopProductPage() {
   const { user } = useAuth();
   const { data: myStall } = useGetMyStall({
     query: { queryKey: getGetMyStallQueryKey(), retry: false },
+  });
+  const { data: stall } = useGetStall(product?.stallId ?? 0, {
+    query: {
+      queryKey: getGetStallQueryKey(product?.stallId ?? 0),
+      enabled: product != null,
+    },
   });
   const [activePhoto, setActivePhoto] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -454,6 +559,11 @@ export function ShopProductPage() {
         <div>
           <div className="bg-card border border-border rounded-2xl p-5 card-depth">
             <h1 className="text-2xl font-extrabold">{product.name}</h1>
+            {product.categoryName && (
+              <span className="inline-block mt-1.5 text-xs font-medium px-2.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                {product.categoryName}
+              </span>
+            )}
             <div className="mt-1">
               <RatingSummary avg={product.ratingAvg} count={product.ratingCount} />
             </div>
@@ -540,6 +650,7 @@ export function ShopProductPage() {
         product={product}
         quantity={quantity}
         buyerPhone={user?.phone ?? ""}
+        isDigital={stall?.productType === "digital"}
       />
     </MainLayout>
   );
@@ -604,12 +715,14 @@ function CheckoutDialog({
   product,
   quantity,
   buyerPhone,
+  isDigital = false,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   product: ShopProduct;
   quantity: number;
   buyerPhone: string;
+  isDigital?: boolean;
 }) {
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
@@ -618,12 +731,17 @@ function CheckoutDialog({
 
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState(buyerPhone);
-  const [paymentMethod, setPaymentMethod] = useState<"cod" | "direct">("cod");
+  const [paymentMethod, setPaymentMethod] = useState<"cod" | "direct">(
+    isDigital ? "direct" : "cod",
+  );
   const [paymentRef, setPaymentRef] = useState("");
 
   useEffect(() => {
-    if (open) setPhone(buyerPhone);
-  }, [open, buyerPhone]);
+    if (open) {
+      setPhone(buyerPhone);
+      setPaymentMethod(isDigital ? "direct" : "cod");
+    }
+  }, [open, buyerPhone, isDigital]);
 
   const total = product.priceCents * quantity;
   const canSubmit =
@@ -723,30 +841,39 @@ function CheckoutDialog({
 
           <div>
             <Label className="mb-1.5 block">Payment method</Label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setPaymentMethod("cod")}
-                className={`p-3 rounded-xl border text-sm font-semibold press transition-colors ${
-                  paymentMethod === "cod"
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border hover:bg-muted"
-                }`}
-              >
-                Cash on Delivery
-              </button>
-              <button
-                type="button"
-                onClick={() => setPaymentMethod("direct")}
-                className={`p-3 rounded-xl border text-sm font-semibold press transition-colors ${
-                  paymentMethod === "direct"
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border hover:bg-muted"
-                }`}
-              >
+            {isDigital ? (
+              <div className="p-3 rounded-xl border border-primary bg-primary/10 text-primary text-sm font-semibold">
                 Direct payment
-              </button>
-            </div>
+                <p className="text-xs font-normal text-muted-foreground mt-1">
+                  Digital product — online payment only
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("cod")}
+                  className={`p-3 rounded-xl border text-sm font-semibold press transition-colors ${
+                    paymentMethod === "cod"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border hover:bg-muted"
+                  }`}
+                >
+                  Cash on Delivery
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("direct")}
+                  className={`p-3 rounded-xl border text-sm font-semibold press transition-colors ${
+                    paymentMethod === "direct"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border hover:bg-muted"
+                  }`}
+                >
+                  Direct payment
+                </button>
+              </div>
+            )}
           </div>
 
           {paymentMethod === "direct" && (
@@ -1187,11 +1314,31 @@ function StallSetup() {
   const { data: pages, isLoading } = useListPages({ mine: true });
   const createStall = useCreateStall();
   const [pageId, setPageId] = useState<string>("");
+  const [address, setAddress] = useState("");
+  const [productType, setProductType] = useState<CreateStallInputProductType>(
+    CreateStallInputProductType.physical,
+  );
+  const [contactPhone, setContactPhone] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+
+  const canSubmit =
+    !!pageId &&
+    address.trim().length > 0 &&
+    contactPhone.trim().length > 0 &&
+    !createStall.isPending;
 
   const submit = () => {
-    if (!pageId || createStall.isPending) return;
+    if (!canSubmit) return;
     createStall.mutate(
-      { data: { pageId: Number(pageId) } },
+      {
+        data: {
+          pageId: Number(pageId),
+          address: address.trim(),
+          productType,
+          contactPhone: contactPhone.trim(),
+          ...(contactEmail.trim() ? { contactEmail: contactEmail.trim() } : {}),
+        },
+      },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetMyStallQueryKey() });
@@ -1251,9 +1398,80 @@ function StallSetup() {
               </SelectContent>
             </Select>
           </div>
+
+          <div>
+            <Label htmlFor="stall-address" className="mb-1.5 block">
+              Address
+            </Label>
+            <Textarea
+              id="stall-address"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Your stall's address"
+              rows={2}
+              maxLength={500}
+            />
+          </div>
+
+          <div>
+            <Label className="mb-1.5 block">Product type</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setProductType(CreateStallInputProductType.physical)}
+                className={`p-3 rounded-xl border text-sm font-semibold press transition-colors ${
+                  productType === CreateStallInputProductType.physical
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border hover:bg-muted"
+                }`}
+              >
+                Physical products
+              </button>
+              <button
+                type="button"
+                onClick={() => setProductType(CreateStallInputProductType.digital)}
+                className={`p-3 rounded-xl border text-sm font-semibold press transition-colors ${
+                  productType === CreateStallInputProductType.digital
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border hover:bg-muted"
+                }`}
+              >
+                Digital products
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="stall-phone" className="mb-1.5 block">
+              Contact phone
+            </Label>
+            <Input
+              id="stall-phone"
+              value={contactPhone}
+              onChange={(e) => setContactPhone(e.target.value)}
+              placeholder="01XXXXXXXXX"
+              maxLength={30}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="stall-email" className="mb-1.5 block">
+              Contact email{" "}
+              <span className="text-muted-foreground font-normal">(optional)</span>
+            </Label>
+            <Input
+              id="stall-email"
+              type="email"
+              value={contactEmail}
+              onChange={(e) => setContactEmail(e.target.value)}
+              placeholder="you@example.com"
+              maxLength={200}
+            />
+          </div>
+
           <Button
             className="w-full press"
-            disabled={!pageId || createStall.isPending}
+            disabled={!canSubmit}
             onClick={submit}
           >
             {createStall.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
@@ -1407,11 +1625,16 @@ function ProductDialog({
   const updateProduct = useUpdateProduct();
   const isEdit = product != null;
 
+  const { data: categories } = useListShopCategories({
+    query: { queryKey: getListShopCategoriesQueryKey() },
+  });
+
   const [name, setName] = useState("");
   const [priceTaka, setPriceTaka] = useState("");
   const [description, setDescription] = useState("");
   const [stockQty, setStockQty] = useState("0");
   const [active, setActive] = useState(true);
+  const [categoryId, setCategoryId] = useState<string>("");
   const [photos, setPhotos] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1423,6 +1646,7 @@ function ProductDialog({
       setDescription(product?.description ?? "");
       setStockQty(product ? String(product.stockQty) : "0");
       setActive(product?.active ?? true);
+      setCategoryId(product?.categoryId != null ? String(product.categoryId) : "");
       setPhotos(product?.photos ?? []);
     }
   }, [open, product]);
@@ -1456,7 +1680,11 @@ function ProductDialog({
     if (product) queryClient.invalidateQueries({ queryKey: getGetProductQueryKey(product.id) });
   };
 
-  const canSubmit = name.trim().length > 0 && priceTaka.trim().length > 0 && !uploading;
+  const canSubmit =
+    name.trim().length > 0 &&
+    priceTaka.trim().length > 0 &&
+    categoryId !== "" &&
+    !uploading;
 
   const submit = () => {
     if (!canSubmit) return;
@@ -1472,6 +1700,7 @@ function ProductDialog({
             description: description.trim(),
             stockQty: stock,
             active,
+            categoryId: Number(categoryId),
             photos,
           },
         },
@@ -1498,6 +1727,7 @@ function ProductDialog({
             priceCents,
             description: description.trim(),
             stockQty: stock,
+            categoryId: Number(categoryId),
             photos,
           },
         },
@@ -1607,6 +1837,22 @@ function ProductDialog({
                 placeholder="0"
               />
             </div>
+          </div>
+
+          <div>
+            <Label className="mb-1.5 block">Category</Label>
+            <Select value={categoryId} onValueChange={setCategoryId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                {(categories ?? []).map((cat) => (
+                  <SelectItem key={cat.id} value={String(cat.id)}>
+                    {cat.icon} {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>

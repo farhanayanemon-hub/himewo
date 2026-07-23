@@ -3832,6 +3832,21 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+  /shop/categories:
+    get:
+      operationId: listShopCategories
+      tags: [shop]
+      summary: List active shop categories (grid on shop landing)
+      responses:
+        "200":
+          description: Categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ShopCategory" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /shop/products:
     get:
       operationId: browseProducts
@@ -3839,6 +3854,7 @@ paths:
       summary: Browse products (active, in-stock)
       parameters:
         - { name: search, in: query, schema: { type: string } }
+        - { name: categoryId, in: query, schema: { type: integer, minimum: 1 } }
         - { name: cursor, in: query, schema: { type: integer, minimum: 1 } }
         - { name: limit, in: query, schema: { type: integer, default: 20, minimum: 1, maximum: 50 } }
       responses:
@@ -4346,6 +4362,88 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+  /admin/shop/categories:
+    get:
+      operationId: listAdminShopCategories
+      tags: [shop-admin]
+      summary: List all shop categories incl. inactive (admin)
+      responses:
+        "200":
+          description: Categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ShopCategory" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: createAdminShopCategory
+      tags: [shop-admin]
+      summary: Create a shop category (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpsertShopCategoryInput" }
+      responses:
+        "201":
+          description: Created category
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShopCategory" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /admin/shop/categories/{id}:
+    patch:
+      operationId: updateAdminShopCategory
+      tags: [shop-admin]
+      summary: Update a shop category (admin)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateShopCategoryInput" }
+      responses:
+        "200":
+          description: Updated category
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShopCategory" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    delete:
+      operationId: deleteAdminShopCategory
+      tags: [shop-admin]
+      summary: Delete a shop category (admin; products keep null category)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
 components:
   responses:
@@ -6437,13 +6535,17 @@ components:
         paymentInstructions: { type: string }
     ShopStall:
       type: object
-      required: [id, userId, pageId, name, active, createdAt]
+      required: [id, userId, pageId, name, active, createdAt, productType]
       properties:
         id: { type: integer }
         userId: { type: string }
         pageId: { type: integer }
         name: { type: string }
         avatarUrl: { type: ["string", "null"] }
+        address: { type: string }
+        productType: { type: string, enum: [physical, digital] }
+        contactPhone: { type: string }
+        contactEmail: { type: string }
         active: { type: boolean }
         productCount: { type: integer }
         isOwner: { type: boolean }
@@ -6452,9 +6554,38 @@ components:
         ratingCount: { type: integer }
     CreateStallInput:
       type: object
-      required: [pageId]
+      required: [pageId, address, productType, contactPhone]
       properties:
         pageId: { type: integer }
+        address: { type: string, minLength: 1, maxLength: 500 }
+        productType: { type: string, enum: [physical, digital] }
+        contactPhone: { type: string, minLength: 1, maxLength: 30 }
+        contactEmail: { type: string, maxLength: 200 }
+    ShopCategory:
+      type: object
+      required: [id, name, icon, sortOrder, active]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        icon: { type: string }
+        sortOrder: { type: integer }
+        active: { type: boolean }
+        productCount: { type: integer }
+    UpsertShopCategoryInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+        icon: { type: string, maxLength: 20 }
+        sortOrder: { type: integer }
+        active: { type: boolean }
+    UpdateShopCategoryInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+        icon: { type: string, maxLength: 20 }
+        sortOrder: { type: integer }
+        active: { type: boolean }
     ShopProduct:
       type: object
       required: [id, stallId, photos, name, priceCents, description, stockQty, active, createdAt]
@@ -6470,17 +6601,20 @@ components:
         description: { type: string }
         stockQty: { type: integer }
         active: { type: boolean }
+        categoryId: { type: ["integer", "null"] }
+        categoryName: { type: ["string", "null"] }
         createdAt: { type: string, format: date-time }
         ratingAvg: { type: ["number", "null"] }
         ratingCount: { type: integer }
     CreateProductInput:
       type: object
-      required: [name, priceCents]
+      required: [name, priceCents, categoryId]
       properties:
         name: { type: string, minLength: 1, maxLength: 200 }
         priceCents: { type: integer, minimum: 0 }
         description: { type: string, maxLength: 5000 }
         stockQty: { type: integer, minimum: 0 }
+        categoryId: { type: integer }
         photos:
           type: array
           items: { type: string }
@@ -6492,6 +6626,7 @@ components:
         description: { type: string, maxLength: 5000 }
         stockQty: { type: integer, minimum: 0 }
         active: { type: boolean }
+        categoryId: { type: integer }
         photos:
           type: array
           items: { type: string }

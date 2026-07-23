@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import {
   db,
   shopStallsTable,
+  shopCategoriesTable,
   shopProductsTable,
   shopOrdersTable,
   shopLedgerTable,
@@ -46,6 +47,13 @@ import {
   GetAdminShopSettingsResponse,
   UpdateAdminShopSettingsBody,
   UpdateAdminShopSettingsResponse,
+  ListAdminShopCategoriesResponse,
+  CreateAdminShopCategoryBody,
+  UpdateAdminShopCategoryBody,
+  CreateAdminShopCategoryResponse,
+  UpdateAdminShopCategoryParams,
+  UpdateAdminShopCategoryResponse,
+  DeleteAdminShopCategoryParams,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -735,6 +743,167 @@ router.patch(
       metadata: { ...body.data },
     });
     res.json(UpdateAdminShopSettingsResponse.parse(await getShopSettings()));
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Categories
+// ---------------------------------------------------------------------------
+
+function toCategoryDto(c: {
+  id: number;
+  name: string;
+  icon: string;
+  sortOrder: number;
+  active: boolean;
+  productCount?: number;
+}) {
+  return {
+    id: c.id,
+    name: c.name,
+    icon: c.icon,
+    sortOrder: c.sortOrder,
+    active: c.active,
+    productCount: c.productCount ?? 0,
+  };
+}
+
+router.get(
+  "/shop/categories",
+  requirePermission("shop.view"),
+  async (_req, res): Promise<void> => {
+    const rows = await db
+      .select({
+        id: shopCategoriesTable.id,
+        name: shopCategoriesTable.name,
+        icon: shopCategoriesTable.icon,
+        sortOrder: shopCategoriesTable.sortOrder,
+        active: shopCategoriesTable.active,
+        productCount: sql<number>`(
+          select count(*)::int from shop_products p
+          where p.category_id = ${shopCategoriesTable.id}
+        )`,
+      })
+      .from(shopCategoriesTable)
+      .orderBy(shopCategoriesTable.sortOrder, shopCategoriesTable.id);
+    res.json(ListAdminShopCategoriesResponse.parse(rows.map(toCategoryDto)));
+  },
+);
+
+router.post(
+  "/shop/categories",
+  requirePermission("shop.manage"),
+  async (req, res): Promise<void> => {
+    const body = CreateAdminShopCategoryBody.safeParse(req.body);
+    if (!body.success) {
+      res.status(400).json({ error: body.error.message });
+      return;
+    }
+    const name = body.data.name.trim();
+    if (!name) {
+      res.status(400).json({ error: "Name is required" });
+      return;
+    }
+    try {
+      const [row] = await db
+        .insert(shopCategoriesTable)
+        .values({
+          name,
+          icon: body.data.icon?.trim() || "🛍️",
+          sortOrder: body.data.sortOrder ?? 0,
+          active: body.data.active ?? true,
+        })
+        .returning();
+      await writeAudit({
+        actorId: req.userId,
+        action: "shop.category.create",
+        targetType: "shop_category",
+        targetId: String(row.id),
+        metadata: { name },
+      });
+      res
+        .status(201)
+        .json(CreateAdminShopCategoryResponse.parse(toCategoryDto(row)));
+    } catch {
+      res.status(409).json({ error: "A category with this name already exists" });
+    }
+  },
+);
+
+router.patch(
+  "/shop/categories/:id",
+  requirePermission("shop.manage"),
+  async (req, res): Promise<void> => {
+    const params = UpdateAdminShopCategoryParams.safeParse(req.params);
+    const body = UpdateAdminShopCategoryBody.safeParse(req.body);
+    if (!params.success || !body.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    const newName = body.data.name?.trim();
+    if (body.data.name !== undefined && !newName) {
+      res.status(400).json({ error: "Name is required" });
+      return;
+    }
+    try {
+      const [row] = await db
+        .update(shopCategoriesTable)
+        .set({
+          ...(newName ? { name: newName } : {}),
+          ...(body.data.icon !== undefined
+            ? { icon: body.data.icon.trim() || "🛍️" }
+            : {}),
+          ...(body.data.sortOrder !== undefined
+            ? { sortOrder: body.data.sortOrder }
+            : {}),
+          ...(body.data.active !== undefined
+            ? { active: body.data.active }
+            : {}),
+        })
+        .where(eq(shopCategoriesTable.id, params.data.id))
+        .returning();
+      if (!row) {
+        res.status(404).json({ error: "Category not found" });
+        return;
+      }
+      await writeAudit({
+        actorId: req.userId,
+        action: "shop.category.update",
+        targetType: "shop_category",
+        targetId: String(row.id),
+        metadata: { ...body.data },
+      });
+      res.json(UpdateAdminShopCategoryResponse.parse(toCategoryDto(row)));
+    } catch {
+      res.status(409).json({ error: "A category with this name already exists" });
+    }
+  },
+);
+
+router.delete(
+  "/shop/categories/:id",
+  requirePermission("shop.manage"),
+  async (req, res): Promise<void> => {
+    const params = DeleteAdminShopCategoryParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+    const [row] = await db
+      .delete(shopCategoriesTable)
+      .where(eq(shopCategoriesTable.id, params.data.id))
+      .returning({ id: shopCategoriesTable.id });
+    if (!row) {
+      res.status(404).json({ error: "Category not found" });
+      return;
+    }
+    await writeAudit({
+      actorId: req.userId,
+      action: "shop.category.delete",
+      targetType: "shop_category",
+      targetId: String(row.id),
+    });
+    res.sendStatus(204);
   },
 );
 

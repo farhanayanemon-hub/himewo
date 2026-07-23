@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import {
   db,
   shopStallsTable,
+  shopCategoriesTable,
   shopProductsTable,
   shopOrdersTable,
   shopLedgerTable,
@@ -60,6 +61,7 @@ import {
   CreateShopReviewResponse,
   GetProductReviewsParams,
   GetProductReviewsResponse,
+  ListShopCategoriesResponse,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -97,6 +99,10 @@ function toStallDto(
     pageId: stall.pageId,
     name: page?.name ?? "Stall",
     avatarUrl: page?.avatarUrl ?? null,
+    address: stall.address,
+    productType: stall.productType,
+    contactPhone: stall.contactPhone,
+    contactEmail: stall.contactEmail,
     active: stall.active,
     productCount,
     isOwner: stall.userId === viewerId,
@@ -140,11 +146,14 @@ function toProductDto(
   product: ShopProduct,
   stallName?: string | null,
   rating?: RatingAgg,
+  categoryName?: string | null,
 ) {
   return {
     id: product.id,
     stallId: product.stallId,
     stallName: stallName ?? null,
+    categoryId: product.categoryId ?? null,
+    categoryName: categoryName ?? null,
     photos: product.photos,
     name: product.name,
     priceCents: product.priceCents,
@@ -324,7 +333,13 @@ router.post("/shop/stall", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   const userId = req.userId!;
-  const { pageId } = parsed.data;
+  const { pageId, productType, contactEmail } = parsed.data;
+  const address = parsed.data.address.trim();
+  const contactPhone = parsed.data.contactPhone.trim();
+  if (!address || !contactPhone) {
+    res.status(400).json({ error: "Address and contact phone are required" });
+    return;
+  }
   const [page] = await db
     .select({ id: pagesTable.id })
     .from(pagesTable)
@@ -352,7 +367,14 @@ router.post("/shop/stall", requireAuth, async (req, res): Promise<void> => {
   try {
     [stall] = await db
       .insert(shopStallsTable)
-      .values({ userId, pageId })
+      .values({
+        userId,
+        pageId,
+        address: address.trim(),
+        productType,
+        contactPhone: contactPhone.trim(),
+        contactEmail: (contactEmail ?? "").trim(),
+      })
       .returning();
   } catch {
     res.status(409).json({ error: "You already have a stall for this Hub" });
@@ -466,16 +488,67 @@ router.get(
       )
       .orderBy(desc(shopProductsTable.id))
       .limit(limit ?? 30);
-    const [pageRefs, ratings] = await Promise.all([
+    const [pageRefs, ratings, categoryNames] = await Promise.all([
       loadPageRefs([stall.pageId]),
       ratingsByProduct(rows.map((p) => p.id)),
+      categoryNamesByIds(rows.map((p) => p.categoryId)),
     ]);
     const stallName = pageRefs.get(stall.pageId)?.name ?? null;
     res.json(
       GetStallProductsResponse.parse(
-        rows.map((p) => toProductDto(p, stallName, ratings.get(p.id))),
+        rows.map((p) =>
+          toProductDto(
+            p,
+            stallName,
+            ratings.get(p.id),
+            p.categoryId != null
+              ? (categoryNames.get(p.categoryId) ?? null)
+              : null,
+          ),
+        ),
       ),
     );
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Categories
+// ---------------------------------------------------------------------------
+
+/** Map of categoryId -> name for the given products' category ids. */
+async function categoryNamesByIds(
+  ids: (number | null)[],
+): Promise<Map<number, string>> {
+  const unique = [...new Set(ids.filter((id): id is number => id != null))];
+  if (unique.length === 0) return new Map();
+  const rows = await db
+    .select({ id: shopCategoriesTable.id, name: shopCategoriesTable.name })
+    .from(shopCategoriesTable)
+    .where(inArray(shopCategoriesTable.id, unique));
+  return new Map(rows.map((r) => [r.id, r.name]));
+}
+
+router.get(
+  "/shop/categories",
+  requireAuth,
+  async (_req, res): Promise<void> => {
+    const rows = await db
+      .select({
+        id: shopCategoriesTable.id,
+        name: shopCategoriesTable.name,
+        icon: shopCategoriesTable.icon,
+        sortOrder: shopCategoriesTable.sortOrder,
+        active: shopCategoriesTable.active,
+        productCount: sql<number>`(
+          select count(*)::int from shop_products p
+          where p.category_id = ${shopCategoriesTable.id}
+            and p.active = true and p.stock_qty > 0
+        )`,
+      })
+      .from(shopCategoriesTable)
+      .where(eq(shopCategoriesTable.active, true))
+      .orderBy(shopCategoriesTable.sortOrder, shopCategoriesTable.id);
+    res.json(ListShopCategoriesResponse.parse(rows));
   },
 );
 
@@ -489,7 +562,7 @@ router.get("/shop/products", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: query.error.message });
     return;
   }
-  const { search, cursor, limit } = query.data;
+  const { search, categoryId, cursor, limit } = query.data;
   const rows = await db
     .select()
     .from(shopProductsTable)
@@ -498,6 +571,7 @@ router.get("/shop/products", requireAuth, async (req, res): Promise<void> => {
         eq(shopProductsTable.active, true),
         gt(shopProductsTable.stockQty, 0),
         search ? ilike(shopProductsTable.name, `%${search}%`) : undefined,
+        categoryId ? eq(shopProductsTable.categoryId, categoryId) : undefined,
         cursor ? lt(shopProductsTable.id, cursor) : undefined,
       ),
     )
@@ -511,16 +585,22 @@ router.get("/shop/products", requireAuth, async (req, res): Promise<void> => {
         .where(inArray(shopStallsTable.id, stallIds))
     : [];
   const pageIdByStall = new Map(stalls.map((s) => [s.id, s.pageId]));
-  const [pageRefs, ratings] = await Promise.all([
+  const [pageRefs, ratings, categoryNames] = await Promise.all([
     loadPageRefs([...pageIdByStall.values()]),
     ratingsByProduct(rows.map((p) => p.id)),
+    categoryNamesByIds(rows.map((p) => p.categoryId)),
   ]);
   res.json(
     BrowseProductsResponse.parse(
       rows.map((p) => {
         const pageId = pageIdByStall.get(p.stallId);
         const stallName = pageId != null ? (pageRefs.get(pageId)?.name ?? null) : null;
-        return toProductDto(p, stallName, ratings.get(p.id));
+        return toProductDto(
+          p,
+          stallName,
+          ratings.get(p.id),
+          p.categoryId != null ? (categoryNames.get(p.categoryId) ?? null) : null,
+        );
       }),
     ),
   );
@@ -537,10 +617,25 @@ router.post("/shop/products", requireAuth, async (req, res): Promise<void> => {
     res.status(403).json({ error: "You need a Hub to open a stall" });
     return;
   }
+  // Category must exist and be active.
+  const [category] = await db
+    .select({ id: shopCategoriesTable.id, name: shopCategoriesTable.name })
+    .from(shopCategoriesTable)
+    .where(
+      and(
+        eq(shopCategoriesTable.id, parsed.data.categoryId),
+        eq(shopCategoriesTable.active, true),
+      ),
+    );
+  if (!category) {
+    res.status(400).json({ error: "Please pick a valid category" });
+    return;
+  }
   const [product] = await db
     .insert(shopProductsTable)
     .values({
       stallId: stall.id,
+      categoryId: category.id,
       name: parsed.data.name,
       priceCents: parsed.data.priceCents,
       description: parsed.data.description ?? "",
@@ -553,7 +648,12 @@ router.post("/shop/products", requireAuth, async (req, res): Promise<void> => {
     .status(201)
     .json(
       CreateProductResponse.parse(
-        toProductDto(product, pageRefs.get(stall.pageId)?.name ?? null),
+        toProductDto(
+          product,
+          pageRefs.get(stall.pageId)?.name ?? null,
+          undefined,
+          category.name,
+        ),
       ),
     );
 });
@@ -576,14 +676,22 @@ router.get("/shop/products/:id", requireAuth, async (req, res): Promise<void> =>
     .select({ pageId: shopStallsTable.pageId })
     .from(shopStallsTable)
     .where(eq(shopStallsTable.id, product.stallId));
-  const [pageRefs, ratings] = await Promise.all([
+  const [pageRefs, ratings, categoryNames] = await Promise.all([
     stall ? loadPageRefs([stall.pageId]) : Promise.resolve(new Map()),
     ratingsByProduct([product.id]),
+    categoryNamesByIds([product.categoryId]),
   ]);
   const stallName = stall ? (pageRefs.get(stall.pageId)?.name ?? null) : null;
   res.json(
     GetProductResponse.parse(
-      toProductDto(product, stallName, ratings.get(product.id)),
+      toProductDto(
+        product,
+        stallName,
+        ratings.get(product.id),
+        product.categoryId != null
+          ? (categoryNames.get(product.categoryId) ?? null)
+          : null,
+      ),
     ),
   );
 });
@@ -659,9 +767,25 @@ router.patch(
       return;
     }
     const d = body.data;
+    if (d.categoryId !== undefined) {
+      const [category] = await db
+        .select({ id: shopCategoriesTable.id })
+        .from(shopCategoriesTable)
+        .where(
+          and(
+            eq(shopCategoriesTable.id, d.categoryId),
+            eq(shopCategoriesTable.active, true),
+          ),
+        );
+      if (!category) {
+        res.status(400).json({ error: "Please pick a valid category" });
+        return;
+      }
+    }
     await db
       .update(shopProductsTable)
       .set({
+        ...(d.categoryId !== undefined ? { categoryId: d.categoryId } : {}),
         ...(d.name !== undefined ? { name: d.name } : {}),
         ...(d.priceCents !== undefined ? { priceCents: d.priceCents } : {}),
         ...(d.description !== undefined ? { description: d.description } : {}),
@@ -674,10 +798,20 @@ router.patch(
       .select()
       .from(shopProductsTable)
       .where(eq(shopProductsTable.id, product.id));
-    const pageRefs = await loadPageRefs([stall.pageId]);
+    const [pageRefs, categoryNames] = await Promise.all([
+      loadPageRefs([stall.pageId]),
+      categoryNamesByIds([updated.categoryId]),
+    ]);
     res.json(
       UpdateProductResponse.parse(
-        toProductDto(updated, pageRefs.get(stall.pageId)?.name ?? null),
+        toProductDto(
+          updated,
+          pageRefs.get(stall.pageId)?.name ?? null,
+          undefined,
+          updated.categoryId != null
+            ? (categoryNames.get(updated.categoryId) ?? null)
+            : null,
+        ),
       ),
     );
   },
@@ -784,6 +918,13 @@ router.post("/shop/orders", requireAuth, async (req, res): Promise<void> => {
   }
   if (stall.userId === buyerId) {
     res.status(403).json({ error: "You cannot order from your own stall" });
+    return;
+  }
+  // Digital stalls cannot accept cash on delivery.
+  if (stall.productType === "digital" && paymentMethod === "cod") {
+    res.status(400).json({
+      error: "Cash on delivery is not available for digital products",
+    });
     return;
   }
 

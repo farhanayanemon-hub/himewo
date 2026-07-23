@@ -12,7 +12,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useBrowseProducts } from "@workspace/api-client-react";
+import {
+  useBrowseProducts,
+  useListShopCategories,
+  getListShopCategoriesQueryKey,
+  type ShopCategory,
+} from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { formatTaka } from "@/constants/shop";
 import { shadow, glow } from "@/constants/shadows";
@@ -20,11 +25,21 @@ import { shadow, glow } from "@/constants/shadows";
 export default function ShopHomeScreen() {
   const c = useColors();
   const [search, setSearch] = useState("");
+  const [activeCategory, setActiveCategory] = useState<ShopCategory | null>(null);
+
+  const { data: categories } = useListShopCategories({
+    query: { queryKey: getListShopCategoriesQueryKey() },
+  });
 
   const { data, isLoading } = useBrowseProducts(
-    search.trim() ? { search: search.trim() } : undefined,
+    {
+      ...(search.trim() ? { search: search.trim() } : {}),
+      ...(activeCategory ? { categoryId: activeCategory.id } : {}),
+    },
   );
   const products = data ?? [];
+  const showCategories =
+    !activeCategory && !!categories && categories.length > 0;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["bottom"]}>
@@ -71,8 +86,71 @@ export default function ShopHomeScreen() {
               </Pressable>
             </View>
 
+            {showCategories ? (
+              <View style={{ gap: 10 }}>
+                <Text style={[styles.sectionTitle, { color: c.foreground }]}>
+                  Categories
+                </Text>
+                <View style={styles.categoryGrid}>
+                  {categories!.map((cat) => (
+                    <Pressable
+                      key={cat.id}
+                      onPress={() => setActiveCategory(cat)}
+                      style={[
+                        styles.categoryCard,
+                        { backgroundColor: c.card, borderColor: c.border },
+                        shadow("sm"),
+                      ]}
+                    >
+                      <Text style={styles.categoryIcon}>{cat.icon}</Text>
+                      <Text
+                        style={[styles.categoryName, { color: c.foreground }]}
+                        numberOfLines={1}
+                      >
+                        {cat.name}
+                      </Text>
+                      {cat.productCount != null ? (
+                        <Text
+                          style={[styles.categoryCount, { color: c.mutedForeground }]}
+                          numberOfLines={1}
+                        >
+                          {cat.productCount} item{cat.productCount === 1 ? "" : "s"}
+                        </Text>
+                      ) : null}
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            ) : null}
+
+            {activeCategory ? (
+              <View style={styles.filterRow}>
+                <View
+                  style={[
+                    styles.categoryChip,
+                    { backgroundColor: c.primary + "22", borderColor: c.primary },
+                  ]}
+                >
+                  <Text style={styles.categoryChipIcon}>{activeCategory.icon}</Text>
+                  <Text
+                    style={[styles.categoryChipText, { color: c.primary }]}
+                    numberOfLines={1}
+                  >
+                    {activeCategory.name}
+                  </Text>
+                  <Pressable
+                    onPress={() => setActiveCategory(null)}
+                    hitSlop={8}
+                    accessibilityLabel="Clear category filter"
+                  >
+                    <Ionicons name="close" size={16} color={c.primary} />
+                  </Pressable>
+                </View>
+              </View>
+            ) : null}
+
             <Text style={[styles.sectionTitle, { color: c.foreground }]}>
-              {search.trim() ? "Results" : "Discover"}
+              {search.trim() || activeCategory ? "Results" : "Discover"}
             </Text>
           </View>
         }
@@ -115,6 +193,21 @@ export default function ShopHomeScreen() {
               <Text style={[styles.cardTitle, { color: c.foreground }]} numberOfLines={1}>
                 {item.name}
               </Text>
+              {item.categoryName ? (
+                <View
+                  style={[
+                    styles.cardBadge,
+                    { backgroundColor: c.secondary, borderColor: c.border },
+                  ]}
+                >
+                  <Text
+                    style={[styles.cardBadgeText, { color: c.mutedForeground }]}
+                    numberOfLines={1}
+                  >
+                    {item.categoryName}
+                  </Text>
+                </View>
+              ) : null}
               {item.stallName ? (
                 <Text
                   style={[styles.cardMeta, { color: c.mutedForeground }]}
@@ -154,6 +247,36 @@ const styles = StyleSheet.create({
   },
   actionText: { fontFamily: "Inter_700Bold", fontSize: 14 },
   sectionTitle: { fontFamily: "Inter_700Bold", fontSize: 17 },
+  categoryGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  categoryCard: {
+    width: "31%",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  categoryIcon: { fontSize: 26 },
+  categoryName: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 13,
+    textAlign: "center",
+  },
+  categoryCount: { fontFamily: "Inter_400Regular", fontSize: 11 },
+  filterRow: { flexDirection: "row" },
+  categoryChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  categoryChipIcon: { fontSize: 15 },
+  categoryChipText: { fontFamily: "Inter_600SemiBold", fontSize: 13, maxWidth: 160 },
   card: {
     flex: 1,
     borderRadius: 16,
@@ -168,6 +291,15 @@ const styles = StyleSheet.create({
   price: { fontFamily: "Inter_700Bold", fontSize: 16 },
   cardTitle: { fontFamily: "Inter_500Medium", fontSize: 14, marginTop: 2 },
   cardMeta: { fontFamily: "Inter_400Regular", fontSize: 12, marginTop: 2 },
+  cardBadge: {
+    alignSelf: "flex-start",
+    marginTop: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  cardBadgeText: { fontFamily: "Inter_600SemiBold", fontSize: 11 },
   empty: { alignItems: "center", gap: 10, marginTop: 48, paddingHorizontal: 32 },
   emptyText: { fontFamily: "Inter_500Medium", fontSize: 15, textAlign: "center" },
 });

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -16,10 +16,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetProduct,
+  useGetStall,
   useGetShopSettings,
   useCreateOrder,
   useGetProductReviews,
   getGetProductQueryKey,
+  getGetStallQueryKey,
   getGetProductReviewsQueryKey,
   getListOrdersQueryKey,
   type CreateOrderInputPaymentMethod,
@@ -40,10 +42,17 @@ export default function ProductScreen() {
     query: { enabled: valid, queryKey: getGetProductQueryKey(productId) },
   });
   const { data: settings } = useGetShopSettings();
+  const { data: stall } = useGetStall(product?.stallId ?? 0, {
+    query: {
+      enabled: product != null,
+      queryKey: getGetStallQueryKey(product?.stallId ?? 0),
+    },
+  });
   const { data: reviewData } = useGetProductReviews(productId, {
     query: { enabled: valid, queryKey: getGetProductReviewsQueryKey(productId) },
   });
   const createOrder = useCreateOrder();
+  const isDigital = stall?.productType === "digital";
 
   const [photoIndex, setPhotoIndex] = useState(0);
   const [qty, setQty] = useState(1);
@@ -51,6 +60,11 @@ export default function ProductScreen() {
   const [phone, setPhone] = useState("");
   const [method, setMethod] = useState<CreateOrderInputPaymentMethod>("cod");
   const [paymentRef, setPaymentRef] = useState("");
+
+  // Digital products only accept online payment; force direct.
+  useEffect(() => {
+    if (isDigital && method !== "direct") setMethod("direct");
+  }, [isDigital, method]);
 
   const maxQty = Math.max(1, product?.stockQty ?? 1);
   const totalCents = (product?.priceCents ?? 0) * qty;
@@ -159,6 +173,24 @@ export default function ProductScreen() {
                 Sold by {product.stallName}
               </Text>
             ) : null}
+            {product.categoryName ? (
+              <View
+                style={[
+                  styles.categoryBadge,
+                  { backgroundColor: c.secondary, borderColor: c.border },
+                ]}
+              >
+                <Text
+                  style={{
+                    color: c.mutedForeground,
+                    fontFamily: "Inter_600SemiBold",
+                    fontSize: 12,
+                  }}
+                >
+                  {product.categoryName}
+                </Text>
+              </View>
+            ) : null}
             {(product.ratingCount ?? 0) > 0 ? (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                 <StarsRow rating={product.ratingAvg ?? 0} size={14} c={c} />
@@ -235,20 +267,42 @@ export default function ProductScreen() {
 
               <View style={{ gap: 8 }}>
                 <Text style={[styles.label, { color: c.foreground }]}>Payment</Text>
-                <View style={{ flexDirection: "row", gap: 10 }}>
-                  <PayOption
-                    label="Cash on Delivery"
-                    active={method === "cod"}
-                    onPress={() => setMethod("cod")}
-                    c={c}
-                  />
-                  <PayOption
-                    label="Direct payment"
-                    active={method === "direct"}
-                    onPress={() => setMethod("direct")}
-                    c={c}
-                  />
-                </View>
+                {isDigital ? (
+                  <View
+                    style={[
+                      styles.digitalNote,
+                      { backgroundColor: c.primary + "22", borderColor: c.primary },
+                    ]}
+                  >
+                    <Text
+                      style={{
+                        color: c.primary,
+                        fontFamily: "Inter_700Bold",
+                        fontSize: 14,
+                      }}
+                    >
+                      Direct payment
+                    </Text>
+                    <Text style={{ color: c.mutedForeground, fontSize: 12 }}>
+                      Digital product — online payment only
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={{ flexDirection: "row", gap: 10 }}>
+                    <PayOption
+                      label="Cash on Delivery"
+                      active={method === "cod"}
+                      onPress={() => setMethod("cod")}
+                      c={c}
+                    />
+                    <PayOption
+                      label="Direct payment"
+                      active={method === "direct"}
+                      onPress={() => setMethod("direct")}
+                      c={c}
+                    />
+                  </View>
+                )}
               </View>
 
               {method === "direct" ? (
@@ -472,6 +526,20 @@ const styles = StyleSheet.create({
   directBox: {
     gap: 8,
     padding: 14,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  digitalNote: {
+    gap: 2,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  categoryBadge: {
+    alignSelf: "flex-start",
+    marginTop: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
     borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
   },

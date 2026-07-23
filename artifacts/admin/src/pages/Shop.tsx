@@ -9,6 +9,9 @@ import {
   Save,
   Settings as SettingsIcon,
   ReceiptText,
+  Plus,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
@@ -23,7 +26,9 @@ import type {
   ShopSummary,
   ShopWithdrawalRow,
   ShopWithdrawalStatus,
+  ShopCategoryRow,
 } from "../lib/types";
+import { ApiError } from "../lib/api";
 import {
   Avatar,
   Badge,
@@ -40,6 +45,7 @@ import {
   Td,
   Th,
   Textarea,
+  Toggle,
 } from "../components/ui";
 import { PageHeader } from "../components/Layout";
 
@@ -93,11 +99,19 @@ const WITHDRAWAL_STATUS_TONE: Record<
   rejected: "red",
 };
 
-type Tab = "overview" | "stalls" | "orders" | "payments" | "withdrawals" | "settings";
+type Tab =
+  | "overview"
+  | "stalls"
+  | "categories"
+  | "orders"
+  | "payments"
+  | "withdrawals"
+  | "settings";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "overview", label: "Overview" },
   { key: "stalls", label: "Stalls" },
+  { key: "categories", label: "Categories" },
   { key: "orders", label: "Orders" },
   { key: "payments", label: "Payments" },
   { key: "withdrawals", label: "Withdrawals" },
@@ -137,6 +151,7 @@ export function Shop() {
       <div className="space-y-6">
         {tab === "overview" && <OverviewSection />}
         {tab === "stalls" && <StallsSection />}
+        {tab === "categories" && <CategoriesSection canManage={canManage} />}
         {tab === "orders" && <OrdersSection canManage={canManage} />}
         {tab === "payments" && <PaymentsSection canManage={canManage} />}
         {tab === "withdrawals" && <WithdrawalsSection canManage={canManage} />}
@@ -423,6 +438,363 @@ function StallRow({
         </tr>
       )}
     </>
+  );
+}
+
+/* ------------------------------ Categories ----------------------------- */
+
+interface CategoryFormValues {
+  name: string;
+  icon: string;
+  sortOrder: string;
+  active: boolean;
+}
+
+function CategoryDialog({
+  open,
+  title,
+  initial,
+  submitting,
+  error,
+  onClose,
+  onSubmit,
+}: {
+  open: boolean;
+  title: string;
+  initial: CategoryFormValues;
+  submitting: boolean;
+  error: unknown;
+  onClose: () => void;
+  onSubmit: (values: { name: string; icon: string; sortOrder: number; active: boolean }) => void;
+}) {
+  const [name, setName] = useState(initial.name);
+  const [icon, setIcon] = useState(initial.icon);
+  const [sortOrder, setSortOrder] = useState(initial.sortOrder);
+  const [active, setActive] = useState(initial.active);
+
+  // Reset fields whenever the dialog opens with fresh initial values.
+  useEffect(() => {
+    if (open) {
+      setName(initial.name);
+      setIcon(initial.icon);
+      setSortOrder(initial.sortOrder);
+      setActive(initial.active);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const sortNum = Number(sortOrder);
+  const validationError = (() => {
+    if (name.trim() === "") return "Name is required.";
+    if (sortOrder.trim() !== "" && !Number.isFinite(sortNum))
+      return "Sort order must be a number.";
+    return null;
+  })();
+
+  const submit = () => {
+    if (validationError) return;
+    onSubmit({
+      name: name.trim(),
+      icon: icon.trim(),
+      sortOrder: sortOrder.trim() === "" ? 0 : sortNum,
+      active,
+    });
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={title}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            loading={submitting}
+            disabled={!!validationError}
+            onClick={submit}
+          >
+            Save
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <ErrorNote error={error} />
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-slate-600">Name</label>
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. Electronics"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-600">Icon (emoji)</label>
+            <Input
+              value={icon}
+              onChange={(e) => setIcon(e.target.value)}
+              placeholder="🛍️"
+              className="text-lg"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-600">Sort order</label>
+            <Input
+              type="number"
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+              placeholder="0"
+            />
+          </div>
+        </div>
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-medium text-slate-600">Active</label>
+          <Toggle checked={active} onChange={setActive} disabled={submitting} />
+        </div>
+        {validationError && (
+          <p className="text-xs font-medium text-rose-600">{validationError}</p>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+function CategoriesSection({ canManage }: { canManage: boolean }) {
+  const qc = useQueryClient();
+  const query = useQuery({
+    queryKey: ["shop-categories"],
+    queryFn: () => api.get<ShopCategoryRow[]>("/admin/shop/categories"),
+  });
+
+  const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<ShopCategoryRow | null>(null);
+  const [deleting, setDeleting] = useState<ShopCategoryRow | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const invalidate = () => {
+    void qc.invalidateQueries({ queryKey: ["shop-categories"] });
+  };
+
+  // Extract a friendly message for the common 409 duplicate-name conflict.
+  const conflictMessage = (err: unknown): string | null =>
+    err instanceof ApiError && err.status === 409
+      ? err.message || "A category with this name already exists."
+      : null;
+
+  const create = useMutation({
+    mutationFn: (v: { name: string; icon: string; sortOrder: number; active: boolean }) =>
+      api.post<ShopCategoryRow>("/admin/shop/categories", v),
+    onSuccess: () => {
+      invalidate();
+      setCreating(false);
+    },
+    onError: (err) => {
+      const msg = conflictMessage(err);
+      if (msg) {
+        setNotice(msg);
+        setCreating(false);
+      }
+    },
+  });
+
+  const update = useMutation({
+    mutationFn: (v: {
+      id: number;
+      body: Partial<{ name: string; icon: string; sortOrder: number; active: boolean }>;
+    }) => api.patch<ShopCategoryRow>(`/admin/shop/categories/${v.id}`, v.body),
+    onSuccess: () => {
+      invalidate();
+      setEditing(null);
+    },
+    onError: (err) => {
+      const msg = conflictMessage(err);
+      if (msg) {
+        setNotice(msg);
+        setEditing(null);
+      }
+    },
+  });
+
+  const remove = useMutation({
+    mutationFn: (id: number) => api.del<void>(`/admin/shop/categories/${id}`),
+    onSuccess: () => {
+      invalidate();
+      setDeleting(null);
+    },
+  });
+
+  const toggleActive = (cat: ShopCategoryRow) => {
+    if (!canManage) return;
+    update.mutate({ id: cat.id, body: { active: !cat.active } });
+  };
+
+  return (
+    <Card>
+      <CardHeader
+        title="Categories"
+        subtitle="Product categories buyers use to browse. Deleting a category leaves its products uncategorised."
+        action={
+          canManage ? (
+            <Button size="sm" onClick={() => setCreating(true)}>
+              <Plus className="h-4 w-4" />
+              New category
+            </Button>
+          ) : undefined
+        }
+      />
+
+      {notice && (
+        <div className="mx-5 mt-4 flex items-start justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <span>{notice}</span>
+          <button
+            type="button"
+            className="text-amber-600 hover:text-amber-800"
+            onClick={() => setNotice(null)}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {query.isLoading && <Loading />}
+      <ErrorNote error={query.error} />
+      {query.data && query.data.length === 0 && !query.isLoading && (
+        <EmptyState
+          title="No categories yet"
+          description="Create a category to help buyers browse products."
+        />
+      )}
+
+      {query.data && query.data.length > 0 && (
+        <Table>
+          <thead>
+            <tr>
+              <Th>Category</Th>
+              <Th>Sort order</Th>
+              <Th>Products</Th>
+              <Th>Active</Th>
+              <Th />
+            </tr>
+          </thead>
+          <tbody>
+            {query.data.map((c) => (
+              <tr key={c.id} className="hover:bg-slate-50">
+                <Td>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl leading-none">{c.icon || "🏷️"}</span>
+                    <span className="font-medium text-slate-900">{c.name}</span>
+                  </div>
+                </Td>
+                <Td className="text-sm text-slate-700">{fmtNumber(c.sortOrder)}</Td>
+                <Td className="text-sm text-slate-700">{fmtNumber(c.productCount)}</Td>
+                <Td>
+                  {canManage ? (
+                    <Toggle
+                      checked={c.active}
+                      onChange={() => toggleActive(c)}
+                      disabled={update.isPending}
+                    />
+                  ) : (
+                    <Badge tone={c.active ? "green" : "neutral"}>
+                      {c.active ? "Active" : "Inactive"}
+                    </Badge>
+                  )}
+                </Td>
+                <Td>
+                  {canManage ? (
+                    <div className="flex justify-end gap-1.5">
+                      <Button size="sm" variant="ghost" onClick={() => setEditing(c)}>
+                        <Pencil className="h-4 w-4" />
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        onClick={() => setDeleting(c)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete
+                      </Button>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-slate-400">—</span>
+                  )}
+                </Td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      )}
+
+      <CategoryDialog
+        open={creating}
+        title="New category"
+        initial={{ name: "", icon: "", sortOrder: "0", active: true }}
+        submitting={create.isPending}
+        error={
+          create.error instanceof ApiError && create.error.status === 409
+            ? null
+            : create.error
+        }
+        onClose={() => setCreating(false)}
+        onSubmit={(v) => create.mutate(v)}
+      />
+
+      <CategoryDialog
+        open={!!editing}
+        title="Edit category"
+        initial={{
+          name: editing?.name ?? "",
+          icon: editing?.icon ?? "",
+          sortOrder: String(editing?.sortOrder ?? 0),
+          active: editing?.active ?? true,
+        }}
+        submitting={update.isPending}
+        error={
+          update.error instanceof ApiError && update.error.status === 409
+            ? null
+            : update.error
+        }
+        onClose={() => setEditing(null)}
+        onSubmit={(v) => editing && update.mutate({ id: editing.id, body: v })}
+      />
+
+      <Modal
+        open={!!deleting}
+        onClose={() => setDeleting(null)}
+        title="Delete category"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setDeleting(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              loading={remove.isPending}
+              onClick={() => deleting && remove.mutate(deleting.id)}
+            >
+              Delete
+            </Button>
+          </>
+        }
+      >
+        {deleting && (
+          <div className="space-y-4">
+            <ErrorNote error={remove.error} />
+            <p className="text-sm text-slate-700">
+              Delete <span className="font-semibold">{deleting.name}</span>? Its{" "}
+              {fmtNumber(deleting.productCount)} product(s) will remain but become
+              uncategorised.
+            </p>
+          </div>
+        )}
+      </Modal>
+    </Card>
   );
 }
 

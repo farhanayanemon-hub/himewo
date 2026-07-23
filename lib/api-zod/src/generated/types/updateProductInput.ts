@@ -19,5 +19,6 @@ export interface UpdateProductInput {
   /** @minimum 0 */
   stockQty?: number;
   active?: boolean;
+  categoryId?: number;
   photos?: string[];
 }

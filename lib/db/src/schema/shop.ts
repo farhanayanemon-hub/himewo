@@ -39,6 +39,12 @@ export const shopStallsTable = pgTable(
     pageId: integer("page_id")
       .notNull()
       .references(() => pagesTable.id, { onDelete: "cascade" }),
+    // Seller's business address (shown to buyers, used for physical goods).
+    address: text("address").notNull().default(""),
+    // physical | digital — digital stalls cannot accept cash-on-delivery.
+    productType: text("product_type").notNull().default("physical"),
+    contactPhone: text("contact_phone").notNull().default(""),
+    contactEmail: text("contact_email").notNull().default(""),
     active: boolean("active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -55,6 +61,25 @@ export const shopStallsTable = pgTable(
 );
 
 /**
+ * Admin-managed product categories shown as a grid on the shop landing page.
+ * `icon` is an emoji (renders everywhere without an icon library).
+ */
+export const shopCategoriesTable = pgTable(
+  "shop_categories",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    icon: text("icon").notNull().default("🛍️"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [uniqueIndex("shop_categories_name_uniq").on(t.name)],
+);
+
+/**
  * A product listed under a stall. `priceCents` is integer paisa. Soft-delete
  * (active=false) when the product already has orders; hard-delete otherwise.
  */
@@ -65,6 +90,10 @@ export const shopProductsTable = pgTable(
     stallId: integer("stall_id")
       .notNull()
       .references(() => shopStallsTable.id, { onDelete: "cascade" }),
+    categoryId: integer("category_id").references(
+      () => shopCategoriesTable.id,
+      { onDelete: "set null" },
+    ),
     photos: text("photos")
       .array()
       .notNull()
@@ -85,6 +114,7 @@ export const shopProductsTable = pgTable(
   (t) => [
     index("shop_products_stall_idx").on(t.stallId, t.id),
     index("shop_products_active_idx").on(t.active),
+    index("shop_products_category_idx").on(t.categoryId, t.id),
   ],
 );
 
@@ -266,6 +296,7 @@ export const insertShopProductSchema = createInsertSchema(
 export type InsertShopProduct = z.infer<typeof insertShopProductSchema>;
 
 export type ShopStall = typeof shopStallsTable.$inferSelect;
+export type ShopCategory = typeof shopCategoriesTable.$inferSelect;
 export type ShopProduct = typeof shopProductsTable.$inferSelect;
 export type ShopOrder = typeof shopOrdersTable.$inferSelect;
 export type ShopLedgerEntry = typeof shopLedgerTable.$inferSelect;
