@@ -91,6 +91,7 @@ function PageSwitcher() {
   const { user } = useAuth();
   const { actingPage, switchTo } = useActingPage();
   const { data: pages } = useListPages({ mine: true });
+  const [, navigate] = useLocation();
 
   if (!pages || pages.length === 0) return null;
 
@@ -120,7 +121,7 @@ function PageSwitcher() {
         <DropdownMenuLabel>Acting as</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onClick={() => actingPage && switchTo(null)}
+          onClick={() => actingPage && switchTo(null, () => navigate("/me"))}
           className="gap-3 py-2"
         >
           <img
@@ -138,11 +139,15 @@ function PageSwitcher() {
               key={p.id}
               onClick={() =>
                 !isActive &&
-                switchTo({
-                  id: p.id,
-                  name: p.name,
-                  avatarUrl: p.avatarUrl ?? null,
-                })
+                switchTo(
+                  {
+                    id: p.id,
+                    name: p.name,
+                    avatarUrl: p.avatarUrl ?? null,
+                  },
+                  // Land on the Hub's own page so the switch is clearly visible.
+                  () => navigate(`/pages/${p.id}`),
+                )
               }
               className="gap-3 py-2"
             >

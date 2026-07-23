@@ -15,8 +15,9 @@ export type ActingPage = {
 interface ActingPageContextValue {
   /** The page the user is currently acting as, or null for their own self. */
   actingPage: ActingPage | null;
-  /** Switch identity (page or back to self when null). Shows a brief overlay. */
-  switchTo: (page: ActingPage | null) => void;
+  /** Switch identity (page or back to self when null). Shows a brief overlay.
+   * `onDone` runs right after the new identity is applied (e.g. to navigate). */
+  switchTo: (page: ActingPage | null, onDone?: () => void) => void;
   /** Name shown in the transition overlay while switching, or null when idle. */
   switching: string | null;
 }
@@ -45,7 +46,7 @@ export function ActingPageProvider({ children }: { children: ReactNode }) {
   );
   const [switching, setSwitching] = useState<string | null>(null);
 
-  const switchTo = useCallback((page: ActingPage | null) => {
+  const switchTo = useCallback((page: ActingPage | null, onDone?: () => void) => {
     setSwitching(page ? page.name : "your profile");
     // Persist immediately so a reload keeps the chosen identity.
     try {
@@ -58,6 +59,7 @@ export function ActingPageProvider({ children }: { children: ReactNode }) {
     window.setTimeout(() => {
       setActingPage(page);
       setSwitching(null);
+      onDone?.();
     }, 750);
   }, []);
 
