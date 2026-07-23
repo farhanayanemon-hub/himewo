@@ -29,6 +29,8 @@ export const PERMISSIONS = [
   "verification.manage",
   "ads.view",
   "ads.manage",
+  "shop.view",
+  "shop.manage",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -67,6 +69,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     "audit.view",
     "ads.view",
     "ads.manage",
+    "shop.view",
+    "shop.manage",
   ],
   admin: [...PERMISSIONS],
 };

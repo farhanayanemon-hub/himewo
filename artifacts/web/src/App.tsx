@@ -40,11 +40,12 @@ import LivePage, { LiveStreamPage } from "@/pages/live";
 import UsernameProfilePage from "@/pages/username-profile";
 import WatchPage from "@/pages/watch";
 import HashtagPage from "@/pages/hashtag";
-import MarketplacePage, {
-  MarketplaceListingPage,
-  MarketplaceCreatePage,
-  MarketplaceSellingPage,
-} from "@/pages/marketplace";
+import ShopPage, {
+  ShopStallPage,
+  ShopProductPage,
+  ShopOrdersPage,
+  ShopMyStallPage,
+} from "@/pages/shop";
 
 const queryClient = new QueryClient();
 
@@ -88,10 +89,11 @@ function AppRoutes() {
       <Route path="/groups/:id" component={GroupsPage} />
       <Route path="/pages" component={PagesView} />
       <Route path="/pages/:id" component={PagesView} />
-      <Route path="/marketplace" component={MarketplacePage} />
-      <Route path="/marketplace/selling" component={MarketplaceSellingPage} />
-      <Route path="/marketplace/create" component={MarketplaceCreatePage} />
-      <Route path="/marketplace/:id" component={MarketplaceListingPage} />
+      <Route path="/shop" component={ShopPage} />
+      <Route path="/shop/orders" component={ShopOrdersPage} />
+      <Route path="/shop/my-stall" component={ShopMyStallPage} />
+      <Route path="/shop/stalls/:id" component={ShopStallPage} />
+      <Route path="/shop/products/:id" component={ShopProductPage} />
       <Route path="/notifications" component={NotificationsPage} />
       <Route path="/search" component={SearchPage} />
       <Route path="/settings" component={SettingsPage} />

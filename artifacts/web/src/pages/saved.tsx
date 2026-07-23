@@ -12,7 +12,12 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PostCard } from "@/components/post-card";
-import { formatPrice } from "@/pages/marketplace";
+
+function formatPrice(price: number, currency = "BDT") {
+  if (price === 0) return "Free";
+  const symbol = currency === "BDT" ? "৳" : currency + " ";
+  return `${symbol}${price.toLocaleString()}`;
+}
 
 export default function SavedPage() {
   const { data: items, isLoading } = useListSavedItems();
@@ -74,7 +79,7 @@ export default function SavedPage() {
             </div>
             <p className="text-foreground font-semibold">Nothing saved yet</p>
             <p className="text-muted-foreground text-sm mt-1 max-w-sm">
-              Save anything you like from your Feed or Marketplace, and find it
+              Save anything you like from your Feed or Shop, and find it
               here later.
             </p>
             <Link
@@ -107,8 +112,8 @@ export default function SavedPage() {
                       >
                         <X className="w-4 h-4" />
                       </button>
-                      <Link href={`/marketplace/${item.id}`}>
-                        <div className="aspect-square bg-muted relative cursor-pointer">
+                      <div>
+                        <div className="aspect-square bg-muted relative">
                           {item.photos[0] ? (
                             <img
                               src={item.photos[0]}
@@ -121,7 +126,7 @@ export default function SavedPage() {
                             </div>
                           )}
                         </div>
-                        <div className="p-3 cursor-pointer">
+                        <div className="p-3">
                           <p className="font-extrabold text-[15px]">
                             {formatPrice(item.price, item.currency)}
                           </p>
@@ -132,7 +137,7 @@ export default function SavedPage() {
                             </p>
                           )}
                         </div>
-                      </Link>
+                      </div>
                     </div>
                   );
                 })}

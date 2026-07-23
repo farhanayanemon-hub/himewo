@@ -26,7 +26,7 @@ const SHORTCUTS: Shortcut[] = [
   { label: "Friends", icon: "people", color: "#1877f2", href: "/friends" },
   { label: "Saved", icon: "bookmark", color: "#a855f7", href: "/saved" },
   { label: "Verified", icon: "checkmark-circle", color: "#1877f2", href: "/verified" as Href },
-  { label: "Marketplace", icon: "storefront", color: "#c084fc", href: "/marketplace" },
+  { label: "Shop", icon: "storefront", color: "#c084fc", href: "/shop" },
   { label: "Circles", icon: "people-circle", color: "#0a7ea4", href: "/groups" },
   { label: "Hubs", icon: "document-text", color: "#d946ef", href: "/pages" },
   { label: "Reels", icon: "film", color: "#e9710f", href: "/reels" },

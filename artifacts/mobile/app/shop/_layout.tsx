@@ -1,7 +1,7 @@
 import { Stack } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 
-export default function MarketplaceLayout() {
+export default function ShopLayout() {
   const c = useColors();
   return (
     <Stack
@@ -12,13 +12,11 @@ export default function MarketplaceLayout() {
         contentStyle: { backgroundColor: c.background },
       }}
     >
-      <Stack.Screen name="index" options={{ title: "Marketplace" }} />
-      <Stack.Screen name="[id]" options={{ title: "Listing" }} />
-      <Stack.Screen
-        name="create"
-        options={{ title: "New listing", presentation: "modal" }}
-      />
-      <Stack.Screen name="selling" options={{ title: "Your selling" }} />
+      <Stack.Screen name="index" options={{ title: "Shop" }} />
+      <Stack.Screen name="stall/[id]" options={{ title: "Stall" }} />
+      <Stack.Screen name="product/[id]" options={{ title: "Product" }} />
+      <Stack.Screen name="orders" options={{ title: "My orders" }} />
+      <Stack.Screen name="my-stall" options={{ title: "My stall" }} />
     </Stack>
   );
 }

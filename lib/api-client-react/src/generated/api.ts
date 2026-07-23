@@ -52,6 +52,9 @@ import type {
   AdjustPointsInput,
   AdjustPointsResult,
   AdminEarningsSummary,
+  AdminShopStall,
+  AdminShopSummary,
+  AdminShopWithdrawal,
   AdminWithdrawalRequest,
   Album,
   AlbumDetail,
@@ -62,14 +65,21 @@ import type {
   BillingSettingsUpdate,
   BoostPageInput,
   BoostPostInput,
+  BrowseProductsParams,
+  BrowseStallsParams,
   CheckoutSession,
   Comment,
   CommentInput,
   CommentUpdate,
+  ConflictResponse,
   Conversation,
   ConversationInput,
   ConversationPrefsInput,
   ConversationUpdate,
+  CreateOrderInput,
+  CreateProductInput,
+  CreateShopWithdrawalInput,
+  CreateStallInput,
   EarningsSummary,
   Event,
   EventDetail,
@@ -93,6 +103,7 @@ import type {
   GetHashtagPostsParams,
   GetPageParams,
   GetPagePostsParams,
+  GetStallProductsParams,
   GetUserFriendsParams,
   GetUserPostsParams,
   GetWatchFeedParams,
@@ -105,12 +116,17 @@ import type {
   InviteInput,
   JoinGroupInput,
   ListAdAccountConversionsParams,
+  ListAdminOrdersParams,
+  ListAdminPaymentsParams,
+  ListAdminShopWithdrawalsParams,
+  ListAdminStallsParams,
   ListAdminWithdrawalsParams,
   ListCommentsParams,
   ListMarketplaceListingsParams,
   ListMessagesParams,
   ListMusicTracksParams,
   ListNotificationsParams,
+  ListOrdersParams,
   ListPageMediaParams,
   ListPagesParams,
   ListReelsParams,
@@ -152,6 +168,7 @@ import type {
   Post,
   PostInput,
   PostUpdate,
+  ProcessShopWithdrawalInput,
   ProcessWithdrawalInput,
   Profile,
   ProfileInput,
@@ -179,6 +196,13 @@ import type {
   SetDefaultCardInput,
   SetMemberRoleInput,
   ShareInput,
+  ShopOrder,
+  ShopProduct,
+  ShopSettings,
+  ShopSettingsInput,
+  ShopStall,
+  ShopWallet,
+  ShopWithdrawal,
   Story,
   StoryGroup,
   StoryInput,
@@ -187,10 +211,13 @@ import type {
   UnauthorizedResponse,
   UnfollowPageParams,
   UnreadCount,
+  UpdateOrderStatusInput,
+  UpdateProductInput,
   UploadUrlInput,
   UploadUrlResponse,
   UserSettings,
   UserSettingsUpdate,
+  VerifyPaymentInput,
   WalletTopupInput,
   WithdrawalAccount,
   WithdrawalAccountInput,
@@ -16198,5 +16225,2227 @@ export const useResetUserPoints = <TError = ErrorType<UnauthorizedResponse | For
         TContext
       > => {
       return useMutation(getResetUserPointsMutationOptions(options));
+    }
+
+export const getGetShopSettingsUrl = () => {
+
+
+
+
+  return `/api/shop/settings`
+}
+
+/**
+ * @summary Public shop settings (commission %, payment instructions)
+ */
+export const getShopSettings = async ( options?: RequestInit): Promise<ShopSettings> => {
+
+  return customFetch<ShopSettings>(getGetShopSettingsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetShopSettingsQueryKey = () => {
+    return [
+    `/api/shop/settings`
+    ] as const;
+    }
+
+
+export const getGetShopSettingsQueryOptions = <TData = Awaited<ReturnType<typeof getShopSettings>>, TError = ErrorType<UnauthorizedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetShopSettingsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getShopSettings>>> = ({ signal }) => getShopSettings({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getShopSettings>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetShopSettingsQueryResult = NonNullable<Awaited<ReturnType<typeof getShopSettings>>>
+export type GetShopSettingsQueryError = ErrorType<UnauthorizedResponse>
+
+
+/**
+ * @summary Public shop settings (commission %, payment instructions)
+ */
+
+export function useGetShopSettings<TData = Awaited<ReturnType<typeof getShopSettings>>, TError = ErrorType<UnauthorizedResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetShopSettingsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetMyStallUrl = () => {
+
+
+
+
+  return `/api/shop/stall`
+}
+
+/**
+ * @summary Get the authenticated user's stall
+ */
+export const getMyStall = async ( options?: RequestInit): Promise<ShopStall> => {
+
+  return customFetch<ShopStall>(getGetMyStallUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyStallQueryKey = () => {
+    return [
+    `/api/shop/stall`
+    ] as const;
+    }
+
+
+export const getGetMyStallQueryOptions = <TData = Awaited<ReturnType<typeof getMyStall>>, TError = ErrorType<UnauthorizedResponse | NotFoundResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyStall>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyStallQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyStall>>> = ({ signal }) => getMyStall({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyStall>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyStallQueryResult = NonNullable<Awaited<ReturnType<typeof getMyStall>>>
+export type GetMyStallQueryError = ErrorType<UnauthorizedResponse | NotFoundResponse>
+
+
+/**
+ * @summary Get the authenticated user's stall
+ */
+
+export function useGetMyStall<TData = Awaited<ReturnType<typeof getMyStall>>, TError = ErrorType<UnauthorizedResponse | NotFoundResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyStall>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyStallQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateStallUrl = () => {
+
+
+
+
+  return `/api/shop/stall`
+}
+
+/**
+ * @summary Open a stall connected to a Hub (page) you manage
+ */
+export const createStall = async (createStallInput: CreateStallInput, options?: RequestInit): Promise<ShopStall> => {
+
+  return customFetch<ShopStall>(getCreateStallUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createStallInput)
+  }
+);}
+
+
+
+
+export const getCreateStallMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createStall>>, TError,{data: BodyType<CreateStallInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createStall>>, TError,{data: BodyType<CreateStallInput>}, TContext> => {
+
+const mutationKey = ['createStall'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createStall>>, {data: BodyType<CreateStallInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createStall(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateStallMutationResult = NonNullable<Awaited<ReturnType<typeof createStall>>>
+    export type CreateStallMutationBody = BodyType<CreateStallInput>
+    export type CreateStallMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | ConflictResponse>
+
+    /**
+ * @summary Open a stall connected to a Hub (page) you manage
+ */
+export const useCreateStall = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createStall>>, TError,{data: BodyType<CreateStallInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createStall>>,
+        TError,
+        {data: BodyType<CreateStallInput>},
+        TContext
+      > => {
+      return useMutation(getCreateStallMutationOptions(options));
+    }
+
+export const getBrowseStallsUrl = (params?: BrowseStallsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/shop/stalls?${stringifiedParams}` : `/api/shop/stalls`
+}
+
+/**
+ * @summary Browse stalls
+ */
+export const browseStalls = async (params?: BrowseStallsParams, options?: RequestInit): Promise<ShopStall[]> => {
+
+  return customFetch<ShopStall[]>(getBrowseStallsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getBrowseStallsQueryKey = (params?: BrowseStallsParams,) => {
+    return [
+    `/api/shop/stalls`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getBrowseStallsQueryOptions = <TData = Awaited<ReturnType<typeof browseStalls>>, TError = ErrorType<UnauthorizedResponse>>(params?: BrowseStallsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof browseStalls>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getBrowseStallsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof browseStalls>>> = ({ signal }) => browseStalls(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof browseStalls>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type BrowseStallsQueryResult = NonNullable<Awaited<ReturnType<typeof browseStalls>>>
+export type BrowseStallsQueryError = ErrorType<UnauthorizedResponse>
+
+
+/**
+ * @summary Browse stalls
+ */
+
+export function useBrowseStalls<TData = Awaited<ReturnType<typeof browseStalls>>, TError = ErrorType<UnauthorizedResponse>>(
+ params?: BrowseStallsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof browseStalls>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getBrowseStallsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetStallUrl = (id: number,) => {
+
+
+
+
+  return `/api/shop/stalls/${id}`
+}
+
+/**
+ * @summary Get a public stall
+ */
+export const getStall = async (id: number, options?: RequestInit): Promise<ShopStall> => {
+
+  return customFetch<ShopStall>(getGetStallUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetStallQueryKey = (id: number,) => {
+    return [
+    `/api/shop/stalls/${id}`
+    ] as const;
+    }
+
+
+export const getGetStallQueryOptions = <TData = Awaited<ReturnType<typeof getStall>>, TError = ErrorType<UnauthorizedResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStall>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStallQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStall>>> = ({ signal }) => getStall(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStall>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetStallQueryResult = NonNullable<Awaited<ReturnType<typeof getStall>>>
+export type GetStallQueryError = ErrorType<UnauthorizedResponse | NotFoundResponse>
+
+
+/**
+ * @summary Get a public stall
+ */
+
+export function useGetStall<TData = Awaited<ReturnType<typeof getStall>>, TError = ErrorType<UnauthorizedResponse | NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStall>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetStallQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetStallProductsUrl = (id: number,
+    params?: GetStallProductsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/shop/stalls/${id}/products?${stringifiedParams}` : `/api/shop/stalls/${id}/products`
+}
+
+/**
+ * @summary List a stall's products (active only unless you own the stall)
+ */
+export const getStallProducts = async (id: number,
+    params?: GetStallProductsParams, options?: RequestInit): Promise<ShopProduct[]> => {
+
+  return customFetch<ShopProduct[]>(getGetStallProductsUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetStallProductsQueryKey = (id: number,
+    params?: GetStallProductsParams,) => {
+    return [
+    `/api/shop/stalls/${id}/products`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetStallProductsQueryOptions = <TData = Awaited<ReturnType<typeof getStallProducts>>, TError = ErrorType<UnauthorizedResponse | NotFoundResponse>>(id: number,
+    params?: GetStallProductsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStallProducts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStallProductsQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStallProducts>>> = ({ signal }) => getStallProducts(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStallProducts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetStallProductsQueryResult = NonNullable<Awaited<ReturnType<typeof getStallProducts>>>
+export type GetStallProductsQueryError = ErrorType<UnauthorizedResponse | NotFoundResponse>
+
+
+/**
+ * @summary List a stall's products (active only unless you own the stall)
+ */
+
+export function useGetStallProducts<TData = Awaited<ReturnType<typeof getStallProducts>>, TError = ErrorType<UnauthorizedResponse | NotFoundResponse>>(
+ id: number,
+    params?: GetStallProductsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStallProducts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetStallProductsQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getBrowseProductsUrl = (params?: BrowseProductsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/shop/products?${stringifiedParams}` : `/api/shop/products`
+}
+
+/**
+ * @summary Browse products (active, in-stock)
+ */
+export const browseProducts = async (params?: BrowseProductsParams, options?: RequestInit): Promise<ShopProduct[]> => {
+
+  return customFetch<ShopProduct[]>(getBrowseProductsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getBrowseProductsQueryKey = (params?: BrowseProductsParams,) => {
+    return [
+    `/api/shop/products`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getBrowseProductsQueryOptions = <TData = Awaited<ReturnType<typeof browseProducts>>, TError = ErrorType<UnauthorizedResponse>>(params?: BrowseProductsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof browseProducts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getBrowseProductsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof browseProducts>>> = ({ signal }) => browseProducts(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof browseProducts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type BrowseProductsQueryResult = NonNullable<Awaited<ReturnType<typeof browseProducts>>>
+export type BrowseProductsQueryError = ErrorType<UnauthorizedResponse>
+
+
+/**
+ * @summary Browse products (active, in-stock)
+ */
+
+export function useBrowseProducts<TData = Awaited<ReturnType<typeof browseProducts>>, TError = ErrorType<UnauthorizedResponse>>(
+ params?: BrowseProductsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof browseProducts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getBrowseProductsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateProductUrl = () => {
+
+
+
+
+  return `/api/shop/products`
+}
+
+/**
+ * @summary Create a product in your stall
+ */
+export const createProduct = async (createProductInput: CreateProductInput, options?: RequestInit): Promise<ShopProduct> => {
+
+  return customFetch<ShopProduct>(getCreateProductUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createProductInput)
+  }
+);}
+
+
+
+
+export const getCreateProductMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createProduct>>, TError,{data: BodyType<CreateProductInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createProduct>>, TError,{data: BodyType<CreateProductInput>}, TContext> => {
+
+const mutationKey = ['createProduct'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createProduct>>, {data: BodyType<CreateProductInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createProduct(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateProductMutationResult = NonNullable<Awaited<ReturnType<typeof createProduct>>>
+    export type CreateProductMutationBody = BodyType<CreateProductInput>
+    export type CreateProductMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>
+
+    /**
+ * @summary Create a product in your stall
+ */
+export const useCreateProduct = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createProduct>>, TError,{data: BodyType<CreateProductInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createProduct>>,
+        TError,
+        {data: BodyType<CreateProductInput>},
+        TContext
+      > => {
+      return useMutation(getCreateProductMutationOptions(options));
+    }
+
+export const getGetProductUrl = (id: number,) => {
+
+
+
+
+  return `/api/shop/products/${id}`
+}
+
+/**
+ * @summary Get a product
+ */
+export const getProduct = async (id: number, options?: RequestInit): Promise<ShopProduct> => {
+
+  return customFetch<ShopProduct>(getGetProductUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetProductQueryKey = (id: number,) => {
+    return [
+    `/api/shop/products/${id}`
+    ] as const;
+    }
+
+
+export const getGetProductQueryOptions = <TData = Awaited<ReturnType<typeof getProduct>>, TError = ErrorType<UnauthorizedResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProduct>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetProductQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProduct>>> = ({ signal }) => getProduct(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProduct>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetProductQueryResult = NonNullable<Awaited<ReturnType<typeof getProduct>>>
+export type GetProductQueryError = ErrorType<UnauthorizedResponse | NotFoundResponse>
+
+
+/**
+ * @summary Get a product
+ */
+
+export function useGetProduct<TData = Awaited<ReturnType<typeof getProduct>>, TError = ErrorType<UnauthorizedResponse | NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProduct>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetProductQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateProductUrl = (id: number,) => {
+
+
+
+
+  return `/api/shop/products/${id}`
+}
+
+/**
+ * @summary Update your product
+ */
+export const updateProduct = async (id: number,
+    updateProductInput: UpdateProductInput, options?: RequestInit): Promise<ShopProduct> => {
+
+  return customFetch<ShopProduct>(getUpdateProductUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateProductInput)
+  }
+);}
+
+
+
+
+export const getUpdateProductMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateProduct>>, TError,{id: number;data: BodyType<UpdateProductInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateProduct>>, TError,{id: number;data: BodyType<UpdateProductInput>}, TContext> => {
+
+const mutationKey = ['updateProduct'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateProduct>>, {id: number;data: BodyType<UpdateProductInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateProduct(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateProductMutationResult = NonNullable<Awaited<ReturnType<typeof updateProduct>>>
+    export type UpdateProductMutationBody = BodyType<UpdateProductInput>
+    export type UpdateProductMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Update your product
+ */
+export const useUpdateProduct = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateProduct>>, TError,{id: number;data: BodyType<UpdateProductInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateProduct>>,
+        TError,
+        {id: number;data: BodyType<UpdateProductInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateProductMutationOptions(options));
+    }
+
+export const getDeleteProductUrl = (id: number,) => {
+
+
+
+
+  return `/api/shop/products/${id}`
+}
+
+/**
+ * @summary Delete your product (soft-delete if it has orders)
+ */
+export const deleteProduct = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteProductUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteProductMutationOptions = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteProduct>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteProduct>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteProduct'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteProduct>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteProduct(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteProductMutationResult = NonNullable<Awaited<ReturnType<typeof deleteProduct>>>
+
+    export type DeleteProductMutationError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Delete your product (soft-delete if it has orders)
+ */
+export const useDeleteProduct = <TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteProduct>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteProduct>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteProductMutationOptions(options));
+    }
+
+export const getListOrdersUrl = (params: ListOrdersParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/shop/orders?${stringifiedParams}` : `/api/shop/orders`
+}
+
+/**
+ * @summary List my orders as buyer or seller
+ */
+export const listOrders = async (params: ListOrdersParams, options?: RequestInit): Promise<ShopOrder[]> => {
+
+  return customFetch<ShopOrder[]>(getListOrdersUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListOrdersQueryKey = (params?: ListOrdersParams,) => {
+    return [
+    `/api/shop/orders`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListOrdersQueryOptions = <TData = Awaited<ReturnType<typeof listOrders>>, TError = ErrorType<UnauthorizedResponse>>(params: ListOrdersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOrders>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOrdersQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOrders>>> = ({ signal }) => listOrders(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOrders>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListOrdersQueryResult = NonNullable<Awaited<ReturnType<typeof listOrders>>>
+export type ListOrdersQueryError = ErrorType<UnauthorizedResponse>
+
+
+/**
+ * @summary List my orders as buyer or seller
+ */
+
+export function useListOrders<TData = Awaited<ReturnType<typeof listOrders>>, TError = ErrorType<UnauthorizedResponse>>(
+ params: ListOrdersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOrders>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListOrdersQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateOrderUrl = () => {
+
+
+
+
+  return `/api/shop/orders`
+}
+
+/**
+ * @summary Place an order on a product
+ */
+export const createOrder = async (createOrderInput: CreateOrderInput, options?: RequestInit): Promise<ShopOrder> => {
+
+  return customFetch<ShopOrder>(getCreateOrderUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createOrderInput)
+  }
+);}
+
+
+
+
+export const getCreateOrderMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createOrder>>, TError,{data: BodyType<CreateOrderInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createOrder>>, TError,{data: BodyType<CreateOrderInput>}, TContext> => {
+
+const mutationKey = ['createOrder'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createOrder>>, {data: BodyType<CreateOrderInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createOrder(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateOrderMutationResult = NonNullable<Awaited<ReturnType<typeof createOrder>>>
+    export type CreateOrderMutationBody = BodyType<CreateOrderInput>
+    export type CreateOrderMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Place an order on a product
+ */
+export const useCreateOrder = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createOrder>>, TError,{data: BodyType<CreateOrderInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createOrder>>,
+        TError,
+        {data: BodyType<CreateOrderInput>},
+        TContext
+      > => {
+      return useMutation(getCreateOrderMutationOptions(options));
+    }
+
+export const getGetOrderUrl = (id: number,) => {
+
+
+
+
+  return `/api/shop/orders/${id}`
+}
+
+/**
+ * @summary Get an order (buyer, seller, or admin only)
+ */
+export const getOrder = async (id: number, options?: RequestInit): Promise<ShopOrder> => {
+
+  return customFetch<ShopOrder>(getGetOrderUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOrderQueryKey = (id: number,) => {
+    return [
+    `/api/shop/orders/${id}`
+    ] as const;
+    }
+
+
+export const getGetOrderQueryOptions = <TData = Awaited<ReturnType<typeof getOrder>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOrder>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOrderQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOrder>>> = ({ signal }) => getOrder(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOrder>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOrderQueryResult = NonNullable<Awaited<ReturnType<typeof getOrder>>>
+export type GetOrderQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+
+/**
+ * @summary Get an order (buyer, seller, or admin only)
+ */
+
+export function useGetOrder<TData = Awaited<ReturnType<typeof getOrder>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOrder>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOrderQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateOrderStatusUrl = (id: number,) => {
+
+
+
+
+  return `/api/shop/orders/${id}/status`
+}
+
+/**
+ * @summary Advance an order's status (role-gated transitions)
+ */
+export const updateOrderStatus = async (id: number,
+    updateOrderStatusInput: UpdateOrderStatusInput, options?: RequestInit): Promise<ShopOrder> => {
+
+  return customFetch<ShopOrder>(getUpdateOrderStatusUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateOrderStatusInput)
+  }
+);}
+
+
+
+
+export const getUpdateOrderStatusMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOrderStatus>>, TError,{id: number;data: BodyType<UpdateOrderStatusInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateOrderStatus>>, TError,{id: number;data: BodyType<UpdateOrderStatusInput>}, TContext> => {
+
+const mutationKey = ['updateOrderStatus'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateOrderStatus>>, {id: number;data: BodyType<UpdateOrderStatusInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateOrderStatus(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateOrderStatusMutationResult = NonNullable<Awaited<ReturnType<typeof updateOrderStatus>>>
+    export type UpdateOrderStatusMutationBody = BodyType<UpdateOrderStatusInput>
+    export type UpdateOrderStatusMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Advance an order's status (role-gated transitions)
+ */
+export const useUpdateOrderStatus = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOrderStatus>>, TError,{id: number;data: BodyType<UpdateOrderStatusInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateOrderStatus>>,
+        TError,
+        {id: number;data: BodyType<UpdateOrderStatusInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateOrderStatusMutationOptions(options));
+    }
+
+export const getGetShopWalletUrl = () => {
+
+
+
+
+  return `/api/shop/wallet`
+}
+
+/**
+ * @summary Seller wallet balance and ledger
+ */
+export const getShopWallet = async ( options?: RequestInit): Promise<ShopWallet> => {
+
+  return customFetch<ShopWallet>(getGetShopWalletUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetShopWalletQueryKey = () => {
+    return [
+    `/api/shop/wallet`
+    ] as const;
+    }
+
+
+export const getGetShopWalletQueryOptions = <TData = Awaited<ReturnType<typeof getShopWallet>>, TError = ErrorType<UnauthorizedResponse | NotFoundResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopWallet>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetShopWalletQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getShopWallet>>> = ({ signal }) => getShopWallet({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getShopWallet>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetShopWalletQueryResult = NonNullable<Awaited<ReturnType<typeof getShopWallet>>>
+export type GetShopWalletQueryError = ErrorType<UnauthorizedResponse | NotFoundResponse>
+
+
+/**
+ * @summary Seller wallet balance and ledger
+ */
+
+export function useGetShopWallet<TData = Awaited<ReturnType<typeof getShopWallet>>, TError = ErrorType<UnauthorizedResponse | NotFoundResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopWallet>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetShopWalletQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListShopWithdrawalsUrl = () => {
+
+
+
+
+  return `/api/shop/withdrawals`
+}
+
+/**
+ * @summary List my withdrawal requests
+ */
+export const listShopWithdrawals = async ( options?: RequestInit): Promise<ShopWithdrawal[]> => {
+
+  return customFetch<ShopWithdrawal[]>(getListShopWithdrawalsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListShopWithdrawalsQueryKey = () => {
+    return [
+    `/api/shop/withdrawals`
+    ] as const;
+    }
+
+
+export const getListShopWithdrawalsQueryOptions = <TData = Awaited<ReturnType<typeof listShopWithdrawals>>, TError = ErrorType<UnauthorizedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listShopWithdrawals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListShopWithdrawalsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listShopWithdrawals>>> = ({ signal }) => listShopWithdrawals({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listShopWithdrawals>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListShopWithdrawalsQueryResult = NonNullable<Awaited<ReturnType<typeof listShopWithdrawals>>>
+export type ListShopWithdrawalsQueryError = ErrorType<UnauthorizedResponse>
+
+
+/**
+ * @summary List my withdrawal requests
+ */
+
+export function useListShopWithdrawals<TData = Awaited<ReturnType<typeof listShopWithdrawals>>, TError = ErrorType<UnauthorizedResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listShopWithdrawals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListShopWithdrawalsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateShopWithdrawalUrl = () => {
+
+
+
+
+  return `/api/shop/withdrawals`
+}
+
+/**
+ * @summary Request a withdrawal from your wallet
+ */
+export const createShopWithdrawal = async (createShopWithdrawalInput: CreateShopWithdrawalInput, options?: RequestInit): Promise<ShopWithdrawal> => {
+
+  return customFetch<ShopWithdrawal>(getCreateShopWithdrawalUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createShopWithdrawalInput)
+  }
+);}
+
+
+
+
+export const getCreateShopWithdrawalMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createShopWithdrawal>>, TError,{data: BodyType<CreateShopWithdrawalInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createShopWithdrawal>>, TError,{data: BodyType<CreateShopWithdrawalInput>}, TContext> => {
+
+const mutationKey = ['createShopWithdrawal'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createShopWithdrawal>>, {data: BodyType<CreateShopWithdrawalInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createShopWithdrawal(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateShopWithdrawalMutationResult = NonNullable<Awaited<ReturnType<typeof createShopWithdrawal>>>
+    export type CreateShopWithdrawalMutationBody = BodyType<CreateShopWithdrawalInput>
+    export type CreateShopWithdrawalMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>
+
+    /**
+ * @summary Request a withdrawal from your wallet
+ */
+export const useCreateShopWithdrawal = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createShopWithdrawal>>, TError,{data: BodyType<CreateShopWithdrawalInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createShopWithdrawal>>,
+        TError,
+        {data: BodyType<CreateShopWithdrawalInput>},
+        TContext
+      > => {
+      return useMutation(getCreateShopWithdrawalMutationOptions(options));
+    }
+
+export const getListAdminStallsUrl = (params?: ListAdminStallsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/shop/stalls?${stringifiedParams}` : `/api/admin/shop/stalls`
+}
+
+/**
+ * @summary List all stalls with owner, page, and counts
+ */
+export const listAdminStalls = async (params?: ListAdminStallsParams, options?: RequestInit): Promise<AdminShopStall[]> => {
+
+  return customFetch<AdminShopStall[]>(getListAdminStallsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminStallsQueryKey = (params?: ListAdminStallsParams,) => {
+    return [
+    `/api/admin/shop/stalls`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListAdminStallsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminStalls>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(params?: ListAdminStallsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminStalls>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminStallsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminStalls>>> = ({ signal }) => listAdminStalls(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminStalls>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminStallsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminStalls>>>
+export type ListAdminStallsQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary List all stalls with owner, page, and counts
+ */
+
+export function useListAdminStalls<TData = Awaited<ReturnType<typeof listAdminStalls>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+ params?: ListAdminStallsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminStalls>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminStallsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListAdminStallProductsUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/shop/stalls/${id}/products`
+}
+
+/**
+ * @summary List a stall's products (admin)
+ */
+export const listAdminStallProducts = async (id: number, options?: RequestInit): Promise<ShopProduct[]> => {
+
+  return customFetch<ShopProduct[]>(getListAdminStallProductsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminStallProductsQueryKey = (id: number,) => {
+    return [
+    `/api/admin/shop/stalls/${id}/products`
+    ] as const;
+    }
+
+
+export const getListAdminStallProductsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminStallProducts>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminStallProducts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminStallProductsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminStallProducts>>> = ({ signal }) => listAdminStallProducts(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminStallProducts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminStallProductsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminStallProducts>>>
+export type ListAdminStallProductsQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+
+/**
+ * @summary List a stall's products (admin)
+ */
+
+export function useListAdminStallProducts<TData = Awaited<ReturnType<typeof listAdminStallProducts>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminStallProducts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminStallProductsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListAdminOrdersUrl = (params?: ListAdminOrdersParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/shop/orders?${stringifiedParams}` : `/api/admin/shop/orders`
+}
+
+/**
+ * @summary List all orders (filterable)
+ */
+export const listAdminOrders = async (params?: ListAdminOrdersParams, options?: RequestInit): Promise<ShopOrder[]> => {
+
+  return customFetch<ShopOrder[]>(getListAdminOrdersUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminOrdersQueryKey = (params?: ListAdminOrdersParams,) => {
+    return [
+    `/api/admin/shop/orders`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListAdminOrdersQueryOptions = <TData = Awaited<ReturnType<typeof listAdminOrders>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(params?: ListAdminOrdersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminOrders>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminOrdersQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminOrders>>> = ({ signal }) => listAdminOrders(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminOrders>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminOrdersQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminOrders>>>
+export type ListAdminOrdersQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary List all orders (filterable)
+ */
+
+export function useListAdminOrders<TData = Awaited<ReturnType<typeof listAdminOrders>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+ params?: ListAdminOrdersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminOrders>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminOrdersQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAdminUpdateOrderUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/shop/orders/${id}`
+}
+
+/**
+ * @summary Set any order status (restores stock when cancelling)
+ */
+export const adminUpdateOrder = async (id: number,
+    updateOrderStatusInput: UpdateOrderStatusInput, options?: RequestInit): Promise<ShopOrder> => {
+
+  return customFetch<ShopOrder>(getAdminUpdateOrderUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateOrderStatusInput)
+  }
+);}
+
+
+
+
+export const getAdminUpdateOrderMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminUpdateOrder>>, TError,{id: number;data: BodyType<UpdateOrderStatusInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof adminUpdateOrder>>, TError,{id: number;data: BodyType<UpdateOrderStatusInput>}, TContext> => {
+
+const mutationKey = ['adminUpdateOrder'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminUpdateOrder>>, {id: number;data: BodyType<UpdateOrderStatusInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  adminUpdateOrder(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AdminUpdateOrderMutationResult = NonNullable<Awaited<ReturnType<typeof adminUpdateOrder>>>
+    export type AdminUpdateOrderMutationBody = BodyType<UpdateOrderStatusInput>
+    export type AdminUpdateOrderMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Set any order status (restores stock when cancelling)
+ */
+export const useAdminUpdateOrder = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminUpdateOrder>>, TError,{id: number;data: BodyType<UpdateOrderStatusInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof adminUpdateOrder>>,
+        TError,
+        {id: number;data: BodyType<UpdateOrderStatusInput>},
+        TContext
+      > => {
+      return useMutation(getAdminUpdateOrderMutationOptions(options));
+    }
+
+export const getVerifyOrderPaymentUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/shop/orders/${id}/verify-payment`
+}
+
+/**
+ * @summary Approve or reject a direct-payment order
+ */
+export const verifyOrderPayment = async (id: number,
+    verifyPaymentInput: VerifyPaymentInput, options?: RequestInit): Promise<ShopOrder> => {
+
+  return customFetch<ShopOrder>(getVerifyOrderPaymentUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(verifyPaymentInput)
+  }
+);}
+
+
+
+
+export const getVerifyOrderPaymentMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyOrderPayment>>, TError,{id: number;data: BodyType<VerifyPaymentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof verifyOrderPayment>>, TError,{id: number;data: BodyType<VerifyPaymentInput>}, TContext> => {
+
+const mutationKey = ['verifyOrderPayment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof verifyOrderPayment>>, {id: number;data: BodyType<VerifyPaymentInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  verifyOrderPayment(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type VerifyOrderPaymentMutationResult = NonNullable<Awaited<ReturnType<typeof verifyOrderPayment>>>
+    export type VerifyOrderPaymentMutationBody = BodyType<VerifyPaymentInput>
+    export type VerifyOrderPaymentMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Approve or reject a direct-payment order
+ */
+export const useVerifyOrderPayment = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyOrderPayment>>, TError,{id: number;data: BodyType<VerifyPaymentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof verifyOrderPayment>>,
+        TError,
+        {id: number;data: BodyType<VerifyPaymentInput>},
+        TContext
+      > => {
+      return useMutation(getVerifyOrderPaymentMutationOptions(options));
+    }
+
+export const getListAdminPaymentsUrl = (params?: ListAdminPaymentsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/shop/payments?${stringifiedParams}` : `/api/admin/shop/payments`
+}
+
+/**
+ * @summary Orders awaiting payment verification
+ */
+export const listAdminPayments = async (params?: ListAdminPaymentsParams, options?: RequestInit): Promise<ShopOrder[]> => {
+
+  return customFetch<ShopOrder[]>(getListAdminPaymentsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminPaymentsQueryKey = (params?: ListAdminPaymentsParams,) => {
+    return [
+    `/api/admin/shop/payments`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListAdminPaymentsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminPayments>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(params?: ListAdminPaymentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminPayments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminPaymentsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminPayments>>> = ({ signal }) => listAdminPayments(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminPayments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminPaymentsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminPayments>>>
+export type ListAdminPaymentsQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary Orders awaiting payment verification
+ */
+
+export function useListAdminPayments<TData = Awaited<ReturnType<typeof listAdminPayments>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+ params?: ListAdminPaymentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminPayments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminPaymentsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListAdminShopWithdrawalsUrl = (params?: ListAdminShopWithdrawalsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/shop/withdrawals?${stringifiedParams}` : `/api/admin/shop/withdrawals`
+}
+
+/**
+ * @summary List withdrawals across all stalls
+ */
+export const listAdminShopWithdrawals = async (params?: ListAdminShopWithdrawalsParams, options?: RequestInit): Promise<AdminShopWithdrawal[]> => {
+
+  return customFetch<AdminShopWithdrawal[]>(getListAdminShopWithdrawalsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminShopWithdrawalsQueryKey = (params?: ListAdminShopWithdrawalsParams,) => {
+    return [
+    `/api/admin/shop/withdrawals`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListAdminShopWithdrawalsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminShopWithdrawals>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(params?: ListAdminShopWithdrawalsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminShopWithdrawals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminShopWithdrawalsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminShopWithdrawals>>> = ({ signal }) => listAdminShopWithdrawals(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminShopWithdrawals>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminShopWithdrawalsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminShopWithdrawals>>>
+export type ListAdminShopWithdrawalsQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary List withdrawals across all stalls
+ */
+
+export function useListAdminShopWithdrawals<TData = Awaited<ReturnType<typeof listAdminShopWithdrawals>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+ params?: ListAdminShopWithdrawalsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminShopWithdrawals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminShopWithdrawalsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getProcessShopWithdrawalUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/shop/withdrawals/${id}`
+}
+
+/**
+ * @summary Approve (mark paid) or reject (refund) a withdrawal
+ */
+export const processShopWithdrawal = async (id: number,
+    processShopWithdrawalInput: ProcessShopWithdrawalInput, options?: RequestInit): Promise<AdminShopWithdrawal> => {
+
+  return customFetch<AdminShopWithdrawal>(getProcessShopWithdrawalUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(processShopWithdrawalInput)
+  }
+);}
+
+
+
+
+export const getProcessShopWithdrawalMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof processShopWithdrawal>>, TError,{id: number;data: BodyType<ProcessShopWithdrawalInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof processShopWithdrawal>>, TError,{id: number;data: BodyType<ProcessShopWithdrawalInput>}, TContext> => {
+
+const mutationKey = ['processShopWithdrawal'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof processShopWithdrawal>>, {id: number;data: BodyType<ProcessShopWithdrawalInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  processShopWithdrawal(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ProcessShopWithdrawalMutationResult = NonNullable<Awaited<ReturnType<typeof processShopWithdrawal>>>
+    export type ProcessShopWithdrawalMutationBody = BodyType<ProcessShopWithdrawalInput>
+    export type ProcessShopWithdrawalMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Approve (mark paid) or reject (refund) a withdrawal
+ */
+export const useProcessShopWithdrawal = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof processShopWithdrawal>>, TError,{id: number;data: BodyType<ProcessShopWithdrawalInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof processShopWithdrawal>>,
+        TError,
+        {id: number;data: BodyType<ProcessShopWithdrawalInput>},
+        TContext
+      > => {
+      return useMutation(getProcessShopWithdrawalMutationOptions(options));
+    }
+
+export const getGetAdminShopSummaryUrl = () => {
+
+
+
+
+  return `/api/admin/shop/summary`
+}
+
+/**
+ * @summary Platform profit, held funds, counts
+ */
+export const getAdminShopSummary = async ( options?: RequestInit): Promise<AdminShopSummary> => {
+
+  return customFetch<AdminShopSummary>(getGetAdminShopSummaryUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminShopSummaryQueryKey = () => {
+    return [
+    `/api/admin/shop/summary`
+    ] as const;
+    }
+
+
+export const getGetAdminShopSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getAdminShopSummary>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminShopSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminShopSummaryQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminShopSummary>>> = ({ signal }) => getAdminShopSummary({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminShopSummary>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminShopSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminShopSummary>>>
+export type GetAdminShopSummaryQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary Platform profit, held funds, counts
+ */
+
+export function useGetAdminShopSummary<TData = Awaited<ReturnType<typeof getAdminShopSummary>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminShopSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminShopSummaryQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAdminShopSettingsUrl = () => {
+
+
+
+
+  return `/api/admin/shop/settings`
+}
+
+/**
+ * @summary Get shop settings (admin)
+ */
+export const getAdminShopSettings = async ( options?: RequestInit): Promise<ShopSettings> => {
+
+  return customFetch<ShopSettings>(getGetAdminShopSettingsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminShopSettingsQueryKey = () => {
+    return [
+    `/api/admin/shop/settings`
+    ] as const;
+    }
+
+
+export const getGetAdminShopSettingsQueryOptions = <TData = Awaited<ReturnType<typeof getAdminShopSettings>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminShopSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminShopSettingsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminShopSettings>>> = ({ signal }) => getAdminShopSettings({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminShopSettings>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminShopSettingsQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminShopSettings>>>
+export type GetAdminShopSettingsQueryError = ErrorType<UnauthorizedResponse | ForbiddenResponse>
+
+
+/**
+ * @summary Get shop settings (admin)
+ */
+
+export function useGetAdminShopSettings<TData = Awaited<ReturnType<typeof getAdminShopSettings>>, TError = ErrorType<UnauthorizedResponse | ForbiddenResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminShopSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminShopSettingsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateAdminShopSettingsUrl = () => {
+
+
+
+
+  return `/api/admin/shop/settings`
+}
+
+/**
+ * @summary Update shop settings (admin)
+ */
+export const updateAdminShopSettings = async (shopSettingsInput: ShopSettingsInput, options?: RequestInit): Promise<ShopSettings> => {
+
+  return customFetch<ShopSettings>(getUpdateAdminShopSettingsUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(shopSettingsInput)
+  }
+);}
+
+
+
+
+export const getUpdateAdminShopSettingsMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdminShopSettings>>, TError,{data: BodyType<ShopSettingsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAdminShopSettings>>, TError,{data: BodyType<ShopSettingsInput>}, TContext> => {
+
+const mutationKey = ['updateAdminShopSettings'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAdminShopSettings>>, {data: BodyType<ShopSettingsInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateAdminShopSettings(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAdminShopSettingsMutationResult = NonNullable<Awaited<ReturnType<typeof updateAdminShopSettings>>>
+    export type UpdateAdminShopSettingsMutationBody = BodyType<ShopSettingsInput>
+    export type UpdateAdminShopSettingsMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>
+
+    /**
+ * @summary Update shop settings (admin)
+ */
+export const useUpdateAdminShopSettings = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | ForbiddenResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdminShopSettings>>, TError,{data: BodyType<ShopSettingsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAdminShopSettings>>,
+        TError,
+        {data: BodyType<ShopSettingsInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateAdminShopSettingsMutationOptions(options));
     }
 
