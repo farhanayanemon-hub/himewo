@@ -104,8 +104,8 @@ export function Dashboard() {
             <MiniStat label="Verified" value={metrics.data.users.verified} />
             <MiniStat label="Suspended" value={metrics.data.users.suspended} />
             <MiniStat label="Banned" value={metrics.data.users.banned} />
-            <MiniStat label="Groups" value={metrics.data.communities.groups} />
-            <MiniStat label="Pages" value={metrics.data.communities.pages} />
+            <MiniStat label="Circles" value={metrics.data.communities.groups} />
+            <MiniStat label="Hubs" value={metrics.data.communities.pages} />
           </div>
 
           <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">

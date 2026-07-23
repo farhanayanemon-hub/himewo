@@ -139,7 +139,7 @@ router.post("/stories", requireAuth, async (req, res): Promise<void> => {
       .from(pagesTable)
       .where(eq(pagesTable.id, data.pageId));
     if (!page) {
-      res.status(404).json({ error: "Page not found" });
+      res.status(404).json({ error: "Hub not found" });
       return;
     }
     if (page.createdBy !== req.userId) {
@@ -154,7 +154,7 @@ router.post("/stories", requireAuth, async (req, res): Promise<void> => {
         );
       if (!member) {
         res.status(403).json({
-          error: "Only people with Page access can post as this page.",
+          error: "Only people with Hub access can post as this hub.",
         });
         return;
       }

@@ -83,6 +83,11 @@ function toList(v: string): string[] {
     .filter(Boolean);
 }
 
+function objectiveLabel(objective: string) {
+  if (objective === "page_boost") return "hub boost";
+  return objective.replace(/_/g, " ");
+}
+
 export function CreateAdWizard() {
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -358,7 +363,7 @@ export function CreateAdWizard() {
                   <SelectContent>
                     {OBJECTIVES.map((o) => (
                       <SelectItem key={o} value={o}>
-                        {o.replace(/_/g, " ")}
+                        {objectiveLabel(o)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -610,7 +615,7 @@ export function CreateAdWizard() {
                 the ad for review.
               </p>
               <div className="rounded-lg border">
-                <Row label="Campaign" value={cName || "—"} sub={objective.replace(/_/g, " ")} />
+                <Row label="Campaign" value={cName || "—"} sub={objectiveLabel(objective)} />
                 <Separator />
                 <Row
                   label="Audience (ad set)"

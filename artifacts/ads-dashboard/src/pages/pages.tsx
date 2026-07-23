@@ -16,24 +16,24 @@ export default function PagesPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Pages</h1>
+        <h1 className="text-2xl font-bold">Hubs</h1>
         <p className="text-sm text-muted-foreground">
-          Pages you own or manage. Boosted posts and page ads run from these
-          pages.
+          Hubs you own or manage. Boosted posts and hub ads run from these
+          hubs.
         </p>
       </div>
 
       {isLoading ? (
         <div className="py-12 text-center text-sm text-muted-foreground">
-          Loading pages...
+          Loading hubs...
         </div>
       ) : !pages || pages.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-12 text-center">
             <Flag className="h-8 w-8 text-muted-foreground" />
-            <div className="font-medium">No pages yet</div>
+            <div className="font-medium">No hubs yet</div>
             <p className="max-w-sm text-sm text-muted-foreground">
-              Create a page on HiMewo first. Pages you own or have access to
+              Create a hub on HiMewo first. Hubs you own or have access to
               will show up here.
             </p>
           </CardContent>

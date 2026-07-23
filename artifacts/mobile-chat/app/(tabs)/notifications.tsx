@@ -74,11 +74,11 @@ function messageFor(n: Notification): string {
     case "follow":
       return `${who} started following you`;
     case "page_follow":
-      return `${who} followed your page`;
+      return `${who} followed your hub`;
     case "message":
       return `${who} sent you a message`;
     case "group_invite":
-      return `${who} invited you to a group`;
+      return `${who} invited you to a circle`;
     case "mention":
       return `${who} mentioned you`;
     case "share":

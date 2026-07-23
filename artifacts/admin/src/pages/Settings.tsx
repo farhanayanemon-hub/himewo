@@ -20,8 +20,8 @@ const FLAG_LABELS: Record<string, string> = {
   stories: "Stories",
   reels: "Reels",
   calls: "Calls",
-  groups: "Groups",
-  pages: "Pages",
+  groups: "Circles",
+  pages: "Hubs",
   messaging: "Messaging",
   signups: "New signups",
 };

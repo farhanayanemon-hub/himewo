@@ -154,7 +154,7 @@ router.get("/pages/:id", requireAuth, async (req, res): Promise<void> => {
     .from(pagesTable)
     .where(eq(pagesTable.id, params.data.id));
   if (!page) {
-    res.status(404).json({ error: "Page not found" });
+    res.status(404).json({ error: "Hub not found" });
     return;
   }
   // Only honour asPageId when the viewer actually manages that page, so the
@@ -187,7 +187,7 @@ router.patch("/pages/:id", requireAuth, async (req, res): Promise<void> => {
     .from(pagesTable)
     .where(eq(pagesTable.id, params.data.id));
   if (!page) {
-    res.status(404).json({ error: "Page not found" });
+    res.status(404).json({ error: "Hub not found" });
     return;
   }
   if (page.createdBy !== req.userId) {
@@ -225,11 +225,11 @@ async function requirePageOwner(
     .from(pagesTable)
     .where(eq(pagesTable.id, pageId));
   if (!page) {
-    res.status(404).json({ error: "Page not found" });
+    res.status(404).json({ error: "Hub not found" });
     return false;
   }
   if (page.createdBy !== userId) {
-    res.status(403).json({ error: "Only the page owner can manage Page access" });
+    res.status(403).json({ error: "Only the hub owner can manage Hub access" });
     return false;
   }
   return true;
@@ -266,7 +266,7 @@ router.post(
     }
     if (!(await requirePageOwner(res, req.userId!, params.data.id))) return;
     if (body.data.userId === req.userId) {
-      res.status(400).json({ error: "You already own this page" });
+      res.status(400).json({ error: "You already own this hub" });
       return;
     }
     const [profile] = await db
@@ -350,17 +350,17 @@ router.post(
       .from(pagesTable)
       .where(eq(pagesTable.id, params.data.id));
     if (!page) {
-      res.status(404).json({ error: "Page not found" });
+      res.status(404).json({ error: "Hub not found" });
       return;
     }
     if (!page.reviewsEnabled) {
-      res.status(403).json({ error: "Reviews are turned off for this page" });
+      res.status(403).json({ error: "Reviews are turned off for this hub" });
       return;
     }
     // A page's owner/editors can't review their own page — reviews may only
     // come from other people.
     if (await canManagePage(req.userId!, params.data.id)) {
-      res.status(403).json({ error: "You can't review a page you manage" });
+      res.status(403).json({ error: "You can't review a hub you manage" });
       return;
     }
     const [row] = await db
@@ -476,7 +476,7 @@ router.post("/pages/:id/follow", requireAuth, async (req, res): Promise<void> =>
   // Following AS a page (page-to-page).
   if (query.data.asPageId) {
     if (query.data.asPageId === params.data.id) {
-      res.status(400).json({ error: "A page can't follow itself" });
+      res.status(400).json({ error: "A hub can't follow itself" });
       return;
     }
     if (!(await canManagePage(req.userId!, query.data.asPageId))) {
@@ -597,7 +597,7 @@ router.post(
       .from(pagesTable)
       .where(eq(pagesTable.id, params.data.id));
     if (!page) {
-      res.status(404).json({ error: "Page not found" });
+      res.status(404).json({ error: "Hub not found" });
       return;
     }
     // You may only invite your own friends — this is the authorization gate.

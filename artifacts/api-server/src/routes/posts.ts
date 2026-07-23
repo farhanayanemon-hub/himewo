@@ -290,11 +290,11 @@ router.post("/posts", requireAuth, async (req, res): Promise<void> => {
     if (!membership || membership.status !== "active") {
       res
         .status(403)
-        .json({ error: "You must be a member of this group to post." });
+        .json({ error: "You must be a member of this circle to post." });
       return;
     }
     if (membership.isMuted) {
-      res.status(403).json({ error: "You are muted in this group." });
+      res.status(403).json({ error: "You are muted in this circle." });
       return;
     }
     const [group] = await db
@@ -313,7 +313,7 @@ router.post("/posts", requireAuth, async (req, res): Promise<void> => {
       .from(pagesTable)
       .where(eq(pagesTable.id, pageId));
     if (!page) {
-      res.status(404).json({ error: "Page not found" });
+      res.status(404).json({ error: "Hub not found" });
       return;
     }
     if (page.createdBy !== req.userId) {
@@ -329,7 +329,7 @@ router.post("/posts", requireAuth, async (req, res): Promise<void> => {
       if (!member) {
         res
           .status(403)
-          .json({ error: "Only people with Page access can post as this page." });
+          .json({ error: "Only people with Hub access can post as this hub." });
         return;
       }
     }
@@ -592,7 +592,7 @@ router.put(
     ) {
       res
         .status(403)
-        .json({ error: "You don't have access to react as this page." });
+        .json({ error: "You don't have access to react as this hub." });
       return;
     }
     await db
@@ -927,7 +927,7 @@ router.post(
     ) {
       res
         .status(403)
-        .json({ error: "You don't have access to comment as this page." });
+        .json({ error: "You don't have access to comment as this hub." });
       return;
     }
     const [comment] = await db

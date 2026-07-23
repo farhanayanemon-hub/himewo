@@ -27,8 +27,8 @@ const SHORTCUTS: Shortcut[] = [
   { label: "Saved", icon: "bookmark", color: "#a855f7", href: "/saved" },
   { label: "Verified", icon: "checkmark-circle", color: "#1877f2", href: "/verified" as Href },
   { label: "Marketplace", icon: "storefront", color: "#c084fc", href: "/marketplace" },
-  { label: "Groups", icon: "people-circle", color: "#0a7ea4", href: "/groups" },
-  { label: "Pages", icon: "document-text", color: "#d946ef", href: "/pages" },
+  { label: "Circles", icon: "people-circle", color: "#0a7ea4", href: "/groups" },
+  { label: "Hubs", icon: "document-text", color: "#d946ef", href: "/pages" },
   { label: "Reels", icon: "film", color: "#e9710f", href: "/reels" },
   { label: "Messages", icon: "chatbubbles", color: "#31a24c", href: "/messages" },
   { label: "Search", icon: "search", color: "#9333ea", href: "/search" },
@@ -82,7 +82,7 @@ export default function MenuScreen() {
               {actingPage ? actingPage.name : user?.displayName ?? "Guest"}
             </Text>
             <Text style={{ color: c.mutedForeground, fontSize: 13 }}>
-              {actingPage ? "View page profile" : "View your profile"}
+              {actingPage ? "View hub profile" : "View your profile"}
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={c.mutedForeground} />

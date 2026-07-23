@@ -30,7 +30,7 @@ const STATUS_TONE: Record<AdReviewStatus, "amber" | "green" | "red"> = {
 
 function boostLabel(ad: AdRow): string | null {
   if (ad.boostedPostId != null) return `Boosted post #${ad.boostedPostId}`;
-  if (ad.boostedPageId != null) return `Boosted page #${ad.boostedPageId}`;
+  if (ad.boostedPageId != null) return `Boosted hub #${ad.boostedPageId}`;
   return null;
 }
 

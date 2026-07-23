@@ -89,7 +89,7 @@ export default function PagesScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["bottom"]}>
       <Stack.Screen
         options={{
-          title: "Pages",
+          title: "Hubs",
           headerRight: () => (
             <Pressable onPress={() => setOpen(true)} hitSlop={8}>
               <Ionicons name="add" size={26} color={c.primary} />
@@ -108,7 +108,7 @@ export default function PagesScreen() {
           keyExtractor={(p) => String(p.id)}
           contentContainerStyle={{ padding: 12 }}
           ListEmptyComponent={
-            <Text style={[styles.empty, { color: c.mutedForeground }]}>No pages found.</Text>
+            <Text style={[styles.empty, { color: c.mutedForeground }]}>No hubs found.</Text>
           }
           renderItem={({ item }) => (
             <Pressable
@@ -141,11 +141,11 @@ export default function PagesScreen() {
       <Modal visible={open} transparent animationType="slide" onRequestClose={closeModal}>
         <View style={styles.modalBackdrop}>
           <View style={[styles.modalCard, { backgroundColor: c.surface }]}>
-            <Text style={[styles.modalTitle, { color: c.foreground }]}>Create Page</Text>
+            <Text style={[styles.modalTitle, { color: c.foreground }]}>Create Hub</Text>
             <TextInput
               value={name}
               onChangeText={setName}
-              placeholder="Page name"
+              placeholder="Hub name"
               placeholderTextColor={c.mutedForeground}
               underlineColorAndroid="transparent"
               style={[styles.input, { color: c.foreground, borderColor: c.border, backgroundColor: c.secondary }]}
@@ -186,7 +186,7 @@ export default function PagesScreen() {
             <TextInput
               value={description}
               onChangeText={setDescription}
-              placeholder="What's this page about?"
+              placeholder="What's this hub about?"
               placeholderTextColor={c.mutedForeground}
               underlineColorAndroid="transparent"
               multiline

@@ -318,7 +318,7 @@ function EditPageModal({
 
   const save = () => {
     if (!name.trim()) {
-      Alert.alert("Name required", "Please enter a page name.");
+      Alert.alert("Name required", "Please enter a hub name.");
       return;
     }
     updatePage.mutate(
@@ -357,9 +357,9 @@ function EditPageModal({
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalBackdrop}>
         <View style={[styles.modalCard, { backgroundColor: c.surface }]}>
-          <Text style={[styles.modalTitle, { color: c.foreground }]}>Edit Page</Text>
+          <Text style={[styles.modalTitle, { color: c.foreground }]}>Edit Hub</Text>
           <ScrollView style={{ maxHeight: 460 }} contentContainerStyle={{ gap: 12, paddingBottom: 8 }}>
-            <TextInput value={name} onChangeText={setName} placeholder="Page name" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" style={inputStyle} />
+            <TextInput value={name} onChangeText={setName} placeholder="Hub name" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" style={inputStyle} />
             <Text style={[styles.fieldLabel, { color: c.mutedForeground }]}>Category</Text>
             <View style={styles.chipWrap}>
               {PAGE_CATEGORIES.map((cat: string) => {
@@ -407,7 +407,7 @@ function EditPageModal({
               <View style={{ flex: 1, paddingRight: 10 }}>
                 <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 14 }}>Reviews</Text>
                 <Text style={{ color: c.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 12, marginTop: 2 }}>
-                  Let people rate and review this Page.
+                  Let people rate and review this Hub.
                 </Text>
               </View>
               <Switch value={reviewsEnabled} onValueChange={setReviewsEnabled} />
@@ -480,9 +480,9 @@ function PageAccessModal({
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalBackdrop}>
         <View style={[styles.modalCard, { backgroundColor: c.surface }]}>
-          <Text style={[styles.modalTitle, { color: c.foreground }]}>Page access</Text>
+          <Text style={[styles.modalTitle, { color: c.foreground }]}>Hub access</Text>
           <Text style={{ color: c.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 13, marginBottom: 10 }}>
-            People with access can post and edit this Page. Only you (the owner) can manage access.
+            People with access can post and edit this Hub. Only you (the owner) can manage access.
           </Text>
           <TextInput
             value={query}
@@ -524,7 +524,7 @@ function PageAccessModal({
               <ActivityIndicator color={c.primary} style={{ marginVertical: 12 }} />
             ) : !members || members.length === 0 ? (
               <Text style={{ color: c.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 13 }}>
-                Only you have access to this Page.
+                Only you have access to this Hub.
               </Text>
             ) : (
               members.map((m) => (
@@ -771,7 +771,7 @@ function PageMenuModal({
           </Pressable>
           <Pressable style={styles.menuRow} onPress={onCreateGroup}>
             <Ionicons name="people-outline" size={20} color={c.foreground} />
-            <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}>Create group</Text>
+            <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}>Create circle</Text>
           </Pressable>
         </View>
       </Pressable>
@@ -821,7 +821,7 @@ export default function PageDetailScreen() {
         onSuccess: () => {
           setInviteOpen(false);
           qc.invalidateQueries({ queryKey: getListPageFollowersQueryKey(id) });
-          Alert.alert("Invites sent", "Your friends have been invited to follow this page.");
+          Alert.alert("Invites sent", "Your friends have been invited to follow this hub.");
         },
         onError: () => Alert.alert("Could not send invites", "Please try again."),
       },
@@ -873,7 +873,7 @@ export default function PageDetailScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={[styles.center, { backgroundColor: c.background }]}>
-        <Stack.Screen options={{ title: "Page" }} />
+        <Stack.Screen options={{ title: "Hub" }} />
         <ActivityIndicator color={c.primary} size="large" />
       </SafeAreaView>
     );
@@ -882,8 +882,8 @@ export default function PageDetailScreen() {
   if (!page) {
     return (
       <SafeAreaView style={[styles.center, { backgroundColor: c.background }]}>
-        <Stack.Screen options={{ title: "Page" }} />
-        <Text style={{ color: c.mutedForeground, fontFamily: "Inter_500Medium" }}>Page not found</Text>
+        <Stack.Screen options={{ title: "Hub" }} />
+        <Text style={{ color: c.mutedForeground, fontFamily: "Inter_500Medium" }}>Hub not found</Text>
       </SafeAreaView>
     );
   }
@@ -1145,7 +1145,7 @@ export default function PageDetailScreen() {
         onClose={() => setFollowingOpen(false)}
         title="Following"
         loading={followingLoading}
-        emptyText="Not following any pages yet."
+        emptyText="Not following any hubs yet."
         rows={(following ?? []).map((pg) => ({
           key: String(pg.id),
           title: pg.name,

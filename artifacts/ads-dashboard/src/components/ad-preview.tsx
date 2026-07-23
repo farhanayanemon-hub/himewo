@@ -52,7 +52,7 @@ export function AdPreview({
 
   const cta = CTA_LABELS[callToAction ?? "none"] ?? "";
   const domain = domainOf(destinationUrl ?? "");
-  const name = pageName?.trim() || "Your Page";
+  const name = pageName?.trim() || "Your Hub";
   const safeMedia = mediaUrl && isSafeUrl(mediaUrl) ? mediaUrl : undefined;
 
   return (

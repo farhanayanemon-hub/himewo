@@ -53,7 +53,7 @@ router.patch(
       .where(eq(groupsTable.id, id))
       .returning();
     if (!updated) {
-      res.status(404).json({ error: "Group not found" });
+      res.status(404).json({ error: "Circle not found" });
       return;
     }
     await writeAudit({
@@ -122,7 +122,7 @@ router.patch(
       .where(eq(pagesTable.id, id))
       .returning();
     if (!updated) {
-      res.status(404).json({ error: "Page not found" });
+      res.status(404).json({ error: "Hub not found" });
       return;
     }
     await writeAudit({

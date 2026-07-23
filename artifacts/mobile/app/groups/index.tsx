@@ -101,7 +101,7 @@ export default function GroupsScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["bottom"]}>
       <Stack.Screen
         options={{
-          title: "Groups",
+          title: "Circles",
           headerRight: () => (
             <Pressable onPress={() => setOpen(true)} hitSlop={8}>
               <Ionicons name="add" size={26} color={c.primary} />
@@ -146,7 +146,7 @@ export default function GroupsScreen() {
                             {g.name}
                           </Text>
                           <Text style={[styles.cardMeta, { color: c.mutedForeground }]}>
-                            {g.privacy} group · {g.memberCount} members
+                            {g.privacy} circle · {g.memberCount} members
                           </Text>
                         </View>
                       </Pressable>
@@ -177,12 +177,12 @@ export default function GroupsScreen() {
                     </View>
                   );
                 })}
-                <Text style={[styles.sectionTitle, { color: c.foreground, marginTop: 8 }]}>Your groups</Text>
+                <Text style={[styles.sectionTitle, { color: c.foreground, marginTop: 8 }]}>Your circles</Text>
               </View>
             ) : null
           }
           ListEmptyComponent={
-            <Text style={[styles.empty, { color: c.mutedForeground }]}>No groups found.</Text>
+            <Text style={[styles.empty, { color: c.mutedForeground }]}>No circles found.</Text>
           }
           renderItem={({ item }) => (
             <Pressable
@@ -215,11 +215,11 @@ export default function GroupsScreen() {
       <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
         <View style={styles.modalBackdrop}>
           <View style={[styles.modalCard, { backgroundColor: c.surface }]}>
-            <Text style={[styles.modalTitle, { color: c.foreground }]}>Create Group</Text>
+            <Text style={[styles.modalTitle, { color: c.foreground }]}>Create Circle</Text>
             <TextInput
               value={name}
               onChangeText={setName}
-              placeholder="Group name"
+              placeholder="Circle name"
               placeholderTextColor={c.mutedForeground}
               underlineColorAndroid="transparent"
               style={[styles.input, { color: c.foreground, borderColor: c.border, backgroundColor: c.secondary }]}
@@ -227,7 +227,7 @@ export default function GroupsScreen() {
             <TextInput
               value={description}
               onChangeText={setDescription}
-              placeholder="What's this group about?"
+              placeholder="What's this circle about?"
               placeholderTextColor={c.mutedForeground}
               underlineColorAndroid="transparent"
               multiline

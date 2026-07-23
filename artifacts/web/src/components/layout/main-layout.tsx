@@ -208,8 +208,8 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
     { href: "/", icon: Home, label: "Home", color: "text-teal-500" },
     { href: "/friends", icon: Users, label: "Friends", color: "text-purple-500" },
     { href: "/reels", icon: Video, label: "Reels", color: "text-pink-500" },
-    { href: "/groups", icon: UsersRound, label: "Groups", color: "text-emerald-500" },
-    { href: "/pages", icon: FileText, label: "Pages", color: "text-orange-500" },
+    { href: "/groups", icon: UsersRound, label: "Circles", color: "text-emerald-500" },
+    { href: "/pages", icon: FileText, label: "Hubs", color: "text-orange-500" },
     { href: "/marketplace", icon: Store, label: "Marketplace", color: "text-amber-500" },
     ...(earnings?.enabled
       ? [{ href: "/earnings", icon: Wallet, label: "Earnings", color: "text-green-500" }]
