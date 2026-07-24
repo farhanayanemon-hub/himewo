@@ -44,6 +44,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { useNavIcons } from "@/lib/nav-icons";
 import { Button } from "@/components/ui/button";
 import { MobileNav, MobileMenuButton } from "./mobile-nav";
 
@@ -74,14 +75,19 @@ function ThemeToggle() {
 
 function NavIcon({
   icon: Icon,
+  iconUrl,
   color,
   size = "md",
 }: {
   icon: LucideIcon;
+  iconUrl?: string;
   color?: string;
   size?: "sm" | "md";
 }) {
   const ic = size === "sm" ? "w-5 h-5" : "w-[22px] h-[22px]";
+  if (iconUrl) {
+    return <img src={iconUrl} alt="" className={`${ic} object-contain`} />;
+  }
   return <Icon className={`${ic} ${color ?? "text-muted-foreground"}`} />;
 }
 
@@ -202,6 +208,8 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
     window.open(url, "_blank", "noopener");
   };
 
+  const navIcons = useNavIcons();
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const q = searchQuery.trim();
@@ -210,25 +218,25 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
   };
 
   const navItems = [
-    { href: "/", icon: Home, label: "Home", color: "text-teal-500" },
-    { href: "/friends", icon: Users, label: "Friends", color: "text-purple-500" },
-    { href: "/reels", icon: Video, label: "Reels", color: "text-pink-500" },
-    { href: "/groups", icon: UsersRound, label: "Circles", color: "text-emerald-500" },
-    { href: "/pages", icon: FileText, label: "Hubs", color: "text-orange-500" },
-    { href: "/shop", icon: Store, label: "Shop", color: "text-amber-500" },
+    { href: "/", icon: Home, label: "Home", color: "text-teal-500", iconUrl: navIcons.home },
+    { href: "/friends", icon: Users, label: "Friends", color: "text-purple-500", iconUrl: navIcons.friends },
+    { href: "/reels", icon: Video, label: "Reels", color: "text-pink-500", iconUrl: navIcons.reels },
+    { href: "/groups", icon: UsersRound, label: "Circles", color: "text-emerald-500", iconUrl: navIcons.circles },
+    { href: "/pages", icon: FileText, label: "Hubs", color: "text-orange-500", iconUrl: navIcons.hubs },
+    { href: "/shop", icon: Store, label: "Shop", color: "text-amber-500", iconUrl: navIcons.shop },
     ...(earnings?.enabled
-      ? [{ href: "/earnings", icon: Wallet, label: "Earnings", color: "text-green-500" }]
+      ? [{ href: "/earnings", icon: Wallet, label: "Earnings", color: "text-green-500", iconUrl: navIcons.earnings }]
       : []),
   ];
 
   const shortcutItems = [
-    { href: "/live", icon: Radio, label: "Live", color: "text-red-500" },
-    { href: "/watch", icon: MonitorPlay, label: "Watch", color: "text-teal-500" },
-    { href: "/events", icon: CalendarDays, label: "Events", color: "text-rose-500" },
-    { href: "/stories", icon: Clapperboard, label: "Stories", color: "text-purple-500" },
-    { href: "/memories", icon: Clock, label: "Memories", color: "text-cyan-500" },
-    { href: "/saved", icon: Bookmark, label: "Saved", color: "text-pink-500" },
-    { href: "/verified", icon: BadgeCheck, label: "Verified Badge", color: "text-blue-500" },
+    { href: "/live", icon: Radio, label: "Live", color: "text-red-500", iconUrl: navIcons.live },
+    { href: "/watch", icon: MonitorPlay, label: "Watch", color: "text-teal-500", iconUrl: navIcons.watch },
+    { href: "/events", icon: CalendarDays, label: "Events", color: "text-rose-500", iconUrl: navIcons.events },
+    { href: "/stories", icon: Clapperboard, label: "Stories", color: "text-purple-500", iconUrl: navIcons.stories },
+    { href: "/memories", icon: Clock, label: "Memories", color: "text-cyan-500", iconUrl: navIcons.memories },
+    { href: "/saved", icon: Bookmark, label: "Saved", color: "text-pink-500", iconUrl: navIcons.saved },
+    { href: "/verified", icon: BadgeCheck, label: "Verified Badge", color: "text-blue-500", iconUrl: navIcons.verified },
   ];
 
   return (
@@ -267,7 +275,11 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
                 return (
                   <Link key={item.href} href={item.href} className="relative">
                     <Button variant="ghost" size="icon" className={`rounded-xl w-14 h-12 press [&_svg]:!size-6 ${isActive ? "bg-accent text-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`}>
-                      <Icon />
+                      {item.iconUrl ? (
+                        <img src={item.iconUrl} alt="" className={`w-7 h-7 object-contain ${isActive ? "" : "opacity-70 saturate-[.8]"}`} />
+                      ) : (
+                        <Icon />
+                      )}
                     </Button>
                     {isActive && <span className="absolute -bottom-[14px] left-2 right-2 h-1 rounded-full bg-gradient-to-r from-teal-400 via-purple-400 to-pink-400" />}
                   </Link>
@@ -313,7 +325,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
               const Icon = item.icon;
               return (
                 <Link key={item.href} href={item.href} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
-                  <NavIcon icon={Icon} color={item.color} size="sm" />
+                  <NavIcon icon={Icon} iconUrl={item.iconUrl} color={item.color} size="sm" />
                   <span className="font-medium">{item.label}</span>
                 </Link>
               );
@@ -322,7 +334,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
               const Icon = item.icon;
               return (
                 <Link key={item.href} href={item.href} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
-                  <NavIcon icon={Icon} color={item.color} size="sm" />
+                  <NavIcon icon={Icon} iconUrl={item.iconUrl} color={item.color} size="sm" />
                   <span className="font-medium">{item.label}</span>
                 </Link>
               );
