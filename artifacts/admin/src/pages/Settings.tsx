@@ -14,6 +14,7 @@ import {
   Toggle,
 } from "../components/ui";
 import { PageHeader } from "../components/Layout";
+import { NavIconsCard } from "../components/NavIconsCard";
 
 const FLAG_LABELS: Record<string, string> = {
   posts: "Posts",
@@ -193,6 +194,11 @@ export function Settings() {
               ))}
             </div>
           </Card>
+
+          <NavIconsCard
+            rawValue={query.data.settings.nav_icons}
+            canManage={canManage}
+          />
 
           <Card className={maintenanceOn ? "border-amber-300" : ""}>
             <CardHeader

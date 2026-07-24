@@ -30,7 +30,54 @@ export const SITE_SETTING_DEFAULTS: Record<string, string> = {
   verification_min_reels: "5",
   verification_regular_post_days: "7",
   verification_monthly_fee: "299",
+  // JSON object mapping nav item keys (home, friends, reels, circles, hubs,
+  // shop, earnings, live, watch, events, stories, memories, saved, verified)
+  // to custom icon image URLs uploaded by admins. Empty object = defaults.
+  nav_icons: "{}",
 };
+
+/** Allowed nav-icon item keys (top nav + sidebar shortcuts). */
+export const NAV_ICON_KEYS = [
+  "home",
+  "friends",
+  "reels",
+  "circles",
+  "hubs",
+  "shop",
+  "earnings",
+  "live",
+  "watch",
+  "events",
+  "stories",
+  "memories",
+  "saved",
+  "verified",
+] as const;
+
+/**
+ * Sanitized admin-uploaded nav icon URLs. Only known keys and http(s) URLs
+ * survive (stored-XSS guard — same rule as page website/CTA URLs).
+ */
+export async function getNavIcons(): Promise<Record<string, string>> {
+  const settings = await getSettings();
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(settings.nav_icons || "{}");
+  } catch {
+    return {};
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    return {};
+  }
+  const out: Record<string, string> = {};
+  for (const key of NAV_ICON_KEYS) {
+    const v = (parsed as Record<string, unknown>)[key];
+    if (typeof v === "string" && /^https?:\/\//i.test(v) && v.length <= 2048) {
+      out[key] = v;
+    }
+  }
+  return out;
+}
 
 type ConfigCache = {
   flags: Record<string, boolean>;

@@ -19,9 +19,12 @@ import {
 } from "@/components/ui/sheet";
 
 type IconType = ComponentType<{ className?: string; fill?: string }>;
-export type MobileNavItem = { href: string; icon: IconType; label: string; color?: string };
+export type MobileNavItem = { href: string; icon: IconType; label: string; color?: string; iconUrl?: string };
 
-function NavIcon({ icon: Icon, color }: { icon: IconType; color?: string }) {
+function NavIcon({ icon: Icon, iconUrl, color }: { icon: IconType; iconUrl?: string; color?: string }) {
+  if (iconUrl) {
+    return <img src={iconUrl} alt="" className="w-5 h-5 object-contain" />;
+  }
   return <Icon className={`w-5 h-5 ${color ?? "text-muted-foreground"}`} />;
 }
 
@@ -88,7 +91,7 @@ export function MobileMenuButton({
                   onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
                 >
-                  <NavIcon icon={Icon} color={item.color} />
+                  <NavIcon icon={Icon} iconUrl={item.iconUrl} color={item.color} />
                   <span className="font-medium">{item.label}</span>
                 </Link>
               );
@@ -103,7 +106,7 @@ export function MobileMenuButton({
                   onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
                 >
-                  <NavIcon icon={Icon} color={item.color} />
+                  <NavIcon icon={Icon} iconUrl={item.iconUrl} color={item.color} />
                   <span className="font-medium">{item.label}</span>
                 </Link>
               );

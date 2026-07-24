@@ -10,6 +10,7 @@ import {
   invalidateConfigCache,
   FEATURE_FLAG_DEFAULTS,
   SITE_SETTING_DEFAULTS,
+  NAV_ICON_KEYS,
 } from "../../lib/flags";
 
 const router: IRouter = Router();
@@ -74,6 +75,37 @@ router.put(
 
 const SettingBody = z.object({ value: z.string().max(5000).nullable() });
 
+/**
+ * Write-side validation + normalization for nav_icons (stored-XSS guard,
+ * defense in depth with the read-side filter in getNavIcons). Returns the
+ * normalized JSON string, or null when invalid.
+ */
+function normalizeNavIcons(raw: string): string | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    return null;
+  }
+  const allowed = new Set<string>(NAV_ICON_KEYS);
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+    if (!allowed.has(key)) return null;
+    if (
+      typeof value !== "string" ||
+      value.length > 2048 ||
+      !/^https?:\/\//i.test(value)
+    ) {
+      return null;
+    }
+    out[key] = value;
+  }
+  return JSON.stringify(out);
+}
+
 router.put(
   "/settings/:key",
   requirePermission("settings.manage"),
@@ -83,6 +115,17 @@ router.put(
     if (!parsed.success) {
       res.status(400).json({ error: parsed.error.message });
       return;
+    }
+    if (key === "nav_icons" && parsed.data.value != null) {
+      const normalized = normalizeNavIcons(parsed.data.value);
+      if (normalized === null) {
+        res.status(400).json({
+          error:
+            "nav_icons must be a JSON object mapping known nav keys to http(s) image URLs",
+        });
+        return;
+      }
+      parsed.data.value = normalized;
     }
     const [row] = await db
       .insert(siteSettingsTable)

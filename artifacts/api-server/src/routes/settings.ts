@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { db, userSettingsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
+import { getNavIcons } from "../lib/flags";
 import {
   GetMySettingsResponse,
   UpdateMySettingsBody,
@@ -9,6 +10,13 @@ import {
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
+
+// Public (no auth): admin-uploaded custom nav icon URLs for web/mobile
+// clients. Returns {} when admins haven't customized anything — clients fall
+// back to their built-in icons.
+router.get("/site/nav-icons", async (_req, res): Promise<void> => {
+  res.json({ icons: await getNavIcons() });
+});
 
 type SettingsRow = typeof userSettingsTable.$inferSelect;
 
