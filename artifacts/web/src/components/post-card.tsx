@@ -454,7 +454,7 @@ export function PostCard({ post }: { post: Post }) {
         </div>
       )}
 
-      {post.media && post.media.length > 0 && <MediaGrid media={post.media} />}
+      {post.media && post.media.length > 0 && <MediaGrid media={post.media} post={post} />}
 
       <div className="flex justify-between items-center text-sm text-muted-foreground py-2 border-b border-border mb-1">
         <div className="flex items-center gap-1">

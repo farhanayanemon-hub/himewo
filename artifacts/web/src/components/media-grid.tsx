@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import type { Post } from "@workspace/api-client-react";
+import { PostViewer } from "@/components/post-viewer";
 
 export type MediaItem = { url: string; type: string };
 
@@ -106,7 +108,7 @@ export function MediaLightbox({
  * Facebook-style media grid: 1 item full width, 2 side-by-side, 3 = one big +
  * two stacked, 4+ = 2x2 with a "+N" overlay. Clicking opens the lightbox.
  */
-export function MediaGrid({ media }: { media: MediaItem[] }) {
+export function MediaGrid({ media, post }: { media: MediaItem[]; post?: Post }) {
   const [open, setOpen] = useState<number | null>(null);
   if (media.length === 0) return null;
 
@@ -173,14 +175,23 @@ export function MediaGrid({ media }: { media: MediaItem[] }) {
           </div>
         )}
       </div>
-      {open != null && (
-        <MediaLightbox
-          items={media}
-          index={open}
-          onClose={() => setOpen(null)}
-          onIndexChange={setOpen}
-        />
-      )}
+      {open != null &&
+        (post ? (
+          <PostViewer
+            post={post}
+            items={media}
+            index={open}
+            onClose={() => setOpen(null)}
+            onIndexChange={setOpen}
+          />
+        ) : (
+          <MediaLightbox
+            items={media}
+            index={open}
+            onClose={() => setOpen(null)}
+            onIndexChange={setOpen}
+          />
+        ))}
     </>
   );
 }
