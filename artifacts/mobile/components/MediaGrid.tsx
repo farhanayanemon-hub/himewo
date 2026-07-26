@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import {
   Dimensions,
+  Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
   Pressable,
@@ -49,9 +50,87 @@ function VideoTile({ uri, height }: { uri: string; height: number }) {
 
 const SLIDE_HEIGHT = 320;
 
+/** Fullscreen photo viewer with its own one-at-a-time carousel + back button. */
+function FullscreenViewer({
+  media,
+  startIndex,
+  onClose,
+}: {
+  media: MediaItem[];
+  startIndex: number;
+  onClose: () => void;
+}) {
+  const width = Dimensions.get("window").width;
+  const [page, setPage] = useState(startIndex);
+  const pageRef = useRef(startIndex);
+  const scrollRef = useRef<ScrollView>(null);
+
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const i = Math.round(e.nativeEvent.contentOffset.x / width);
+    if (i !== pageRef.current && i >= 0 && i < media.length) {
+      pageRef.current = i;
+      setPage(i);
+    }
+  };
+  const restoreOffset = () => {
+    scrollRef.current?.scrollTo({ x: pageRef.current * width, animated: false });
+  };
+
+  return (
+    <Modal visible animationType="fade" onRequestClose={onClose} statusBarTranslucent>
+      <View style={styles.fsRoot}>
+        <ScrollView
+          ref={scrollRef}
+          horizontal
+          pagingEnabled
+          snapToInterval={width}
+          snapToAlignment="start"
+          decelerationRate="fast"
+          disableIntervalMomentum
+          showsHorizontalScrollIndicator={false}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+          onLayout={restoreOffset}
+          onContentSizeChange={restoreOffset}
+          style={{ flex: 1 }}
+        >
+          {media.map((m, i) => (
+            <View key={m.id ?? i} style={{ width, flex: 1, justifyContent: "center" }}>
+              {m.type === "video" ? (
+                <VideoTile uri={m.url} height={Dimensions.get("window").height * 0.7} />
+              ) : (
+                <Image
+                  source={{ uri: m.url }}
+                  style={{ width: "100%", height: "100%" }}
+                  contentFit="contain"
+                  transition={100}
+                />
+              )}
+            </View>
+          ))}
+        </ScrollView>
+
+        {/* Back button */}
+        <Pressable style={styles.fsBack} onPress={onClose} hitSlop={12}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </Pressable>
+
+        {media.length > 1 && (
+          <View style={styles.fsCounter}>
+            <Text style={styles.counterText}>
+              {page + 1}/{media.length}
+            </Text>
+          </View>
+        )}
+      </View>
+    </Modal>
+  );
+}
+
 /**
  * Post media: single item renders full width; multiple items become a
  * swipeable, paged carousel with dot indicators (Facebook/Instagram style).
+ * Tapping a photo opens a fullscreen viewer with a back button.
  */
 export function MediaGrid({ media }: { media: MediaItem[] }) {
   const c = useColors();
@@ -59,6 +138,7 @@ export function MediaGrid({ media }: { media: MediaItem[] }) {
   const [page, setPage] = useState(0);
   const pageRef = useRef(0);
   const scrollRef = useRef<ScrollView>(null);
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   if (!media || media.length === 0) return null;
 
   if (media.length === 1) {
@@ -66,18 +146,25 @@ export function MediaGrid({ media }: { media: MediaItem[] }) {
     const h = m.type === "video" ? 240 : SLIDE_HEIGHT;
     if (m.type === "video") return <VideoTile uri={m.url} height={h} />;
     return (
-      <Image
-        source={{ uri: m.url }}
-        style={{ width: "100%", height: h }}
-        contentFit="cover"
-        transition={150}
-      />
+      <>
+        <Pressable onPress={() => setViewerIndex(0)}>
+          <Image
+            source={{ uri: m.url }}
+            style={{ width: "100%", height: h }}
+            contentFit="cover"
+            transition={150}
+          />
+        </Pressable>
+        {viewerIndex !== null && (
+          <FullscreenViewer media={media} startIndex={0} onClose={() => setViewerIndex(null)} />
+        )}
+      </>
     );
   }
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const i = Math.round(e.nativeEvent.contentOffset.x / width);
-    if (i !== page && i >= 0 && i < media.length) {
+    if (i !== pageRef.current && i >= 0 && i < media.length) {
       pageRef.current = i;
       setPage(i);
     }
@@ -96,9 +183,13 @@ export function MediaGrid({ media }: { media: MediaItem[] }) {
         ref={scrollRef}
         horizontal
         pagingEnabled
+        snapToInterval={width}
+        snapToAlignment="start"
+        decelerationRate="fast"
+        disableIntervalMomentum
         showsHorizontalScrollIndicator={false}
         onScroll={onScroll}
-        scrollEventThrottle={32}
+        scrollEventThrottle={16}
         onLayout={restoreOffset}
         onContentSizeChange={restoreOffset}
         style={{ width }}
@@ -108,12 +199,14 @@ export function MediaGrid({ media }: { media: MediaItem[] }) {
             {m.type === "video" ? (
               <VideoTile uri={m.url} height={SLIDE_HEIGHT} />
             ) : (
-              <Image
-                source={{ uri: m.url }}
-                style={{ width: "100%", height: "100%" }}
-                contentFit="contain"
-                transition={150}
-              />
+              <Pressable style={{ flex: 1 }} onPress={() => setViewerIndex(i)}>
+                <Image
+                  source={{ uri: m.url }}
+                  style={{ width: "100%", height: "100%" }}
+                  contentFit="contain"
+                  transition={150}
+                />
+              </Pressable>
             )}
           </View>
         ))}
@@ -142,6 +235,14 @@ export function MediaGrid({ media }: { media: MediaItem[] }) {
           />
         ))}
       </View>
+
+      {viewerIndex !== null && (
+        <FullscreenViewer
+          media={media}
+          startIndex={viewerIndex}
+          onClose={() => setViewerIndex(null)}
+        />
+      )}
     </View>
   );
 }
@@ -183,5 +284,29 @@ const styles = StyleSheet.create({
   },
   dot: {
     borderRadius: 4,
+  },
+  fsRoot: {
+    flex: 1,
+    backgroundColor: "#000",
+  },
+  fsBack: {
+    position: "absolute",
+    top: 48,
+    left: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#0008",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  fsCounter: {
+    position: "absolute",
+    top: 56,
+    alignSelf: "center",
+    backgroundColor: "#0009",
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
 });
