@@ -1,8 +1,8 @@
-/** BDT (৳) helpers for the Shop. Prices are stored as integer paisa (cents). */
+/** USD helpers for the Shop. Prices are stored as integer cents. */
 
-export const BDT = "৳";
+export const BDT = "$";
 
-/** Format integer paisa → "৳125.50". */
+/** Format integer cents → "$125.50". */
 export function formatTaka(cents: number): string {
   const taka = (cents ?? 0) / 100;
   return `${BDT}${taka.toLocaleString(undefined, {

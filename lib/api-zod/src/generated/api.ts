@@ -184,6 +184,154 @@ export const FindAccountResponse = zod.object({
 
 
 /**
+ * @summary Unified search across people, hubs (pages) and circles (groups)
+ */
+export const searchAllQueryLimitDefault = 10;
+
+export const SearchAllQueryParams = zod.object({
+  "q": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().default(searchAllQueryLimitDefault).describe('Max results per section')
+})
+
+export const searchAllResponsePagesItemViewerReviewOneRatingMax = 5;
+
+
+
+export const SearchAllResponse = zod.object({
+  "people": zod.array(zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "gender": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "hasCompletedOnboarding": zod.boolean().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+})),
+  "pages": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "category": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "contactPhone": zod.string().nullish(),
+  "contactEmail": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "hours": zod.string().nullish(),
+  "ctaType": zod.enum(['none', 'message', 'call', 'shop', 'signup']),
+  "ctaUrl": zod.string().nullish(),
+  "ownerId": zod.string(),
+  "followerCount": zod.number(),
+  "followingCount": zod.number(),
+  "reviewCount": zod.number(),
+  "averageRating": zod.number().nullable(),
+  "reviewsEnabled": zod.boolean(),
+  "viewerFollows": zod.boolean().optional(),
+  "viewerCanPost": zod.boolean().optional(),
+  "viewerCanReview": zod.boolean().optional(),
+  "viewerReview": zod.union([zod.object({
+  "id": zod.number(),
+  "user": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "gender": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "education": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "hobbies": zod.string().nullish(),
+  "interests": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "isVerified": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "usernameChangedAt": zod.coerce.date().nullish(),
+  "displayNameChangedAt": zod.coerce.date().nullish(),
+  "hasCompletedOnboarding": zod.boolean().nullish(),
+  "friendCount": zod.number().nullish(),
+  "followerCount": zod.number().nullish(),
+  "followingCount": zod.number().nullish(),
+  "postCount": zod.number().nullish(),
+  "viewerIsFriend": zod.boolean().nullish(),
+  "viewerHasPendingRequest": zod.boolean().nullish(),
+  "viewerFollows": zod.boolean().nullish(),
+  "viewerCanSendRequest": zod.boolean().nullish(),
+  "isLocked": zod.boolean().nullish(),
+  "presence": zod.object({
+  "status": zod.string().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}).nullish()
+}),
+  "rating": zod.number().min(1).max(searchAllResponsePagesItemViewerReviewOneRatingMax),
+  "body": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}),zod.null()]).optional(),
+  "createdAt": zod.coerce.date()
+})),
+  "groups": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "privacy": zod.enum(['public', 'friends', 'private', 'hidden']),
+  "rules": zod.string().nullish(),
+  "requirePostApproval": zod.boolean(),
+  "joinQuestions": zod.array(zod.string()).nullish(),
+  "pinnedPostId": zod.number().nullish(),
+  "memberCount": zod.number(),
+  "viewerIsMember": zod.boolean(),
+  "viewerStatus": zod.enum(['none', 'active', 'pending', 'banned']),
+  "viewerRole": zod.union([zod.literal('admin'),zod.literal('moderator'),zod.literal('member'),zod.literal(null)]).nullish(),
+  "viewerIsMuted": zod.boolean(),
+  "viewerNotifyNewPosts": zod.boolean(),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+/**
  * @summary Search users
  */
 export const searchUsersQueryLimitDefault = 20;

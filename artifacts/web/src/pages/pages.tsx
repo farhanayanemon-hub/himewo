@@ -1165,7 +1165,11 @@ function PageDetail({ id }: { id: number }) {
                   {page.viewerFollows ? "Following" : "Follow"}
                 </Button>
               )}
-              <PageCTA page={page} />
+              {/* CTA buttons (Message/Call/etc.) are for OTHER users — hide
+                  when browsing AS this page or when the viewer owns it. */}
+              {actingPage?.id !== page.id && user?.id !== page.ownerId && (
+                <PageCTA page={page} />
+              )}
               {page.viewerCanPost && (
                 <Button variant="secondary" size="icon" onClick={() => setEditOpen(true)} aria-label="Edit hub">
                   <Pencil className="w-4 h-4" />

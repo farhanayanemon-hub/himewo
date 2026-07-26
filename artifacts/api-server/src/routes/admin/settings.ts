@@ -11,6 +11,7 @@ import {
   FEATURE_FLAG_DEFAULTS,
   SITE_SETTING_DEFAULTS,
   NAV_ICON_KEYS,
+  OTP_EVENT_KEYS,
 } from "../../lib/flags";
 
 const router: IRouter = Router();
@@ -19,7 +20,15 @@ router.get(
   "/settings",
   requirePermission("settings.view"),
   async (_req, res): Promise<void> => {
-    const [flags, settings] = await Promise.all([getFlags(), getSettings()]);
+    const [flags, rawSettings] = await Promise.all([getFlags(), getSettings()]);
+    // Copy before redacting — getSettings() returns the shared config cache
+    // and mutating it would corrupt the token used for actual SMS sends.
+    const settings: Record<string, string> = { ...rawSettings };
+    // Redact secret-ish settings: admins only see whether they are set.
+    settings.sms_hook_secret = settings.sms_hook_secret ? "(set)" : "";
+    settings.sms_greenweb_token = settings.sms_greenweb_token
+      ? `••••••••${settings.sms_greenweb_token.slice(-4)}`
+      : "";
     res.json({
       flags,
       settings,
@@ -114,6 +123,44 @@ router.put(
     const parsed = SettingBody.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    if (key === "otp_events" && parsed.data.value != null) {
+      let obj: unknown;
+      try {
+        obj = JSON.parse(parsed.data.value);
+      } catch {
+        obj = null;
+      }
+      if (
+        typeof obj !== "object" ||
+        obj === null ||
+        Array.isArray(obj) ||
+        !Object.entries(obj as Record<string, unknown>).every(
+          ([k, v]) =>
+            (OTP_EVENT_KEYS as readonly string[]).includes(k) &&
+            typeof v === "boolean",
+        )
+      ) {
+        res.status(400).json({
+          error: "otp_events must be a JSON object mapping known OTP event keys to booleans",
+        });
+        return;
+      }
+    }
+    if (
+      (key === "email_verification_enabled" ||
+        key === "phone_verification_enabled") &&
+      parsed.data.value != null &&
+      !["on", "off"].includes(parsed.data.value)
+    ) {
+      res.status(400).json({ error: `${key} must be "on" or "off"` });
+      return;
+    }
+    if (key === "sms_hook_secret") {
+      // Ops-only value (part of the Supabase hook URI) — not editable from
+      // the admin panel to avoid accidentally breaking OTP delivery.
+      res.status(400).json({ error: "sms_hook_secret cannot be changed from the admin panel" });
       return;
     }
     if (key === "nav_icons" && parsed.data.value != null) {

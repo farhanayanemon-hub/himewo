@@ -19,7 +19,7 @@ export const CONDITIONS = [
 
 export function formatPrice(price: number, currency = "BDT") {
   if (price === 0) return "Free";
-  const symbol = currency === "BDT" ? "৳" : currency + " ";
+  const symbol = currency === "USD" || currency === "BDT" ? "$" : currency + " ";
   return `${symbol}${price.toLocaleString()}`;
 }
 

@@ -207,7 +207,7 @@ export default function VerifiedPage() {
                   )}
                 </ul>
                 <p className="text-xs text-muted-foreground mt-3">
-                  Verified badge costs ৳{data.requirements.monthlyFee}/month after approval.
+                  Verified badge costs ${data.requirements.monthlyFee}/month after approval.
                 </p>
               </div>
             )}

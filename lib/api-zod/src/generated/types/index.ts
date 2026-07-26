@@ -278,6 +278,8 @@ export * from './savedItem';
 export * from './savedItemEntityType';
 export * from './savedItemInput';
 export * from './savedItemInputEntityType';
+export * from './searchAllParams';
+export * from './searchResults';
 export * from './searchUsersParams';
 export * from './sellingOverview';
 export * from './serveAdsParams';

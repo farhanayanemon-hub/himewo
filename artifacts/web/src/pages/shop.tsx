@@ -85,10 +85,10 @@ import { toast } from "@/hooks/use-toast";
 
 /* ---------------- Helpers ---------------- */
 
-/** priceCents (paisa) → "৳125.50" */
+/** priceCents → "$125.50" (system currency is always USD) */
 export function formatTaka(cents: number) {
   const taka = cents / 100;
-  return `৳${taka.toLocaleString(undefined, {
+  return `$${taka.toLocaleString(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
@@ -1813,7 +1813,7 @@ function ProductDialog({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="p-price" className="mb-1.5 block">
-                Price (৳)
+                Price ($)
               </Label>
               <Input
                 id="p-price"
@@ -2026,7 +2026,7 @@ function WithdrawalForm({ available }: { available: number }) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label htmlFor="w-amount" className="mb-1.5 block">
-              Amount (৳)
+              Amount ($)
             </Label>
             <Input
               id="w-amount"

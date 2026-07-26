@@ -191,6 +191,8 @@ import type {
   SavedCard,
   SavedItem,
   SavedItemInput,
+  SearchAllParams,
+  SearchResults,
   SearchUsersParams,
   SellingOverview,
   ServeAdsParams,
@@ -699,6 +701,90 @@ export const useFindAccount = <TError = ErrorType<void>,
       > => {
       return useMutation(getFindAccountMutationOptions(options));
     }
+
+export const getSearchAllUrl = (params?: SearchAllParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/search?${stringifiedParams}` : `/api/search`
+}
+
+/**
+ * @summary Unified search across people, hubs (pages) and circles (groups)
+ */
+export const searchAll = async (params?: SearchAllParams, options?: RequestInit): Promise<SearchResults> => {
+
+  return customFetch<SearchResults>(getSearchAllUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSearchAllQueryKey = (params?: SearchAllParams,) => {
+    return [
+    `/api/search`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSearchAllQueryOptions = <TData = Awaited<ReturnType<typeof searchAll>>, TError = ErrorType<unknown>>(params?: SearchAllParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchAll>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSearchAllQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchAll>>> = ({ signal }) => searchAll(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof searchAll>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type SearchAllQueryResult = NonNullable<Awaited<ReturnType<typeof searchAll>>>
+export type SearchAllQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Unified search across people, hubs (pages) and circles (groups)
+ */
+
+export function useSearchAll<TData = Awaited<ReturnType<typeof searchAll>>, TError = ErrorType<unknown>>(
+ params?: SearchAllParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchAll>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getSearchAllQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getSearchUsersUrl = (params?: SearchUsersParams,) => {
   const normalizedParams = new URLSearchParams();
