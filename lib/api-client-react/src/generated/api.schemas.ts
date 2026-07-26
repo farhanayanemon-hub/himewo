@@ -720,7 +720,12 @@ export interface Group {
   /** @nullable */
   viewerRole?: GroupViewerRole;
   viewerIsMuted: boolean;
+  viewerNotifyNewPosts: boolean;
   createdAt: string;
+}
+
+export interface GroupNotificationsInput {
+  enabled: boolean;
 }
 
 export type GroupInputPrivacy = typeof GroupInputPrivacy[keyof typeof GroupInputPrivacy];
@@ -2473,6 +2478,7 @@ export const NotificationType = {
   follow: 'follow',
   message: 'message',
   group_invite: 'group_invite',
+  group_post: 'group_post',
   page_follow: 'page_follow',
   page_invite: 'page_invite',
   mention: 'mention',

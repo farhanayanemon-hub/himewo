@@ -75,6 +75,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "follow",
   "message",
   "group_invite",
+  "group_post",
   "page_follow",
   "page_invite",
   "mention",

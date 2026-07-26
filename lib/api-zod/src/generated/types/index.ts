@@ -153,6 +153,7 @@ export * from './groupInputPrivacy';
 export * from './groupMember';
 export * from './groupMemberRole';
 export * from './groupMemberStatus';
+export * from './groupNotificationsInput';
 export * from './groupPrivacy';
 export * from './groupUpdateInput';
 export * from './groupUpdateInputPrivacy';

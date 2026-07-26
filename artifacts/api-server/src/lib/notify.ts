@@ -2,9 +2,10 @@ import {
   db,
   notificationsTable,
   userSettingsTable,
+  groupMembersTable,
   type Notification,
 } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { realtime } from "../realtime";
 
 type NotificationType = Notification["type"];
@@ -61,5 +62,39 @@ export async function createNotification(params: {
     .returning();
   if (row) {
     realtime.toUser(params.userId, { type: "notification", notificationId: row.id });
+  }
+}
+
+/**
+ * Notify group members that a new post is live in their group. Called when a
+ * post is created (not pending approval) or when a pending post is approved.
+ * Respects each member's per-group "notify new posts" toggle and skips the
+ * author. Capped to avoid unbounded fan-out on huge groups.
+ */
+export async function notifyGroupNewPost(params: {
+  groupId: number;
+  postId: number;
+  authorId: string;
+}): Promise<void> {
+  const members = await db
+    .select({ userId: groupMembersTable.userId })
+    .from(groupMembersTable)
+    .where(
+      and(
+        eq(groupMembersTable.groupId, params.groupId),
+        eq(groupMembersTable.status, "active"),
+        eq(groupMembersTable.notifyNewPosts, true),
+        ne(groupMembersTable.userId, params.authorId),
+      ),
+    )
+    .limit(500);
+  for (const m of members) {
+    await createNotification({
+      userId: m.userId,
+      actorId: params.authorId,
+      type: "group_post",
+      entityType: "post",
+      entityId: params.postId,
+    });
   }
 }

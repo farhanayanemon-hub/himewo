@@ -32,5 +32,6 @@ export interface Group {
   /** @nullable */
   viewerRole?: GroupViewerRole;
   viewerIsMuted: boolean;
+  viewerNotifyNewPosts: boolean;
   createdAt: Date;
 }

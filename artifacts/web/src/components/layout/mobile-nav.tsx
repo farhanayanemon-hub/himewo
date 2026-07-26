@@ -213,7 +213,7 @@ export function MobileNav({
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="relative flex items-end justify-around h-16 px-1">
-        <StdItem href="/" icon={Home} label="Home" active={isActive("/")} />
+        <StdItem href="/" icon={Home} label="Feed" active={isActive("/")} />
         <StdItem href="/friends" icon={Users} label="Friends" active={isActive("/friends")} />
 
         {/* Reels — raised center button */}

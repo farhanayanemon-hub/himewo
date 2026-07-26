@@ -111,6 +111,7 @@ import type {
   Group,
   GroupInput,
   GroupMember,
+  GroupNotificationsInput,
   GroupUpdateInput,
   HealthStatus,
   Insights,
@@ -5255,6 +5256,77 @@ export const useInviteToGroup = <TError = ErrorType<ForbiddenResponse | NotFound
         TContext
       > => {
       return useMutation(getInviteToGroupMutationOptions(options));
+    }
+
+export const getSetGroupNotificationsUrl = (id: number,) => {
+
+
+
+
+  return `/api/groups/${id}/notifications`
+}
+
+/**
+ * @summary Turn new-post notifications on/off for the viewer in this group
+ */
+export const setGroupNotifications = async (id: number,
+    groupNotificationsInput: GroupNotificationsInput, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getSetGroupNotificationsUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(groupNotificationsInput)
+  }
+);}
+
+
+
+
+export const getSetGroupNotificationsMutationOptions = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setGroupNotifications>>, TError,{id: number;data: BodyType<GroupNotificationsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setGroupNotifications>>, TError,{id: number;data: BodyType<GroupNotificationsInput>}, TContext> => {
+
+const mutationKey = ['setGroupNotifications'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setGroupNotifications>>, {id: number;data: BodyType<GroupNotificationsInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  setGroupNotifications(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetGroupNotificationsMutationResult = NonNullable<Awaited<ReturnType<typeof setGroupNotifications>>>
+    export type SetGroupNotificationsMutationBody = BodyType<GroupNotificationsInput>
+    export type SetGroupNotificationsMutationError = ErrorType<ForbiddenResponse | NotFoundResponse>
+
+    /**
+ * @summary Turn new-post notifications on/off for the viewer in this group
+ */
+export const useSetGroupNotifications = <TError = ErrorType<ForbiddenResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setGroupNotifications>>, TError,{id: number;data: BodyType<GroupNotificationsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setGroupNotifications>>,
+        TError,
+        {id: number;data: BodyType<GroupNotificationsInput>},
+        TContext
+      > => {
+      return useMutation(getSetGroupNotificationsMutationOptions(options));
     }
 
 export const getDeclineGroupInviteUrl = (id: number,) => {

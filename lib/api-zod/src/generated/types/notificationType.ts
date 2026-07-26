@@ -17,6 +17,7 @@ export const NotificationType = {
   follow: 'follow',
   message: 'message',
   group_invite: 'group_invite',
+  group_post: 'group_post',
   page_follow: 'page_follow',
   page_invite: 'page_invite',
   mention: 'mention',
