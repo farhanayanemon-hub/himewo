@@ -371,8 +371,38 @@ router.get("/auth/otp-config", async (_req, res): Promise<void> => {
  * Auth: the hook URI configured in Supabase carries `?key=<sms_hook_secret>`;
  * the constant-time comparison below rejects everything else.
  */
+// Abuse guards (SMS-pumping): per-phone and global send-rate caps. In-memory
+// is fine — the API runs as a single instance and these are soft limits on
+// top of Supabase's own sms_max_frequency throttle.
+const smsPerPhone = new Map<string, number[]>();
+let smsGlobal: number[] = [];
+const SMS_PER_PHONE_MAX = 3; // per 10 minutes per number
+const SMS_PER_PHONE_WINDOW_MS = 10 * 60 * 1000;
+const SMS_GLOBAL_MAX = 120; // per hour across all numbers
+const SMS_GLOBAL_WINDOW_MS = 60 * 60 * 1000;
+
+function smsRateLimited(phone: string): boolean {
+  const now = Date.now();
+  smsGlobal = smsGlobal.filter((t) => now - t < SMS_GLOBAL_WINDOW_MS);
+  if (smsGlobal.length >= SMS_GLOBAL_MAX) return true;
+  const hits = (smsPerPhone.get(phone) ?? []).filter(
+    (t) => now - t < SMS_PER_PHONE_WINDOW_MS,
+  );
+  if (hits.length >= SMS_PER_PHONE_MAX) return true;
+  hits.push(now);
+  smsPerPhone.set(phone, hits);
+  smsGlobal.push(now);
+  if (smsPerPhone.size > 5000) {
+    // Cheap GC so the map can't grow unbounded.
+    for (const [k, v] of smsPerPhone) {
+      if (v.every((t) => now - t >= SMS_PER_PHONE_WINDOW_MS)) smsPerPhone.delete(k);
+    }
+  }
+  return false;
+}
+
 router.post("/auth/sms-hook", async (req, res): Promise<void> => {
-  const settings = await getSettings();
+  const [settings, otpEvents] = await Promise.all([getSettings(), getOtpEvents()]);
   const secret = (settings.sms_hook_secret || "").trim();
   const provided = String(req.query.key ?? "");
   const a = Buffer.from(provided);
@@ -381,7 +411,14 @@ router.post("/auth/sms-hook", async (req, res): Promise<void> => {
     res.status(401).json({ error: "unauthorized" });
     return;
   }
-  if (settings.phone_verification_enabled === "off") {
+  // Server-side policy enforcement (client checks are advisory only):
+  // master phone switch, plus refuse when every phone OTP event is disabled.
+  const anyPhoneEventOn =
+    otpEvents.login_phone ||
+    otpEvents.signup_phone_verify ||
+    otpEvents.password_reset_phone ||
+    otpEvents.phone_change;
+  if (settings.phone_verification_enabled === "off" || !anyPhoneEventOn) {
     res.status(400).json({
       error: "Phone verification is currently turned off by the admins.",
     });
@@ -391,10 +428,15 @@ router.post("/auth/sms-hook", async (req, res): Promise<void> => {
     user?: { phone?: string };
     sms?: { otp?: string };
   };
-  const phone = body?.user?.phone ?? "";
-  const otp = body?.sms?.otp ?? "";
-  if (!phone || !otp) {
-    res.status(400).json({ error: "missing phone or otp" });
+  const phone = String(body?.user?.phone ?? "");
+  const otp = String(body?.sms?.otp ?? "");
+  // Strict shape validation — this must look like a Supabase auth-hook OTP.
+  if (!/^\+?\d{8,15}$/.test(phone.replace(/\s/g, "")) || !/^\d{4,10}$/.test(otp)) {
+    res.status(400).json({ error: "invalid request" });
+    return;
+  }
+  if (smsRateLimited(phone)) {
+    res.status(429).json({ error: "Too many codes requested — try again later." });
     return;
   }
   try {
@@ -404,10 +446,14 @@ router.post("/auth/sms-hook", async (req, res): Promise<void> => {
     );
     res.json({});
   } catch (err) {
+    // Log the provider detail privately; keep the caller-facing error generic
+    // (except the BD-only rule, which the end user genuinely needs to see).
     console.error("[sms-hook] delivery failed:", err);
-    res.status(400).json({
-      error: err instanceof Error ? err.message : "SMS delivery failed",
-    });
+    const msg =
+      err instanceof Error && /Bangladeshi/.test(err.message)
+        ? err.message
+        : "SMS delivery failed. Please try again later.";
+    res.status(400).json({ error: msg });
   }
 });
 
