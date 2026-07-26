@@ -218,7 +218,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
   };
 
   const navItems = [
-    { href: "/", icon: Home, label: "Home", color: "text-teal-500", iconUrl: navIcons.home },
+    { href: "/", icon: Home, label: "Feed", color: "text-teal-500", iconUrl: navIcons.home },
     { href: "/friends", icon: Users, label: "Friends", color: "text-purple-500", iconUrl: navIcons.friends },
     { href: "/reels", icon: Video, label: "Reels", color: "text-pink-500", iconUrl: navIcons.reels },
     { href: "/groups", icon: UsersRound, label: "Circles", color: "text-emerald-500", iconUrl: navIcons.circles },

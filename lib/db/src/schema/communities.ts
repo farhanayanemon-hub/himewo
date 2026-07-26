@@ -58,6 +58,8 @@ export const groupMembersTable = pgTable(
     status: groupMemberStatusEnum("status").notNull().default("active"),
     // Muted members stay in the group but cannot post.
     isMuted: boolean("is_muted").notNull().default(false),
+    // Per-member toggle: notify me when a new post appears in this group.
+    notifyNewPosts: boolean("notify_new_posts").notNull().default(true),
     // Answers to the group's join questions (given at request time).
     answers: jsonb("answers").$type<string[]>(),
     joinedAt: timestamp("joined_at", { withTimezone: true })

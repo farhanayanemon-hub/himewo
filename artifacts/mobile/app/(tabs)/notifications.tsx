@@ -42,6 +42,8 @@ function notificationText(n: Notification): string {
       return `${actor} sent you a message.`;
     case NotificationType.group_invite:
       return `${actor} invited you to a circle.`;
+    case NotificationType.group_post:
+      return `${actor} posted in a circle you're in.`;
     case NotificationType.page_invite:
       return `${actor} invited you to follow a hub.`;
     case NotificationType.page_follow:
@@ -81,6 +83,7 @@ function notificationIcon(type: NotificationType): keyof typeof Ionicons.glyphMa
     case NotificationType.message:
       return "mail";
     case NotificationType.group_invite:
+    case NotificationType.group_post:
     case NotificationType.page_invite:
       return "people";
     case NotificationType.share:

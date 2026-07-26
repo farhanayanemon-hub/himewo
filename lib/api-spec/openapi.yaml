@@ -1037,6 +1037,24 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+  /groups/{id}/notifications:
+    post:
+      operationId: setGroupNotifications
+      tags: [groups]
+      summary: Turn new-post notifications on/off for the viewer in this group
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GroupNotificationsInput" }
+      responses:
+        "204": { description: Updated }
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /groups/{id}/invite/decline:
     post:
       operationId: declineGroupInvite
@@ -4995,6 +5013,7 @@ components:
           viewerIsMember,
           viewerStatus,
           viewerIsMuted,
+          viewerNotifyNewPosts,
           requirePostApproval,
           createdAt,
         ]
@@ -5020,7 +5039,13 @@ components:
           type: ["string", "null"]
           enum: [admin, moderator, member, null]
         viewerIsMuted: { type: boolean }
+        viewerNotifyNewPosts: { type: boolean }
         createdAt: { type: string, format: date-time }
+    GroupNotificationsInput:
+      type: object
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
     GroupInput:
       type: object
       required: [name]
@@ -6296,7 +6321,7 @@ components:
         id: { type: integer }
         type:
           type: string
-          enum: [reaction, comment, friend_request, friend_accept, follow, message, group_invite, page_follow, page_invite, mention, share, story_view, announcement, verification]
+          enum: [reaction, comment, friend_request, friend_accept, follow, message, group_invite, group_post, page_follow, page_invite, mention, share, story_view, announcement, verification]
         actor:
           oneOf:
             - { $ref: "#/components/schemas/Profile" }

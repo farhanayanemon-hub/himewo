@@ -20,6 +20,7 @@ import {
   useApproveGroupPost,
   useRejectGroupPost,
   useInviteToGroup,
+  useSetGroupNotifications,
   useListGroupInvites,
   useDeclineGroupInvite,
   useListFriends,
@@ -57,9 +58,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, Users, Lock, EyeOff, Globe, Pin, Shield, UserPlus } from "lucide-react";
+import {
+  Loader2,
+  Users,
+  Lock,
+  EyeOff,
+  Globe,
+  Pin,
+  Shield,
+  UserPlus,
+  Bell,
+  BellOff,
+  ImagePlus,
+} from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useState, useEffect } from "react";
+import { uploadMedia, UploadUnavailableError } from "@/lib/upload";
+import { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 
@@ -225,6 +239,165 @@ function InviteGroupFriendsDialog({
   );
 }
 
+/**
+ * Facebook-style post-create wizard: step 1 = upload a cover photo, step 2 =
+ * invite friends. Every step can be skipped; finishing navigates to the circle.
+ */
+function CreateCircleWizard({
+  groupId,
+  onDone,
+}: {
+  groupId: number;
+  onDone: () => void;
+}) {
+  const [step, setStep] = useState<1 | 2>(1);
+  const updateGroup = useUpdateGroup();
+  const inviteToGroup = useInviteToGroup();
+  const { data: friends, isLoading: friendsLoading } = useListFriends({
+    query: { enabled: step === 2, queryKey: getListFriendsQueryKey() },
+  });
+  const [selected, setSelected] = useState<string[]>([]);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
+
+  const pickFile = (f: File | null) => {
+    setCoverFile(f);
+    setUploadError(null);
+    setCoverPreview(f ? URL.createObjectURL(f) : null);
+  };
+
+  const saveCover = async () => {
+    if (!coverFile) return setStep(2);
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const media = await uploadMedia(coverFile);
+      await updateGroup.mutateAsync({ id: groupId, data: { coverUrl: media.url } });
+      queryClient.invalidateQueries({ queryKey: getGetGroupQueryKey(groupId) });
+      setStep(2);
+    } catch (err) {
+      setUploadError(
+        err instanceof UploadUnavailableError
+          ? "Photo upload isn't available right now. You can skip and add it later."
+          : "Upload failed. Try again or skip for now.",
+      );
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const sendInvites = () => {
+    if (selected.length === 0) return onDone();
+    inviteToGroup.mutate(
+      { id: groupId, data: { userIds: selected } },
+      { onSuccess: onDone },
+    );
+  };
+
+  return (
+    <Dialog open onOpenChange={(v) => !v && onDone()}>
+      <DialogContent className="max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle>
+            {step === 1 ? "Add a cover photo" : "Invite friends"}
+          </DialogTitle>
+        </DialogHeader>
+        {step === 1 ? (
+          <div className="space-y-3">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
+            />
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="w-full h-40 rounded-xl border-2 border-dashed border-border bg-muted/40 hover:bg-muted/70 transition-colors overflow-hidden flex items-center justify-center"
+            >
+              {coverPreview ? (
+                <img src={coverPreview} className="w-full h-full object-cover" alt="" />
+              ) : (
+                <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                  <ImagePlus className="w-8 h-8" />
+                  <span className="text-sm font-medium">Click to choose a cover photo</span>
+                </div>
+              )}
+            </button>
+            {uploadError && (
+              <p className="text-sm text-destructive">{uploadError}</p>
+            )}
+            <DialogFooter>
+              <Button variant="secondary" onClick={() => setStep(2)}>
+                Skip
+              </Button>
+              <Button onClick={saveCover} disabled={!coverFile || uploading}>
+                {uploading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                Save & continue
+              </Button>
+            </DialogFooter>
+          </div>
+        ) : (
+          <>
+            <div className="flex-1 overflow-y-auto -mx-1 px-1">
+              {friendsLoading ? (
+                <div className="py-6 flex justify-center">
+                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                </div>
+              ) : friends?.length === 0 ? (
+                <div className="py-6 text-center text-muted-foreground text-sm">
+                  No friends to invite yet.
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {friends?.map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() =>
+                        setSelected((prev) =>
+                          prev.includes(f.id)
+                            ? prev.filter((x) => x !== f.id)
+                            : [...prev, f.id],
+                        )
+                      }
+                      className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors text-left"
+                    >
+                      <Checkbox checked={selected.includes(f.id)} className="pointer-events-none" />
+                      <img src={avatarSrc(f.avatarUrl)} className="w-10 h-10 rounded-full object-cover bg-muted shrink-0" alt="" />
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{f.displayName || f.username}</div>
+                        {f.username && <div className="text-xs text-muted-foreground truncate">@{f.username}</div>}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="secondary" onClick={onDone}>
+                Skip
+              </Button>
+              <Button
+                onClick={sendInvites}
+                disabled={selected.length === 0 || inviteToGroup.isPending}
+              >
+                {inviteToGroup.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                Invite{selected.length > 0 ? ` (${selected.length})` : ""}
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function GroupList() {
   const { data: groups, isLoading } = useListGroups();
   const { data: invites } = useListGroupInvites();
@@ -247,6 +420,7 @@ function GroupList() {
   const [questions, setQuestions] = useState("");
 
   const createGroup = useCreateGroup();
+  const [wizardGroupId, setWizardGroupId] = useState<number | null>(null);
 
   const handleCreate = () => {
     if (!name.trim()) return;
@@ -275,7 +449,7 @@ function GroupList() {
           setRules("");
           setRequirePostApproval(false);
           setQuestions("");
-          navigate(`/groups/${group.id}`);
+          setWizardGroupId(group.id);
         },
       },
     );
@@ -437,6 +611,17 @@ function GroupList() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {wizardGroupId != null && (
+        <CreateCircleWizard
+          groupId={wizardGroupId}
+          onDone={() => {
+            const gid = wizardGroupId;
+            setWizardGroupId(null);
+            navigate(`/groups/${gid}`);
+          }}
+        />
+      )}
     </MainLayout>
   );
 }
@@ -449,6 +634,7 @@ function GroupDetail({ id }: { id: number }) {
 
   const joinGroup = useJoinGroup();
   const leaveGroup = useLeaveGroup();
+  const setNotifications = useSetGroupNotifications();
 
   const [joinOpen, setJoinOpen] = useState(false);
   const [answers, setAnswers] = useState<string[]>([]);
@@ -579,6 +765,30 @@ function GroupDetail({ id }: { id: number }) {
               </div>
             </div>
             <div className="flex gap-2 shrink-0">
+              {group.viewerIsMember && (
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  title={
+                    group.viewerNotifyNewPosts
+                      ? "Notifications on — click to turn off"
+                      : "Notifications off — click to turn on"
+                  }
+                  disabled={setNotifications.isPending}
+                  onClick={() =>
+                    setNotifications.mutate(
+                      { id, data: { enabled: !group.viewerNotifyNewPosts } },
+                      { onSuccess: invalidateGroup },
+                    )
+                  }
+                >
+                  {group.viewerNotifyNewPosts ? (
+                    <Bell className="w-4 h-4" />
+                  ) : (
+                    <BellOff className="w-4 h-4" />
+                  )}
+                </Button>
+              )}
               {group.viewerIsMember && (
                 <Button variant="secondary" onClick={() => setInviteOpen(true)}>
                   <UserPlus className="w-4 h-4 mr-2" />
@@ -1112,10 +1322,35 @@ function SettingsTab({
     rules?: string | null;
     requirePostApproval: boolean;
     joinQuestions?: string[] | null;
+    coverUrl?: string | null;
+    avatarUrl?: string | null;
   };
   onSaved: () => void;
 }) {
   const updateGroup = useUpdateGroup();
+  const coverRef = useRef<HTMLInputElement>(null);
+  const avatarRef = useRef<HTMLInputElement>(null);
+  const [uploadingField, setUploadingField] = useState<"coverUrl" | "avatarUrl" | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const handleUpload = async (field: "coverUrl" | "avatarUrl", file: File | null) => {
+    if (!file) return;
+    setUploadingField(field);
+    setUploadError(null);
+    try {
+      const media = await uploadMedia(file);
+      await updateGroup.mutateAsync({ id: group.id, data: { [field]: media.url } });
+      onSaved();
+    } catch (err) {
+      setUploadError(
+        err instanceof UploadUnavailableError
+          ? "Photo upload isn't available right now."
+          : "Upload failed. Try again.",
+      );
+    } finally {
+      setUploadingField(null);
+    }
+  };
   const [name, setName] = useState(group.name);
   const [description, setDescription] = useState(group.description ?? "");
   const [privacy, setPrivacy] = useState<Privacy>(
@@ -1152,6 +1387,58 @@ function SettingsTab({
 
   return (
     <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+      <div className="space-y-2">
+        <Label>Cover photo</Label>
+        <input
+          ref={coverRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => handleUpload("coverUrl", e.target.files?.[0] ?? null)}
+        />
+        <button
+          type="button"
+          onClick={() => coverRef.current?.click()}
+          disabled={uploadingField !== null}
+          className="w-full h-32 rounded-xl border-2 border-dashed border-border bg-muted/40 hover:bg-muted/70 transition-colors overflow-hidden flex items-center justify-center"
+        >
+          {uploadingField === "coverUrl" ? (
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          ) : group.coverUrl ? (
+            <img src={group.coverUrl} className="w-full h-full object-cover" alt="" />
+          ) : (
+            <div className="flex flex-col items-center gap-1 text-muted-foreground">
+              <ImagePlus className="w-6 h-6" />
+              <span className="text-xs font-medium">Upload cover photo</span>
+            </div>
+          )}
+        </button>
+      </div>
+      <div className="space-y-2">
+        <Label>Circle photo</Label>
+        <input
+          ref={avatarRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => handleUpload("avatarUrl", e.target.files?.[0] ?? null)}
+        />
+        <button
+          type="button"
+          onClick={() => avatarRef.current?.click()}
+          disabled={uploadingField !== null}
+          className="w-20 h-20 rounded-xl border-2 border-dashed border-border bg-muted/40 hover:bg-muted/70 transition-colors overflow-hidden flex items-center justify-center"
+        >
+          {uploadingField === "avatarUrl" ? (
+            <Loader2 className="w-5 h-5 animate-spin text-primary" />
+          ) : group.avatarUrl ? (
+            <img src={avatarSrc(group.avatarUrl)} className="w-full h-full object-cover" alt="" />
+          ) : (
+            <ImagePlus className="w-5 h-5 text-muted-foreground" />
+          )}
+        </button>
+      </div>
+      {uploadError && <p className="text-sm text-destructive">{uploadError}</p>}
       <div className="space-y-2">
         <Label>Name</Label>
         <Input value={name} onChange={(e) => setName(e.target.value)} />

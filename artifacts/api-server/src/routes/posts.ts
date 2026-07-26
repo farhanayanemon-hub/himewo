@@ -41,7 +41,7 @@ import {
   buildComments,
   buildCommentById,
 } from "../lib/serialize";
-import { createNotification } from "../lib/notify";
+import { createNotification, notifyGroupNewPost } from "../lib/notify";
 import { awardPoints } from "../lib/earnings";
 import { canViewPost, filterVisiblePosts, canManagePage } from "../lib/authz";
 import {
@@ -471,6 +471,17 @@ router.post("/posts", requireAuth, async (req, res): Promise<void> => {
         entityId: post.id,
       });
     }
+  }
+  // A visible group post notifies members who opted into new-post
+  // notifications. (Pending posts notify on approval instead; mention
+  // recipients above are deduped inside createNotification by self-check
+  // only, so members may get both a mention and a group_post — acceptable.)
+  if (groupId != null && !pendingApproval) {
+    await notifyGroupNewPost({
+      groupId,
+      postId: post.id,
+      authorId: req.userId!,
+    });
   }
   await awardPoints({
     userId: req.userId!,

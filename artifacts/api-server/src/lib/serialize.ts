@@ -838,6 +838,7 @@ export async function buildGroup(row: GroupRow, viewerId?: string) {
     viewerStatus,
     viewerRole: viewerStatus === "active" ? (viewerRow?.role ?? null) : null,
     viewerIsMuted: viewerRow?.isMuted ?? false,
+    viewerNotifyNewPosts: viewerRow?.notifyNewPosts ?? true,
     createdAt: row.createdAt,
   };
 }

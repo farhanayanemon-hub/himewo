@@ -3794,6 +3794,7 @@ export const ListGroupsResponseItem = zod.object({
   "viewerStatus": zod.enum(['none', 'active', 'pending', 'banned']),
   "viewerRole": zod.union([zod.literal('admin'),zod.literal('moderator'),zod.literal('member'),zod.literal(null)]).nullish(),
   "viewerIsMuted": zod.boolean(),
+  "viewerNotifyNewPosts": zod.boolean(),
   "createdAt": zod.coerce.date()
 })
 export const ListGroupsResponse = zod.array(ListGroupsResponseItem)
@@ -3829,6 +3830,7 @@ export const CreateGroupResponse = zod.object({
   "viewerStatus": zod.enum(['none', 'active', 'pending', 'banned']),
   "viewerRole": zod.union([zod.literal('admin'),zod.literal('moderator'),zod.literal('member'),zod.literal(null)]).nullish(),
   "viewerIsMuted": zod.boolean(),
+  "viewerNotifyNewPosts": zod.boolean(),
   "createdAt": zod.coerce.date()
 })
 
@@ -3852,6 +3854,7 @@ export const ListGroupInvitesResponseItem = zod.object({
   "viewerStatus": zod.enum(['none', 'active', 'pending', 'banned']),
   "viewerRole": zod.union([zod.literal('admin'),zod.literal('moderator'),zod.literal('member'),zod.literal(null)]).nullish(),
   "viewerIsMuted": zod.boolean(),
+  "viewerNotifyNewPosts": zod.boolean(),
   "createdAt": zod.coerce.date()
 })
 export const ListGroupInvitesResponse = zod.array(ListGroupInvitesResponseItem)
@@ -3877,6 +3880,7 @@ export const GetGroupResponse = zod.object({
   "viewerStatus": zod.enum(['none', 'active', 'pending', 'banned']),
   "viewerRole": zod.union([zod.literal('admin'),zod.literal('moderator'),zod.literal('member'),zod.literal(null)]).nullish(),
   "viewerIsMuted": zod.boolean(),
+  "viewerNotifyNewPosts": zod.boolean(),
   "createdAt": zod.coerce.date()
 })
 
@@ -3916,6 +3920,7 @@ export const UpdateGroupResponse = zod.object({
   "viewerStatus": zod.enum(['none', 'active', 'pending', 'banned']),
   "viewerRole": zod.union([zod.literal('admin'),zod.literal('moderator'),zod.literal('member'),zod.literal(null)]).nullish(),
   "viewerIsMuted": zod.boolean(),
+  "viewerNotifyNewPosts": zod.boolean(),
   "createdAt": zod.coerce.date()
 })
 
@@ -3950,6 +3955,20 @@ export const InviteToGroupBody = zod.object({
 })
 
 export const InviteToGroupResponse = zod.void()
+
+
+/**
+ * @summary Turn new-post notifications on/off for the viewer in this group
+ */
+export const SetGroupNotificationsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const SetGroupNotificationsBody = zod.object({
+  "enabled": zod.boolean()
+})
+
+export const SetGroupNotificationsResponse = zod.void()
 
 
 /**
@@ -9743,7 +9762,7 @@ export const ListNotificationsQueryParams = zod.object({
 
 export const ListNotificationsResponseItem = zod.object({
   "id": zod.number(),
-  "type": zod.enum(['reaction', 'comment', 'friend_request', 'friend_accept', 'follow', 'message', 'group_invite', 'page_follow', 'page_invite', 'mention', 'share', 'story_view', 'announcement', 'verification']),
+  "type": zod.enum(['reaction', 'comment', 'friend_request', 'friend_accept', 'follow', 'message', 'group_invite', 'group_post', 'page_follow', 'page_invite', 'mention', 'share', 'story_view', 'announcement', 'verification']),
   "actor": zod.union([zod.object({
   "id": zod.string(),
   "username": zod.string(),

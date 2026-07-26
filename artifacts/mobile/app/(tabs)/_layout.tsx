@@ -19,7 +19,7 @@ export default function TabsLayout() {
       screenOptions={{ headerShown: false }}
       tabBar={(props) => <SolidDockTabBar {...props} unreadCount={unreadCount} />}
     >
-      <Tabs.Screen name="index" options={{ title: "Home" }} />
+      <Tabs.Screen name="index" options={{ title: "Feed" }} />
       <Tabs.Screen name="friends" options={{ title: "Friends" }} />
       <Tabs.Screen name="reels" options={{ title: "Reels" }} />
       <Tabs.Screen name="notifications" options={{ title: "Alerts" }} />

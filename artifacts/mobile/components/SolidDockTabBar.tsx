@@ -19,7 +19,7 @@ type TabConfig = {
  * listed here (e.g. the header-driven "menu" route) are skipped.
  */
 const TABS: Record<string, TabConfig> = {
-  index: { label: "Home", icon: "home", iconOutline: "home-outline" },
+  index: { label: "Feed", icon: "home", iconOutline: "home-outline" },
   friends: { label: "Friends", icon: "people", iconOutline: "people-outline" },
   reels: { label: "Reels", icon: "film", iconOutline: "film-outline", raised: true },
   notifications: {

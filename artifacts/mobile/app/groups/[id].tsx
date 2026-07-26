@@ -21,6 +21,7 @@ import {
   useJoinGroup,
   useLeaveGroup,
   useInviteToGroup,
+  useSetGroupNotifications,
   useListFriends,
   getListGroupsQueryKey,
   getGetGroupQueryKey,
@@ -154,6 +155,7 @@ export default function GroupDetailScreen() {
   const joinGroup = useJoinGroup();
   const leaveGroup = useLeaveGroup();
   const inviteToGroup = useInviteToGroup();
+  const setNotifications = useSetGroupNotifications();
 
   const [inviteOpen, setInviteOpen] = useState(false);
 
@@ -259,6 +261,24 @@ export default function GroupDetailScreen() {
                   >
                     <Ionicons name="person-add-outline" size={18} color={c.foreground} />
                     <Text style={{ color: c.foreground, fontFamily: "Inter_700Bold" }}>Invite</Text>
+                  </Pressable>
+                ) : null}
+                {group.viewerIsMember ? (
+                  <Pressable
+                    style={[styles.joinBtn, { backgroundColor: c.secondary, paddingHorizontal: 14 }]}
+                    disabled={setNotifications.isPending}
+                    onPress={() =>
+                      setNotifications.mutate(
+                        { id, data: { enabled: !group.viewerNotifyNewPosts } },
+                        { onSuccess: invalidate },
+                      )
+                    }
+                  >
+                    <Ionicons
+                      name={group.viewerNotifyNewPosts ? "notifications" : "notifications-off-outline"}
+                      size={18}
+                      color={group.viewerNotifyNewPosts ? c.primary : c.mutedForeground}
+                    />
                   </Pressable>
                 ) : null}
               </View>

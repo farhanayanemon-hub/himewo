@@ -8,7 +8,7 @@ import {
 } from "@workspace/db";
 import { and, eq, lt, desc, ne, asc, inArray } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
-import { createNotification } from "../lib/notify";
+import { createNotification, notifyGroupNewPost } from "../lib/notify";
 import { getFriendIds } from "../lib/authz";
 import { buildGroup, buildPosts, buildGroupMembers } from "../lib/serialize";
 import {
@@ -46,6 +46,8 @@ import {
   InviteToGroupParams,
   InviteToGroupBody,
   DeclineGroupInviteParams,
+  SetGroupNotificationsParams,
+  SetGroupNotificationsBody,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -328,6 +330,34 @@ router.post(
         });
       }
     }
+    res.sendStatus(204);
+  },
+);
+
+router.post(
+  "/groups/:id/notifications",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const params = SetGroupNotificationsParams.safeParse(req.params);
+    const body = SetGroupNotificationsBody.safeParse(req.body);
+    if (!params.success || !body.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    const membership = await getMembership(params.data.id, req.userId!);
+    if (!membership || membership.status !== "active") {
+      res.status(403).json({ error: "Members only" });
+      return;
+    }
+    await db
+      .update(groupMembersTable)
+      .set({ notifyNewPosts: body.data.enabled })
+      .where(
+        and(
+          eq(groupMembersTable.groupId, params.data.id),
+          eq(groupMembersTable.userId, req.userId!),
+        ),
+      );
     res.sendStatus(204);
   },
 );
@@ -716,15 +746,25 @@ router.post(
       res.status(403).json({ error: "Moderators only" });
       return;
     }
-    await db
+    const [approved] = await db
       .update(postsTable)
       .set({ pendingApproval: false })
       .where(
         and(
           eq(postsTable.id, params.data.postId),
           eq(postsTable.groupId, params.data.id),
+          eq(postsTable.pendingApproval, true),
         ),
-      );
+      )
+      .returning();
+    // The post just became visible — notify members who opted in.
+    if (approved) {
+      await notifyGroupNewPost({
+        groupId: params.data.id,
+        postId: approved.id,
+        authorId: approved.authorId,
+      });
+    }
     res.sendStatus(204);
   },
 );

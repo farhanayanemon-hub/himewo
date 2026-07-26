@@ -11,7 +11,7 @@ import {
   getListSavedItemsQueryKey,
   type Reel,
 } from "@workspace/api-client-react";
-import { Heart, MessageCircle, Share2, Loader2, Bookmark, Music, Plus, X } from "lucide-react";
+import { Heart, MessageCircle, Share2, Loader2, Bookmark, Music, Plus, X, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -183,6 +183,7 @@ function ReelCard({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [muted, setMuted] = useState(true);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -192,7 +193,17 @@ function ReelCard({
       (entries) => {
         const entry = entries[0];
         if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
-          video.play().catch(() => {});
+          // Try playing with sound first; browsers may block unmuted
+          // autoplay, so fall back to muted playback (tap 🔊 to unmute).
+          video.muted = false;
+          video
+            .play()
+            .then(() => setMuted(false))
+            .catch(() => {
+              video.muted = true;
+              setMuted(true);
+              video.play().catch(() => {});
+            });
         } else {
           video.pause();
         }
@@ -202,6 +213,14 @@ function ReelCard({
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+
+  const toggleMute = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setMuted(video.muted);
+    if (video.paused) video.play().catch(() => {});
+  };
 
   return (
     <div
@@ -219,6 +238,16 @@ function ReelCard({
         />
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+
+        {/* Mute / unmute */}
+        <button
+          type="button"
+          onClick={toggleMute}
+          className="absolute top-3 right-3 z-20 w-9 h-9 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center"
+          title={muted ? "Unmute" : "Mute"}
+        >
+          {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+        </button>
 
         <div className="absolute bottom-4 left-4 right-16 text-white z-10">
           <div className="flex items-center gap-2 mb-2">
