@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  FlatList,
   Pressable,
+  SectionList,
   Text,
   TextInput,
   View,
@@ -12,12 +12,19 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
-  useSearchUsers,
-  getSearchUsersQueryKey,
+  useSearchAll,
+  getSearchAllQueryKey,
   type Profile,
+  type Page,
+  type Group,
 } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
 import { useColors } from "@/hooks/useColors";
+
+type Row =
+  | { kind: "person"; person: Profile }
+  | { kind: "page"; page: Page }
+  | { kind: "group"; group: Group };
 
 export default function SearchScreen() {
   const c = useColors();
@@ -30,11 +37,105 @@ export default function SearchScreen() {
   }, [query]);
 
   const enabled = debounced.length > 0;
-  const searchParams = { q: debounced, limit: 30 };
-  const { data, isLoading, isFetching } = useSearchUsers(searchParams, {
-    query: { enabled, queryKey: getSearchUsersQueryKey(searchParams) },
+  const searchParams = { q: debounced, limit: 10 };
+  const { data, isLoading, isFetching } = useSearchAll(searchParams, {
+    query: { enabled, queryKey: getSearchAllQueryKey(searchParams) },
   });
-  const results = (data ?? []) as Profile[];
+
+  const people = data?.people ?? [];
+  const pages = data?.pages ?? [];
+  const groups = data?.groups ?? [];
+  const total = people.length + pages.length + groups.length;
+
+  const sections = [
+    {
+      title: "People",
+      data: people.map((person): Row => ({ kind: "person", person })),
+    },
+    {
+      title: "Hubs",
+      data: pages.map((page): Row => ({ kind: "page", page })),
+    },
+    {
+      title: "Circles",
+      data: groups.map((group): Row => ({ kind: "group", group })),
+    },
+  ].filter((s) => s.data.length > 0);
+
+  const renderRow = (item: Row) => {
+    if (item.kind === "person") {
+      const p = item.person;
+      return (
+        <Pressable style={styles.row} onPress={() => router.push(`/profile/${p.id}`)}>
+          <Avatar uri={p.avatarUrl} name={p.displayName} size={48} />
+          <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <Text
+                numberOfLines={1}
+                style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}
+              >
+                {p.displayName}
+              </Text>
+              {p.isVerified && (
+                <Ionicons name="checkmark-circle" size={15} color={c.primary} />
+              )}
+            </View>
+            <Text
+              numberOfLines={1}
+              style={{ color: c.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 13 }}
+            >
+              @{p.username}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={c.mutedForeground} />
+        </Pressable>
+      );
+    }
+    if (item.kind === "page") {
+      const p = item.page;
+      return (
+        <Pressable style={styles.row} onPress={() => router.push(`/pages/${p.id}`)}>
+          <Avatar uri={p.avatarUrl} name={p.name} size={48} />
+          <View style={{ flex: 1 }}>
+            <Text
+              numberOfLines={1}
+              style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}
+            >
+              {p.name}
+            </Text>
+            <Text
+              numberOfLines={1}
+              style={{ color: c.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 13 }}
+            >
+              Hub{p.category ? ` · ${p.category}` : ""} · {p.followerCount} followers
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={c.mutedForeground} />
+        </Pressable>
+      );
+    }
+    const g = item.group;
+    return (
+      <Pressable style={styles.row} onPress={() => router.push(`/groups/${g.id}`)}>
+        <Avatar uri={g.avatarUrl} name={g.name} size={48} />
+        <View style={{ flex: 1 }}>
+          <Text
+            numberOfLines={1}
+            style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}
+          >
+            {g.name}
+          </Text>
+          <Text
+            numberOfLines={1}
+            style={{ color: c.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 13 }}
+          >
+            Circle · {g.privacy} · {g.memberCount} members
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color={c.mutedForeground} />
+      </Pressable>
+    );
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
@@ -47,7 +148,7 @@ export default function SearchScreen() {
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Search people"
+            placeholder="Search HiMewo"
             placeholderTextColor={c.mutedForeground}
             autoFocus
             returnKeyType="search"
@@ -66,54 +167,39 @@ export default function SearchScreen() {
         <View style={styles.center}>
           <Ionicons name="search" size={48} color={c.mutedForeground} />
           <Text style={[styles.emptyText, { color: c.mutedForeground }]}>
-            Search for people by name or username
+            Search for people, hubs and circles
           </Text>
         </View>
-      ) : isLoading || (isFetching && results.length === 0) ? (
+      ) : isLoading || (isFetching && total === 0) ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={c.primary} />
         </View>
-      ) : results.length === 0 ? (
+      ) : total === 0 ? (
         <View style={styles.center}>
-          <Ionicons name="person-outline" size={48} color={c.mutedForeground} />
+          <Ionicons name="search-outline" size={48} color={c.mutedForeground} />
           <Text style={[styles.emptyText, { color: c.mutedForeground }]}>
-            No people found for "{debounced}"
+            No results for "{debounced}"
           </Text>
         </View>
       ) : (
-        <FlatList
-          data={results}
-          keyExtractor={(item) => item.id}
+        <SectionList
+          sections={sections}
+          keyExtractor={(item) =>
+            item.kind === "person"
+              ? `u-${item.person.id}`
+              : item.kind === "page"
+                ? `p-${item.page.id}`
+                : `g-${item.group.id}`
+          }
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingVertical: 8 }}
-          renderItem={({ item }) => (
-            <Pressable
-              style={styles.row}
-              onPress={() => router.push(`/profile/${item.id}`)}
-            >
-              <Avatar uri={item.avatarUrl} name={item.displayName} size={48} />
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                  <Text
-                    numberOfLines={1}
-                    style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}
-                  >
-                    {item.displayName}
-                  </Text>
-                  {item.isVerified && (
-                    <Ionicons name="checkmark-circle" size={15} color={c.primary} />
-                  )}
-                </View>
-                <Text
-                  numberOfLines={1}
-                  style={{ color: c.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 13 }}
-                >
-                  @{item.username}
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={c.mutedForeground} />
-            </Pressable>
+          stickySectionHeadersEnabled={false}
+          renderSectionHeader={({ section }) => (
+            <Text style={[styles.sectionHeader, { color: c.mutedForeground }]}>
+              {section.title}
+            </Text>
           )}
+          renderItem={({ item }) => renderRow(item)}
         />
       )}
     </SafeAreaView>
@@ -141,6 +227,15 @@ const styles = StyleSheet.create({
   input: { flex: 1, fontFamily: "Inter_400Regular", fontSize: 16, padding: 0 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, padding: 32 },
   emptyText: { fontFamily: "Inter_500Medium", fontSize: 15, textAlign: "center" },
+  sectionHeader: {
+    fontFamily: "Inter_700Bold",
+    fontSize: 13,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 6,
+  },
   row: {
     flexDirection: "row",
     alignItems: "center",

@@ -1,10 +1,16 @@
 import { Router, type IRouter } from "express";
+import { timingSafeEqual } from "node:crypto";
 import { sql, eq } from "drizzle-orm";
 import { db, profilesTable } from "@workspace/db";
 import { requireAuth } from "../lib/auth";
 import { buildProfileDetail } from "../lib/serialize";
 import { normalizeUsername, isReservedUsername } from "../lib/username";
-import { getBlockedSignupCountries } from "../lib/flags";
+import {
+  getBlockedSignupCountries,
+  getOtpEvents,
+  getSettings,
+} from "../lib/flags";
+import { sendGreenWebSms } from "../lib/sms";
 import { findCountry } from "@workspace/countries";
 import {
   validateFullName,
@@ -342,6 +348,67 @@ router.post("/auth/sync", requireAuth, async (req, res): Promise<void> => {
 router.get("/auth/signup-config", async (_req, res): Promise<void> => {
   const blockedCountries = await getBlockedSignupCountries();
   res.json({ blockedCountries });
+});
+
+// Public OTP/verification configuration — which OTP events are enabled and
+// whether email/phone verification are required. Clients check this before
+// asking Supabase to send an OTP so admin toggles take effect immediately.
+router.get("/auth/otp-config", async (_req, res): Promise<void> => {
+  const [events, settings] = await Promise.all([getOtpEvents(), getSettings()]);
+  res.json({
+    events,
+    emailVerificationEnabled: settings.email_verification_enabled !== "off",
+    phoneVerificationEnabled: settings.phone_verification_enabled !== "off",
+  });
+});
+
+/**
+ * Supabase "send SMS" auth hook. Supabase generates the OTP and calls this
+ * endpoint to deliver it; we forward it via the GreenWeb (bdbulksms.com)
+ * gateway. BD (+880) numbers ONLY — anything else fails loudly so the user
+ * sees a clear error instead of a silently missing SMS.
+ *
+ * Auth: the hook URI configured in Supabase carries `?key=<sms_hook_secret>`;
+ * the constant-time comparison below rejects everything else.
+ */
+router.post("/auth/sms-hook", async (req, res): Promise<void> => {
+  const settings = await getSettings();
+  const secret = (settings.sms_hook_secret || "").trim();
+  const provided = String(req.query.key ?? "");
+  const a = Buffer.from(provided);
+  const b = Buffer.from(secret);
+  if (!secret || a.length !== b.length || !timingSafeEqual(a, b)) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+  if (settings.phone_verification_enabled === "off") {
+    res.status(400).json({
+      error: "Phone verification is currently turned off by the admins.",
+    });
+    return;
+  }
+  const body = req.body as {
+    user?: { phone?: string };
+    sms?: { otp?: string };
+  };
+  const phone = body?.user?.phone ?? "";
+  const otp = body?.sms?.otp ?? "";
+  if (!phone || !otp) {
+    res.status(400).json({ error: "missing phone or otp" });
+    return;
+  }
+  try {
+    await sendGreenWebSms(
+      phone,
+      `Your HiMewo verification code is ${otp}. It expires in 5 minutes.`,
+    );
+    res.json({});
+  } catch (err) {
+    console.error("[sms-hook] delivery failed:", err);
+    res.status(400).json({
+      error: err instanceof Error ? err.message : "SMS delivery failed",
+    });
+  }
 });
 
 export default router;

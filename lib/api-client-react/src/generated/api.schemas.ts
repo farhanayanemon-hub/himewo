@@ -192,6 +192,133 @@ export interface FindAccountInput {
   identifier: string;
 }
 
+export type PageCtaType = typeof PageCtaType[keyof typeof PageCtaType];
+
+
+export const PageCtaType = {
+  none: 'none',
+  message: 'message',
+  call: 'call',
+  shop: 'shop',
+  signup: 'signup',
+} as const;
+
+export interface PageReview {
+  id: number;
+  user: Profile;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  rating: number;
+  /** @nullable */
+  body?: string | null;
+  createdAt: string;
+}
+
+export interface Page {
+  id: number;
+  name: string;
+  /** @nullable */
+  category?: string | null;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  avatarUrl?: string | null;
+  /** @nullable */
+  coverUrl?: string | null;
+  /** @nullable */
+  contactPhone?: string | null;
+  /** @nullable */
+  contactEmail?: string | null;
+  /** @nullable */
+  website?: string | null;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  hours?: string | null;
+  ctaType: PageCtaType;
+  /** @nullable */
+  ctaUrl?: string | null;
+  ownerId: string;
+  followerCount: number;
+  followingCount: number;
+  reviewCount: number;
+  /** @nullable */
+  averageRating: number | null;
+  reviewsEnabled: boolean;
+  viewerFollows?: boolean;
+  viewerCanPost?: boolean;
+  viewerCanReview?: boolean;
+  viewerReview?: PageReview | null;
+  createdAt: string;
+}
+
+export type GroupPrivacy = typeof GroupPrivacy[keyof typeof GroupPrivacy];
+
+
+export const GroupPrivacy = {
+  public: 'public',
+  friends: 'friends',
+  private: 'private',
+  hidden: 'hidden',
+} as const;
+
+export type GroupViewerStatus = typeof GroupViewerStatus[keyof typeof GroupViewerStatus];
+
+
+export const GroupViewerStatus = {
+  none: 'none',
+  active: 'active',
+  pending: 'pending',
+  banned: 'banned',
+} as const;
+
+/**
+ * @nullable
+ */
+export type GroupViewerRole = typeof GroupViewerRole[keyof typeof GroupViewerRole] | null;
+
+
+export const GroupViewerRole = {
+  admin: 'admin',
+  moderator: 'moderator',
+  member: 'member',
+} as const;
+
+export interface Group {
+  id: number;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  avatarUrl?: string | null;
+  /** @nullable */
+  coverUrl?: string | null;
+  privacy: GroupPrivacy;
+  /** @nullable */
+  rules?: string | null;
+  requirePostApproval: boolean;
+  /** @nullable */
+  joinQuestions?: string[] | null;
+  /** @nullable */
+  pinnedPostId?: number | null;
+  memberCount: number;
+  viewerIsMember: boolean;
+  viewerStatus: GroupViewerStatus;
+  /** @nullable */
+  viewerRole?: GroupViewerRole;
+  viewerIsMuted: boolean;
+  viewerNotifyNewPosts: boolean;
+  createdAt: string;
+}
+
+export interface SearchResults {
+  people: Profile[];
+  pages: Page[];
+  groups: Group[];
+}
+
 /**
  * Which contact method matched the lookup.
  * @nullable
@@ -665,65 +792,6 @@ export interface MembersInput {
   userIds: string[];
 }
 
-export type GroupPrivacy = typeof GroupPrivacy[keyof typeof GroupPrivacy];
-
-
-export const GroupPrivacy = {
-  public: 'public',
-  friends: 'friends',
-  private: 'private',
-  hidden: 'hidden',
-} as const;
-
-export type GroupViewerStatus = typeof GroupViewerStatus[keyof typeof GroupViewerStatus];
-
-
-export const GroupViewerStatus = {
-  none: 'none',
-  active: 'active',
-  pending: 'pending',
-  banned: 'banned',
-} as const;
-
-/**
- * @nullable
- */
-export type GroupViewerRole = typeof GroupViewerRole[keyof typeof GroupViewerRole] | null;
-
-
-export const GroupViewerRole = {
-  admin: 'admin',
-  moderator: 'moderator',
-  member: 'member',
-} as const;
-
-export interface Group {
-  id: number;
-  name: string;
-  /** @nullable */
-  description?: string | null;
-  /** @nullable */
-  avatarUrl?: string | null;
-  /** @nullable */
-  coverUrl?: string | null;
-  privacy: GroupPrivacy;
-  /** @nullable */
-  rules?: string | null;
-  requirePostApproval: boolean;
-  /** @nullable */
-  joinQuestions?: string[] | null;
-  /** @nullable */
-  pinnedPostId?: number | null;
-  memberCount: number;
-  viewerIsMember: boolean;
-  viewerStatus: GroupViewerStatus;
-  /** @nullable */
-  viewerRole?: GroupViewerRole;
-  viewerIsMuted: boolean;
-  viewerNotifyNewPosts: boolean;
-  createdAt: string;
-}
-
 export interface GroupNotificationsInput {
   enabled: boolean;
 }
@@ -827,68 +895,6 @@ export interface SetMemberRoleInput {
 
 export interface MuteMemberInput {
   muted: boolean;
-}
-
-export type PageCtaType = typeof PageCtaType[keyof typeof PageCtaType];
-
-
-export const PageCtaType = {
-  none: 'none',
-  message: 'message',
-  call: 'call',
-  shop: 'shop',
-  signup: 'signup',
-} as const;
-
-export interface PageReview {
-  id: number;
-  user: Profile;
-  /**
-     * @minimum 1
-     * @maximum 5
-     */
-  rating: number;
-  /** @nullable */
-  body?: string | null;
-  createdAt: string;
-}
-
-export interface Page {
-  id: number;
-  name: string;
-  /** @nullable */
-  category?: string | null;
-  /** @nullable */
-  description?: string | null;
-  /** @nullable */
-  avatarUrl?: string | null;
-  /** @nullable */
-  coverUrl?: string | null;
-  /** @nullable */
-  contactPhone?: string | null;
-  /** @nullable */
-  contactEmail?: string | null;
-  /** @nullable */
-  website?: string | null;
-  /** @nullable */
-  address?: string | null;
-  /** @nullable */
-  hours?: string | null;
-  ctaType: PageCtaType;
-  /** @nullable */
-  ctaUrl?: string | null;
-  ownerId: string;
-  followerCount: number;
-  followingCount: number;
-  reviewCount: number;
-  /** @nullable */
-  averageRating: number | null;
-  reviewsEnabled: boolean;
-  viewerFollows?: boolean;
-  viewerCanPost?: boolean;
-  viewerCanReview?: boolean;
-  viewerReview?: PageReview | null;
-  createdAt: string;
 }
 
 export type PageInputCtaType = typeof PageInputCtaType[keyof typeof PageInputCtaType];
@@ -3149,6 +3155,14 @@ export type ForbiddenResponse = Error;
  * Conflict
  */
 export type ConflictResponse = Error;
+
+export type SearchAllParams = {
+q?: string;
+/**
+ * Max results per section
+ */
+limit?: number;
+};
 
 export type SearchUsersParams = {
 q?: string;

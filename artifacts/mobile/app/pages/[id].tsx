@@ -923,10 +923,14 @@ export default function PageDetailScreen() {
           : page.ctaType === "signup"
             ? "Sign Up"
             : null;
+  // CTA buttons (Message/Call/etc.) are for OTHER users — hide them when the
+  // viewer is browsing AS this page or owns it (you can't message yourself).
   const showCta =
-    page.ctaType === "message" ||
-    (page.ctaType === "call" && !!page.contactPhone) ||
-    ((page.ctaType === "shop" || page.ctaType === "signup") && !!page.ctaUrl);
+    actingPage?.id !== page.id &&
+    !isOwner &&
+    (page.ctaType === "message" ||
+      (page.ctaType === "call" && !!page.contactPhone) ||
+      ((page.ctaType === "shop" || page.ctaType === "signup") && !!page.ctaUrl));
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["bottom"]}>

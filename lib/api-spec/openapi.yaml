@@ -127,6 +127,28 @@ paths:
         "429":
           description: Too many attempts — try again later
 
+  # ---------------- Unified search ----------------
+  /search:
+    get:
+      operationId: searchAll
+      tags: [users]
+      summary: Unified search across people, hubs (pages) and circles (groups)
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          description: Max results per section
+          schema: { type: integer, default: 10 }
+      responses:
+        "200":
+          description: Sectioned search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResults"
+
   # ---------------- Users ----------------
   /users:
     get:
@@ -4628,6 +4650,20 @@ components:
           minLength: 3
           maxLength: 320
           description: Email address or phone number to look up.
+    SearchResults:
+      type: object
+      required: [people, pages, groups]
+      properties:
+        people:
+          type: array
+          items: { $ref: "#/components/schemas/Profile" }
+        pages:
+          type: array
+          items: { $ref: "#/components/schemas/Page" }
+        groups:
+          type: array
+          items: { $ref: "#/components/schemas/Group" }
+
     FindAccountResult:
       type: object
       required: [found]

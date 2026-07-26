@@ -54,7 +54,7 @@ import { PageHeader } from "../components/Layout";
 // Money is stored as integer paisa; display as taka with 2 decimals.
 function bdt(cents: number): string {
   const taka = cents / 100;
-  return `৳${taka.toLocaleString("en-US", {
+  return `$${taka.toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
@@ -205,7 +205,7 @@ function OverviewSection() {
       <Card>
         <CardHeader
           title="Shop overview"
-          subtitle="Platform commission earned, funds held in escrow, and marketplace activity. All values in BDT (৳)."
+          subtitle="Platform commission earned, funds held in escrow, and marketplace activity. All values in USD ($)."
         />
         {query.isLoading && <Loading />}
         <ErrorNote error={query.error} />

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Save, MapPin, BadgeCheck } from "lucide-react";
+import { AlertTriangle, Save, MapPin, BadgeCheck, MessageSquareText } from "lucide-react";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import type { SettingsResponse } from "../lib/types";
@@ -50,6 +50,7 @@ export function Settings() {
   });
 
   const [siteName, setSiteName] = useState("");
+  const [smsToken, setSmsToken] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [maintMsg, setMaintMsg] = useState("");
   const [verif, setVerif] = useState<Record<string, string>>({});
@@ -75,10 +76,45 @@ export function Settings() {
     { key: "verification_min_posts", label: "Minimum posts", hint: "Total posts required before applying." },
     { key: "verification_min_reels", label: "Minimum reels", hint: "Total reels required before applying." },
     { key: "verification_regular_post_days", label: "Regular posting window (days)", hint: "Must have posted within the last N days. 0 disables this check." },
-    { key: "verification_monthly_fee", label: "Monthly fee (৳)", hint: "Shown to users on the apply page." },
+    { key: "verification_monthly_fee", label: "Monthly fee ($)", hint: "Shown to users on the apply page." },
   ];
 
   const maintenanceOn = query.data?.settings.maintenance_mode === "on";
+
+  // ---- SMS / OTP ----
+  const OTP_EVENT_FIELDS: { key: string; label: string; hint: string }[] = [
+    { key: "login_phone", label: "Login with phone (OTP)", hint: "One-time code sent by SMS when someone logs in with a phone number." },
+    { key: "login_email", label: "Login with email (OTP)", hint: "One-time code sent by email for email-based login." },
+    { key: "signup_phone_verify", label: "Signup — phone verification", hint: "SMS code that verifies a new account's phone number." },
+    { key: "signup_email_verify", label: "Signup — email verification", hint: "Email code that verifies a new account's email address." },
+    { key: "password_reset_phone", label: "Password reset via SMS", hint: "SMS code for the forgot-password flow." },
+    { key: "password_reset_email", label: "Password reset via email", hint: "Email code for the forgot-password flow." },
+    { key: "account_recovery", label: "Account recovery", hint: "Codes sent from the find-your-account flow." },
+    { key: "phone_change", label: "Phone number change", hint: "Code sent when a user changes their phone number." },
+    { key: "email_change", label: "Email change", hint: "Code sent when a user changes their email address." },
+    { key: "two_factor", label: "Two-factor authentication", hint: "Codes for setting up / using 2FA." },
+    { key: "new_device_login", label: "New device login", hint: "Extra code when logging in from an unrecognized device." },
+    { key: "account_deletion", label: "Account deletion", hint: "Confirmation code before deleting an account." },
+  ];
+  const otpEvents: Record<string, boolean> = (() => {
+    try {
+      const raw = JSON.parse(query.data?.settings.otp_events || "{}");
+      return typeof raw === "object" && raw !== null && !Array.isArray(raw) ? raw : {};
+    } catch {
+      return {};
+    }
+  })();
+  const setOtpEvent = (key: string, enabled: boolean) => {
+    const next: Record<string, boolean> = {};
+    for (const f of OTP_EVENT_FIELDS) {
+      const cur = otpEvents[f.key] === false ? false : true;
+      next[f.key] = f.key === key ? enabled : cur;
+    }
+    setSetting.mutate({ key: "otp_events", value: JSON.stringify(next) });
+  };
+  const emailVerifOn = query.data?.settings.email_verification_enabled !== "off";
+  const phoneVerifOn = query.data?.settings.phone_verification_enabled !== "off";
+  const tokenSet = !!query.data?.settings.sms_greenweb_token;
 
   return (
     <div>
@@ -192,6 +228,96 @@ export function Settings() {
                   <p className="text-xs text-slate-400">{f.hint}</p>
                 </div>
               ))}
+            </div>
+          </Card>
+
+          <Card>
+            <CardHeader
+              title="SMS gateway & OTP (GreenWeb)"
+              subtitle="Bangladeshi (+880) numbers only — OTP SMS are delivered through GreenWeb (bdbulksms.com)."
+            />
+            <div className="space-y-4 px-5 py-4">
+              <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                <MessageSquareText className="h-5 w-5 shrink-0" />
+                <span>
+                  {tokenSet
+                    ? `GreenWeb token is set (${query.data.settings.sms_greenweb_token}). Paste a new one below to replace it.`
+                    : "No GreenWeb token yet — OTP SMS will fail until you paste one."}
+                </span>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-600">GreenWeb API token</label>
+                <div className="flex gap-2">
+                  <Input
+                    type="password"
+                    value={smsToken}
+                    onChange={(e) => setSmsToken(e.target.value)}
+                    disabled={!canManage}
+                    placeholder="Paste your bdbulksms.com token"
+                  />
+                  <Button
+                    variant="secondary"
+                    disabled={!canManage || !smsToken.trim()}
+                    loading={setSetting.isPending}
+                    onClick={() => {
+                      setSetting.mutate(
+                        { key: "sms_greenweb_token", value: smsToken.trim() },
+                        { onSuccess: () => setSmsToken("") },
+                      );
+                    }}
+                  >
+                    <Save className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-700">Email verification</p>
+                  <p className="text-xs text-slate-400">Require email codes for email signup/verification.</p>
+                </div>
+                <Toggle
+                  checked={emailVerifOn}
+                  disabled={!canManage || setSetting.isPending}
+                  onChange={(v) =>
+                    setSetting.mutate({ key: "email_verification_enabled", value: v ? "on" : "off" })
+                  }
+                />
+              </div>
+              <div className="flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-700">Phone (number) verification</p>
+                  <p className="text-xs text-slate-400">Master switch — when off, NO OTP SMS are sent at all.</p>
+                </div>
+                <Toggle
+                  checked={phoneVerifOn}
+                  disabled={!canManage || setSetting.isPending}
+                  onChange={(v) =>
+                    setSetting.mutate({ key: "phone_verification_enabled", value: v ? "on" : "off" })
+                  }
+                />
+              </div>
+
+              <div>
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  OTP events
+                </p>
+                <div className="divide-y divide-slate-50 rounded-lg border border-slate-100">
+                  {OTP_EVENT_FIELDS.map((f) => (
+                    <div key={f.key} className="flex items-center justify-between px-4 py-3">
+                      <div className="pr-4">
+                        <p className="text-sm text-slate-700">{f.label}</p>
+                        <p className="text-xs text-slate-400">{f.hint}</p>
+                      </div>
+                      <Toggle
+                        checked={otpEvents[f.key] === false ? false : true}
+                        disabled={!canManage || setSetting.isPending}
+                        onChange={(v) => setOtpEvent(f.key, v)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </Card>
 

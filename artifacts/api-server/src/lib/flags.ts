@@ -34,7 +34,59 @@ export const SITE_SETTING_DEFAULTS: Record<string, string> = {
   // shop, earnings, live, watch, events, stories, memories, saved, verified)
   // to custom icon image URLs uploaded by admins. Empty object = defaults.
   nav_icons: "{}",
+  // GreenWeb (bdbulksms.com) SMS gateway token — pasted by admins in the
+  // admin panel. Used to deliver Supabase auth OTP SMS to BD numbers only.
+  sms_greenweb_token: "",
+  // Shared secret in the Supabase send-SMS hook URI (?key=…). Set once via
+  // ops SQL; never shown in the admin UI.
+  sms_hook_secret: "",
+  // Master switches for account verification requirements.
+  email_verification_enabled: "on",
+  phone_verification_enabled: "on",
+  // JSON object mapping OTP event keys (see OTP_EVENT_KEYS) to booleans.
+  // Missing keys default to true (enabled).
+  otp_events: "{}",
 };
+
+/**
+ * Admin-toggleable OTP events. Each controls whether the corresponding flow
+ * is allowed to request/send an OTP code (SMS for phone flows via GreenWeb,
+ * email for email flows).
+ */
+export const OTP_EVENT_KEYS = [
+  "login_phone",
+  "login_email",
+  "signup_phone_verify",
+  "signup_email_verify",
+  "password_reset_phone",
+  "password_reset_email",
+  "account_recovery",
+  "phone_change",
+  "email_change",
+  "two_factor",
+  "new_device_login",
+  "account_deletion",
+] as const;
+export type OtpEventKey = (typeof OTP_EVENT_KEYS)[number];
+
+/** Per-event OTP toggles; unknown/missing keys default to enabled. */
+export async function getOtpEvents(): Promise<Record<OtpEventKey, boolean>> {
+  const settings = await getSettings();
+  let parsed: Record<string, unknown> = {};
+  try {
+    const raw = JSON.parse(settings.otp_events || "{}");
+    if (typeof raw === "object" && raw !== null && !Array.isArray(raw)) {
+      parsed = raw as Record<string, unknown>;
+    }
+  } catch {
+    // fall through to defaults
+  }
+  const out = {} as Record<OtpEventKey, boolean>;
+  for (const key of OTP_EVENT_KEYS) {
+    out[key] = parsed[key] === false ? false : true;
+  }
+  return out;
+}
 
 /** Allowed nav-icon item keys (top nav + sidebar shortcuts). */
 export const NAV_ICON_KEYS = [

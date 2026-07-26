@@ -228,7 +228,7 @@ export default function VerifiedScreen() {
                   />
                 )}
                 <Text style={[styles.feeNote, { color: c.muted }]}>
-                  Verified badge costs ৳{data.requirements.monthlyFee}/month after approval.
+                  Verified badge costs ${data.requirements.monthlyFee}/month after approval.
                 </Text>
               </View>
             )}

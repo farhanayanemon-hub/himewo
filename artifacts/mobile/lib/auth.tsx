@@ -16,6 +16,7 @@ import {
   type Profile,
 } from "@workspace/api-client-react";
 import "./api";
+import { getApiOrigin } from "./api";
 import {
   supabase,
   isSupabaseConfigured,
@@ -128,6 +129,38 @@ function parseAuthUrl(url: string): {
     params,
     errorMessage: params.error_description || params.error || null,
   };
+}
+
+// Admin-toggleable OTP gate: ask the API whether this OTP event is enabled
+// before requesting a code from Supabase. Fails OPEN on network/config
+// errors so a transient API blip can never lock everyone out of auth.
+async function assertOtpAllowed(event: string): Promise<void> {
+  const origin = getApiOrigin();
+  if (!origin) return;
+  let cfg: {
+    events?: Record<string, boolean>;
+    emailVerificationEnabled?: boolean;
+    phoneVerificationEnabled?: boolean;
+  } | null = null;
+  try {
+    const res = await fetch(`${origin}/api/auth/otp-config`);
+    if (res.ok) cfg = await res.json();
+  } catch {
+    return; // fail open
+  }
+  if (!cfg) return;
+  if (cfg.events?.[event] === false) {
+    throw new Error("This verification method is currently turned off by the admins.");
+  }
+  if (event === "signup_email_verify" && cfg.emailVerificationEnabled === false) {
+    throw new Error("Email verification is currently turned off by the admins.");
+  }
+  if (
+    (event === "signup_phone_verify" || event === "login_phone" || event === "password_reset_phone") &&
+    cfg.phoneVerificationEnabled === false
+  ) {
+    throw new Error("Phone verification is currently turned off by the admins.");
+  }
 }
 
 function requireSupabase() {
@@ -484,6 +517,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadUser]);
 
   const sendPhoneOtp = useCallback(async (phone: string) => {
+    await assertOtpAllowed(wizardActive.current ? "signup_phone_verify" : "login_phone");
     const sb = requireSupabase();
     const { error } = await sb.auth.signInWithOtp({ phone });
     if (error) throw error;
@@ -509,6 +543,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const sendEmailOtp = useCallback(async (email: string) => {
+    await assertOtpAllowed("signup_email_verify");
     const sb = requireSupabase();
     const { error } = await sb.auth.signInWithOtp({
       email,
@@ -518,6 +553,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const sendResetEmailOtp = useCallback(async (email: string) => {
+    await assertOtpAllowed("password_reset_email");
     const sb = requireSupabase();
     const { error } = await sb.auth.signInWithOtp({
       email,
@@ -527,6 +563,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const sendResetPhoneOtp = useCallback(async (phone: string) => {
+    await assertOtpAllowed("password_reset_phone");
     const sb = requireSupabase();
     const { error } = await sb.auth.signInWithOtp({
       phone,

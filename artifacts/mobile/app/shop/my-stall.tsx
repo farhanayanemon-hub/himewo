@@ -758,7 +758,7 @@ function ProductEditor({
             )}
           </View>
 
-          <Field label="Price (৳ taka)" c={c}>
+          <Field label="Price ($)" c={c}>
             <TextInput
               value={price}
               onChangeText={setPrice}
@@ -906,7 +906,7 @@ function WithdrawModal({
             Available balance: {formatTaka(maxCents)}
           </Text>
 
-          <Field label="Amount (৳ taka)" c={c}>
+          <Field label="Amount ($)" c={c}>
             <TextInput
               value={amount}
               onChangeText={setAmount}
