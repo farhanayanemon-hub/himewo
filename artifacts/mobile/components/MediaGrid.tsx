@@ -57,6 +57,7 @@ export function MediaGrid({ media }: { media: MediaItem[] }) {
   const c = useColors();
   const width = Dimensions.get("window").width;
   const [page, setPage] = useState(0);
+  const pageRef = useRef(0);
   const scrollRef = useRef<ScrollView>(null);
   if (!media || media.length === 0) return null;
 
@@ -76,7 +77,17 @@ export function MediaGrid({ media }: { media: MediaItem[] }) {
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const i = Math.round(e.nativeEvent.contentOffset.x / width);
-    if (i !== page && i >= 0 && i < media.length) setPage(i);
+    if (i !== page && i >= 0 && i < media.length) {
+      pageRef.current = i;
+      setPage(i);
+    }
+  };
+
+  // When the screen re-lays-out (e.g. after navigating back), the ScrollView
+  // resets its offset to 0 and visibly "rewinds" through the slides. Snap
+  // straight back to the current page without animation instead.
+  const restoreOffset = () => {
+    scrollRef.current?.scrollTo({ x: pageRef.current * width, animated: false });
   };
 
   return (
@@ -88,6 +99,8 @@ export function MediaGrid({ media }: { media: MediaItem[] }) {
         showsHorizontalScrollIndicator={false}
         onScroll={onScroll}
         scrollEventThrottle={32}
+        onLayout={restoreOffset}
+        onContentSizeChange={restoreOffset}
         style={{ width }}
       >
         {media.map((m, i) => (
