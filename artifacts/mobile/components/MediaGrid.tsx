@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Dimensions,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Pressable,
+  ScrollView,
   Text,
   View,
   StyleSheet,
@@ -44,14 +47,22 @@ function VideoTile({ uri, height }: { uri: string; height: number }) {
   );
 }
 
+const SLIDE_HEIGHT = 320;
+
+/**
+ * Post media: single item renders full width; multiple items become a
+ * swipeable, paged carousel with dot indicators (Facebook/Instagram style).
+ */
 export function MediaGrid({ media }: { media: MediaItem[] }) {
   const c = useColors();
   const width = Dimensions.get("window").width;
+  const [page, setPage] = useState(0);
+  const scrollRef = useRef<ScrollView>(null);
   if (!media || media.length === 0) return null;
 
   if (media.length === 1) {
     const m = media[0];
-    const h = m.type === "video" ? 240 : 320;
+    const h = m.type === "video" ? 240 : SLIDE_HEIGHT;
     if (m.type === "video") return <VideoTile uri={m.url} height={h} />;
     return (
       <Image
@@ -63,39 +74,66 @@ export function MediaGrid({ media }: { media: MediaItem[] }) {
     );
   }
 
-  const tileSize = (width - 2) / 2;
-  const shown = media.slice(0, 4);
-  const extra = media.length - 4;
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const i = Math.round(e.nativeEvent.contentOffset.x / width);
+    if (i !== page && i >= 0 && i < media.length) setPage(i);
+  };
 
   return (
-    <View style={styles.grid}>
-      {shown.map((m, i) => (
-        <View key={m.id ?? i} style={{ width: tileSize, height: tileSize, margin: 0.5 }}>
-          {m.type === "video" ? (
-            <VideoTile uri={m.url} height={tileSize} />
-          ) : (
-            <Image
-              source={{ uri: m.url }}
-              style={{ width: "100%", height: "100%" }}
-              contentFit="cover"
-              transition={150}
-            />
-          )}
-          {i === 3 && extra > 0 && (
-            <View style={styles.moreOverlay}>
-              <Text style={{ color: "#fff", fontSize: 26, fontFamily: "Inter_700Bold" }}>
-                +{extra}
-              </Text>
-            </View>
-          )}
-        </View>
-      ))}
+    <View>
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onScroll={onScroll}
+        scrollEventThrottle={32}
+        style={{ width }}
+      >
+        {media.map((m, i) => (
+          <View key={m.id ?? i} style={{ width, height: SLIDE_HEIGHT, backgroundColor: "#000" }}>
+            {m.type === "video" ? (
+              <VideoTile uri={m.url} height={SLIDE_HEIGHT} />
+            ) : (
+              <Image
+                source={{ uri: m.url }}
+                style={{ width: "100%", height: "100%" }}
+                contentFit="contain"
+                transition={150}
+              />
+            )}
+          </View>
+        ))}
+      </ScrollView>
+
+      {/* Photo counter (top-right) */}
+      <View style={styles.counter}>
+        <Text style={styles.counterText}>
+          {page + 1}/{media.length}
+        </Text>
+      </View>
+
+      {/* Dot indicators */}
+      <View style={styles.dots}>
+        {media.map((_, i) => (
+          <View
+            key={i}
+            style={[
+              styles.dot,
+              {
+                backgroundColor: i === page ? c.primary : c.mutedForeground,
+                width: i === page ? 8 : 6,
+                height: i === page ? 8 : 6,
+              },
+            ]}
+          />
+        ))}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  grid: { flexDirection: "row", flexWrap: "wrap" },
   playOverlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",
@@ -109,10 +147,28 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     opacity: 0.92,
   },
-  moreOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#0008",
-    alignItems: "center",
+  counter: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "#0009",
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  counterText: {
+    color: "#fff",
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+  },
+  dots: {
+    flexDirection: "row",
     justifyContent: "center",
+    alignItems: "center",
+    gap: 5,
+    paddingVertical: 8,
+  },
+  dot: {
+    borderRadius: 4,
   },
 });

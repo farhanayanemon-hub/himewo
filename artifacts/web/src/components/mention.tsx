@@ -155,9 +155,9 @@ export function RenderWithMentions({ content }: { content: string }) {
         <Link
           key={`m-${i++}`}
           href={`/profile/${m[2]}`}
-          className="text-primary font-semibold hover:underline"
+          className="font-semibold text-foreground hover:underline"
         >
-          @{m[1]}
+          {m[1]}
         </Link>,
       );
     }

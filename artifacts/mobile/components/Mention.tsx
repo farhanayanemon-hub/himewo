@@ -82,10 +82,10 @@ export function MentionText({
       parts.push(
         <Text
           key={`m-${i++}`}
-          style={{ color: c.primary, fontFamily: "Inter_600SemiBold" }}
+          style={{ color: c.text, fontFamily: "Inter_600SemiBold" }}
           onPress={() => router.push(`/profile/${userId}` as never)}
         >
-          @{m[1]}
+          {m[1]}
         </Text>,
       );
     }
