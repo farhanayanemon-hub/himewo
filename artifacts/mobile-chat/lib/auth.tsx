@@ -41,6 +41,7 @@ interface AuthContextValue {
   supabaseEnabled: boolean;
   devUsers: DevUser[];
   signInWithEmail: (email: string, password: string) => Promise<void>;
+  signInWithPhonePassword: (phone: string, password: string) => Promise<void>;
   signUpWithEmail: (args: SignUpArgs) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   sendPhoneOtp: (phone: string) => Promise<void>;
@@ -237,6 +238,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [ensureProfile],
   );
 
+  const signInWithPhonePassword = useCallback(
+    async (phone: string, password: string) => {
+      const sb = requireSupabase();
+      const { error } = await sb.auth.signInWithPassword({ phone, password });
+      if (error) throw error;
+      const me = await ensureProfile();
+      setUser(me);
+    },
+    [ensureProfile],
+  );
+
   const signUpWithEmail = useCallback(
     async (args: SignUpArgs) => {
       const sb = requireSupabase();
@@ -351,6 +363,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabaseEnabled: isSupabaseConfigured,
     devUsers: DEV_USERS,
     signInWithEmail,
+    signInWithPhonePassword,
     signUpWithEmail,
     signInWithGoogle,
     sendPhoneOtp,
