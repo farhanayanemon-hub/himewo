@@ -209,90 +209,103 @@ function SignInForm() {
 }
 
 
+// Phone login requires number + PASSWORD (no OTP-only login).
 function PhoneAuth() {
-  const { sendPhoneOtp, verifyPhoneOtp } = useAuth();
+  const { signInWithPhonePassword, verifyTotpForLogin, cancelMfaLogin } = useAuth();
   const { toast } = useToast();
-  const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
+  const [password, setPassword] = useState("");
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSendOtp(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      await sendPhoneOtp(phone);
-      setStep("otp");
-      toast({ title: "Code sent", description: `We sent a code to ${phone}.` });
+      const result = await signInWithPhonePassword(phone.trim(), password);
+      if (result.mfaRequired) {
+        setMfaFactorId(result.factorId);
+        setMfaCode("");
+      }
     } catch (err) {
       const message = getErrorMessage(err);
       setError(message);
-      toast({ variant: "destructive", title: "Could not send code", description: message });
+      toast({ variant: "destructive", title: "Login failed", description: message });
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleVerifyOtp(e: FormEvent) {
+  async function handleMfaSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!mfaFactorId) return;
     setError(null);
     setLoading(true);
     try {
-      await verifyPhoneOtp(phone, otp);
+      await verifyTotpForLogin(mfaFactorId, mfaCode.trim());
     } catch (err) {
-      const message = getErrorMessage(err);
-      setError(message);
-      toast({ variant: "destructive", title: "Verification failed", description: message });
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
   }
 
-  if (step === "otp") {
+  if (mfaFactorId) {
     return (
-      <form onSubmit={handleVerifyOtp} className="space-y-3">
+      <form onSubmit={handleMfaSubmit} className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          Two-factor authentication is on for this account. Enter the 6-digit
+          code from your authenticator app.
+        </p>
         <Input
-          id="otp-code"
+          id="phone-mfa-code"
           type="text"
-          aria-label="Verification code"
           inputMode="numeric"
+          aria-label="Authentication code"
           autoComplete="one-time-code"
-          placeholder="123456"
-          value={otp}
-          onChange={(e) => setOtp(e.target.value)}
+          placeholder="6-digit code"
+          value={mfaCode}
+          onChange={(e) => setMfaCode(e.target.value)}
           required
+          autoFocus
           className={inputClass}
         />
-        <p className="text-xs text-muted-foreground">Enter the code sent to {phone}.</p>
         {error && <p className="text-sm text-destructive">{error}</p>}
         <Button
           type="submit"
-          disabled={loading}
+          disabled={loading || mfaCode.trim().length === 0}
           className="w-full h-12 text-lg font-bold rounded-lg aurora-button text-white"
         >
-          {loading ? "Verifying…" : "Verify & Continue"}
+          {loading ? "Verifying…" : "Verify & log in"}
         </Button>
-        <Button
+        <button
           type="button"
-          variant="ghost"
-          className="w-full"
-          disabled={loading}
-          onClick={() => {
-            setStep("phone");
-            setOtp("");
-            setError(null);
+          onClick={async () => {
+            setLoading(true);
+            try {
+              await cancelMfaLogin();
+            } catch {
+              // ignore — returning to the phone step anyway
+            } finally {
+              setMfaFactorId(null);
+              setMfaCode("");
+              setError(null);
+              setLoading(false);
+            }
           }}
+          className="w-full text-sm text-muted-foreground hover:underline"
         >
-          Use a different number
-        </Button>
+          Back to login
+        </button>
       </form>
     );
   }
 
   return (
-    <form onSubmit={handleSendOtp} className="space-y-3">
+    <form onSubmit={handleSubmit} className="space-y-3">
       <Input
         id="phone-number"
         type="tel"
@@ -304,6 +317,17 @@ function PhoneAuth() {
         required
         className={inputClass}
       />
+      <Input
+        id="phone-password"
+        type="password"
+        aria-label="Password"
+        autoComplete="current-password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+        className={inputClass}
+      />
       <p className="text-xs text-muted-foreground">Include your country code.</p>
       {error && <p className="text-sm text-destructive">{error}</p>}
       <Button
@@ -311,7 +335,7 @@ function PhoneAuth() {
         disabled={loading}
         className="w-full h-12 text-lg font-bold rounded-lg aurora-button text-white"
       >
-        {loading ? "Sending code…" : "Send Code"}
+        {loading ? "Logging in…" : "Log in"}
       </Button>
     </form>
   );

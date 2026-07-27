@@ -28,8 +28,6 @@ export default function LoginScreen() {
     signInWithEmail,
     signInWithPhonePassword,
     signInWithGoogle,
-    sendPhoneOtp,
-    verifyPhoneOtp,
     verifyTotpForLogin,
     cancelMfaLogin,
   } = useAuth();
@@ -40,8 +38,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
 
   const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
-  const [otpStep, setOtpStep] = useState<"phone" | "code">("phone");
+  const [phonePassword, setPhonePassword] = useState("");
 
   const [busy, setBusy] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
@@ -108,28 +105,21 @@ export default function LoginScreen() {
     }
   };
 
-  const submitSendOtp = async () => {
-    setError(null);
-    setNotice(null);
-    setBusy(true);
-    try {
-      await sendPhoneOtp(phone.trim());
-      setOtpStep("code");
-      setNotice(`We sent a verification code to ${phone.trim()}.`);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not send code");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const submitVerifyOtp = async () => {
+  // Phone login requires number + PASSWORD (no OTP-only login) — same as web.
+  const submitPhonePassword = async () => {
     setError(null);
     setBusy(true);
     try {
-      await verifyPhoneOtp(phone.trim(), otp.trim());
+      const result = await signInWithPhonePassword(
+        normalizePhone(phone.trim()),
+        phonePassword,
+      );
+      if (result.mfaRequired) {
+        setMfaFactorId(result.factorId);
+        setMfaCode("");
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Invalid code");
+      setError(e instanceof Error ? e.message : "Login failed");
     } finally {
       setBusy(false);
     }
@@ -148,8 +138,7 @@ export default function LoginScreen() {
     setMethod(next);
     setError(null);
     setNotice(null);
-    setOtpStep("phone");
-    setOtp("");
+    setPhonePassword("");
   };
 
   return (
@@ -337,67 +326,44 @@ export default function LoginScreen() {
               </>
             ) : (
               <>
-                {otpStep === "phone" ? (
-                  <>
-                    <Field
-                      icon="call-outline"
-                      placeholder="Phone (e.g. +8801XXXXXXXXX)"
-                      value={phone}
-                      onChangeText={setPhone}
-                      keyboardType="phone-pad"
-                      autoCapitalize="none"
-                    />
-                    {error && <Text style={{ color: c.destructive, fontSize: 13 }}>{error}</Text>}
-                    <Pressable
-                      style={[styles.primaryBtn, { backgroundColor: c.primary }]}
-                      onPress={submitSendOtp}
-                      disabled={busy || phone.trim().length === 0}
-                    >
-                      {busy ? (
-                        <ActivityIndicator color="#fff" />
-                      ) : (
-                        <Text style={styles.primaryBtnText}>Send Code</Text>
-                      )}
-                    </Pressable>
-                  </>
-                ) : (
-                  <>
-                    {notice && (
-                      <Text style={{ color: c.mutedForeground, fontSize: 13 }}>{notice}</Text>
-                    )}
-                    <Field
-                      icon="keypad-outline"
-                      placeholder="Verification code"
-                      value={otp}
-                      onChangeText={setOtp}
-                      keyboardType="number-pad"
-                      autoCapitalize="none"
-                    />
-                    {error && <Text style={{ color: c.destructive, fontSize: 13 }}>{error}</Text>}
-                    <Pressable
-                      style={[styles.primaryBtn, { backgroundColor: c.primary }]}
-                      onPress={submitVerifyOtp}
-                      disabled={busy || otp.trim().length === 0}
-                    >
-                      {busy ? (
-                        <ActivityIndicator color="#fff" />
-                      ) : (
-                        <Text style={styles.primaryBtnText}>Verify & Log In</Text>
-                      )}
-                    </Pressable>
-                    <Pressable
-                      onPress={() => {
-                        setOtpStep("phone");
-                        setOtp("");
-                        setError(null);
-                      }}
-                    >
-                      <Text style={[styles.switchText, { color: c.primary }]}>
-                        Use a different number
-                      </Text>
-                    </Pressable>
-                  </>
-                )}
+                <Field
+                  icon="call-outline"
+                  placeholder="Phone (e.g. +8801XXXXXXXXX)"
+                  value={phone}
+                  onChangeText={setPhone}
+                  keyboardType="phone-pad"
+                  autoCapitalize="none"
+                />
+                <Field
+                  icon="lock-closed-outline"
+                  placeholder="Password"
+                  value={phonePassword}
+                  onChangeText={setPhonePassword}
+                  secureTextEntry
+                />
+                {error && <Text style={{ color: c.destructive, fontSize: 13 }}>{error}</Text>}
+                <Pressable
+                  style={[styles.primaryBtn, { backgroundColor: c.primary }]}
+                  onPress={submitPhonePassword}
+                  disabled={busy || phone.trim().length === 0 || phonePassword.length === 0}
+                >
+                  {busy ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.primaryBtnText}>Log In</Text>
+                  )}
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    setScreen("forgot");
+                    setError(null);
+                    setNotice(null);
+                  }}
+                >
+                  <Text style={[styles.switchText, { color: c.primary }]}>
+                    Forgotten password?
+                  </Text>
+                </Pressable>
               </>
             )}
 
