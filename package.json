@@ -13,5 +13,10 @@
   "devDependencies": {
     "prettier": "^3.8.4",
     "typescript": "~5.9.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "tar": "https://registry.npmjs.org/tar/-/tar-7.5.16.tgz"
+    }
   }
 }
