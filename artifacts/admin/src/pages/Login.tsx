@@ -63,13 +63,13 @@ export function Login() {
               >
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-slate-600">
-                    Email
+                    Email or Username
                   </label>
                   <Input
-                    type="email"
+                    type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@himewo.com"
+                    placeholder="Email or username"
                     required
                   />
                 </div>
