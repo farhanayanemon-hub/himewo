@@ -31,6 +31,7 @@ import earningsAdminRouter from "./earnings-admin";
 import adminRouter from "./admin";
 import reportsRouter from "./reports";
 import adsRouter from "./ads";
+import appLandingRouter from "./app-landing";
 
 const router: IRouter = Router();
 
@@ -68,5 +69,6 @@ router.use(earningsAdminRouter);
 router.use(adminRouter);
 router.use(reportsRouter);
 router.use(adsRouter);
+router.use(appLandingRouter);
 
 export default router;

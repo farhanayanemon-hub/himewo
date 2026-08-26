@@ -16,6 +16,7 @@ import { Countries } from "./pages/Countries";
 import { Earnings } from "./pages/Earnings";
 import { Shop } from "./pages/Shop";
 import { Audit } from "./pages/Audit";
+import { AppLanding } from "./pages/AppLanding";
 import { Spinner } from "./components/ui";
 import type { Permission } from "./lib/types";
 
@@ -113,6 +114,11 @@ export default function App() {
         <Route path="/audit">
           <Guard perm="audit.view">
             <Audit />
+          </Guard>
+        </Route>
+        <Route path="/app-landing">
+          <Guard perm="settings.view">
+            <AppLanding />
           </Guard>
         </Route>
         <Route>
