@@ -94,10 +94,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [hasCredential, loadMe]);
 
   const signInWithEmail = useCallback(
-    async (email: string, password: string) => {
+    async (emailOrUsername: string, password: string) => {
       if (!supabase) throw new Error("Supabase is not configured.");
+      let targetEmail = emailOrUsername.trim();
+      if (!targetEmail.includes("@")) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email")
+          .ilike("username", targetEmail)
+          .maybeSingle();
+        if (profile?.email) {
+          targetEmail = profile.email;
+        }
+      }
       const { error: e } = await supabase.auth.signInWithPassword({
-        email,
+        email: targetEmail,
         password,
       });
       if (e) throw e;
