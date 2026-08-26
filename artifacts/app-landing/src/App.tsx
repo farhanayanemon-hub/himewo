@@ -451,9 +451,9 @@ export default function App() {
                 <h2 className="font-['Outfit',sans-serif] text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
                   {config.mobileApp.title}
                 </h2>
-                <Badge variant="outline" className="border-sky-500/30 text-sky-300 text-xs font-mono">
+                <span className="px-2.5 py-0.5 rounded-full border border-sky-500/30 text-sky-300 text-xs font-mono">
                   {config.mobileApp.version}
-                </Badge>
+                </span>
               </div>
 
               <p className="text-lg font-medium text-sky-200">
@@ -594,9 +594,9 @@ export default function App() {
                 <h2 className="font-['Outfit',sans-serif] text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
                   {config.chatApp.title}
                 </h2>
-                <Badge variant="outline" className="border-purple-500/30 text-purple-300 text-xs font-mono">
+                <span className="px-2.5 py-0.5 rounded-full border border-purple-500/30 text-purple-300 text-xs font-mono">
                   {config.chatApp.version}
-                </Badge>
+                </span>
               </div>
 
               <p className="text-lg font-medium text-purple-200">
