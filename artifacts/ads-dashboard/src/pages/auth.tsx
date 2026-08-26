@@ -59,12 +59,13 @@ export default function AuthPage() {
             <>
               <form onSubmit={handleEmailSignIn} className="space-y-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Email or Username</Label>
                   <Input
                     id="email"
-                    type="email"
+                    type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter email or username"
                     required
                   />
                 </div>
