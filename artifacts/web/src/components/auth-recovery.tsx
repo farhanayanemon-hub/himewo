@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { findAccount, type FindAccountResult } from "@workspace/api-client-react";
 import { avatarSrc } from "@/lib/avatar";
 import { useAuth } from "@/lib/auth";
@@ -56,6 +57,7 @@ export function AccountRecovery({
   const [account, setAccount] = useState<FindAccountResult | null>(null);
   const [otp, setOtp] = useState("");
   const [password, setPasswordValue] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const sessionCreated = useRef(false);
@@ -385,17 +387,32 @@ export function AccountRecovery({
                   You're verified. Choose a new password (at least 8 characters).
                 </p>
               </div>
-              <Input
-                autoFocus
-                type="password"
-                aria-label="New password"
-                autoComplete="new-password"
-                placeholder="New password"
-                value={password}
-                onChange={(e) => setPasswordValue(e.target.value)}
-                required
-                className={inputClass}
-              />
+              <div className="relative">
+                <Input
+                  autoFocus
+                  type={showPassword ? "text" : "password"}
+                  aria-label="New password"
+                  autoComplete="new-password"
+                  placeholder="New password"
+                  value={password}
+                  onChange={(e) => setPasswordValue(e.target.value)}
+                  required
+                  className={`${inputClass} pr-12`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 focus:outline-none transition-colors"
+                  tabIndex={-1}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <Button
                 type="submit"
