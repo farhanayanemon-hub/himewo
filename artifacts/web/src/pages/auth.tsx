@@ -344,7 +344,7 @@ function PhoneAuth() {
 function FacebookCard() {
   const { signInWithGoogle } = useAuth();
   const { toast } = useToast();
-  const [mode, setMode] = useState<"landing" | "login" | "phone">("landing");
+  const [mode, setMode] = useState<"login" | "phone">("login");
   const [wizardOpen, setWizardOpen] = useState(false);
   const [recovery, setRecovery] = useState<"forgot" | "find" | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -367,8 +367,19 @@ function FacebookCard() {
         <AccountRecovery mode={recovery} onClose={() => setRecovery(null)} />
       )}
       <div className="bg-white dark:bg-[#242526] rounded-xl p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1),0_8px_16px_rgba(0,0,0,0.1)] space-y-3">
-        {mode === "landing" && (
+        {mode === "login" && (
           <>
+            <SignInForm />
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => setRecovery("forgot")}
+                className="text-sm text-primary hover:underline"
+              >
+                Forgotten password?
+              </button>
+            </div>
+            <div className="border-t border-[#dadde1] dark:border-[#3e4042] my-2" />
             <Button
               type="button"
               onClick={() => setWizardOpen(true)}
@@ -376,20 +387,12 @@ function FacebookCard() {
             >
               Create new account
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setMode("login")}
-              className="w-full h-12 text-lg font-bold rounded-lg"
-            >
-              Login
-            </Button>
             <button
               type="button"
-              onClick={() => setRecovery("find")}
+              onClick={() => setMode("phone")}
               className="block w-full text-center text-sm text-primary hover:underline pt-1"
             >
-              Find my account
+              Log in with phone number
             </button>
             <div className="relative py-1">
               <div className="absolute inset-0 flex items-center">
@@ -411,36 +414,6 @@ function FacebookCard() {
               <GoogleIcon />
               {googleLoading ? "Redirecting…" : "Continue with Google"}
             </Button>
-          </>
-        )}
-
-        {mode === "login" && (
-          <>
-            <SignInForm />
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => setRecovery("forgot")}
-                className="text-sm text-primary hover:underline"
-              >
-                Forgotten password?
-              </button>
-            </div>
-            <div className="border-t border-[#dadde1] dark:border-[#3e4042] my-1" />
-            <button
-              type="button"
-              onClick={() => setMode("phone")}
-              className="block w-full text-center text-sm text-primary hover:underline"
-            >
-              Log in with phone number
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("landing")}
-              className="block w-full text-center text-sm text-primary hover:underline"
-            >
-              ← Back
-            </button>
           </>
         )}
 
