@@ -494,11 +494,7 @@ export default function AuthPage() {
 
       <footer className="py-6 text-center text-xs text-muted-foreground">
         <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 px-4">
-          <span>English (UK)</span>
-          <span>বাংলা</span>
-          <span>हिन्दी</span>
-          <span>العربية</span>
-          <span>More…</span>
+          <span>English</span>
         </div>
         <p className="mt-2">HiMewo © 2026</p>
       </footer>
