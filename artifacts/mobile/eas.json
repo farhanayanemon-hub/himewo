@@ -1,6 +1,6 @@
 {
   "cli": {
-    "version": ">= 14.0.0"
+    "version": ">= 12.0.0"
   },
   "build": {
     "development": {
@@ -13,18 +13,23 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_DOMAIN": "api.himewo.com",
+        "EXPO_PUBLIC_DOMAIN": "workspaceapi-server-production-5e99.up.railway.app",
         "EXPO_PUBLIC_SUPABASE_URL": "https://rzdfgbfyhnkvqbcegguk.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6ZGZnYmZ5aG5rdnFiY2VnZ3VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MDgwODMsImV4cCI6MjA5Nzk4NDA4M30.8RlmkHFpDxDGmZ1KJg3bnswfy6my8FRT0Su_F1fu5CU"
       }
     },
     "production": {
-      "autoIncrement": true,
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
-        "EXPO_PUBLIC_DOMAIN": "api.himewo.com",
+        "EXPO_PUBLIC_DOMAIN": "workspaceapi-server-production-5e99.up.railway.app",
         "EXPO_PUBLIC_SUPABASE_URL": "https://rzdfgbfyhnkvqbcegguk.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6ZGZnYmZ5aG5rdnFiY2VnZ3VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MDgwODMsImV4cCI6MjA5Nzk4NDA4M30.8RlmkHFpDxDGmZ1KJg3bnswfy6my8FRT0Su_F1fu5CU"
       }
     }
+  },
+  "submit": {
+    "production": {}
   }
 }
