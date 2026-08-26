@@ -16,6 +16,7 @@ import {
   Coins,
   Target,
   ShoppingBag,
+  Smartphone,
   LogOut,
 } from "lucide-react";
 import { useAuth } from "../lib/auth";
@@ -63,6 +64,7 @@ const NAV: NavItem[] = [
   { href: "/ads", label: "Ads Review", icon: Target, perm: "ads.view" },
   { href: "/roles", label: "Roles", icon: ShieldCheck, perm: "roles.view" },
   { href: "/settings", label: "Settings", icon: Settings, perm: "settings.view" },
+  { href: "/app-landing", label: "App Landing Page", icon: Smartphone, perm: "settings.view" },
   { href: "/countries", label: "Signup countries", icon: Globe, perm: "settings.view" },
   { href: "/audit", label: "Audit log", icon: ScrollText, perm: "audit.view" },
 ];
