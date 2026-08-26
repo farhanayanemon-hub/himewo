@@ -1,8 +1,9 @@
 import { setBaseUrl, setAuthTokenGetter } from "@workspace/api-client-react";
 import { supabase, isSupabaseConfigured, getDevUserId } from "./supabase";
 
-const domain = process.env.EXPO_PUBLIC_DOMAIN;
-setBaseUrl(domain ? `https://${domain}` : null);
+const rawDomain = process.env.EXPO_PUBLIC_DOMAIN || "workspaceapi-server-production-5e99.up.railway.app";
+const domain = rawDomain.replace(/^https?:\/\//, "");
+setBaseUrl(`https://${domain}`);
 
 setAuthTokenGetter(async () => {
   if (isSupabaseConfigured && supabase) {

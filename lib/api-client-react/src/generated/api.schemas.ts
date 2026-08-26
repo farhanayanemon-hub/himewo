@@ -1227,6 +1227,11 @@ export interface AdAccount {
   id: number;
   ownerId: string;
   name: string;
+  accountNumber?: string | null;
+  phone?: string | null;
+  businessAddress?: string | null;
+  tin?: string | null;
+  bin?: string | null;
   currency: string;
   timezone: string;
   balanceCents: number;
@@ -1249,6 +1254,10 @@ export interface AdAccount {
 export interface AdAccountInput {
   /** @minLength 1 */
   name: string;
+  phone?: string;
+  businessAddress?: string;
+  tin?: string;
+  bin?: string;
   currency?: string;
   timezone?: string;
 }

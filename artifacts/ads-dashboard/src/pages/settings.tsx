@@ -245,9 +245,31 @@ export default function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">{selectedAccount.name}</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base font-bold">{selectedAccount.name}</CardTitle>
+            <Badge variant="outline" className="font-mono text-xs">
+              ID: {selectedAccount.accountNumber || selectedAccount.id}
+            </Badge>
+          </div>
         </CardHeader>
         <CardContent>
+          <div className="mb-4 rounded-lg bg-muted/50 p-3 text-xs space-y-1">
+            <div className="font-mono text-muted-foreground">
+              <strong>Ad Account ID:</strong> {selectedAccount.accountNumber || selectedAccount.id}
+            </div>
+            {selectedAccount.phone && (
+              <div className="text-muted-foreground"><strong>Phone:</strong> {selectedAccount.phone}</div>
+            )}
+            {selectedAccount.businessAddress && (
+              <div className="text-muted-foreground"><strong>Business Address:</strong> {selectedAccount.businessAddress}</div>
+            )}
+            {(selectedAccount.tin || selectedAccount.bin) && (
+              <div className="text-muted-foreground">
+                {selectedAccount.tin && <span><strong>TIN:</strong> {selectedAccount.tin} </span>}
+                {selectedAccount.bin && <span><strong>BIN:</strong> {selectedAccount.bin}</span>}
+              </div>
+            )}
+          </div>
           <form onSubmit={submit} className="space-y-4">
             <div className="space-y-1.5">
               <Label>Name</Label>

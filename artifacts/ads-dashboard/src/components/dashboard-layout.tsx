@@ -67,13 +67,16 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
             value={selectedAccountId ? String(selectedAccountId) : undefined}
             onValueChange={(v) => setSelectedAccountId(Number(v))}
           >
-            <SelectTrigger className="w-[200px]" data-testid="account-switcher">
+            <SelectTrigger className="w-[240px]" data-testid="account-switcher">
               <SelectValue placeholder="Select ad account" />
             </SelectTrigger>
             <SelectContent>
               {accounts.map((a) => (
                 <SelectItem key={a.id} value={String(a.id)}>
-                  {a.name}
+                  <div className="flex flex-col text-left py-0.5">
+                    <span className="font-medium text-xs">{a.name}</span>
+                    <span className="text-[10px] font-mono text-muted-foreground">ID: {a.accountNumber || a.id}</span>
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>

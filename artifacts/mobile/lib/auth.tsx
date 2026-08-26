@@ -313,11 +313,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadUser]);
 
   const signInWithEmail = useCallback(
-    async (email: string, password: string): Promise<PasswordSignInResult> => {
+    async (emailOrUsername: string, password: string): Promise<PasswordSignInResult> => {
       const sb = requireSupabase();
       mfaPending.current = true;
       try {
-        const { error } = await sb.auth.signInWithPassword({ email, password });
+        let targetEmail = emailOrUsername.trim();
+        if (!targetEmail.includes("@")) {
+          const { data: profile } = await sb
+            .from("profiles")
+            .select("email")
+            .ilike("username", targetEmail)
+            .maybeSingle();
+          if (profile?.email) {
+            targetEmail = profile.email;
+          }
+        }
+        const { error } = await sb.auth.signInWithPassword({ email: targetEmail, password });
         if (error) throw error;
         return await finishPasswordSignIn();
       } catch (e) {
