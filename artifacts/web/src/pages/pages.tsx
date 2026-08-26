@@ -562,7 +562,6 @@ function EditPageDialog({
   const queryClient = useQueryClient();
   const updatePage = useUpdatePage();
 
-  const [name, setName] = useState(page.name);
   const [category, setCategory] = useState(page.category ?? "");
   const [description, setDescription] = useState(page.description ?? "");
   const [contactPhone, setContactPhone] = useState(page.contactPhone ?? "");
@@ -575,12 +574,11 @@ function EditPageDialog({
   const [reviewsEnabled, setReviewsEnabled] = useState(page.reviewsEnabled);
 
   const handleSave = () => {
-    if (!name.trim()) return;
     updatePage.mutate(
       {
         id: page.id,
         data: {
-          name: name.trim(),
+          name: page.name,
           category: category || null,
           description: description.trim() || null,
           contactPhone: contactPhone.trim() || null,
@@ -613,10 +611,6 @@ function EditPageDialog({
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-          <div className="space-y-2">
             <Label>Category</Label>
             <Select value={category || undefined} onValueChange={(v) => setCategory(v)}>
               <SelectTrigger>
@@ -633,8 +627,8 @@ function EditPageDialog({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Description</Label>
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
+            <Label>Bio</Label>
+            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Write a bio for this hub..." />
           </div>
           <div className="space-y-2">
             <Label>Phone</Label>

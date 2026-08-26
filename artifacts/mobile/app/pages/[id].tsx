@@ -304,7 +304,6 @@ function EditPageModal({
   const qc = useQueryClient();
   const updatePage = useUpdatePage();
 
-  const [name, setName] = useState(page.name);
   const [category, setCategory] = useState(page.category ?? "");
   const [description, setDescription] = useState(page.description ?? "");
   const [contactPhone, setContactPhone] = useState(page.contactPhone ?? "");
@@ -317,15 +316,11 @@ function EditPageModal({
   const [reviewsEnabled, setReviewsEnabled] = useState(page.reviewsEnabled);
 
   const save = () => {
-    if (!name.trim()) {
-      Alert.alert("Name required", "Please enter a hub name.");
-      return;
-    }
     updatePage.mutate(
       {
         id: page.id,
         data: {
-          name: name.trim(),
+          name: page.name,
           category: category || null,
           description: description.trim() || null,
           contactPhone: contactPhone.trim() || null,
@@ -359,7 +354,6 @@ function EditPageModal({
         <View style={[styles.modalCard, { backgroundColor: c.surface }]}>
           <Text style={[styles.modalTitle, { color: c.foreground }]}>Edit Hub</Text>
           <ScrollView style={{ maxHeight: 460 }} contentContainerStyle={{ gap: 12, paddingBottom: 8 }}>
-            <TextInput value={name} onChangeText={setName} placeholder="Hub name" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" style={inputStyle} />
             <Text style={[styles.fieldLabel, { color: c.mutedForeground }]}>Category</Text>
             <View style={styles.chipWrap}>
               {PAGE_CATEGORIES.map((cat: string) => {
@@ -377,7 +371,8 @@ function EditPageModal({
                 );
               })}
             </View>
-            <TextInput value={description} onChangeText={setDescription} placeholder="Description" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" multiline style={[inputStyle, styles.textarea]} />
+            <Text style={[styles.fieldLabel, { color: c.mutedForeground }]}>Bio</Text>
+            <TextInput value={description} onChangeText={setDescription} placeholder="Bio" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" multiline style={[inputStyle, styles.textarea]} />
             <TextInput value={contactPhone} onChangeText={setContactPhone} placeholder="Phone" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" style={inputStyle} keyboardType="phone-pad" />
             <TextInput value={contactEmail} onChangeText={setContactEmail} placeholder="Email" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" style={inputStyle} keyboardType="email-address" autoCapitalize="none" />
             <TextInput value={website} onChangeText={setWebsite} placeholder="Website (https://...)" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" style={inputStyle} autoCapitalize="none" />

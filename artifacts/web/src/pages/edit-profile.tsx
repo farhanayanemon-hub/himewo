@@ -166,12 +166,7 @@ export default function EditProfilePage() {
 
         <form onSubmit={handleSubmit} className="space-y-6 p-6 pt-4">
           <div className="space-y-2">
-            <Label htmlFor="displayName">Name</Label>
-            <Input id="displayName" value={formData.displayName} onChange={(e) => set("displayName", e.target.value)} className="bg-muted/50" />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="bio">Bio / Intro</Label>
+            <Label htmlFor="bio">Bio</Label>
             <Textarea id="bio" value={formData.bio} onChange={(e) => set("bio", e.target.value)} className="bg-muted/50 resize-none" rows={3} placeholder="Write something about yourself" />
           </div>
 
