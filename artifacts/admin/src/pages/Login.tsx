@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ShieldAlert, LogIn } from "lucide-react";
+import { ShieldAlert, LogIn, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../lib/auth";
 import { Button, Card, Input, ErrorNote } from "../components/ui";
 
@@ -8,6 +8,7 @@ export function Login() {
     useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [devId, setDevId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,13 +78,29 @@ export function Login() {
                   <label className="text-xs font-medium text-slate-600">
                     Password
                   </label>
-                  <Input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 focus:outline-none"
+                      tabIndex={-1}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <Button type="submit" className="w-full" loading={busy}>
                   <LogIn className="h-4 w-4" />

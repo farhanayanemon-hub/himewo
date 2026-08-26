@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { Eye, EyeOff, AlertCircle } from "lucide-react";
 import { avatarSrc } from "@/lib/avatar";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -77,6 +78,7 @@ function SignInForm() {
   const { toast } = useToast();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
@@ -153,7 +155,12 @@ function SignInForm() {
           autoFocus
           className={inputClass}
         />
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && (
+          <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-sm font-medium flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
         <Button
           type="submit"
           disabled={loading || mfaCode.trim().length === 0}
@@ -177,26 +184,46 @@ function SignInForm() {
       <Input
         id="signin-identifier"
         type="text"
-        aria-label="Email address or mobile number"
+        aria-label="Email address or username or mobile number"
         autoComplete="username"
-        placeholder="Email address or mobile number"
+        placeholder="Email, username or mobile number"
         value={identifier}
         onChange={(e) => setIdentifier(e.target.value)}
         required
         className={inputClass}
       />
-      <Input
-        id="signin-password"
-        type="password"
-        aria-label="Password"
-        autoComplete="current-password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-        className={inputClass}
-      />
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      <div className="relative">
+        <Input
+          id="signin-password"
+          type={showPassword ? "text" : "password"}
+          aria-label="Password"
+          autoComplete="current-password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          className={`${inputClass} pr-12`}
+        />
+        <button
+          type="button"
+          onClick={() => setShowPassword(!showPassword)}
+          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 focus:outline-none transition-colors"
+          tabIndex={-1}
+          aria-label={showPassword ? "Hide password" : "Show password"}
+        >
+          {showPassword ? (
+            <EyeOff className="h-5 w-5" />
+          ) : (
+            <Eye className="h-5 w-5" />
+          )}
+        </button>
+      </div>
+      {error && (
+        <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-sm font-medium flex items-center gap-2.5">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
       <Button
         type="submit"
         disabled={loading}
@@ -215,6 +242,7 @@ function PhoneAuth() {
   const { toast } = useToast();
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -273,7 +301,12 @@ function PhoneAuth() {
           autoFocus
           className={inputClass}
         />
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && (
+          <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-sm font-medium flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
         <Button
           type="submit"
           disabled={loading || mfaCode.trim().length === 0}
@@ -317,19 +350,39 @@ function PhoneAuth() {
         required
         className={inputClass}
       />
-      <Input
-        id="phone-password"
-        type="password"
-        aria-label="Password"
-        autoComplete="current-password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-        className={inputClass}
-      />
+      <div className="relative">
+        <Input
+          id="phone-password"
+          type={showPassword ? "text" : "password"}
+          aria-label="Password"
+          autoComplete="current-password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          className={`${inputClass} pr-12`}
+        />
+        <button
+          type="button"
+          onClick={() => setShowPassword(!showPassword)}
+          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 focus:outline-none transition-colors"
+          tabIndex={-1}
+          aria-label={showPassword ? "Hide password" : "Show password"}
+        >
+          {showPassword ? (
+            <EyeOff className="h-5 w-5" />
+          ) : (
+            <Eye className="h-5 w-5" />
+          )}
+        </button>
+      </div>
       <p className="text-xs text-muted-foreground">Include your country code.</p>
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && (
+        <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-sm font-medium flex items-center gap-2.5">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
       <Button
         type="submit"
         disabled={loading}

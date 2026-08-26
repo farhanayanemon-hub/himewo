@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { detectCountry, validateName } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -224,6 +225,7 @@ export function SignupWizard({ onClose }: { onClose: () => void }) {
   const [contactMethod, setContactMethod] = useState<"phone" | "email">("phone");
   const [otp, setOtp] = useState("");
   const [password, setPasswordValue] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Track whether the wizard created a Supabase session (OTP verified) and
@@ -727,15 +729,30 @@ export function SignupWizard({ onClose }: { onClose: () => void }) {
                   characters.
                 </p>
               </div>
-              <Input
-                type="password"
-                autoComplete="new-password"
-                aria-label="New password"
-                placeholder="New password"
-                value={password}
-                onChange={(e) => setPasswordValue(e.target.value)}
-                className={inputClass}
-              />
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  aria-label="New password"
+                  placeholder="New password"
+                  value={password}
+                  onChange={(e) => setPasswordValue(e.target.value)}
+                  className={`${inputClass} pr-12`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 focus:outline-none transition-colors"
+                  tabIndex={-1}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <Button
                 className="w-full h-12 text-lg font-bold rounded-lg aurora-button text-white"
