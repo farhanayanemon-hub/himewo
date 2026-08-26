@@ -10,6 +10,7 @@ import {
   Apple,
   CheckCircle2,
 } from "lucide-react";
+import { api } from "../lib/api";
 import { Button, Input, Card, Badge, Switch, Spinner } from "../components/ui";
 
 interface AppDownloadOption {
@@ -81,8 +82,8 @@ export function AppLanding() {
   const [msg, setMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/app-landing/config")
-      .then((r) => r.json())
+    api
+      .get<AppLandingConfig>("/app-landing/config")
       .then((data) => {
         setConfig(data);
         setLoading(false);
@@ -98,19 +99,10 @@ export function AppLanding() {
     setSaving(true);
     setMsg(null);
     try {
-      const res = await fetch("/api/admin/app-landing/config", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(config),
-      });
-      if (res.ok) {
-        setMsg("App landing page settings saved successfully!");
-      } else {
-        const err = await res.json();
-        setMsg(`Error: ${err.error || "Failed to save"}`);
-      }
-    } catch {
-      setMsg("Error saving settings. Please try again.");
+      await api.put("/admin/app-landing/config", config);
+      setMsg("App landing page settings saved successfully!");
+    } catch (e: any) {
+      setMsg(`Error: ${e?.message || "Failed to save"}`);
     } finally {
       setSaving(false);
     }
