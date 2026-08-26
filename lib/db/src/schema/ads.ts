@@ -49,6 +49,11 @@ export const adAccountsTable = pgTable(
       .notNull()
       .references(() => profilesTable.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
+    accountNumber: text("account_number").unique(),
+    phone: text("phone"),
+    businessAddress: text("business_address"),
+    tin: text("tin"),
+    bin: text("bin"),
     currency: text("currency").notNull().default("USD"),
     timezone: text("timezone").notNull().default("UTC"),
     // Cached REAL-money wallet balance in cents (top-ups, refunds). The

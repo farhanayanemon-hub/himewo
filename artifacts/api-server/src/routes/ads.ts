@@ -274,12 +274,28 @@ router.post("/ad-accounts", requireAuth, async (req, res): Promise<void> => {
     });
     return;
   }
+  // Generate unique 16-digit random account number
+  let accountNumber = `${Math.floor(10000000 + Math.random() * 90000000)}${Math.floor(10000000 + Math.random() * 90000000)}`;
+  for (let i = 0; i < 5; i++) {
+    const [existing] = await db
+      .select({ id: adAccountsTable.id })
+      .from(adAccountsTable)
+      .where(eq(adAccountsTable.accountNumber, accountNumber));
+    if (!existing) break;
+    accountNumber = `${Math.floor(10000000 + Math.random() * 90000000)}${Math.floor(10000000 + Math.random() * 90000000)}`;
+  }
+
   const account = await db.transaction(async (tx) => {
     const [created] = await tx
       .insert(adAccountsTable)
       .values({
         ownerId: uid,
         name: body.data.name,
+        accountNumber,
+        phone: body.data.phone ?? null,
+        businessAddress: body.data.businessAddress ?? null,
+        tin: body.data.tin ?? null,
+        bin: body.data.bin ?? null,
         currency: body.data.currency ?? "USD",
         timezone: body.data.timezone ?? "UTC",
       })
