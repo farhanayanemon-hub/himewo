@@ -24,6 +24,86 @@ import {
   MessageCircle,
 } from "lucide-react";
 
+function GooglePlayIcon({ className = "h-6 w-6" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M48.7 18.2C44.8 22.3 42.6 28.6 42.6 36.8V475.2C42.6 483.4 44.8 489.7 48.7 493.8L50.2 495.2L282.8 262.6V249.4L50.2 16.8L48.7 18.2Z"
+        fill="url(#gp_blue)"
+      />
+      <path
+        d="M360.2 340.1L282.8 262.6V249.4L360.3 171.9L362 172.9L453.6 224.9C479.7 239.7 479.7 272.3 453.6 287.1L362 339.1L360.2 340.1Z"
+        fill="url(#gp_yellow)"
+      />
+      <path
+        d="M362 339.1L282.8 256L48.7 493.8C57.3 502.9 71.3 503.9 87.2 494.9L362 339.1Z"
+        fill="url(#gp_red)"
+      />
+      <path
+        d="M362 172.9L87.2 17.1C71.3 8.1 57.3 9.1 48.7 18.2L282.8 256L362 172.9Z"
+        fill="url(#gp_green)"
+      />
+      <defs>
+        <linearGradient id="gp_blue" x1="262.5" y1="42.6" x2="35.5" y2="269.6" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#00A0FF" />
+          <stop offset="0.007" stopColor="#00A1FF" />
+          <stop offset="0.26" stopColor="#00BEFF" />
+          <stop offset="0.512" stopColor="#00D2FF" />
+          <stop offset="0.76" stopColor="#00DFFF" />
+          <stop offset="1" stopColor="#00E3FF" />
+        </linearGradient>
+        <linearGradient id="gp_yellow" x1="486.2" y1="256" x2="38.7" y2="256" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#FFE000" />
+          <stop offset="0.409" stopColor="#FFBD00" />
+          <stop offset="0.775" stopColor="#FFA500" />
+          <stop offset="1" stopColor="#FF9C00" />
+        </linearGradient>
+        <linearGradient id="gp_red" x1="384.6" y1="316.5" x2="114" y2="587.1" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#FF3A44" />
+          <stop offset="1" stopColor="#C31162" />
+        </linearGradient>
+        <linearGradient id="gp_green" x1="114" y1="-75.1" x2="384.6" y2="195.5" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#32A071" />
+          <stop offset="0.069" stopColor="#2DA771" />
+          <stop offset="0.476" stopColor="#15CF74" />
+          <stop offset="0.801" stopColor="#06E775" />
+          <stop offset="1" stopColor="#00F076" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
+function AppStoreIcon({ className = "h-6 w-6" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="512" height="512" rx="115" fill="url(#as_bg)" />
+      <path
+        d="M208.5 137.2c-5.2-9-15.6-13.8-25.9-12-10.3 1.8-18.4 9.8-20.3 20.1-1.9 10.3 2.9 20.7 11.9 25.9l121.2 210c5.2 9 15.6 13.8 25.9 12 10.3-1.8 18.4-9.8 20.3-20.1 1.9-10.3-2.9-20.7-11.9-25.9L208.5 137.2z"
+        fill="white"
+      />
+      <path
+        d="M327.4 137.2l-40.8 70.7 41.5 24 30.6-53c5.2-9 4-20.4-3-28.1-7-7.7-18.3-9.5-27.3-4.3l-.9.7-.1-.0z"
+        fill="white"
+      />
+      <path
+        d="M178.6 395.2l34.8-60.3-41.5-24-24.6 42.6c-5.2 9-4 20.4 3 28.1 7.1 7.8 18.4 9.6 27.5 4.3l.8-.7z"
+        fill="white"
+      />
+      <path
+        d="M136.2 299.7h239.6c10.4 0 19.8-6.4 23.5-16.1 3.7-9.7 1-20.7-6.8-27.5-7.8-6.8-19.1-8.3-28.5-3.8l-1.8.9H149.8c-10.4 0-19.8 6.4-23.5 16.1-3.7 9.7-1 20.7 6.8 27.5 3.3 2.9 7.4 4.5 11.7 4.5l11.4-1.6z"
+        fill="white"
+      />
+      <defs>
+        <linearGradient id="as_bg" x1="256" y1="0" x2="256" y2="512" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#1E9DFB" />
+          <stop offset="1" stopColor="#0B64FE" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
 interface FloatingMessage {
   sender: string;
   text: string;
@@ -645,9 +725,7 @@ export default function App() {
                       className="clean-card p-4 rounded-2xl flex flex-col justify-between text-left group hover:border-purple-500 bg-white"
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <svg className="h-6 w-6 text-emerald-600" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M3.609 1.814L13.792 12 3.61 22.186a2.036 2.036 0 0 1-.22-.964V2.778c0-.36.08-.69.22-.964zM15.207 13.414l2.585-2.586a1.414 1.414 0 0 0 0-2l-2.585-2.585-1.415 1.414 5 5-5 5 1.415-1.243zM4.732.691l10.061 10.06-2.586 2.586L2.146 3.276A2.04 2.04 0 0 1 4.732.69zM14.793 13.25l-10.06 10.06a2.04 2.04 0 0 1-2.587-2.586l10.061-10.06 2.586 2.586z"/>
-                        </svg>
+                        <GooglePlayIcon className="h-7 w-7 shrink-0 group-hover:scale-105 transition-transform" />
                         {config.mobileApp.playStoreComingSoon ? (
                           <span className="text-[10px] font-bold uppercase bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
                             Coming Soon
@@ -659,7 +737,7 @@ export default function App() {
                         )}
                       </div>
                       <div>
-                        <div className="text-[11px] text-slate-500">GET IT ON</div>
+                        <div className="text-[11px] text-slate-500 font-medium">GET IT ON</div>
                         <div className="text-sm font-bold text-slate-900">Google Play</div>
                       </div>
                     </button>
@@ -681,7 +759,7 @@ export default function App() {
                       className="clean-card p-4 rounded-2xl flex flex-col justify-between text-left group hover:border-purple-500 bg-white"
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <Apple className="h-6 w-6 text-slate-900" />
+                        <AppStoreIcon className="h-7 w-7 shrink-0 rounded-lg shadow-xs group-hover:scale-105 transition-transform" />
                         {config.mobileApp.appStoreComingSoon ? (
                           <span className="text-[10px] font-bold uppercase bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
                             Coming Soon
@@ -693,7 +771,7 @@ export default function App() {
                         )}
                       </div>
                       <div>
-                        <div className="text-[11px] text-slate-500">Download on the</div>
+                        <div className="text-[11px] text-slate-500 font-medium">Download on the</div>
                         <div className="text-sm font-bold text-slate-900">App Store</div>
                       </div>
                     </button>
@@ -788,9 +866,7 @@ export default function App() {
                       className="clean-card p-4 rounded-2xl flex flex-col justify-between text-left group hover:border-fuchsia-500 bg-white"
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <svg className="h-6 w-6 text-emerald-600" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M3.609 1.814L13.792 12 3.61 22.186a2.036 2.036 0 0 1-.22-.964V2.778c0-.36.08-.69.22-.964zM15.207 13.414l2.585-2.586a1.414 1.414 0 0 0 0-2l-2.585-2.585-1.415 1.414 5 5-5 5 1.415-1.243zM4.732.691l10.061 10.06-2.586 2.586L2.146 3.276A2.04 2.04 0 0 1 4.732.69zM14.793 13.25l-10.06 10.06a2.04 2.04 0 0 1-2.587-2.586l10.061-10.06 2.586 2.586z"/>
-                        </svg>
+                        <GooglePlayIcon className="h-7 w-7 shrink-0 group-hover:scale-105 transition-transform" />
                         {config.chatApp.playStoreComingSoon ? (
                           <span className="text-[10px] font-bold uppercase bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
                             Coming Soon
@@ -802,7 +878,7 @@ export default function App() {
                         )}
                       </div>
                       <div>
-                        <div className="text-[11px] text-slate-500">GET IT ON</div>
+                        <div className="text-[11px] text-slate-500 font-medium">GET IT ON</div>
                         <div className="text-sm font-bold text-slate-900">Google Play</div>
                       </div>
                     </button>
@@ -824,7 +900,7 @@ export default function App() {
                       className="clean-card p-4 rounded-2xl flex flex-col justify-between text-left group hover:border-fuchsia-500 bg-white"
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <Apple className="h-6 w-6 text-slate-900" />
+                        <AppStoreIcon className="h-7 w-7 shrink-0 rounded-lg shadow-xs group-hover:scale-105 transition-transform" />
                         {config.chatApp.appStoreComingSoon ? (
                           <span className="text-[10px] font-bold uppercase bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
                             Coming Soon
@@ -836,7 +912,7 @@ export default function App() {
                         )}
                       </div>
                       <div>
-                        <div className="text-[11px] text-slate-500">Download on the</div>
+                        <div className="text-[11px] text-slate-500 font-medium">Download on the</div>
                         <div className="text-sm font-bold text-slate-900">App Store</div>
                       </div>
                     </button>
@@ -959,8 +1035,12 @@ export default function App() {
               <X className="h-5 w-5" />
             </button>
 
-            <div className="w-12 h-12 rounded-2xl bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-600">
-              <Sparkles className="h-6 w-6" />
+            <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-purple-100 flex items-center justify-center shadow-xs">
+              {activeModal.store === "Play Store" ? (
+                <GooglePlayIcon className="h-8 w-8" />
+              ) : (
+                <AppStoreIcon className="h-8 w-8 rounded-xl shadow-xs" />
+              )}
             </div>
 
             <div>
