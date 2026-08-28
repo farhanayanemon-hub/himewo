@@ -616,12 +616,12 @@ export default function App() {
                     >
                       <div className="flex items-center justify-between mb-2">
                         <Download className="h-6 w-6 text-purple-600 group-hover:translate-y-0.5 transition-transform" />
-                        <span className="text-[10px] font-bold uppercase bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full">
-                          41 MB · Direct APK
+                        <span className="text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                          27.8 MB · Ultra Lite
                         </span>
                       </div>
                       <div>
-                        <div className="text-xs text-slate-500 font-medium">Lightweight & Fast</div>
+                        <div className="text-xs text-slate-500 font-medium">Instant Download · -71% Smaller</div>
                         <div className="text-sm font-bold text-slate-900">
                           {config.mobileApp.directButtonText || "Download APK"}
                         </div>
@@ -759,12 +759,12 @@ export default function App() {
                     >
                       <div className="flex items-center justify-between mb-2">
                         <Download className="h-6 w-6 text-fuchsia-600 group-hover:translate-y-0.5 transition-transform" />
-                        <span className="text-[10px] font-bold uppercase bg-fuchsia-100 text-fuchsia-800 px-2 py-0.5 rounded-full">
-                          56 MB · Direct APK
+                        <span className="text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                          34.8 MB · Ultra Lite
                         </span>
                       </div>
                       <div>
-                        <div className="text-xs text-slate-500 font-medium">Lightweight & Fast</div>
+                        <div className="text-xs text-slate-500 font-medium">Instant Download · -76% Smaller</div>
                         <div className="text-sm font-bold text-slate-900">
                           {config.chatApp.directButtonText || "Download APK"}
                         </div>
