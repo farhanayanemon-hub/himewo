@@ -652,7 +652,7 @@ export function AppLanding() {
             <Input
               value={config.mobileApp.directUrl}
               onChange={(e) => setConfig({ ...config, mobileApp: { ...config.mobileApp, directUrl: e.target.value } })}
-              placeholder="https://himewo.com/downloads/himewo-social.apk"
+              placeholder="https://github.com/farhanayanemon-hub/himewo/releases/download/v1.0.0/himewo-social.apk"
             />
           </div>
 
@@ -803,6 +803,7 @@ export function AppLanding() {
             <Input
               value={config.chatApp.directUrl}
               onChange={(e) => setConfig({ ...config, chatApp: { ...config.chatApp, directUrl: e.target.value } })}
+              placeholder="https://github.com/farhanayanemon-hub/himewo/releases/download/v1.0.0/himewo-chat.apk"
             />
           </div>
 
