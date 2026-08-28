@@ -131,46 +131,49 @@ export function ProfileView({
           onView={coverEditor.onView}
           onPickFile={coverEditor.onPickFile}
         >
-          <div className="h-48 md:h-64 bg-muted relative">
+          <div className="h-48 md:h-64 lg:h-72 bg-muted relative">
             {profile.coverUrl ? (
               <img src={profile.coverUrl} className="w-full h-full object-cover" alt="Cover" />
             ) : (
-              <div className="w-full h-full bg-gradient-to-r from-teal-400/50 via-purple-400/50 to-pink-400/50" />
+              <div className="w-full h-full bg-gradient-to-r from-purple-600/30 via-indigo-500/30 to-pink-500/30" />
             )}
           </div>
         </PhotoActionMenu>
-        <div className="px-6 pb-4 relative">
-          <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-16">
-            <div className="relative z-10 w-32 shrink-0">
-              <PhotoActionMenu
-                photoUrl={profile.avatarUrl}
-                kind="avatar"
-                canChange={isOwnProfile}
-                onView={avatarEditor.onView}
-                onPickFile={avatarEditor.onPickFile}
-              >
-                <img
-                  src={avatarSrc(profile.avatarUrl)}
-                  className="w-32 h-32 rounded-full border-4 border-card object-cover bg-muted"
-                  alt="Avatar"
-                />
-              </PhotoActionMenu>
-            </div>
-            <div className="flex-1 sm:pb-2">
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                {profile.displayName}
-                {profile.isVerified && <VerifiedBadge className="w-6 h-6" />}
-                {isLocked && (
-                  <Lock className="w-5 h-5 text-muted-foreground" aria-label="Locked profile" />
-                )}
-              </h1>
-              <p className="text-muted-foreground text-sm">@{profile.username}</p>
-              <div className="flex gap-4 text-sm text-muted-foreground font-medium mt-1">
-                <span>{profile.friendCount || 0} Friends</span>
-                <span>{profile.followerCount || 0} Followers</span>
+        <div className="px-6 pb-6 pt-2 relative">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-5">
+              <div className="-mt-16 sm:-mt-20 relative z-10 w-32 sm:w-36 shrink-0 mx-auto sm:mx-0">
+                <PhotoActionMenu
+                  photoUrl={profile.avatarUrl}
+                  kind="avatar"
+                  canChange={isOwnProfile}
+                  onView={avatarEditor.onView}
+                  onPickFile={avatarEditor.onPickFile}
+                >
+                  <img
+                    src={avatarSrc(profile.avatarUrl)}
+                    className="w-32 h-32 sm:w-36 sm:h-36 rounded-full border-4 border-card object-cover bg-muted shadow-md"
+                    alt="Avatar"
+                  />
+                </PhotoActionMenu>
+              </div>
+              <div className="text-center sm:text-left pt-1 sm:pt-0 sm:pb-1">
+                <h1 className="text-2xl sm:text-3xl font-bold flex items-center justify-center sm:justify-start gap-2">
+                  <span className="text-foreground tracking-tight">{profile.displayName}</span>
+                  {profile.isVerified && <VerifiedBadge className="w-6 h-6" />}
+                  {isLocked && (
+                    <Lock className="w-5 h-5 text-muted-foreground" aria-label="Locked profile" />
+                  )}
+                </h1>
+                <p className="text-muted-foreground text-sm font-medium">@{profile.username}</p>
+                <div className="flex items-center justify-center sm:justify-start gap-3 text-sm text-muted-foreground font-medium mt-1.5">
+                  <span><b className="text-foreground">{profile.friendCount || 0}</b> Friends</span>
+                  <span>•</span>
+                  <span><b className="text-foreground">{profile.followerCount || 0}</b> Followers</span>
+                </div>
               </div>
             </div>
-            <div className="flex gap-2 sm:pb-2">{headerActions}</div>
+            <div className="flex items-center justify-center sm:justify-end gap-2 pb-1 flex-wrap">{headerActions}</div>
           </div>
         </div>
       </div>

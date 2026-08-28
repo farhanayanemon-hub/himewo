@@ -38,6 +38,7 @@ import { PhotoActionMenu, usePhotoEditor } from "@/components/photo-editor";
 import { useParams, Link, useLocation } from "wouter";
 import { PostCard } from "@/components/post-card";
 import { PostComposer } from "@/components/post-composer";
+import { VerifiedBadge } from "@/components/verified-badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -1121,34 +1122,59 @@ function PageDetail({ id }: { id: number }) {
           onView={coverEditor.onView}
           onPickFile={coverEditor.onPickFile}
         >
-          <div className="h-48 bg-muted relative">
+          <div className="h-48 md:h-64 lg:h-72 bg-muted relative">
             {page.coverUrl ? (
               <img src={page.coverUrl} className="w-full h-full object-cover" alt="Cover" />
             ) : (
-              <div className="w-full h-full bg-gradient-to-r from-primary/20 to-primary/40" />
+              <div className="w-full h-full bg-gradient-to-r from-purple-600/30 via-indigo-500/30 to-pink-500/30" />
             )}
           </div>
         </PhotoActionMenu>
-        <div className="px-6 pb-6 relative">
-          <div className="flex justify-between items-end mb-4">
-            <div className="-mt-16 relative z-10 w-32 shrink-0">
-              <PhotoActionMenu
-                photoUrl={page.avatarUrl}
-                kind="avatar"
-                canChange={!!page.viewerCanPost}
-                onView={avatarEditor.onView}
-                onPickFile={avatarEditor.onPickFile}
-              >
-                <img
-                  src={avatarSrc(page.avatarUrl)}
-                  className="w-32 h-32 rounded-full border-4 border-card object-cover bg-muted"
-                  alt="Avatar"
-                />
-              </PhotoActionMenu>
+        <div className="px-6 pb-6 pt-2 relative">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-5">
+              <div className="-mt-16 sm:-mt-20 relative z-10 w-32 sm:w-36 shrink-0 mx-auto sm:mx-0">
+                <PhotoActionMenu
+                  photoUrl={page.avatarUrl}
+                  kind="avatar"
+                  canChange={!!page.viewerCanPost}
+                  onView={avatarEditor.onView}
+                  onPickFile={avatarEditor.onPickFile}
+                >
+                  <img
+                    src={avatarSrc(page.avatarUrl)}
+                    className="w-32 h-32 sm:w-36 sm:h-36 rounded-full border-4 border-card object-cover bg-muted shadow-md"
+                    alt="Avatar"
+                  />
+                </PhotoActionMenu>
+              </div>
+              <div className="text-center sm:text-left pt-1 sm:pt-0 sm:pb-1">
+                <h1 className="text-2xl sm:text-3xl font-bold flex items-center justify-center sm:justify-start gap-2">
+                  <span className="text-foreground tracking-tight">{page.name}</span>
+                  {page.isVerified && <VerifiedBadge className="w-6 h-6" />}
+                </h1>
+                <p className="text-muted-foreground text-sm font-medium">{page.category}</p>
+                <div className="text-sm text-muted-foreground font-medium flex items-center justify-center sm:justify-start gap-3 mt-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setFollowersOpen(true)}
+                    className="hover:text-foreground hover:underline transition-colors"
+                  >
+                    <b className="text-foreground">{page.followerCount}</b> Followers
+                  </button>
+                  <span>•</span>
+                  <button
+                    type="button"
+                    onClick={() => setFollowingOpen(true)}
+                    className="hover:text-foreground hover:underline transition-colors"
+                  >
+                    <b className="text-foreground">{page.followingCount}</b> Following
+                  </button>
+                </div>
+              </div>
             </div>
-            <div className="flex gap-2">
-              {/* Hide the Follow button when browsing AS this same page — you
-                  can't follow yourself. It reappears when acting as your profile. */}
+
+            <div className="flex items-center justify-center sm:justify-end gap-2 pb-1 flex-wrap">
               {actingPage?.id !== page.id && (
                 <Button
                   variant={page.viewerFollows ? "secondary" : "default"}
@@ -1159,8 +1185,6 @@ function PageDetail({ id }: { id: number }) {
                   {page.viewerFollows ? "Following" : "Follow"}
                 </Button>
               )}
-              {/* CTA buttons (Message/Call/etc.) are for OTHER users — hide
-                  when browsing AS this page or when the viewer owns it. */}
               {actingPage?.id !== page.id && user?.id !== page.ownerId && (
                 <PageCTA page={page} />
               )}
@@ -1191,33 +1215,6 @@ function PageDetail({ id }: { id: number }) {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            </div>
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">{page.name}</h1>
-            <p className="text-muted-foreground text-sm mb-2">{page.category}</p>
-            {page.description && <p className="text-[15px] mb-4">{page.description}</p>}
-            <div className="text-sm text-muted-foreground font-medium flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setFollowersOpen(true)}
-                className="hover:text-foreground hover:underline transition-colors"
-              >
-                {page.followerCount} Followers
-              </button>
-              <button
-                type="button"
-                onClick={() => setFollowingOpen(true)}
-                className="hover:text-foreground hover:underline transition-colors"
-              >
-                {page.followingCount} Following
-              </button>
-              {page.reviewCount > 0 && (
-                <span className="flex items-center gap-1">
-                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  {page.averageRating?.toFixed(1)} ({page.reviewCount})
-                </span>
-              )}
             </div>
           </div>
         </div>
