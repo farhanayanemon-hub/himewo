@@ -313,7 +313,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
         </div>
       </header>
 
-      <div className="flex-1 w-full px-4 flex gap-6 pt-6">
+      <div className={`flex-1 w-full flex gap-6 ${location === "/reels" ? "px-0 pt-0" : "px-4 pt-6"}`}>
         {/* Left Sidebar */}
         <aside className="hidden lg:block w-[280px] shrink-0 sticky top-[88px] h-[calc(100vh-88px)] overflow-y-auto pb-6">
           <nav className="space-y-1">
@@ -359,7 +359,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 max-w-[740px] mx-auto min-w-0">
+        <main className={`flex-1 min-w-0 ${location === "/reels" ? "max-w-none p-0" : "max-w-[740px] mx-auto"}`}>
           {children}
         </main>
 

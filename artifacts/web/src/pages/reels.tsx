@@ -469,8 +469,15 @@ function ReelCard({
   // Video playback states
   const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
-  const [showPlayIcon, setShowPlayIcon] = useState(false);
+  const [playFeedback, setPlayFeedback] = useState<{ visible: boolean; isPlaying: boolean; key: number }>({
+    visible: false,
+    isPlaying: true,
+    key: 0,
+  });
   const [showHeartBurst, setShowHeartBurst] = useState(false);
+
+  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const playIconTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Modal states
   const [commentsOpen, setCommentsOpen] = useState(false);
@@ -511,28 +518,19 @@ function ReelCard({
     }
   }, [isActive, isGlobalMuted]);
 
+  // Clean up timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
+      if (playIconTimeoutRef.current) clearTimeout(playIconTimeoutRef.current);
+    };
+  }, []);
+
   // Track playback progress
   const handleTimeUpdate = () => {
     const video = videoRef.current;
     if (!video || !video.duration) return;
     setProgress((video.currentTime / video.duration) * 100);
-  };
-
-  // Toggle Play/Pause on single click
-  const togglePlay = () => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    if (video.paused) {
-      video.play().catch(() => {});
-      setIsPlaying(true);
-    } else {
-      video.pause();
-      setIsPlaying(false);
-    }
-
-    setShowPlayIcon(true);
-    setTimeout(() => setShowPlayIcon(false), 600);
   };
 
   // Optimistic Like Toggle
@@ -575,14 +573,42 @@ function ReelCard({
     }
   }, [liked, likeCount, reel.id, likeMutation, unlikeMutation, queryClient]);
 
-  // Double click on video to like
-  const handleDoubleClick = (e: React.MouseEvent) => {
+  // Single click vs double click handler (NO DOUBLE TRIGGER)
+  const handleVideoClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!liked) {
-      handleToggleLike();
+    if (clickTimeoutRef.current) {
+      // It's a double click!
+      clearTimeout(clickTimeoutRef.current);
+      clickTimeoutRef.current = null;
+      if (!liked) {
+        handleToggleLike();
+      }
+      setShowHeartBurst(true);
+      setTimeout(() => setShowHeartBurst(false), 900);
+      return;
     }
-    setShowHeartBurst(true);
-    setTimeout(() => setShowHeartBurst(false), 900);
+
+    // Single click candidate: wait 220ms to distinguish from double click
+    clickTimeoutRef.current = setTimeout(() => {
+      clickTimeoutRef.current = null;
+      const video = videoRef.current;
+      if (!video) return;
+
+      const nextPlaying = video.paused;
+      if (nextPlaying) {
+        video.play().catch(() => {});
+        setIsPlaying(true);
+      } else {
+        video.pause();
+        setIsPlaying(false);
+      }
+
+      if (playIconTimeoutRef.current) clearTimeout(playIconTimeoutRef.current);
+      setPlayFeedback({ visible: true, isPlaying: nextPlaying, key: Date.now() });
+      playIconTimeoutRef.current = setTimeout(() => {
+        setPlayFeedback((prev) => ({ ...prev, visible: false }));
+      }, 500);
+    }, 220);
   };
 
   // Optimistic Save Toggle
@@ -628,10 +654,10 @@ function ReelCard({
   return (
     <div
       ref={containerRef}
-      className="snap-start snap-always shrink-0 h-full w-full flex items-center justify-center p-2 sm:p-4"
+      className="snap-start snap-always shrink-0 h-[calc(100dvh-56px)] sm:h-[calc(100vh-70px)] w-full flex items-center justify-center p-0 sm:p-4"
     >
-      {/* 9:16 Responsive Full-Height Video Container */}
-      <div className="relative h-full max-h-[820px] aspect-[9/16] w-auto max-w-full bg-neutral-950 rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center select-none group border border-border/20">
+      {/* Responsive Full-Height Video Container (Edge-to-Edge on Mobile) */}
+      <div className="relative h-full w-full sm:max-h-[820px] sm:aspect-[9/16] sm:w-auto bg-black sm:rounded-2xl overflow-hidden sm:shadow-2xl flex items-center justify-center select-none group sm:border sm:border-border/20">
         <video
           ref={videoRef}
           src={reel.videoUrl}
@@ -640,18 +666,24 @@ function ReelCard({
           muted={isGlobalMuted}
           playsInline
           onTimeUpdate={handleTimeUpdate}
-          onClick={togglePlay}
-          onDoubleClick={handleDoubleClick}
+          onClick={handleVideoClick}
         />
 
         {/* Ambient Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30 pointer-events-none" />
 
-        {/* Center Animated Play/Pause Indicator */}
-        {showPlayIcon && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 animate-out fade-out zoom-out duration-500">
-            <div className="w-16 h-16 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-white shadow-xl">
-              {isPlaying ? <Play className="w-8 h-8 ml-1 fill-white" /> : <Pause className="w-8 h-8 fill-white" />}
+        {/* Center Animated Play/Pause Indicator (Single Clean Pop) */}
+        {playFeedback.visible && (
+          <div
+            key={playFeedback.key}
+            className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 animate-in zoom-in-75 fade-in duration-200"
+          >
+            <div className="w-16 h-16 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-white shadow-2xl">
+              {playFeedback.isPlaying ? (
+                <Play className="w-8 h-8 ml-1 fill-white text-white" />
+              ) : (
+                <Pause className="w-8 h-8 fill-white text-white" />
+              )}
             </div>
           </div>
         )}
@@ -667,14 +699,14 @@ function ReelCard({
         <button
           type="button"
           onClick={onToggleGlobalMute}
-          className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-md text-white flex items-center justify-center transition-transform active:scale-95 shadow-md"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-md text-white flex items-center justify-center transition-transform active:scale-95 shadow-md"
           title={isGlobalMuted ? "Unmute (M)" : "Mute (M)"}
         >
           {isGlobalMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
         </button>
 
         {/* Bottom Left Info Area */}
-        <div className="absolute bottom-4 left-4 right-20 text-white z-10 space-y-2 pointer-events-auto">
+        <div className="absolute bottom-4 left-3 right-16 sm:bottom-4 sm:left-4 sm:right-20 text-white z-10 space-y-2 pointer-events-auto">
           <div className="flex items-center gap-2.5">
             <Link href={`/profile/${reel.author.username}`} className="shrink-0 group/author">
               <img
@@ -712,12 +744,12 @@ function ReelCard({
         </div>
 
         {/* Right Floating Actions Bar */}
-        <div className="absolute bottom-4 right-3 flex flex-col items-center gap-3.5 z-20">
+        <div className="absolute bottom-4 right-2 sm:right-3 flex flex-col items-center gap-3.5 z-20">
           {/* Like Button */}
           <div className="flex flex-col items-center">
             <button
               onClick={handleToggleLike}
-              className="w-11 h-11 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md flex items-center justify-center text-white transition-all active:scale-75 shadow-lg group/btn"
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md flex items-center justify-center text-white transition-all active:scale-75 shadow-lg group/btn"
               title="Like (L)"
             >
               <Heart
@@ -737,7 +769,7 @@ function ReelCard({
           <div className="flex flex-col items-center">
             <button
               onClick={() => setCommentsOpen(true)}
-              className="w-11 h-11 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md flex items-center justify-center text-white transition-all active:scale-75 shadow-lg group/btn"
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md flex items-center justify-center text-white transition-all active:scale-75 shadow-lg group/btn"
               title="Comments"
             >
               <MessageCircle className="w-6 h-6 text-white group-hover/btn:scale-110 transition-transform" />
@@ -751,7 +783,7 @@ function ReelCard({
           <div className="flex flex-col items-center">
             <button
               onClick={handleToggleSave}
-              className="w-11 h-11 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md flex items-center justify-center text-white transition-all active:scale-75 shadow-lg group/btn"
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md flex items-center justify-center text-white transition-all active:scale-75 shadow-lg group/btn"
               title={saved ? "Unsave" : "Save"}
             >
               <Bookmark
@@ -771,7 +803,7 @@ function ReelCard({
           <div className="flex flex-col items-center">
             <button
               onClick={() => setShareOpen(true)}
-              className="w-11 h-11 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md flex items-center justify-center text-white transition-all active:scale-75 shadow-lg group/btn"
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md flex items-center justify-center text-white transition-all active:scale-75 shadow-lg group/btn"
               title="Share"
             >
               <Share2 className="w-6 h-6 text-white group-hover/btn:scale-110 transition-transform" />
