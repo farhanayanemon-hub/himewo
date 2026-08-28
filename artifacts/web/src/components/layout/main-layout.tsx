@@ -236,7 +236,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
     { href: "/stories", icon: Clapperboard, label: "Stories", color: "text-purple-500", iconUrl: navIcons.stories },
     { href: "/memories", icon: Clock, label: "Memories", color: "text-cyan-500", iconUrl: navIcons.memories },
     { href: "/saved", icon: Bookmark, label: "Saved", color: "text-pink-500", iconUrl: navIcons.saved },
-    { href: "/verified", icon: BadgeCheck, label: "Verified Badge", color: "text-blue-500", iconUrl: navIcons.verified },
+    { href: "/verified", icon: BadgeCheck, label: "Verified Badge", color: "text-purple-600 dark:text-purple-400", iconUrl: navIcons.verified },
   ];
 
   return (

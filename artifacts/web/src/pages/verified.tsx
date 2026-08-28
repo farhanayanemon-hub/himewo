@@ -129,12 +129,12 @@ export default function VerifiedPage() {
     <MainLayout>
       <div className="max-w-xl mx-auto px-4 py-8">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-500/10 mb-4">
-            <BadgeCheck className="w-9 h-9 text-blue-500" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-500/10 mb-4">
+            <BadgeCheck className="w-10 h-10 text-white fill-purple-600 dark:fill-purple-500 drop-shadow-sm" />
           </div>
           <h1 className="text-2xl font-bold">Verified Badge</h1>
           <p className="text-muted-foreground mt-2">
-            The blue badge shows people that your profile is authentic. Apply below and our
+            The purple badge shows people that your profile is authentic. Apply below and our
             team will review your request.
           </p>
         </div>
@@ -156,10 +156,10 @@ export default function VerifiedPage() {
           </div>
         ) : status === "verified" ? (
           <div className="rounded-2xl border bg-card p-6 text-center">
-            <BadgeCheck className="w-10 h-10 text-blue-500 mx-auto mb-3" />
+            <BadgeCheck className="w-12 h-12 text-white fill-purple-600 dark:fill-purple-500 mx-auto mb-3 drop-shadow-sm" />
             <h2 className="font-semibold text-lg">You're verified!</h2>
             <p className="text-muted-foreground text-sm mt-1">
-              Your profile shows the blue verified badge.
+              Your profile displays the purple verified badge.
             </p>
           </div>
         ) : status === "pending" ? (

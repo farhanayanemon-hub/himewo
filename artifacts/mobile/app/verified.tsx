@@ -150,12 +150,12 @@ export default function VerifiedScreen() {
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.hero}>
-          <View style={[styles.heroIcon, { backgroundColor: "rgba(24,119,242,0.12)" }]}>
-            <Ionicons name="checkmark-circle" size={44} color="#1877f2" />
+          <View style={[styles.heroIcon, { backgroundColor: "rgba(147,51,234,0.12)" }]}>
+            <Ionicons name="checkmark-circle" size={44} color="#9333ea" />
           </View>
           <Text style={[styles.heroTitle, { color: c.text }]}>Verified Badge</Text>
           <Text style={[styles.heroSub, { color: c.muted }]}>
-            The blue badge shows people that your profile is authentic. Apply below and our
+            The purple badge shows people that your profile is authentic. Apply below and our
             team will review your request.
           </Text>
         </View>
@@ -175,10 +175,12 @@ export default function VerifiedScreen() {
           </View>
         ) : status === "verified" ? (
           <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
-            <Ionicons name="checkmark-circle" size={36} color="#1877f2" style={styles.cardIcon} />
-            <Text style={[styles.cardTitle, { color: c.text }]}>You're verified!</Text>
-            <Text style={[styles.cardSub, { color: c.muted }]}>
-              Your profile shows the blue verified badge.
+            <Ionicons name="checkmark-circle" size={48} color="#9333ea" style={{ alignSelf: "center", marginBottom: 12 }} />
+            <Text style={[styles.cardTitle, { color: c.text, textAlign: "center" }]}>
+              You're verified!
+            </Text>
+            <Text style={[styles.cardSub, { color: c.muted, textAlign: "center", marginTop: 4 }]}>
+              Your profile shows the purple verified badge.
             </Text>
           </View>
         ) : status === "pending" ? (
