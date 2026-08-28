@@ -323,7 +323,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (totp) return { mfaRequired: true, factorId: totp.id };
     }
     mfaPending.current = false;
-    await loadUser();
+    const loaded = await loadUser().catch((e) => {
+      console.error("[Auth] loadUser in finishPasswordSignIn failed:", e);
+      return null;
+    });
+    if (!loaded) {
+      throw new Error("Could not load user profile. Please check your network connection and try again.");
+    }
     return { mfaRequired: false };
   }, [loadUser]);
 
