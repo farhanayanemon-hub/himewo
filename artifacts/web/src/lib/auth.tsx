@@ -12,7 +12,7 @@ import {
   syncProfile,
   type Profile,
 } from "@workspace/api-client-react";
-import "./api";
+import { setCachedToken } from "./api";
 
 // Admin-toggleable OTP gate: ask the API whether this OTP event is enabled
 // before requesting a code from Supabase. Fails OPEN on network/config
@@ -323,12 +323,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (totp) return { mfaRequired: true, factorId: totp.id };
     }
     mfaPending.current = false;
+    let loadErr: unknown = null;
     const loaded = await loadUser().catch((e) => {
+      loadErr = e;
       console.error("[Auth] loadUser in finishPasswordSignIn failed:", e);
       return null;
     });
     if (!loaded) {
-      throw new Error("Could not load user profile. Please check your network connection and try again.");
+      const msg = loadErr instanceof Error ? loadErr.message : String(loadErr || "Network error");
+      throw new Error(`Could not load user profile: ${msg}`);
     }
     return { mfaRequired: false };
   }, [loadUser]);
@@ -349,8 +352,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             targetEmail = profile.email;
           }
         }
-        const { error } = await sb.auth.signInWithPassword({ email: targetEmail, password });
+        const { data, error } = await sb.auth.signInWithPassword({ email: targetEmail, password });
         if (error) throw error;
+        if (data.session?.access_token) {
+          setCachedToken(data.session.access_token);
+        }
         return await finishPasswordSignIn();
       } catch (e) {
         mfaPending.current = false;
@@ -365,8 +371,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const sb = requireSupabase();
       mfaPending.current = true;
       try {
-        const { error } = await sb.auth.signInWithPassword({ phone, password });
+        const { data, error } = await sb.auth.signInWithPassword({ phone, password });
         if (error) throw error;
+        if (data.session?.access_token) {
+          setCachedToken(data.session.access_token);
+        }
         return await finishPasswordSignIn();
       } catch (e) {
         mfaPending.current = false;

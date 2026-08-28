@@ -18,10 +18,26 @@ const apiBaseUrl = rawApiBaseUrl
   : PROD_API_FALLBACK;
 setBaseUrl(apiBaseUrl ?? null);
 
+let _cachedToken: string | null = null;
+
+export function setCachedToken(token: string | null): void {
+  _cachedToken = token;
+}
+
+if (isSupabaseConfigured && supabase) {
+  supabase.auth.onAuthStateChange((_event, session) => {
+    _cachedToken = session?.access_token ?? null;
+  });
+}
+
 setAuthTokenGetter(async () => {
+  if (_cachedToken) return _cachedToken;
   if (isSupabaseConfigured && supabase) {
     const { data } = await supabase.auth.getSession();
-    if (data.session?.access_token) return data.session.access_token;
+    if (data.session?.access_token) {
+      _cachedToken = data.session.access_token;
+      return data.session.access_token;
+    }
     if (!import.meta.env.DEV) return null;
     // Dev-only: fall through to the dev bypass token below.
   }
