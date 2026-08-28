@@ -104,6 +104,14 @@ function AppStoreIcon({ className = "h-6 w-6" }: { className?: string }) {
   );
 }
 
+function AppleLogoIcon({ className = "h-6 w-6" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 170 170" fill="currentColor">
+      <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.08-7.6-7.81-11.7-14.18-6.19-9.58-11.01-20.57-14.46-32.96-3.45-12.39-5.18-24.08-5.18-35.07 0-14.7 3.65-26.69 10.96-35.98 7.31-9.29 16.48-14.07 27.5-14.34 4.58 0 9.87 1.25 15.88 3.76 6 2.51 10.02 3.82 12.06 3.94 1.63 0 5.86-1.39 12.69-4.16 6.83-2.77 12.61-4.01 17.33-3.71 13.06.84 23.36 5.83 30.9 14.97-11.53 7.02-17.18 16.74-16.96 29.17.22 10.14 4.1 18.57 11.64 25.29 7.54 6.72 16.59 10.42 27.15 11.11-2.4 7.42-5.46 14.95-9.17 22.58zM119.22 31.84c0-7.39 2.66-14.4 7.98-21.03 5.32-6.63 11.93-10.45 19.82-11.45.22 1.09.33 2.07.33 2.94 0 7.39-2.77 14.28-8.31 20.67-5.54 6.39-12.26 10.23-20.15 11.51-.11-.87-.17-1.75-.17-2.64z" />
+    </svg>
+  );
+}
+
 interface FloatingMessage {
   sender: string;
   text: string;
@@ -759,7 +767,7 @@ export default function App() {
                       className="clean-card p-4 rounded-2xl flex flex-col justify-between text-left group hover:border-purple-500 bg-white"
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <AppStoreIcon className="h-7 w-7 shrink-0 rounded-lg shadow-xs group-hover:scale-105 transition-transform" />
+                        <AppleLogoIcon className="h-7 w-7 text-slate-900 shrink-0 group-hover:scale-105 transition-transform" />
                         {config.mobileApp.appStoreComingSoon ? (
                           <span className="text-[10px] font-bold uppercase bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
                             Coming Soon
@@ -900,7 +908,7 @@ export default function App() {
                       className="clean-card p-4 rounded-2xl flex flex-col justify-between text-left group hover:border-fuchsia-500 bg-white"
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <AppStoreIcon className="h-7 w-7 shrink-0 rounded-lg shadow-xs group-hover:scale-105 transition-transform" />
+                        <AppleLogoIcon className="h-7 w-7 text-slate-900 shrink-0 group-hover:scale-105 transition-transform" />
                         {config.chatApp.appStoreComingSoon ? (
                           <span className="text-[10px] font-bold uppercase bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
                             Coming Soon
@@ -1037,9 +1045,9 @@ export default function App() {
 
             <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-purple-100 flex items-center justify-center shadow-xs">
               {activeModal.store === "Play Store" ? (
-                <GooglePlayIcon className="h-8 w-8" />
+                <GooglePlayIcon className="h-9 w-9" />
               ) : (
-                <AppStoreIcon className="h-8 w-8 rounded-xl shadow-xs" />
+                <AppleLogoIcon className="h-9 w-9 text-slate-900" />
               )}
             </div>
 
