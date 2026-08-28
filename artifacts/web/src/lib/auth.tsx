@@ -18,8 +18,8 @@ import "./api";
 // before requesting a code from Supabase. Fails OPEN on network/config
 // errors so a transient API blip can never lock everyone out of auth.
 const OTP_API_BASE = (() => {
-  const raw = import.meta.env.DEV ? undefined : (import.meta.env.VITE_API_URL as string | undefined);
-  if (!raw) return "";
+  const raw = import.meta.env.DEV ? undefined : ((import.meta.env.VITE_API_URL as string | undefined) || "https://workspaceapi-server-production-5e99.up.railway.app");
+  if (!raw) return "https://workspaceapi-server-production-5e99.up.railway.app";
   return /^https?:\/\//.test(raw) ? raw : `https://${raw}`;
 })();
 

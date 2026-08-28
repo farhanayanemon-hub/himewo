@@ -7,14 +7,15 @@ import {
 
 // In dev, always talk to the local API server via relative URLs (the proxy
 // routes /api to artifacts/api-server) — VITE_API_URL points at production.
+const PROD_API_FALLBACK = "https://workspaceapi-server-production-5e99.up.railway.app";
 const rawApiBaseUrl = import.meta.env.DEV
   ? undefined
-  : (import.meta.env.VITE_API_URL as string | undefined);
+  : ((import.meta.env.VITE_API_URL as string | undefined) || PROD_API_FALLBACK);
 const apiBaseUrl = rawApiBaseUrl
   ? /^https?:\/\//.test(rawApiBaseUrl)
     ? rawApiBaseUrl
     : `https://${rawApiBaseUrl}`
-  : undefined;
+  : PROD_API_FALLBACK;
 setBaseUrl(apiBaseUrl ?? null);
 
 setAuthTokenGetter(async () => {
