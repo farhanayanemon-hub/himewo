@@ -470,6 +470,8 @@ function Field({
 }: { icon: keyof typeof Ionicons.glyphMap } & React.ComponentProps<typeof TextInput>) {
   const c = useColors();
   const [isFocused, setIsFocused] = useState(false);
+  const isPassword = props.secureTextEntry || props.placeholder?.toLowerCase().includes("password");
+  const [showPass, setShowPass] = useState(false);
   return (
     <View style={[styles.field, { backgroundColor: c.card, borderColor: c.border }]}>
       <Ionicons name={icon} size={20} color={c.mutedForeground} />
@@ -478,6 +480,7 @@ function Field({
         placeholderTextColor={c.mutedForeground}
         underlineColorAndroid="transparent"
         {...props}
+        secureTextEntry={isPassword ? !showPass : false}
         onFocus={(e) => {
           setIsFocused(true);
           props.onFocus?.(e);
@@ -487,6 +490,15 @@ function Field({
           props.onBlur?.(e);
         }}
       />
+      {isPassword && (
+        <Pressable onPress={() => setShowPass((v) => !v)} hitSlop={8}>
+          <Ionicons
+            name={showPass ? "eye-off-outline" : "eye-outline"}
+            size={20}
+            color={c.mutedForeground}
+          />
+        </Pressable>
+      )}
     </View>
   );
 }

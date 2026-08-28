@@ -385,7 +385,7 @@ export default function ChatThreadScreen() {
   const canSend = text.trim().length > 0 && !sending;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top", "bottom"]}>
       <View style={[styles.header, { backgroundColor: c.card }, shadow("sm")]}>
         <Touchable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={c.foreground} />
@@ -423,7 +423,7 @@ export default function ChatThreadScreen() {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
         {isLoading ? (

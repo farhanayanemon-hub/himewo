@@ -868,7 +868,14 @@ export default function PageDetailScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={[styles.center, { backgroundColor: c.background }]}>
-        <Stack.Screen options={{ title: "Hub" }} />
+        <Stack.Screen options={{
+          title: "Hub",
+          headerLeft: () => (
+            <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")} hitSlop={8} style={{ paddingRight: 8 }}>
+              <Ionicons name="arrow-back" size={24} color={c.foreground ?? "#fff"} />
+            </Pressable>
+          ),
+        }} />
         <ActivityIndicator color={c.primary} size="large" />
       </SafeAreaView>
     );
@@ -877,7 +884,14 @@ export default function PageDetailScreen() {
   if (!page) {
     return (
       <SafeAreaView style={[styles.center, { backgroundColor: c.background }]}>
-        <Stack.Screen options={{ title: "Hub" }} />
+        <Stack.Screen options={{
+          title: "Hub",
+          headerLeft: () => (
+            <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")} hitSlop={8} style={{ paddingRight: 8 }}>
+              <Ionicons name="arrow-back" size={24} color={c.foreground ?? "#fff"} />
+            </Pressable>
+          ),
+        }} />
         <Text style={{ color: c.mutedForeground, fontFamily: "Inter_500Medium" }}>Hub not found</Text>
       </SafeAreaView>
     );
@@ -929,7 +943,14 @@ export default function PageDetailScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["bottom"]}>
-      <Stack.Screen options={{ title: page.name }} />
+      <Stack.Screen options={{
+        title: page.name,
+        headerLeft: () => (
+          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")} hitSlop={8} style={{ paddingRight: 8 }}>
+            <Ionicons name="arrow-back" size={24} color={c.foreground ?? "#fff"} />
+          </Pressable>
+        ),
+      }} />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         <Pressable
           style={[styles.cover, { backgroundColor: c.secondary }]}
