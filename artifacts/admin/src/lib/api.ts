@@ -12,7 +12,11 @@ function normalizeBase(raw?: string): string {
 // at the API origin, e.g. VITE_API_URL=https://api.himewo.com
 export const API_BASE = import.meta.env.DEV
   ? ""
-  : (normalizeBase(import.meta.env.VITE_API_URL as string) || "https://workspaceapi-server-production-5e99.up.railway.app");
+  : (() => {
+      const u = normalizeBase(import.meta.env.VITE_API_URL as string);
+      if (!u || u.includes("api.himewo.com")) return "https://workspaceapi-server-production-5e99.up.railway.app";
+      return u;
+    })();
 
 export async function getAuthToken(): Promise<string | null> {
   if (isSupabaseConfigured && supabase) {

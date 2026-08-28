@@ -10,13 +10,12 @@ import {
 const PROD_API_FALLBACK = "https://workspaceapi-server-production-5e99.up.railway.app";
 const rawApiBaseUrl = import.meta.env.DEV
   ? undefined
-  : ((import.meta.env.VITE_API_URL as string | undefined) || PROD_API_FALLBACK);
-const apiBaseUrl = rawApiBaseUrl
-  ? /^https?:\/\//.test(rawApiBaseUrl)
-    ? rawApiBaseUrl
-    : `https://${rawApiBaseUrl}`
-  : PROD_API_FALLBACK;
-setBaseUrl(apiBaseUrl ?? null);
+  : (() => {
+      const u = import.meta.env.VITE_API_URL as string | undefined;
+      if (!u || u.includes("api.himewo.com")) return PROD_API_FALLBACK;
+      return /^https?:\/\//.test(u) ? u : `https://${u}`;
+    })();
+setBaseUrl(rawApiBaseUrl ?? null);
 
 let _cachedToken: string | null = null;
 
