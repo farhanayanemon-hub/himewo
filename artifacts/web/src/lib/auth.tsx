@@ -172,7 +172,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const me = await getCurrentUser();
       setUser(me);
-    } catch {
+    } catch (err) {
+      console.warn("[Auth] getCurrentUser initial load failed, trying profile sync recovery:", err);
+      if (isSupabaseConfigured && supabase) {
+        try {
+          const { data } = await supabase.auth.getSession();
+          if (data.session?.user) {
+            const u = data.session.user;
+            const meta = u.user_metadata ?? {};
+            const fallbackName =
+              (meta.full_name as string) ||
+              (meta.name as string) ||
+              u.email?.split("@")[0] ||
+              "User";
+            const fallbackUsername = (
+              u.email?.split("@")[0] || `user${u.id.slice(0, 8)}`
+            ).replace(/[^a-zA-Z0-9_]/g, "");
+            await syncProfile({
+              id: u.id,
+              username: fallbackUsername,
+              displayName: fallbackName,
+              email: u.email ?? undefined,
+            });
+            const me2 = await getCurrentUser();
+            setUser(me2);
+            return;
+          }
+        } catch (syncErr) {
+          console.error("[Auth] Auto-recovery profile sync failed:", syncErr);
+        }
+      }
       setUser(null);
     }
   }, []);
