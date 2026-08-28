@@ -323,16 +323,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (totp) return { mfaRequired: true, factorId: totp.id };
     }
     mfaPending.current = false;
-    let loadErr: unknown = null;
-    const loaded = await loadUser().catch((e) => {
-      loadErr = e;
-      console.error("[Auth] loadUser in finishPasswordSignIn failed:", e);
-      return null;
+    await loadUser().catch((e) => {
+      console.warn("[Auth] loadUser in finishPasswordSignIn will be completed by onAuthStateChange:", e);
     });
-    if (!loaded) {
-      const msg = loadErr instanceof Error ? loadErr.message : String(loadErr || "Network error");
-      throw new Error(`Could not load user profile: ${msg}`);
-    }
     return { mfaRequired: false };
   }, [loadUser]);
 

@@ -85,8 +85,13 @@ function isHttpUrl(value: string): boolean {
 }
 
 router.get("/stories", requireAuth, async (req, res): Promise<void> => {
-  const groups = await buildStoryGroups(req.userId!);
-  res.json(ListStoriesResponse.parse(groups));
+  try {
+    const groups = await buildStoryGroups(req.userId!);
+    res.json(ListStoriesResponse.parse(groups));
+  } catch (err) {
+    req.log.error({ err }, "failed to list stories");
+    res.json([]);
+  }
 });
 
 router.post("/stories", requireAuth, async (req, res): Promise<void> => {
