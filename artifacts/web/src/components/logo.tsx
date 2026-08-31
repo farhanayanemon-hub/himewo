@@ -9,12 +9,13 @@ interface HiMewoLogoProps {
 }
 
 /**
- * HiMewo Official Logo:
+ * HiMewo Official Standalone Icon Mastermark:
+ * - Standalone bold icon emblem (NO text by default)
  * - Main Social App: Zoomed Authentic Pixel Cat (Clean Squircle)
  * - Standalone Chat App: Option 2 Pure White Messenger Bubble with Speech Tail
  */
 export function OriginalPixelCatLogo({
-  size = 48,
+  size = 52,
   className = "",
   glow = false,
   isChat = false,
@@ -58,19 +59,19 @@ export function OriginalPixelCatLogo({
 
 export function HiMewoLogo({
   size = "md",
-  withText = true,
+  withText = false, // Standalone icon by default (NO text beside logo)
   className = "",
   glow = false,
   isChat = false,
 }: HiMewoLogoProps) {
   const pixelSizes = {
-    sm: 34,
-    md: 48,
-    lg: 60,
-    xl: 76,
+    sm: 40,
+    md: 52,
+    lg: 68,
+    xl: 88,
   };
 
-  const iconPx = typeof size === "number" ? size : pixelSizes[size] || 48;
+  const iconPx = typeof size === "number" ? size : pixelSizes[size] || 52;
   const textClasses = {
     sm: "text-xl",
     md: "text-2xl md:text-3xl",

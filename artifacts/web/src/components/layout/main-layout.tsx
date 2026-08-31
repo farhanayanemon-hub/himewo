@@ -252,11 +252,8 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
               user={user}
               onSignOut={signOut}
             />
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <PixelCatIcon size={28} glow className="group-hover:scale-110 transition-transform" />
-              <span className="text-2xl font-extrabold tracking-tight aurora-gradient-text">
-                HiMewo
-              </span>
+            <Link href="/" className="flex items-center group" aria-label="HiMewo Home">
+              <PixelCatIcon size={46} glow={false} className="group-hover:scale-110 transition-transform" />
             </Link>
 
             <form onSubmit={handleSearch} className="hidden md:flex relative">

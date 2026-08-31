@@ -122,18 +122,12 @@ export default function LoginScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <View style={styles.brand}>
+        <View style={[styles.brand, { alignItems: "center", marginBottom: 20 }]}>
           <Image
             source={require("@/assets/images/icon.png")}
-            style={{ width: 92, height: 92, borderRadius: 26, marginBottom: 8 }}
+            style={{ width: 115, height: 115, borderRadius: 30, marginBottom: 12 }}
             resizeMode="contain"
           />
-          <Text style={[styles.title, { color: c.foreground, fontSize: 32, fontFamily: "Inter_900Black" }]}>
-            HiMewo <Text style={{ color: "#a855f7" }}>Chat</Text>
-          </Text>
-          <Text style={{ color: c.mutedForeground, fontSize: fs(15), textAlign: "center" }}>
-            Messenger — message, call & connect instantly 💬
-          </Text>
         </View>
 
         {supabaseEnabled ? (
