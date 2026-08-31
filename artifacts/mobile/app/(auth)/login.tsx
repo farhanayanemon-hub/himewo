@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   ScrollView,
   Text,
@@ -145,12 +146,16 @@ export default function LoginScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.brand}>
-          <View style={[styles.logo, { backgroundColor: c.primary }]}>
-            <Ionicons name="chatbubble-ellipses" size={34} color="#fff" />
-          </View>
-          <Text style={[styles.title, { color: c.primary }]}>HiMewo</Text>
-          <Text style={{ color: c.mutedForeground, fontSize: 14 }}>
-            Connect with friends and the world
+          <Image
+            source={require("@/assets/images/icon.png")}
+            style={{ width: 88, height: 88, borderRadius: 24, marginBottom: 8 }}
+            resizeMode="contain"
+          />
+          <Text style={[styles.title, { color: c.foreground, fontSize: 32, fontFamily: "Inter_900Black" }]}>
+            HiMewo
+          </Text>
+          <Text style={{ color: c.mutedForeground, fontSize: 15, textAlign: "center" }}>
+            Connect with friends and the world 🐾
           </Text>
         </View>
 

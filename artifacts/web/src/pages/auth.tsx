@@ -505,9 +505,9 @@ export default function AuthPage() {
       <div className="flex-1 flex items-center justify-center px-4 py-10">
         <div className="w-full max-w-[980px] grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
           <div className="text-center md:text-left animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex items-center justify-center md:justify-start gap-4 mb-2">
-              <PixelCatIcon size={54} glow />
-              <h1 className="aurora-gradient-text text-5xl md:text-6xl font-extrabold tracking-tight drop-shadow-sm">
+            <div className="flex items-center justify-center md:justify-start gap-4 mb-3">
+              <PixelCatIcon size={64} glow={false} />
+              <h1 className="text-white text-5xl md:text-6xl font-extrabold tracking-tight drop-shadow-sm">
                 HiMewo
               </h1>
             </div>

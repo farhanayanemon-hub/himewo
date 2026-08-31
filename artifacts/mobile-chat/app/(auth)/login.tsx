@@ -4,6 +4,7 @@ import { shadow, glow } from "@/constants/shadows";
 import { useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   ScrollView,
   Text,
@@ -122,17 +123,16 @@ export default function LoginScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.brand}>
-          <LinearGradient
-            colors={[...auroraGradient]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[styles.logo, glow(c.primary)]}
-          >
-            <Ionicons name="chatbubble-ellipses" size={34} color="#fff" />
-          </LinearGradient>
-          <Text style={[styles.title, { color: c.primary }]}>HiMewo Chat</Text>
-          <Text style={{ color: c.mutedForeground, fontSize: fs(14) }}>
-            Messenger — message, call & connect instantly
+          <Image
+            source={require("@/assets/images/icon.png")}
+            style={{ width: 92, height: 92, borderRadius: 26, marginBottom: 8 }}
+            resizeMode="contain"
+          />
+          <Text style={[styles.title, { color: c.foreground, fontSize: 32, fontFamily: "Inter_900Black" }]}>
+            HiMewo <Text style={{ color: "#a855f7" }}>Chat</Text>
+          </Text>
+          <Text style={{ color: c.mutedForeground, fontSize: fs(15), textAlign: "center" }}>
+            Messenger — message, call & connect instantly 💬
           </Text>
         </View>
 
