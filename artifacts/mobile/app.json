@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/images/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#090D16"
     },
     "ios": {
       "supportsTablet": false
@@ -19,8 +19,8 @@
     "android": {
       "package": "com.himewo.app",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#090D16"
       },
       "permissions": [
         "android.permission.RECORD_AUDIO",
