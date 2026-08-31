@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HiMewo — Aurora Duo Brand Identity</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(18, 24, 38, 0.92);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 50px 20px 80px;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(6, 182, 212, 0.18) 0%, transparent 45%),
+        radial-gradient(circle at 85% 25%, rgba(168, 85, 247, 0.18) 0%, transparent 45%),
+        radial-gradient(circle at 50% 80%, rgba(236, 72, 153, 0.12) 0%, transparent 50%);
+    }
+
+    .container {
+      max-width: 1060px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 16px;
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 38px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    p.sub {
+      color: var(--text-muted);
+      font-size: 16px;
+    }
+
+    .duo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 36px;
+      margin-bottom: 40px;
+    }
+
+    @media (max-width: 768px) {
+      .duo-grid { grid-template-columns: 1fr; }
+    }
+
+    .duo-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 28px;
+      padding: 36px 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      backdrop-filter: blur(24px);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .duo-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .duo-card.main-app {
+      border: 1.5px solid rgba(56, 189, 248, 0.4);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5), 0 0 30px rgba(56, 189, 248, 0.15);
+    }
+
+    .duo-card.chat-app {
+      border: 1.5px solid rgba(168, 85, 247, 0.4);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5), 0 0 30px rgba(168, 85, 247, 0.15);
+    }
+
+    .app-tag {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 5px 14px;
+      border-radius: 9999px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .app-tag.main {
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .app-tag.chat {
+      background: rgba(168, 85, 247, 0.15);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.3);
+    }
+
+    .icon-holder {
+      width: 130px;
+      height: 130px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      transition: transform 0.2s ease;
+      cursor: pointer;
+    }
+
+    .icon-holder:hover {
+      transform: scale(1.08);
+    }
+
+    .brand-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+
+    .grad-main {
+      background: linear-gradient(135deg, #38bdf8 0%, #a855f7 50%, #ec4899 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .grad-chat {
+      background: linear-gradient(135deg, #a855f7 0%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .app-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      max-width: 320px;
+    }
+
+    .navbar-preview-section {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 28px;
+    }
+
+    .nav-box {
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(12px);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="badge">Official Aurora Brand Identity</div>
+      <h1>HiMewo Aurora Duo Logos</h1>
+      <p class="sub">The Aurora Ribbon System — Main Social Web/Mobile & Dedicated Messenger Chat</p>
+    </header>
+
+    <div class="duo-grid">
+
+      <!-- 1. Main Social App: The Aurora H-Wave Monogram -->
+      <div class="duo-card main-app">
+        <span class="app-tag main">🌐 Main Social App & Web</span>
+        
+        <div class="icon-holder">
+          <!-- Fluid 3D Aurora H-Wave Ribbon Vector -->
+          <svg width="110" height="110" viewBox="0 0 100 100" fill="none" style="filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.5)) drop-shadow(0 0 30px rgba(168, 85, 247, 0.3));">
+            <!-- Left Stem & Loop -->
+            <path d="M24 82 C24 82, 18 42, 34 22 C44 10, 52 14, 46 32 C40 50, 32 64, 30 78 C28 84, 24 82, 24 82 Z" fill="url(#aurora_stem_left)" />
+            <!-- Bridge Wave connecting to Right Stem -->
+            <path d="M30 52 C42 46, 58 46, 70 52 C76 55, 78 48, 70 42 C56 34, 40 34, 28 42 C22 46, 24 54, 30 52 Z" fill="url(#aurora_bridge)" />
+            <!-- Right Stem & Loop (forming H / M wave) -->
+            <path d="M76 82 C76 82, 82 42, 66 22 C56 10, 48 14, 54 32 C60 50, 68 64, 70 78 C72 84, 76 82, 76 82 Z" fill="url(#aurora_stem_right)" />
+            <defs>
+              <linearGradient id="aurora_stem_left" x1="20" y1="20" x2="50" y2="80" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#00F0FF" />
+                <stop offset="0.6" stop-color="#3B82F6" />
+                <stop offset="1" stop-color="#8B5CF6" />
+              </linearGradient>
+              <linearGradient id="aurora_bridge" x1="25" y1="45" x2="75" y2="45" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#38BDF8" />
+                <stop offset="0.5" stop-color="#A855F7" />
+                <stop offset="1" stop-color="#EC4899" />
+              </linearGradient>
+              <linearGradient id="aurora_stem_right" x1="80" y1="20" x2="50" y2="80" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#EC4899" />
+                <stop offset="0.6" stop-color="#D946EF" />
+                <stop offset="1" stop-color="#8B5CF6" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+
+        <div class="brand-name grad-main">HiMewo</div>
+        <div class="app-subtitle">The Aurora H-Wave: Fluid modern ribbon monogram representing momentum and social connection.</div>
+      </div>
+
+      <!-- 2. Chat App: The Aurora Speech Wave -->
+      <div class="duo-card chat-app">
+        <span class="app-tag chat">💬 HiMewo Chat / Messenger</span>
+
+        <div class="icon-holder">
+          <!-- Aurora Ribbon Chat Speech Bubble Vector -->
+          <svg width="110" height="110" viewBox="0 0 100 100" fill="none" style="filter: drop-shadow(0 0 16px rgba(168, 85, 247, 0.5)) drop-shadow(0 0 30px rgba(56, 189, 248, 0.3));">
+            <!-- Fluid Ribbon Chat Bubble -->
+            <path d="M22 34 C22 18, 40 12, 54 12 C74 12, 88 22, 88 40 C88 56, 76 68, 56 68 C46 68, 38 65, 30 72 L32 60 C25 54, 22 45, 22 34 Z" stroke="url(#chat_ribbon_stroke)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+            <!-- Inner Dynamic Chat Wave -->
+            <path d="M38 40 C44 32, 56 32, 62 40 C68 48, 56 52, 48 48" stroke="url(#chat_wave)" stroke-width="5" stroke-linecap="round" fill="none" />
+            <circle cx="62" cy="48" r="3" fill="#00F0FF" />
+            <defs>
+              <linearGradient id="chat_ribbon_stroke" x1="20" y1="12" x2="88" y2="72" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#00F0FF" />
+                <stop offset="0.5" stop-color="#A855F7" />
+                <stop offset="1" stop-color="#EC4899" />
+              </linearGradient>
+              <linearGradient id="chat_wave" x1="38" y1="40" x2="65" y2="48" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#EC4899" />
+                <stop offset="1" stop-color="#00F0FF" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+
+        <div class="brand-name grad-chat">HiMewo <span style="color: #c084fc; -webkit-text-fill-color: #c084fc; font-weight: 700; font-size: 24px;">Chat</span></div>
+        <div class="app-subtitle">The Aurora Chat Wave: Matching fluid ribbon speech bubble for dedicated messenger, voice and video.</div>
+      </div>
+
+    </div>
+
+    <!-- Live Desktop Navbar Placement -->
+    <div class="navbar-preview-section">
+      <div style="font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 16px; text-align: center;">
+        🖥️ Desktop Website Navbar Placement
+      </div>
+      <div class="nav-box">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <!-- Aurora H-Wave in Navbar -->
+          <svg width="34" height="34" viewBox="0 0 100 100" fill="none" style="filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));">
+            <path d="M24 82 C24 82, 18 42, 34 22 C44 10, 52 14, 46 32 C40 50, 32 64, 30 78 C28 84, 24 82, 24 82 Z" fill="url(#nav_stem_left)" />
+            <path d="M30 52 C42 46, 58 46, 70 52 C76 55, 78 48, 70 42 C56 34, 40 34, 28 42 C22 46, 24 54, 30 52 Z" fill="url(#nav_bridge)" />
+            <path d="M76 82 C76 82, 82 42, 66 22 C56 10, 48 14, 54 32 C60 50, 68 64, 70 78 C72 84, 76 82, 76 82 Z" fill="url(#nav_stem_right)" />
+            <defs>
+              <linearGradient id="nav_stem_left" x1="20" y1="20" x2="50" y2="80" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#00F0FF" />
+                <stop offset="1" stop-color="#8B5CF6" />
+              </linearGradient>
+              <linearGradient id="nav_bridge" x1="25" y1="45" x2="75" y2="45" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#38BDF8" />
+                <stop offset="1" stop-color="#EC4899" />
+              </linearGradient>
+              <linearGradient id="nav_stem_right" x1="80" y1="20" x2="50" y2="80" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#EC4899" />
+                <stop offset="1" stop-color="#8B5CF6" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <span style="font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 800; background: linear-gradient(135deg, #38bdf8, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">HiMewo</span>
+        </div>
+
+        <div style="display: flex; gap: 16px; align-items: center;">
+          <div style="background: rgba(255,255,255,0.06); padding: 8px 20px; border-radius: 9999px; font-size: 13px; color: #94a3b8;">
+            🔍 Search HiMewo...
+          </div>
+          <div style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #38bdf8, #a855f7);"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

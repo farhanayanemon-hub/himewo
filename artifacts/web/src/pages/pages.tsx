@@ -683,7 +683,7 @@ function EditPageDialog({
         </div>
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSave} disabled={!name.trim() || updatePage.isPending}>
+          <Button onClick={handleSave} disabled={updatePage.isPending}>
             {updatePage.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
             Save
           </Button>
@@ -1151,7 +1151,7 @@ function PageDetail({ id }: { id: number }) {
               <div className="text-center sm:text-left pt-1 sm:pt-0 sm:pb-1">
                 <h1 className="text-2xl sm:text-3xl font-bold flex items-center justify-center sm:justify-start gap-2">
                   <span className="text-foreground tracking-tight">{page.name}</span>
-                  {page.isVerified && <VerifiedBadge className="w-6 h-6" />}
+                  {(page as any).isVerified && <VerifiedBadge className="w-6 h-6" />}
                 </h1>
                 <p className="text-muted-foreground text-sm font-medium">{page.category}</p>
                 <div className="text-sm text-muted-foreground font-medium flex items-center justify-center sm:justify-start gap-3 mt-1.5">

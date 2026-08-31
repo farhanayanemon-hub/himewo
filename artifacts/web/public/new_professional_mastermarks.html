@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HiMewo — New Professional Mastermark Collection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #080C16;
+      --card-bg: rgba(15, 22, 38, 0.94);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --cyan: #00F0FF;
+      --purple: #8B5CF6;
+      --pink: #EC4899;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 50px 20px 100px;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(0, 240, 255, 0.14) 0%, transparent 45%),
+        radial-gradient(circle at 85% 25%, rgba(139, 92, 246, 0.14) 0%, transparent 45%),
+        radial-gradient(circle at 50% 80%, rgba(236, 72, 153, 0.1) 0%, transparent 50%);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 18px;
+      background: rgba(0, 240, 255, 0.12);
+      color: var(--cyan);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 42px;
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+
+    p.sub {
+      color: var(--text-muted);
+      font-size: 16px;
+      max-width: 650px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 28px;
+      margin-bottom: 44px;
+    }
+
+    .master-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 26px;
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      backdrop-filter: blur(24px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      position: relative;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .master-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(0, 240, 255, 0.4);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 240, 255, 0.2);
+    }
+
+    .master-card.featured {
+      border: 1.5px solid rgba(0, 240, 255, 0.6);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6), 0 0 32px rgba(0, 240, 255, 0.25);
+    }
+
+    .master-card.featured::before {
+      content: '★ TOP RECOMMENDATION';
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: linear-gradient(135deg, #00F0FF, #8B5CF6);
+      color: #000;
+      font-size: 9px;
+      font-weight: 900;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      letter-spacing: 0.5px;
+    }
+
+    .logo-box {
+      width: 140px;
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 12px 0 22px;
+      transition: transform 0.2s ease;
+    }
+
+    .master-card:hover .logo-box {
+      transform: scale(1.08);
+    }
+
+    .opt-tag {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .opt-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .opt-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+
+    .duo-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      width: 100%;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .duo-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+
+    .duo-item span.dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--cyan);
+    }
+
+    .navbar-section {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 26px;
+      padding: 30px;
+    }
+
+    .nav-bar {
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(12px);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="badge">Bespoke Vector Mastermarks</div>
+      <h1>HiMewo 6 New Professional Brand Logos</h1>
+      <p class="sub">100% pure precision vector geometry — razor sharp at all screen resolutions with matching Main App and Standalone Chat editions</p>
+    </header>
+
+    <div class="grid-3">
+
+      <!-- 1. The Aurora Mewo Bubble (Discord/Apple Grade) -->
+      <div class="master-card featured">
+        <div class="opt-tag">Design 1 (Top Recommended)</div>
+        <div class="logo-box">
+          <!-- Design 1: Geometric Aurora Speech Bubble Cat -->
+          <svg width="110" height="110" viewBox="0 0 100 100" fill="none" style="filter: drop-shadow(0 0 16px rgba(0, 240, 255, 0.6)) drop-shadow(0 0 32px rgba(139, 92, 246, 0.4));">
+            <!-- Smooth Continuous Speech Bubble Cat Silhouette -->
+            <path d="M18 36 C18 22, 28 8, 36 16 C44 23, 56 23, 64 16 C72 8, 82 22, 82 36 C86 54, 82 78, 50 78 C36 78, 24 74, 12 86 L16 68 C8 56, 12 46, 18 36 Z" fill="url(#grad_d1)" />
+            <!-- Soft Depth Shimmer Stroke -->
+            <path d="M24 38 C24 28, 32 16, 38 22 C44 26, 56 26, 62 22 C68 16, 76 28, 76 38 C79 50, 76 70, 50 70 C38 70, 28 66, 20 76" stroke="rgba(255,255,255,0.4)" stroke-width="2.5" stroke-linecap="round" fill="none" />
+            <!-- Minimalist Circular Eyes -->
+            <circle cx="40" cy="46" r="4.5" fill="#080C16" />
+            <circle cx="60" cy="46" r="4.5" fill="#080C16" />
+            <circle cx="41.5" cy="44" r="1.6" fill="#ffffff" />
+            <circle cx="61.5" cy="44" r="1.6" fill="#ffffff" />
+            <!-- Sweet Little Smile -->
+            <path d="M47 55 Q50 58 53 55" stroke="#080C16" stroke-width="2.5" stroke-linecap="round" fill="none" />
+            <!-- Glowing Blush -->
+            <circle cx="32" cy="52" r="3.5" fill="#EC4899" opacity="0.8" />
+            <circle cx="68" cy="52" r="3.5" fill="#EC4899" opacity="0.8" />
+            <defs>
+              <linearGradient id="grad_d1" x1="12" y1="8" x2="86" y2="86" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#00F0FF" />
+                <stop offset="0.5" stop-color="#8B5CF6" />
+                <stop offset="1" stop-color="#EC4899" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="opt-title">The Aurora Mewo Bubble</div>
+        <div class="opt-desc">Geometric speech bubble cat silhouette with smooth aerodynamic ears, soft depth lighting, and cheerful eyes.</div>
+        <div class="duo-row">
+          <div class="duo-item"><span class="dot"></span> Main App: Aurora</div>
+          <div class="duo-item"><span class="dot" style="background: #a855f7;"></span> Chat App: Messenger Badge</div>
+        </div>
+      </div>
+
+      <!-- 2. The Infinity Ribbon Mewo (Meta / Linear Grade) -->
+      <div class="master-card">
+        <div class="opt-tag">Design 2</div>
+        <div class="logo-box">
+          <!-- Design 2: Single Interlocking Ribbon Cat -->
+          <svg width="110" height="110" viewBox="0 0 100 100" fill="none" style="filter: drop-shadow(0 0 16px rgba(139, 92, 246, 0.6));">
+            <!-- Fluid Interlocking Ribbon forming H and Cat Ears -->
+            <path d="M26 78 C16 78, 14 58, 24 42 C30 32, 40 18, 46 26 C50 30, 50 30, 54 26 C60 18, 70 32, 76 42 C86 58, 84 78, 74 78 C64 78, 54 68, 50 56 C46 68, 36 78, 26 78 Z" stroke="url(#grad_d2)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+            <circle cx="38" cy="46" r="3.5" fill="#00F0FF" />
+            <circle cx="62" cy="46" r="3.5" fill="#00F0FF" />
+            <defs>
+              <linearGradient id="grad_d2" x1="14" y1="18" x2="86" y2="78" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#00F0FF" />
+                <stop offset="0.5" stop-color="#8B5CF6" />
+                <stop offset="1" stop-color="#EC4899" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="opt-title">The Infinity Ribbon Cat</div>
+        <div class="opt-desc">Unbroken fluid ribbon looping seamlessly into cat ears and an infinity connection symbol. Ultra-modern.</div>
+        <div class="duo-row">
+          <div class="duo-item"><span class="dot"></span> Main App: Infinity Loop</div>
+          <div class="duo-item"><span class="dot" style="background: #a855f7;"></span> Chat App: Speech Loop</div>
+        </div>
+      </div>
+
+      <!-- 3. The Minimalist Precision Monoline (Apple Grade) -->
+      <div class="master-card">
+        <div class="opt-tag">Design 3</div>
+        <div class="logo-box">
+          <!-- Design 3: Golden-Ratio Precision Monoline -->
+          <svg width="110" height="110" viewBox="0 0 100 100" fill="none" style="filter: drop-shadow(0 0 14px rgba(0, 240, 255, 0.5));">
+            <path d="M22 76 C22 62, 28 50, 34 36 C36 30, 44 16, 48 22 C52 28, 60 28, 64 22 C68 16, 76 30, 74 42 C72 56, 66 74, 52 76 C42 76, 32 74, 18 86 L20 72" stroke="url(#grad_d3)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+            <path d="M46 44 C44 42, 41 45, 46 50 C51 45, 48 42, 46 44 Z" fill="url(#grad_d3)" />
+            <circle cx="38" cy="38" r="2.5" fill="#00F0FF" />
+            <circle cx="58" cy="38" r="2.5" fill="#00F0FF" />
+            <defs>
+              <linearGradient id="grad_d3" x1="18" y1="16" x2="76" y2="86" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#00F0FF" />
+                <stop offset="0.5" stop-color="#3B82F6" />
+                <stop offset="1" stop-color="#8B5CF6" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="opt-title">Precision Monoline Cat</div>
+        <div class="opt-desc">Apple-level continuous golden-ratio vector line forming a sleek cat profile and integrated chat tail.</div>
+        <div class="duo-row">
+          <div class="duo-item"><span class="dot"></span> Main App: Cyan Monoline</div>
+          <div class="duo-item"><span class="dot" style="background: #a855f7;"></span> Chat App: Purple Monoline</div>
+        </div>
+      </div>
+
+      <!-- 4. The 3D Glass VisionOS Prism (Apple VisionOS Grade) -->
+      <div class="master-card">
+        <div class="opt-tag">Design 4</div>
+        <div class="logo-box">
+          <svg width="110" height="110" viewBox="0 0 100 100" fill="none" style="filter: drop-shadow(0 0 20px rgba(0, 240, 255, 0.4));">
+            <!-- Frosted Glass Squircle Outer -->
+            <rect width="96" height="96" x="2" y="2" rx="28" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.2)" stroke-width="2" />
+            <!-- Floating Glowing Aurora Core -->
+            <circle cx="50" cy="50" r="26" fill="url(#grad_d4)" opacity="0.6" style="filter: blur(14px);" />
+            <!-- Sleek Minimalist Cat Face inside -->
+            <path d="M26 38 C26 34, 34 22, 39 28 C44 32, 56 32, 61 28 C66 22, 74 34, 74 38 C76 50, 74 68, 50 68 C26 68, 24 50, 26 38 Z" fill="#ffffff" />
+            <circle cx="40" cy="48" r="4" fill="#080C16" />
+            <circle cx="60" cy="48" r="4" fill="#080C16" />
+            <defs>
+              <linearGradient id="grad_d4" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#00F0FF" />
+                <stop offset="1" stop-color="#EC4899" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="opt-title">VisionOS Glass Prism</div>
+        <div class="opt-desc">Translucent frosted crystal glass squircle tile with floating glowing neon core and crisp white cat face.</div>
+        <div class="duo-row">
+          <div class="duo-item"><span class="dot"></span> Main App: Glass Aurora</div>
+          <div class="duo-item"><span class="dot" style="background: #a855f7;"></span> Chat App: Glass Messenger</div>
+        </div>
+      </div>
+
+      <!-- 5. The Cyber Acoustic Wave (Spotify / Arc Grade) -->
+      <div class="master-card">
+        <div class="opt-tag">Design 5</div>
+        <div class="logo-box">
+          <svg width="110" height="110" viewBox="0 0 100 100" fill="none" style="filter: drop-shadow(0 0 16px rgba(236, 72, 153, 0.5));">
+            <path d="M20 74 C20 60, 26 48, 32 38 C34 32, 40 20, 44 26 C48 32, 56 32, 60 26 C64 20, 70 32, 68 42 C66 56, 60 74, 48 74 C40 74, 30 72, 16 84 L18 70 Z" fill="url(#grad_d5)" />
+            <!-- Radiating Sound & Speech Waves -->
+            <path d="M68 44 C74 48, 74 56, 68 60" stroke="#00F0FF" stroke-width="3" stroke-linecap="round" fill="none" />
+            <path d="M76 38 C84 46, 84 58, 76 66" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round" fill="none" />
+            <path d="M84 32 C94 44, 94 60, 84 72" stroke="#EC4899" stroke-width="3" stroke-linecap="round" fill="none" />
+            <defs>
+              <linearGradient id="grad_d5" x1="16" y1="20" x2="68" y2="84" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#00F0FF" />
+                <stop offset="0.5" stop-color="#8B5CF6" />
+                <stop offset="1" stop-color="#EC4899" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="opt-title">Acoustic Social Wave</div>
+        <div class="opt-desc">Dynamic communication frequency waves emanating from the cat profile — for social feed, voice and reels.</div>
+        <div class="duo-row">
+          <div class="duo-item"><span class="dot"></span> Main App: Tri-Wave</div>
+          <div class="duo-item"><span class="dot" style="background: #a855f7;"></span> Chat App: Voice Pulse</div>
+        </div>
+      </div>
+
+      <!-- 6. The Minimalist Architectural Monogram (Twitter / Stripe Grade) -->
+      <div class="master-card">
+        <div class="opt-tag">Design 6</div>
+        <div class="logo-box">
+          <svg width="110" height="110" viewBox="0 0 100 100" fill="none" style="filter: drop-shadow(0 0 16px rgba(0, 240, 255, 0.6));">
+            <!-- Modern Letter H with Cat Ear Apexes -->
+            <path d="M28 24 L40 24 L40 44 L60 44 L60 24 L72 24 L72 76 L60 76 L60 56 L40 56 L40 76 L28 76 Z" fill="url(#grad_d6)" />
+            <polygon points="34,14 40,24 28,24" fill="#00F0FF" />
+            <polygon points="66,14 72,24 60,24" fill="#EC4899" />
+            <defs>
+              <linearGradient id="grad_d6" x1="28" y1="14" x2="72" y2="76" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#00F0FF" />
+                <stop offset="0.5" stop-color="#8B5CF6" />
+                <stop offset="1" stop-color="#EC4899" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="opt-title">Architectural H-Mewo</div>
+        <div class="opt-desc">Bold titanium architectural letter 'H' with geometric cat ear apexes and bridging connection. Powerful tech mark.</div>
+        <div class="duo-row">
+          <div class="duo-item"><span class="dot"></span> Main App: H Monogram</div>
+          <div class="duo-item"><span class="dot" style="background: #a855f7;"></span> Chat App: Inverted Badge</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Live Desktop Navbar Placement -->
+    <div class="navbar-section">
+      <div style="font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 16px; text-align: center;">
+        🖥️ Desktop Website Navbar Placement (Design 1: The Aurora Mewo Bubble)
+      </div>
+      <div class="nav-bar">
+        <div style="display: flex; align-items: center; gap: 14px; cursor: pointer;">
+          <!-- 36px Pure Vector SVG in Navbar -->
+          <svg width="36" height="36" viewBox="0 0 100 100" fill="none" style="filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.7));">
+            <path d="M18 36 C18 22, 28 8, 36 16 C44 23, 56 23, 64 16 C72 8, 82 22, 82 36 C86 54, 82 78, 50 78 C36 78, 24 74, 12 86 L16 68 C8 56, 12 46, 18 36 Z" fill="url(#nav_d1)" />
+            <circle cx="40" cy="46" r="4.5" fill="#080C16" />
+            <circle cx="60" cy="46" r="4.5" fill="#080C16" />
+            <circle cx="41.5" cy="44" r="1.6" fill="#ffffff" />
+            <circle cx="61.5" cy="44" r="1.6" fill="#ffffff" />
+            <path d="M47 55 Q50 58 53 55" stroke="#080C16" stroke-width="2.5" stroke-linecap="round" fill="none" />
+            <defs>
+              <linearGradient id="nav_d1" x1="12" y1="8" x2="86" y2="86" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#00F0FF" />
+                <stop offset="0.5" stop-color="#8B5CF6" />
+                <stop offset="1" stop-color="#EC4899" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <span style="font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 800; background: linear-gradient(135deg, #00F0FF, #8B5CF6, #EC4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">HiMewo</span>
+        </div>
+
+        <div style="display: flex; gap: 16px; align-items: center;">
+          <div style="background: rgba(255,255,255,0.06); padding: 8px 20px; border-radius: 9999px; font-size: 13px; color: #94a3b8;">
+            🔍 Search HiMewo...
+          </div>
+          <div style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #00F0FF, #8B5CF6);"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

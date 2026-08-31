@@ -149,7 +149,7 @@ export function MusicPickerButton({
       <Dialog open={open} onOpenChange={close}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Add music to your story</DialogTitle>
+            <DialogTitle>Add music & songs</DialogTitle>
           </DialogHeader>
 
           {!uploadMode ? (
@@ -157,34 +157,61 @@ export function MusicPickerButton({
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search songs, artists, moods..."
-                className="w-full bg-muted/50 border-none rounded-xl px-4 py-2.5 text-sm focus:ring-1 focus:ring-primary focus:outline-none"
+                placeholder="Search Bangla, Hindi, artists, moods..."
+                className="w-full bg-muted/50 border border-border/50 rounded-xl px-4 py-2.5 text-sm focus:ring-1 focus:ring-primary focus:outline-none"
               />
+
+              {/* Category Filter Tabs */}
+              <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs font-medium">
+                {[
+                  { id: "", label: "All" },
+                  { id: "Bangla", label: "🇧🇩 Bangla" },
+                  { id: "Hindi", label: "🇮🇳 Hindi" },
+                  { id: "Lo-Fi", label: "🎧 Lo-Fi" },
+                  { id: "Folk", label: "🪕 Folk" },
+                  { id: "Trending", label: "🔥 Trending" },
+                ].map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setQuery(cat.id)}
+                    className={`px-3 py-1 rounded-full shrink-0 transition-colors ${
+                      (query === cat.id || (!query && !cat.id))
+                        ? "bg-primary text-primary-foreground font-semibold"
+                        : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+
               <div className="max-h-72 overflow-y-auto space-y-1">
                 {isLoading ? (
                   <div className="py-8 flex justify-center">
                     <Loader2 className="w-5 h-5 animate-spin text-primary" />
                   </div>
                 ) : (tracks ?? []).length === 0 ? (
-                  <p className="py-8 text-center text-sm text-muted-foreground">
-                    No tracks found.
-                  </p>
+                  <div className="py-8 text-center text-sm text-muted-foreground space-y-2">
+                    <p>No tracks found for "{query}".</p>
+                    <p className="text-xs">You can upload your own custom song or MP3 audio below!</p>
+                  </div>
                 ) : (
                   tracks!.map((t) => (
                     <div
                       key={t.id}
-                      className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-muted/60"
+                      className="flex items-center gap-2 rounded-xl p-2 hover:bg-muted/60 transition-colors group"
                     >
                       <button
                         type="button"
                         onClick={() => togglePreview(t.url)}
-                        className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0"
+                        className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0 hover:bg-primary/20 transition-colors"
                         aria-label="Preview"
                       >
                         {playingUrl === t.url ? (
-                          <Pause className="w-4 h-4" />
+                          <Pause className="w-4 h-4 fill-primary" />
                         ) : (
-                          <Play className="w-4 h-4" />
+                          <Play className="w-4 h-4 fill-primary ml-0.5" />
                         )}
                       </button>
                       <button
@@ -196,11 +223,11 @@ export function MusicPickerButton({
                           close(false);
                         }}
                       >
-                        <div className="text-sm font-medium truncate">{t.title}</div>
+                        <div className="text-sm font-semibold truncate group-hover:text-primary transition-colors">{t.title}</div>
                         <div className="text-xs text-muted-foreground truncate">
                           {t.artist ?? "Unknown artist"}
                           {t.mood ? ` · ${t.mood}` : ""}
-                          {t.source === "upload" ? " · your upload" : ""}
+                          {t.source === "upload" ? " · community upload" : ""}
                         </div>
                       </button>
                     </div>
@@ -209,11 +236,11 @@ export function MusicPickerButton({
               </div>
               <Button
                 type="button"
-                variant="ghost"
-                className="gap-2 justify-start"
+                variant="outline"
+                className="gap-2 justify-center w-full rounded-xl"
                 onClick={() => setUploadMode(true)}
               >
-                <Upload className="w-4 h-4" /> Upload your own audio
+                <Upload className="w-4 h-4 text-primary" /> Upload your own MP3 song
               </Button>
             </>
           ) : (

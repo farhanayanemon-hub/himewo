@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HiMewo — 6 Professional Icon Design Styles Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(18, 24, 38, 0.85);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 40px 20px 80px;
+      background-image: 
+        radial-gradient(circle at 20% 15%, rgba(56, 189, 248, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 80% 25%, rgba(168, 85, 247, 0.12) 0%, transparent 45%),
+        radial-gradient(circle at 50% 80%, rgba(236, 72, 153, 0.08) 0%, transparent 50%);
+    }
+
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 16px;
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 38px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 16px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .styles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(370px, 1fr));
+      gap: 28px;
+    }
+
+    .style-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 28px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .style-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(56, 189, 248, 0.3);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5), 0 0 30px rgba(56, 189, 248, 0.1);
+    }
+
+    .style-card.recommended {
+      border: 1.5px solid rgba(56, 189, 248, 0.5);
+    }
+
+    .style-card.recommended::before {
+      content: '★ MOST RECOMMENDED';
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: linear-gradient(135deg, #06b6d4, #3b82f6);
+      color: white;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      letter-spacing: 0.5px;
+    }
+
+    .style-num {
+      font-size: 12px;
+      font-weight: 700;
+      color: #38bdf8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .card-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 6px;
+    }
+
+    .card-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    .icons-row {
+      display: flex;
+      justify-content: space-between;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 18px;
+      padding: 14px 10px;
+      margin-bottom: 16px;
+    }
+
+    .icon-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 12px;
+      transition: all 0.2s ease;
+    }
+
+    .icon-box:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: scale(1.08);
+    }
+
+    .icon-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+    }
+
+    .icon-glyph {
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Style 1: Aurora Duotone Glow */
+    .style-1 .icon-glyph svg {
+      filter: drop-shadow(0 0 8px currentColor);
+    }
+
+    /* Style 2: 3D Frosted Glass */
+    .style-2 .icon-glyph {
+      background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 100%);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 12px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.4);
+    }
+
+    /* Style 3: 3D Glossy Clay */
+    .style-3 .icon-glyph {
+      border-radius: 12px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.6), inset 0 -2px 4px rgba(0,0,0,0.3);
+    }
+
+    /* Style 4: Gradient Squircle */
+    .style-4 .icon-glyph {
+      border-radius: 12px;
+      color: white;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    /* Style 5: Apple Monoline */
+    .style-5 .icon-glyph svg {
+      stroke-width: 1.5;
+    }
+
+    /* Style 6: Cyber Neon */
+    .style-6 .icon-glyph {
+      filter: drop-shadow(0 0 10px currentColor);
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      background: rgba(255,255,255,0.05);
+      color: #cbd5e1;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="badge">HiMewo Design System</div>
+      <h1>Choose Your Icon Style</h1>
+      <p class="subtitle">HiMewo-er jonno 6-ti alada professional design styles. Check each style below with live hover interactions.</p>
+    </header>
+
+    <div class="styles-grid">
+
+      <!-- Style 1 -->
+      <div class="style-card style-1 recommended">
+        <div class="style-num">Style 1</div>
+        <div class="card-title">Aurora Duotone Glow</div>
+        <div class="card-desc">Ultra-clean modern dual-tone line art with ambient neon glow on active state. Super crisp on all devices.</div>
+        <div class="icons-row">
+          <div class="icon-box">
+            <div class="icon-glyph" style="color: #06b6d4;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <span class="icon-label" style="color: #06b6d4;">Home</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="color: #a855f7;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <span class="icon-label">Friends</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="color: #ec4899;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="m10 15 5-3-5-3v6Z"/></svg>
+            </div>
+            <span class="icon-label">Reels</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="color: #10b981;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+            </div>
+            <span class="icon-label">Circles</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="color: #f59e0b;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/></svg>
+            </div>
+            <span class="icon-label">Shop</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="color: #22c55e;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="14" x="3" y="5" rx="3"/><circle cx="15" cy="12" r="1.5"/></svg>
+            </div>
+            <span class="icon-label">Wallet</span>
+          </div>
+        </div>
+        <div class="tags">
+          <span class="tag">#Modern</span><span class="tag">#DualTone</span><span class="tag">#NeonGlow</span><span class="tag">#UltraFast</span>
+        </div>
+      </div>
+
+      <!-- Style 2 -->
+      <div class="style-card style-2">
+        <div class="style-num">Style 2</div>
+        <div class="card-title">3D Frosted Glassmorphism</div>
+        <div class="card-desc">Apple VisionOS style translucent frosted glass with inner highlights and soft ambient lighting.</div>
+        <div class="icons-row">
+          <div class="icon-box">
+            <div class="icon-glyph" style="color: #67e8f9;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            </div>
+            <span class="icon-label">Home</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="color: #c084fc;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            </div>
+            <span class="icon-label">Friends</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="color: #f472b6;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="4"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+            </div>
+            <span class="icon-label">Reels</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="color: #34d399;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+            <span class="icon-label">Circles</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="color: #fbbf24;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/></svg>
+            </div>
+            <span class="icon-label">Shop</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="color: #4ade80;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="14" x="3" y="5" rx="3"/><circle cx="15" cy="12" r="1.5"/></svg>
+            </div>
+            <span class="icon-label">Wallet</span>
+          </div>
+        </div>
+        <div class="tags">
+          <span class="tag">#Glassmorphism</span><span class="tag">#VisionOS</span><span class="tag">#Refractive</span>
+        </div>
+      </div>
+
+      <!-- Style 3 -->
+      <div class="style-card style-3">
+        <div class="style-num">Style 3</div>
+        <div class="card-title">3D Glossy Claymorphism</div>
+        <div class="card-desc">Tactile rounded 3D shapes with soft pastel colors and glossy highlights. Engaging and friendly.</div>
+        <div class="icons-row">
+          <div class="icon-box">
+            <div class="icon-glyph" style="background: linear-gradient(135deg, #38bdf8, #0284c7); color: white;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            </div>
+            <span class="icon-label">Home</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="background: linear-gradient(135deg, #c084fc, #9333ea); color: white;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+            </div>
+            <span class="icon-label">Friends</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="background: linear-gradient(135deg, #fb7185, #e11d48); color: white;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="10 8 16 12 10 16 10 8"/></svg>
+            </div>
+            <span class="icon-label">Reels</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="background: linear-gradient(135deg, #34d399, #059669); color: white;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg>
+            </div>
+            <span class="icon-label">Circles</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="background: linear-gradient(135deg, #fbbf24, #d97706); color: white;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/></svg>
+            </div>
+            <span class="icon-label">Shop</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="background: linear-gradient(135deg, #4ade80, #16a34a); color: white;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect width="18" height="14" x="3" y="5" rx="3"/></svg>
+            </div>
+            <span class="icon-label">Wallet</span>
+          </div>
+        </div>
+        <div class="tags">
+          <span class="tag">#3DClay</span><span class="tag">#Tactile</span><span class="tag">#Glossy</span>
+        </div>
+      </div>
+
+      <!-- Style 4 -->
+      <div class="style-card style-4">
+        <div class="style-num">Style 4</div>
+        <div class="card-title">Gradient Squircle Badges</div>
+        <div class="card-desc">Instagram and Apple App Store inspired colorful mesh squircle tiles with crisp white icons inside.</div>
+        <div class="icons-row">
+          <div class="icon-box">
+            <div class="icon-glyph" style="background: linear-gradient(135deg, #0ea5e9, #2563eb);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            </div>
+            <span class="icon-label">Home</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="background: linear-gradient(135deg, #a855f7, #6366f1);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            </div>
+            <span class="icon-label">Friends</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="background: linear-gradient(135deg, #f43f5e, #ec4899, #f59e0b);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="10 8 16 12 10 16 10 8"/></svg>
+            </div>
+            <span class="icon-label">Reels</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="background: linear-gradient(135deg, #10b981, #059669);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="8"/></svg>
+            </div>
+            <span class="icon-label">Circles</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="background: linear-gradient(135deg, #f59e0b, #ea580c);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/></svg>
+            </div>
+            <span class="icon-label">Shop</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="background: linear-gradient(135deg, #22c55e, #15803d);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="18" height="14" x="3" y="5" rx="3"/></svg>
+            </div>
+            <span class="icon-label">Wallet</span>
+          </div>
+        </div>
+        <div class="tags">
+          <span class="tag">#Squircle</span><span class="tag">#InstagramVibe</span><span class="tag">#Gradients</span>
+        </div>
+      </div>
+
+      <!-- Style 5 -->
+      <div class="style-card style-5">
+        <div class="style-num">Style 5</div>
+        <div class="card-title">Apple Monoline Minimalist</div>
+        <div class="card-desc">Razor-sharp hairline vector outlines with solid minimalist active states. Understated luxury.</div>
+        <div class="icons-row">
+          <div class="icon-box">
+            <div class="icon-glyph" style="color: #cbd5e1;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            </div>
+            <span class="icon-label">Home</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="color: #cbd5e1;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            </div>
+            <span class="icon-label">Friends</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="color: #cbd5e1;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect width="18" height="18" x="3" y="3" rx="4"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+            </div>
+            <span class="icon-label">Reels</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="color: #cbd5e1;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+            <span class="icon-label">Circles</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="color: #cbd5e1;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/></svg>
+            </div>
+            <span class="icon-label">Shop</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="color: #cbd5e1;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect width="18" height="14" x="3" y="5" rx="3"/><circle cx="15" cy="12" r="1.5"/></svg>
+            </div>
+            <span class="icon-label">Wallet</span>
+          </div>
+        </div>
+        <div class="tags">
+          <span class="tag">#Monoline</span><span class="tag">#Minimalist</span><span class="tag">#AppleStyle</span>
+        </div>
+      </div>
+
+      <!-- Style 6 -->
+      <div class="style-card style-6">
+        <div class="style-num">Style 6</div>
+        <div class="card-title">Cyber Neon Holographic</div>
+        <div class="card-desc">High-tech futuristic electric glowing outlines with vibrant color shifts for extreme dark mode aesthetics.</div>
+        <div class="icons-row">
+          <div class="icon-box">
+            <div class="icon-glyph" style="color: #00f0ff;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            </div>
+            <span class="icon-label" style="color: #00f0ff;">Home</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="color: #bf00ff;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            </div>
+            <span class="icon-label" style="color: #bf00ff;">Friends</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="color: #ff007f;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect width="18" height="18" x="3" y="3" rx="4"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+            </div>
+            <span class="icon-label" style="color: #ff007f;">Reels</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="color: #00ff88;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+            <span class="icon-label" style="color: #00ff88;">Circles</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="color: #ffaa00;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/></svg>
+            </div>
+            <span class="icon-label" style="color: #ffaa00;">Shop</span>
+          </div>
+          <div class="icon-box">
+            <div class="icon-glyph" style="color: #00e5ff;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect width="18" height="14" x="3" y="5" rx="3"/><circle cx="15" cy="12" r="1.5"/></svg>
+            </div>
+            <span class="icon-label" style="color: #00e5ff;">Wallet</span>
+          </div>
+        </div>
+        <div class="tags">
+          <span class="tag">#Cyberpunk</span><span class="tag">#ElectricNeon</span><span class="tag">#DarkVibe</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>

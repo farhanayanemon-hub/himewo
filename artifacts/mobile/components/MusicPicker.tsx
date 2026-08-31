@@ -93,14 +93,45 @@ export function MusicPickerModal({
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Search songs, artists, moods..."
+            placeholder="Search Bangla, Hindi, moods..."
             placeholderTextColor="#ffffff88"
             underlineColorAndroid="transparent"
             style={styles.search}
           />
         </View>
+
+        {/* Quick Category Chips */}
+        <View style={styles.chipRow}>
+          {[
+            { id: "", label: "All" },
+            { id: "Bangla", label: "🇧🇩 Bangla" },
+            { id: "Hindi", label: "🇮🇳 Hindi" },
+            { id: "Lo-Fi", label: "🎧 Lo-Fi" },
+            { id: "Folk", label: "🪕 Folk" },
+            { id: "Trending", label: "🔥 Trending" },
+          ].map((cat) => (
+            <Pressable
+              key={cat.id}
+              style={[
+                styles.chip,
+                (query === cat.id || (!query && !cat.id)) && styles.chipActive,
+              ]}
+              onPress={() => setQuery(cat.id)}
+            >
+              <Text
+                style={[
+                  styles.chipText,
+                  (query === cat.id || (!query && !cat.id)) && styles.chipTextActive,
+                ]}
+              >
+                {cat.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
         <Text style={styles.note}>
-          Royalty-free music library. Upload your own audio from the website.
+          Curated Bangla, Hindi & Lo-Fi tracks. Tap to preview or select.
         </Text>
         {isLoading ? (
           <View style={styles.center}>
@@ -180,6 +211,31 @@ const styles = StyleSheet.create({
     fontSize: 12,
     paddingHorizontal: 16,
     paddingBottom: 6,
+  },
+  chipRow: {
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingBottom: 8,
+    flexWrap: "wrap",
+  },
+  chip: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 16,
+    backgroundColor: "#ffffff18",
+  },
+  chipActive: {
+    backgroundColor: "#a855f7",
+  },
+  chipText: {
+    color: "#ffffffaa",
+    fontFamily: "Inter_500Medium",
+    fontSize: 12,
+  },
+  chipTextActive: {
+    color: "#fff",
+    fontFamily: "Inter_700Bold",
   },
   center: { flex: 1, alignItems: "center", justifyContent: "center", paddingTop: 40 },
   row: {

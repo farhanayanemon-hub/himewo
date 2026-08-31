@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HiMewo Pixel Cat SVG Test</title>
+  <style>
+    body {
+      background: #0b0f19;
+      color: #fff;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 30px;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .preview-card {
+      background: #151c2e;
+      padding: 30px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .brand-title {
+      font-size: 32px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #38bdf8, #a855f7, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+  </style>
+</head>
+<body>
+  <h2>Exact Pixel Cat Vector (SVG) Test</h2>
+
+  <!-- Black on White / Light Card -->
+  <div class="preview-card" style="background: #ffffff; color: #000;">
+    <svg width="48" height="32" viewBox="0 0 30 18" fill="none" style="shape-rendering: crispEdges;">
+      <!-- White sticker border / shadow if needed -->
+      <!-- Cat Body in black -->
+      <!-- Tail: x:0-5, y:8-11 -->
+      <rect x="0" y="8" width="5" height="3" fill="#000000"/>
+      <!-- Body Back slope -->
+      <rect x="5" y="6" width="4" height="6" fill="#000000"/>
+      <rect x="9" y="4" width="4" height="9" fill="#000000"/>
+      <!-- Left Ear -->
+      <rect x="13" y="1" width="2" height="5" fill="#000000"/>
+      <rect x="12" y="3" width="4" height="3" fill="#000000"/>
+      <rect x="13" y="3" width="1" height="1" fill="#ffffff"/><!-- Ear inner cutout -->
+      <!-- Head top valley -->
+      <rect x="15" y="4" width="3" height="9" fill="#000000"/>
+      <!-- Right Ear -->
+      <rect x="18" y="1" width="3" height="5" fill="#000000"/>
+      <rect x="19" y="2" width="1" height="2" fill="#ffffff"/><!-- Right ear inner cutout -->
+      <!-- Head / Face -->
+      <rect x="18" y="4" width="5" height="8" fill="#000000"/>
+      <rect x="13" y="6" width="10" height="7" fill="#000000"/>
+      <rect x="4" y="9" width="19" height="4" fill="#000000"/>
+      <rect x="9" y="13" width="12" height="1" fill="#000000"/>
+      <!-- Eyes (white bars) -->
+      <rect x="12" y="9" width="3" height="1" fill="#ffffff"/>
+      <rect x="18" y="9" width="3" height="1" fill="#ffffff"/>
+    </svg>
+    <span class="brand-title" style="-webkit-text-fill-color: #000;">HiMewo</span>
+  </div>
+
+  <!-- Dark Mode / Neon Glow Card -->
+  <div class="preview-card">
+    <svg width="48" height="32" viewBox="0 0 30 18" fill="none" style="shape-rendering: crispEdges; filter: drop-shadow(0 0 10px #38bdf8);">
+      <!-- Glowing Cat in Dark Mode with White Fill and Cyan / Neon Accent -->
+      <rect x="0" y="8" width="5" height="3" fill="#ffffff"/>
+      <rect x="5" y="6" width="4" height="6" fill="#ffffff"/>
+      <rect x="9" y="4" width="4" height="9" fill="#ffffff"/>
+      <rect x="13" y="1" width="2" height="5" fill="#ffffff"/>
+      <rect x="12" y="3" width="4" height="3" fill="#ffffff"/>
+      <rect x="13" y="3" width="1" height="1" fill="#0b0f19"/><!-- Ear cutout -->
+      <rect x="15" y="4" width="3" height="9" fill="#ffffff"/>
+      <rect x="18" y="1" width="3" height="5" fill="#ffffff"/>
+      <rect x="19" y="2" width="1" height="2" fill="#0b0f19"/><!-- Right ear cutout -->
+      <rect x="18" y="4" width="5" height="8" fill="#ffffff"/>
+      <rect x="13" y="6" width="10" height="7" fill="#ffffff"/>
+      <rect x="4" y="9" width="19" height="4" fill="#ffffff"/>
+      <rect x="9" y="13" width="12" height="1" fill="#ffffff"/>
+      <!-- Eyes -->
+      <rect x="12" y="9" width="3" height="1" fill="#38bdf8"/>
+      <rect x="18" y="9" width="3" height="1" fill="#38bdf8"/>
+    </svg>
+    <span class="brand-title">HiMewo</span>
+  </div>
+</body>
+</html>

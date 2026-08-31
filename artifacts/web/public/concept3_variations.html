@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HiMewo — Concept 3 Variations (Discord/Tech Style Mewo Emblems)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(18, 24, 38, 0.9);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --cyan: #38bdf8;
+      --purple: #a855f7;
+      --pink: #ec4899;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 40px 20px 80px;
+      background-image: 
+        radial-gradient(circle at 20% 15%, rgba(56, 189, 248, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 80% 25%, rgba(168, 85, 247, 0.12) 0%, transparent 45%);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 16px;
+      background: rgba(168, 85, 247, 0.15);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 36px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    p.sub {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+      margin-bottom: 36px;
+    }
+
+    .concept-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      backdrop-filter: blur(20px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      cursor: pointer;
+    }
+
+    .concept-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(168, 85, 247, 0.4);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 25px rgba(168, 85, 247, 0.2);
+    }
+
+    .concept-card.featured {
+      border: 1.5px solid rgba(56, 189, 248, 0.6);
+    }
+
+    .concept-card.featured::before {
+      content: '★ TOP PICK';
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: linear-gradient(135deg, #06b6d4, #8b5cf6);
+      color: white;
+      font-size: 9px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      letter-spacing: 0.5px;
+    }
+
+    .logo-container {
+      width: 110px;
+      height: 110px;
+      margin: 12px 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease;
+    }
+
+    .concept-card:hover .logo-container {
+      transform: scale(1.08);
+    }
+
+    .concept-num {
+      font-size: 11px;
+      font-weight: 700;
+      color: #c084fc;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .concept-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .concept-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Navbar Mockup Box */
+    .nav-preview-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 28px;
+      margin-top: 32px;
+    }
+
+    .nav-bar {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(12px);
+    }
+
+    .brand-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 24px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #38bdf8 0%, #a855f7 50%, #ec4899 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="badge">Concept 3 Exploration</div>
+      <h1>Discord & Tech Style Mewo Emblems</h1>
+      <p class="sub">Soft squircle emblems with iconic minimalist cat face geometry — 8 stunning variations</p>
+    </header>
+
+    <div class="grid-4">
+
+      <!-- 3A: Classic Discord-Aurora Squircle -->
+      <div class="concept-card featured">
+        <div class="concept-num">Variation 3A</div>
+        <div class="logo-container">
+          <svg width="96" height="96" viewBox="0 0 100 100" fill="none">
+            <!-- Squircle Background -->
+            <rect width="100" height="100" rx="26" fill="url(#grad3A)" />
+            <!-- Inner Shadow Glow -->
+            <rect x="2" y="2" width="96" height="96" rx="24" stroke="rgba(255,255,255,0.25)" stroke-width="2" />
+            <!-- Minimalist Cat Face Cutout -->
+            <path d="M26 38 C26 34, 34 22, 39 28 C44 32, 56 32, 61 28 C66 22, 74 34, 74 38 C76 50, 74 68, 50 68 C26 68, 24 50, 26 38 Z" fill="#090d16" />
+            <!-- Chill Circle Eyes -->
+            <circle cx="40" cy="48" r="4.5" fill="#ffffff" />
+            <circle cx="60" cy="48" r="4.5" fill="#ffffff" />
+            <!-- Little Nose / Mouth -->
+            <path d="M48 56 Q50 58 52 56" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
+            <defs>
+              <linearGradient id="grad3A" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#5865F2" />
+                <stop offset="0.5" stop-color="#7c3aed" />
+                <stop offset="1" stop-color="#a855f7" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="concept-title">Classic Tech Squircle</div>
+        <div class="concept-desc">Discord-inspired royal indigo squircle with bold minimalist black cat silhouette and white circular eyes.</div>
+      </div>
+
+      <!-- 3B: Aurora Gradient Glow -->
+      <div class="concept-card">
+        <div class="concept-num">Variation 3B</div>
+        <div class="logo-container">
+          <svg width="96" height="96" viewBox="0 0 100 100" fill="none">
+            <rect width="100" height="100" rx="26" fill="#0f172a" stroke="url(#grad3B)" stroke-width="3" />
+            <!-- Glowing Aurora Cat Inside -->
+            <path d="M26 38 C26 34, 34 22, 39 28 C44 32, 56 32, 61 28 C66 22, 74 34, 74 38 C76 50, 74 68, 50 68 C26 68, 24 50, 26 38 Z" fill="url(#grad3B)" />
+            <!-- Glowing Eyes -->
+            <circle cx="40" cy="48" r="4.5" fill="#0f172a" />
+            <circle cx="60" cy="48" r="4.5" fill="#0f172a" />
+            <defs>
+              <linearGradient id="grad3B" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#06b6d4" />
+                <stop offset="0.5" stop-color="#a855f7" />
+                <stop offset="1" stop-color="#ec4899" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="concept-title">Aurora Mesh Glow</div>
+        <div class="concept-desc">Dark obsidian squircle border with vivid glowing cyan-to-magenta aurora cat face inside.</div>
+      </div>
+
+      <!-- 3C: Winking Social Mewo -->
+      <div class="concept-card">
+        <div class="concept-num">Variation 3C</div>
+        <div class="logo-container">
+          <svg width="96" height="96" viewBox="0 0 100 100" fill="none">
+            <rect width="100" height="100" rx="26" fill="url(#grad3C)" />
+            <!-- Cat Head -->
+            <path d="M26 38 C26 34, 34 22, 39 28 C44 32, 56 32, 61 28 C66 22, 74 34, 74 38 C76 50, 74 68, 50 68 C26 68, 24 50, 26 38 Z" fill="#090d16" />
+            <!-- Winking Eye Left & Normal Eye Right -->
+            <path d="M36 48 Q40 43 44 48" stroke="#ffffff" stroke-width="3" stroke-linecap="round" fill="none" />
+            <circle cx="60" cy="47" r="4.5" fill="#ffffff" />
+            <!-- Happy Smile -->
+            <path d="M47 55 Q50 59 53 55" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
+            <defs>
+              <linearGradient id="grad3C" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#0284c7" />
+                <stop offset="1" stop-color="#6366f1" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="concept-title">Winking Social Mewo</div>
+        <div class="concept-desc">Playful winking expression (^ •) with a warm friendly smile. Highly expressive and engaging.</div>
+      </div>
+
+      <!-- 3D: Gamer / Headset Mewo -->
+      <div class="concept-card">
+        <div class="concept-num">Variation 3D</div>
+        <div class="logo-container">
+          <svg width="96" height="96" viewBox="0 0 100 100" fill="none">
+            <rect width="100" height="100" rx="26" fill="url(#grad3D)" />
+            <!-- Headset Arch -->
+            <path d="M22 48 C22 24, 78 24, 78 48" stroke="#ffffff" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.9" />
+            <!-- Ear Cushions -->
+            <rect x="18" y="44" width="8" height="16" rx="4" fill="#ffffff" />
+            <rect x="74" y="44" width="8" height="16" rx="4" fill="#ffffff" />
+            <!-- Cat Head -->
+            <path d="M28 42 C28 38, 35 28, 40 34 C44 37, 56 37, 60 34 C65 28, 72 38, 72 42 C74 54, 72 68, 50 68 C28 68, 26 54, 28 42 Z" fill="#090d16" />
+            <circle cx="41" cy="51" r="4" fill="#38bdf8" />
+            <circle cx="59" cy="51" r="4" fill="#38bdf8" />
+            <defs>
+              <linearGradient id="grad3D" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#ec4899" />
+                <stop offset="1" stop-color="#8b5cf6" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="concept-title">Headset Voice Mewo</div>
+        <div class="concept-desc">Sleek minimalist gaming headset on the cat emblem — perfect for voice chat, reels, and live rooms.</div>
+      </div>
+
+      <!-- 3E: Cyber Neon Outline -->
+      <div class="concept-card">
+        <div class="concept-num">Variation 3E</div>
+        <div class="logo-container">
+          <svg width="96" height="96" viewBox="0 0 100 100" fill="none">
+            <rect width="100" height="100" rx="26" fill="#0b0f19" stroke="#1e293b" stroke-width="2" />
+            <!-- Neon Glowing Stroke Cat -->
+            <path d="M26 38 C26 34, 34 22, 39 28 C44 32, 56 32, 61 28 C66 22, 74 34, 74 38 C76 50, 74 68, 50 68 C26 68, 24 50, 26 38 Z" stroke="#38bdf8" stroke-width="3" fill="none" style="filter: drop-shadow(0 0 8px #38bdf8);" />
+            <!-- Glowing Eyes -->
+            <rect x="36" y="47" width="8" height="3" rx="1.5" fill="#38bdf8" style="filter: drop-shadow(0 0 6px #38bdf8);" />
+            <rect x="56" y="47" width="8" height="3" rx="1.5" fill="#38bdf8" style="filter: drop-shadow(0 0 6px #38bdf8);" />
+          </svg>
+        </div>
+        <div class="concept-title">Cyber Neon Outline</div>
+        <div class="concept-desc">Dark obsidian squircle with razor-sharp electric cyan glowing neon line vector cat.</div>
+      </div>
+
+      <!-- 3F: Heart-Eyes Cute Mewo -->
+      <div class="concept-card">
+        <div class="concept-num">Variation 3F</div>
+        <div class="logo-container">
+          <svg width="96" height="96" viewBox="0 0 100 100" fill="none">
+            <rect width="100" height="100" rx="26" fill="url(#grad3F)" />
+            <!-- Cat Head -->
+            <path d="M26 38 C26 34, 34 22, 39 28 C44 32, 56 32, 61 28 C66 22, 74 34, 74 38 C76 50, 74 68, 50 68 C26 68, 24 50, 26 38 Z" fill="#090d16" />
+            <!-- Heart Eyes -->
+            <path d="M40 46 C37 43 34 47 40 52 C46 47 43 43 40 46 Z" fill="#ff4b72" />
+            <path d="M60 46 C57 43 54 47 60 52 C66 47 63 43 60 46 Z" fill="#ff4b72" />
+            <!-- Little Smile -->
+            <path d="M48 56 Q50 58 52 56" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
+            <defs>
+              <linearGradient id="grad3F" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#f43f5e" />
+                <stop offset="1" stop-color="#fb923c" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="concept-title">Sunset Love Mewo</div>
+        <div class="concept-desc">Warm sunset orange-rose squircle with adorable glowing heart eyes. Friendly and heartfelt.</div>
+      </div>
+
+      <!-- 3G: 3D Frosted Glass VisionOS -->
+      <div class="concept-card">
+        <div class="concept-num">Variation 3G</div>
+        <div class="logo-container">
+          <svg width="96" height="96" viewBox="0 0 100 100" fill="none">
+            <!-- Frosted Glass Layer -->
+            <rect width="100" height="100" rx="26" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.3)" stroke-width="2" />
+            <!-- Ambient Glow Behind -->
+            <circle cx="50" cy="50" r="30" fill="url(#grad3G)" opacity="0.4" style="filter: blur(14px);" />
+            <!-- Floating Clean White Cat -->
+            <path d="M26 38 C26 34, 34 22, 39 28 C44 32, 56 32, 61 28 C66 22, 74 34, 74 38 C76 50, 74 68, 50 68 C26 68, 24 50, 26 38 Z" fill="#ffffff" />
+            <circle cx="40" cy="48" r="4" fill="#090d16" />
+            <circle cx="60" cy="48" r="4" fill="#090d16" />
+            <defs>
+              <linearGradient id="grad3G" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#38bdf8" />
+                <stop offset="1" stop-color="#a855f7" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="concept-title">3D Frosted Glass Prism</div>
+        <div class="concept-desc">VisionOS style frosted translucent glass tile with floating clean white cat glyph and soft aurora glow.</div>
+      </div>
+
+      <!-- 3H: Monoline Architectural Squircle -->
+      <div class="concept-card">
+        <div class="concept-num">Variation 3H</div>
+        <div class="logo-container">
+          <svg width="96" height="96" viewBox="0 0 100 100" fill="none">
+            <rect width="100" height="100" rx="26" fill="#18181b" stroke="url(#grad3H)" stroke-width="2.5" />
+            <!-- Minimal Geometric Cat Face Lines -->
+            <path d="M30 36 L40 26 L48 34 L52 34 L60 26 L70 36 C73 48, 68 64, 50 64 C32 64, 27 48, 30 36 Z" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" fill="none" />
+            <circle cx="42" cy="46" r="3.5" fill="#38bdf8" />
+            <circle cx="58" cy="46" r="3.5" fill="#38bdf8" />
+            <defs>
+              <linearGradient id="grad3H" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#38bdf8" />
+                <stop offset="0.5" stop-color="#818cf8" />
+                <stop offset="1" stop-color="#c084fc" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="concept-title">Geometric Luxury Line</div>
+        <div class="concept-desc">Crisp architectural polygon cat face with gradient neon border. Sleek high-tech minimalist feel.</div>
+      </div>
+
+    </div>
+
+    <!-- Live Navbar Placement Preview -->
+    <div class="nav-preview-card">
+      <h3 style="font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 16px;">
+        🖥️ Live Website Header Placement Preview (Variation 3A vs 3B)
+      </h3>
+      <div class="nav-bar">
+        <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+          <!-- 32px Compact Squircle Badge -->
+          <svg width="34" height="34" viewBox="0 0 100 100" fill="none">
+            <rect width="100" height="100" rx="26" fill="url(#grad3A_nav)" />
+            <path d="M26 38 C26 34, 34 22, 39 28 C44 32, 56 32, 61 28 C66 22, 74 34, 74 38 C76 50, 74 68, 50 68 C26 68, 24 50, 26 38 Z" fill="#090d16" />
+            <circle cx="40" cy="48" r="5" fill="#ffffff" />
+            <circle cx="60" cy="48" r="5" fill="#ffffff" />
+            <defs>
+              <linearGradient id="grad3A_nav" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#5865F2" />
+                <stop offset="1" stop-color="#a855f7" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <span class="brand-title">HiMewo</span>
+        </div>
+
+        <div style="display: flex; gap: 16px; align-items: center;">
+          <div style="background: rgba(255,255,255,0.06); padding: 8px 18px; border-radius: 9999px; font-size: 13px; color: #94a3b8;">
+            🔍 Search HiMewo...
+          </div>
+          <div style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #38bdf8, #a855f7);"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

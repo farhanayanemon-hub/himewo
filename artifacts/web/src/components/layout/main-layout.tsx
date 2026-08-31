@@ -47,6 +47,7 @@ import { supabase } from "@/lib/supabase";
 import { useNavIcons } from "@/lib/nav-icons";
 import { Button } from "@/components/ui/button";
 import { MobileNav, MobileMenuButton } from "./mobile-nav";
+import { PixelCatIcon } from "@/components/logo";
 
 function ThemeToggle() {
   const [isDark, setIsDark] = useState(() =>
@@ -251,8 +252,11 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
               user={user}
               onSignOut={signOut}
             />
-            <Link href="/" className="text-2xl font-extrabold tracking-tight aurora-gradient-text">
-              HiMewo
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <PixelCatIcon size={28} glow className="group-hover:scale-110 transition-transform" />
+              <span className="text-2xl font-extrabold tracking-tight aurora-gradient-text">
+                HiMewo
+              </span>
             </Link>
 
             <form onSubmit={handleSearch} className="hidden md:flex relative">
@@ -274,11 +278,25 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
                 const isActive = location === item.href;
                 return (
                   <Link key={item.href} href={item.href} className="relative">
-                    <Button variant="ghost" size="icon" className={`rounded-xl w-14 h-12 press [&_svg]:!size-6 ${isActive ? "bg-accent text-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`}>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className={`rounded-2xl w-14 h-12 press transition-all duration-200 [&_svg]:!size-6 ${
+                        isActive 
+                          ? "bg-accent/80 text-foreground shadow-sm shadow-primary/20 backdrop-blur-md" 
+                          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                      }`}
+                    >
                       {item.iconUrl ? (
-                        <img src={item.iconUrl} alt="" className={`w-7 h-7 object-contain ${isActive ? "" : "opacity-70 saturate-[.8]"}`} />
+                        <img 
+                          src={item.iconUrl} 
+                          alt="" 
+                          className={`w-7 h-7 object-contain transition-all ${
+                            isActive ? "scale-110 drop-shadow-[0_0_8px_rgba(56,189,248,0.5)]" : "opacity-75 saturate-[.85]"
+                          }`} 
+                        />
                       ) : (
-                        <Icon />
+                        <Icon className={`transition-all ${isActive ? `${item.color} scale-110 drop-shadow-[0_0_8px_currentColor]` : ""}`} />
                       )}
                     </Button>
                     {isActive && <span className="absolute -bottom-[14px] left-2 right-2 h-1 rounded-full bg-gradient-to-r from-teal-400 via-purple-400 to-pink-400" />}

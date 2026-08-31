@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HiMewo Ecosystem — Main App Logo & Chat App Logo Duo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(18, 24, 38, 0.9);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 40px 20px 80px;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 85% 25%, rgba(168, 85, 247, 0.15) 0%, transparent 45%);
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 44px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 16px;
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 36px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    p.sub {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+
+    .duo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-bottom: 48px;
+    }
+
+    @media (max-width: 768px) {
+      .duo-grid { grid-template-columns: 1fr; }
+    }
+
+    .duo-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      position: relative;
+    }
+
+    .duo-card.main-app {
+      border: 1.5px solid rgba(56, 189, 248, 0.4);
+    }
+
+    .duo-card.chat-app {
+      border: 1.5px solid rgba(168, 85, 247, 0.4);
+    }
+
+    .app-tag {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .app-tag.main {
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .app-tag.chat {
+      background: rgba(168, 85, 247, 0.15);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.3);
+    }
+
+    .app-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .app-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .app-icon-wrapper {
+      width: 140px;
+      height: 140px;
+      border-radius: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
+      transition: transform 0.2s ease;
+      cursor: pointer;
+    }
+
+    .app-icon-wrapper:hover {
+      transform: scale(1.06);
+    }
+
+    .app-icon-wrapper.main-icon {
+      background: linear-gradient(135deg, #090d16 0%, #1e1b4b 100%);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .app-icon-wrapper.chat-icon {
+      background: linear-gradient(135deg, #090d16 0%, #1e1035 100%);
+      border: 1px solid rgba(168, 85, 247, 0.3);
+    }
+
+    .brand-wordmark {
+      font-family: 'Outfit', sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .main-grad {
+      background: linear-gradient(135deg, #38bdf8 0%, #a855f7 50%, #ec4899 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .chat-grad {
+      background: linear-gradient(135deg, #a855f7 0%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Chat Variations Options Grid */
+    .chat-options-section {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 32px;
+    }
+
+    .options-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+
+    .options-sub {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+      text-align: center;
+    }
+
+    .chat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+
+    .chat-option-box {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 18px;
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .chat-option-box:hover {
+      background: rgba(168, 85, 247, 0.08);
+      border-color: rgba(168, 85, 247, 0.4);
+      transform: translateY(-3px);
+    }
+
+    .chat-opt-num {
+      font-size: 11px;
+      font-weight: 700;
+      color: #c084fc;
+      margin-bottom: 6px;
+    }
+
+    .chat-opt-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .chat-opt-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="badge">HiMewo Brand System</div>
+      <h1>HiMewo Main App & Chat App Logo Duo</h1>
+      <p class="sub">Both apps share the same cohesive Concept 1 identity — Main Social platform + Dedicated Messenger</p>
+    </header>
+
+    <!-- Side by Side Main vs Chat App Showcase -->
+    <div class="duo-grid">
+
+      <!-- 1. HiMewo Main Social App -->
+      <div class="duo-card main-app">
+        <span class="app-tag main">📱 Main Social App & Web</span>
+        <div class="app-icon-wrapper main-icon">
+          <!-- Exact Concept 1 Celestial Aurora Mewo -->
+          <svg width="86" height="76" viewBox="0 0 100 88" fill="none" style="filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.5));">
+            <path d="M12 28 C12 24, 24 6, 32 16 C40 23, 60 23, 68 16 C76 6, 88 24, 88 28 C92 48, 86 80, 50 80 C14 80, 8 48, 12 28 Z" fill="url(#main_app_grad)" />
+            <circle cx="38" cy="46" r="4.5" fill="#090d16" />
+            <circle cx="62" cy="46" r="4.5" fill="#090d16" />
+            <circle cx="39.5" cy="44.5" r="1.6" fill="#ffffff" />
+            <circle cx="63.5" cy="44.5" r="1.6" fill="#ffffff" />
+            <path d="M47 56 Q50 59 53 56" stroke="#090d16" stroke-width="2.5" stroke-linecap="round" fill="none" />
+            <defs>
+              <linearGradient id="main_app_grad" x1="0" y1="0" x2="100" y2="88" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#06b6d4" />
+                <stop offset="0.5" stop-color="#8b5cf6" />
+                <stop offset="1" stop-color="#ec4899" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="brand-wordmark main-grad">HiMewo</div>
+        <div class="app-desc" style="margin-top: 8px;">The full social platform (feed, posts, reels, stories, circles, hubs, shop, wallet).</div>
+      </div>
+
+      <!-- 2. HiMewo Chat Standalone Messenger -->
+      <div class="duo-card chat-app">
+        <span class="app-tag chat">💬 Messenger / Chat App</span>
+        <div class="app-icon-wrapper chat-icon">
+          <!-- Concept 1 Chat Speech Bubble Mewo -->
+          <svg width="86" height="76" viewBox="0 0 100 88" fill="none" style="filter: drop-shadow(0 0 16px rgba(168, 85, 247, 0.5));">
+            <!-- Cat Head with Speech Bubble Tail -->
+            <path d="M12 28 C12 24, 24 6, 32 16 C40 23, 60 23, 68 16 C76 6, 88 24, 88 28 C92 48, 86 80, 50 80 C36 80, 24 76, 16 84 L18 70 C10 58, 8 48, 12 28 Z" fill="url(#chat_app_grad)" />
+            <!-- Messaging Dots / Eyes -->
+            <circle cx="38" cy="46" r="4.5" fill="#090d16" />
+            <circle cx="62" cy="46" r="4.5" fill="#090d16" />
+            <circle cx="39.5" cy="44.5" r="1.6" fill="#ffffff" />
+            <circle cx="63.5" cy="44.5" r="1.6" fill="#ffffff" />
+            <path d="M47 56 Q50 59 53 56" stroke="#090d16" stroke-width="2.5" stroke-linecap="round" fill="none" />
+            <defs>
+              <linearGradient id="chat_app_grad" x1="0" y1="0" x2="100" y2="88" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#38bdf8" />
+                <stop offset="0.5" stop-color="#a855f7" />
+                <stop offset="1" stop-color="#7c3aed" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="brand-wordmark chat-grad">HiMewo <span style="font-size: 22px; font-weight: 700; color: #c084fc; -webkit-text-fill-color: #c084fc;">Chat</span></div>
+        <div class="app-desc" style="margin-top: 8px;">Standalone dedicated messenger (inbox, threads, voice/video calls, stories).</div>
+      </div>
+
+    </div>
+
+    <!-- 4 Chat Style Variations -->
+    <div class="chat-options-section">
+      <div class="options-title">Chat App Style Options (Concept 1 Variations)</div>
+      <div class="options-sub">Pick your favorite chat treatment for HiMewo Chat:</div>
+
+      <div class="chat-grid">
+
+        <!-- Chat Option 1: Speech Tail Mewo -->
+        <div class="chat-option-box">
+          <div class="chat-opt-num">Chat Option 1 (Top Pick)</div>
+          <svg width="60" height="54" viewBox="0 0 100 88" fill="none" style="margin: 8px 0 12px;">
+            <path d="M12 28 C12 24, 24 6, 32 16 C40 23, 60 23, 68 16 C76 6, 88 24, 88 28 C92 48, 86 80, 50 80 C36 80, 24 76, 16 84 L18 70 C10 58, 8 48, 12 28 Z" fill="url(#chat_opt1)" />
+            <circle cx="38" cy="46" r="4.5" fill="#090d16" />
+            <circle cx="62" cy="46" r="4.5" fill="#090d16" />
+            <path d="M47 56 Q50 59 53 56" stroke="#090d16" stroke-width="2.5" stroke-linecap="round" fill="none" />
+            <defs>
+              <linearGradient id="chat_opt1" x1="0" y1="0" x2="100" y2="88" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#38bdf8" />
+                <stop offset="1" stop-color="#a855f7" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="chat-opt-name">Aurora Bubble Tail</div>
+          <div class="chat-opt-desc">Concept 1 shape with smooth speech tail. Identical DNA to Main App.</div>
+        </div>
+
+        <!-- Chat Option 2: 3 Typing Dots -->
+        <div class="chat-option-box">
+          <div class="chat-opt-num">Chat Option 2</div>
+          <svg width="60" height="54" viewBox="0 0 100 88" fill="none" style="margin: 8px 0 12px;">
+            <path d="M12 28 C12 24, 24 6, 32 16 C40 23, 60 23, 68 16 C76 6, 88 24, 88 28 C92 48, 86 80, 50 80 C36 80, 24 76, 16 84 L18 70 C10 58, 8 48, 12 28 Z" fill="url(#chat_opt2)" />
+            <!-- 3 Message Dots inside -->
+            <circle cx="36" cy="50" r="4.5" fill="#090d16" />
+            <circle cx="50" cy="50" r="4.5" fill="#090d16" />
+            <circle cx="64" cy="50" r="4.5" fill="#090d16" />
+            <defs>
+              <linearGradient id="chat_opt2" x1="0" y1="0" x2="100" y2="88" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#06b6d4" />
+                <stop offset="1" stop-color="#8b5cf6" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="chat-opt-name">Typing Dots Bubble</div>
+          <div class="chat-opt-desc">Concept 1 speech bubble with 3 animated messaging dots (...).</div>
+        </div>
+
+        <!-- Chat Option 3: Messenger Lightning Pulse -->
+        <div class="chat-option-box">
+          <div class="chat-opt-num">Chat Option 3</div>
+          <svg width="60" height="54" viewBox="0 0 100 88" fill="none" style="margin: 8px 0 12px;">
+            <path d="M12 28 C12 24, 24 6, 32 16 C40 23, 60 23, 68 16 C76 6, 88 24, 88 28 C92 48, 86 80, 50 80 C36 80, 24 76, 16 84 L18 70 C10 58, 8 48, 12 28 Z" fill="url(#chat_opt3)" />
+            <!-- Lightning / Pulse Bolt -->
+            <path d="M54 36 L40 50 L48 50 L44 64 L60 48 L52 48 Z" fill="#090d16" />
+            <defs>
+              <linearGradient id="chat_opt3" x1="0" y1="0" x2="100" y2="88" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#38bdf8" />
+                <stop offset="0.5" stop-color="#a855f7" />
+                <stop offset="1" stop-color="#ec4899" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="chat-opt-name">Lightning Messenger</div>
+          <div class="chat-opt-desc">Messenger style lightning speed bolt inside the cat bubble.</div>
+        </div>
+
+        <!-- Chat Option 4: Dual Overlapping Convo -->
+        <div class="chat-option-box">
+          <div class="chat-opt-num">Chat Option 4</div>
+          <svg width="60" height="54" viewBox="0 0 100 88" fill="none" style="margin: 8px 0 12px;">
+            <!-- Back Purple Bubble -->
+            <path d="M38 18 C38 15, 46 3, 52 10 C58 15, 72 15, 78 10 C83 3, 92 15, 92 18 C95 32, 91 54, 65 54 C55 54, 46 51, 41 57 L42 47 C37 38, 35 32, 38 18 Z" fill="#8b5cf6" opacity="0.8" />
+            <!-- Front Blue Bubble -->
+            <path d="M8 36 C8 32, 20 14, 28 24 C36 31, 56 31, 64 24 C72 14, 84 32, 84 36 C88 56, 82 84, 46 84 C32 84, 20 80, 12 88 L14 74 C6 62, 4 52, 8 36 Z" fill="#38bdf8" />
+            <circle cx="34" cy="54" r="3.5" fill="#090d16" />
+            <circle cx="58" cy="54" r="3.5" fill="#090d16" />
+          </svg>
+          <div class="chat-opt-name">Dual Convo Mewos</div>
+          <div class="chat-opt-desc">Two overlapping cat bubbles showing active two-way chatting.</div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

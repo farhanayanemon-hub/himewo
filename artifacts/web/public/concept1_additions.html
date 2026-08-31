@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HiMewo — Concept 1 Minimalist Additions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(18, 24, 38, 0.9);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 40px 20px 80px;
+      background-image: 
+        radial-gradient(circle at 20% 15%, rgba(56, 189, 248, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 80% 25%, rgba(168, 85, 247, 0.12) 0%, transparent 45%);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 16px;
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 34px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    p.sub {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      margin-bottom: 36px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      backdrop-filter: blur(20px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(56, 189, 248, 0.4);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 25px rgba(56, 189, 248, 0.15);
+    }
+
+    .card.featured {
+      border: 1.5px solid rgba(56, 189, 248, 0.6);
+    }
+
+    .logo-container {
+      width: 120px;
+      height: 100px;
+      margin: 12px 0 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .opt-num {
+      font-size: 11px;
+      font-weight: 700;
+      color: #38bdf8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .opt-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .opt-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .brand-preview {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      width: 100%;
+      justify-content: center;
+    }
+
+    .brand-text {
+      font-family: 'Outfit', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #38bdf8 0%, #a855f7 50%, #ec4899 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="badge">Concept 1 Refinements</div>
+      <h1>Concept 1: Celestial Aurora Cat + Subtle Features</h1>
+      <p class="sub">Exact same sleek geometric silhouette of Concept 1, with subtle minimalist facial additions</p>
+    </header>
+
+    <div class="grid-3">
+
+      <!-- 1. Original Concept 1 Silhouette -->
+      <div class="card">
+        <div class="opt-num">Option 1A</div>
+        <div class="logo-container">
+          <svg width="84" height="74" viewBox="0 0 100 88" fill="none">
+            <!-- Exact Concept 1 Sleek Silhouette -->
+            <path d="M12 28 C12 24, 24 6, 32 16 C40 23, 60 23, 68 16 C76 6, 88 24, 88 28 C92 48, 86 80, 50 80 C14 80, 8 48, 12 28 Z" fill="url(#grad_aurora)" />
+            <defs>
+              <linearGradient id="grad_aurora" x1="0" y1="0" x2="100" y2="88" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#06b6d4" />
+                <stop offset="0.5" stop-color="#8b5cf6" />
+                <stop offset="1" stop-color="#ec4899" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="opt-title">Pure Minimalist Silhouette</div>
+        <div class="opt-desc">The original sleek geometric aurora cat head shape with zero face clutter. Pure luxury.</div>
+        <div class="brand-preview">
+          <span class="brand-text">HiMewo</span>
+        </div>
+      </div>
+
+      <!-- 2. Concept 1 + Cute Circle Eyes -->
+      <div class="card featured">
+        <div class="opt-num">Option 1B (Recommended)</div>
+        <div class="logo-container">
+          <svg width="84" height="74" viewBox="0 0 100 88" fill="none">
+            <!-- Silhouette -->
+            <path d="M12 28 C12 24, 24 6, 32 16 C40 23, 60 23, 68 16 C76 6, 88 24, 88 28 C92 48, 86 80, 50 80 C14 80, 8 48, 12 28 Z" fill="url(#grad_aurora)" />
+            <!-- Clean Circular Eyes in White / Dark Core -->
+            <circle cx="38" cy="46" r="5" fill="#090d16" />
+            <circle cx="62" cy="46" r="5" fill="#090d16" />
+            <circle cx="39.5" cy="44.5" r="1.8" fill="#ffffff" />
+            <circle cx="63.5" cy="44.5" r="1.8" fill="#ffffff" />
+            <!-- Subtle Smile -->
+            <path d="M47 56 Q50 59 53 56" stroke="#090d16" stroke-width="2.5" stroke-linecap="round" fill="none" />
+          </svg>
+        </div>
+        <div class="opt-title">Minimalist Eyes & Smile</div>
+        <div class="opt-desc">Exact same Concept 1 shape + two sleek minimalist dark eyes with micro-light catch and tiny smile.</div>
+        <div class="brand-preview">
+          <span class="brand-text">HiMewo</span>
+        </div>
+      </div>
+
+      <!-- 3. Concept 1 + Sleepy Chill Eyes (-- --) -->
+      <div class="card">
+        <div class="opt-num">Option 1C</div>
+        <div class="logo-container">
+          <svg width="84" height="74" viewBox="0 0 100 88" fill="none">
+            <path d="M12 28 C12 24, 24 6, 32 16 C40 23, 60 23, 68 16 C76 6, 88 24, 88 28 C92 48, 86 80, 50 80 C14 80, 8 48, 12 28 Z" fill="url(#grad_aurora)" />
+            <!-- Chill Horizontal Bar Eyes like the sticker -->
+            <rect x="32" y="44" width="10" height="3" rx="1.5" fill="#090d16" />
+            <rect x="58" y="44" width="10" height="3" rx="1.5" fill="#090d16" />
+            <path d="M48 55 Q50 57 52 55" stroke="#090d16" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </div>
+        <div class="opt-title">Chill Sleepy Bar Eyes</div>
+        <div class="opt-desc">Concept 1 shape + the chill relaxed horizontal bar eyes inspired by your sticker.</div>
+        <div class="brand-preview">
+          <span class="brand-text">HiMewo</span>
+        </div>
+      </div>
+
+      <!-- 4. Concept 1 + Winking Eye (^ •) -->
+      <div class="card">
+        <div class="opt-num">Option 1D</div>
+        <div class="logo-container">
+          <svg width="84" height="74" viewBox="0 0 100 88" fill="none">
+            <path d="M12 28 C12 24, 24 6, 32 16 C40 23, 60 23, 68 16 C76 6, 88 24, 88 28 C92 48, 86 80, 50 80 C14 80, 8 48, 12 28 Z" fill="url(#grad_aurora)" />
+            <!-- Winking Left Eye -->
+            <path d="M33 46 Q38 40 43 46" stroke="#090d16" stroke-width="3" stroke-linecap="round" fill="none" />
+            <!-- Dot Right Eye -->
+            <circle cx="62" cy="45" r="5" fill="#090d16" />
+            <circle cx="63.5" cy="43.5" r="1.8" fill="#ffffff" />
+            <path d="M47 55 Q50 58 53 55" stroke="#090d16" stroke-width="2.5" stroke-linecap="round" />
+          </svg>
+        </div>
+        <div class="opt-title">Winking Playful Mewo</div>
+        <div class="opt-desc">Concept 1 shape + sweet winking eye expression (^ •) for an interactive social vibe.</div>
+        <div class="brand-preview">
+          <span class="brand-text">HiMewo</span>
+        </div>
+      </div>
+
+      <!-- 5. Concept 1 + Heart Nose & Micro-Whiskers -->
+      <div class="card">
+        <div class="opt-num">Option 1E</div>
+        <div class="logo-container">
+          <svg width="84" height="74" viewBox="0 0 100 88" fill="none">
+            <path d="M12 28 C12 24, 24 6, 32 16 C40 23, 60 23, 68 16 C76 6, 88 24, 88 28 C92 48, 86 80, 50 80 C14 80, 8 48, 12 28 Z" fill="url(#grad_aurora)" />
+            <circle cx="38" cy="44" r="4.5" fill="#090d16" />
+            <circle cx="62" cy="44" r="4.5" fill="#090d16" />
+            <!-- Tiny Heart Nose -->
+            <path d="M50 51 C48 48, 45 51, 50 56 C55 51, 52 48, 50 51 Z" fill="#090d16" />
+            <!-- Subtle Whiskers -->
+            <line x1="20" y1="46" x2="30" y2="48" stroke="#090d16" stroke-width="2" stroke-linecap="round" />
+            <line x1="20" y1="52" x2="30" y2="52" stroke="#090d16" stroke-width="2" stroke-linecap="round" />
+            <line x1="80" y1="46" x2="70" y2="48" stroke="#090d16" stroke-width="2" stroke-linecap="round" />
+            <line x1="80" y1="52" x2="70" y2="52" stroke="#090d16" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </div>
+        <div class="opt-title">Heart Nose & Whiskers</div>
+        <div class="opt-desc">Concept 1 shape + subtle heart nose and 2 sleek micro-whiskers on each side.</div>
+        <div class="brand-preview">
+          <span class="brand-text">HiMewo</span>
+        </div>
+      </div>
+
+      <!-- 6. Concept 1 + Speech Bubble Tail -->
+      <div class="card">
+        <div class="opt-num">Option 1F</div>
+        <div class="logo-container">
+          <svg width="84" height="74" viewBox="0 0 100 88" fill="none">
+            <!-- Cat Head with Speech Bubble Tail at bottom left -->
+            <path d="M12 28 C12 24, 24 6, 32 16 C40 23, 60 23, 68 16 C76 6, 88 24, 88 28 C92 48, 86 80, 50 80 C36 80, 24 76, 18 84 L18 72 C10 60, 8 48, 12 28 Z" fill="url(#grad_aurora)" />
+            <circle cx="38" cy="46" r="4.5" fill="#090d16" />
+            <circle cx="62" cy="46" r="4.5" fill="#090d16" />
+            <path d="M47 55 Q50 58 53 55" stroke="#090d16" stroke-width="2.5" stroke-linecap="round" />
+          </svg>
+        </div>
+        <div class="opt-title">Speech Bubble Mewo</div>
+        <div class="opt-desc">Concept 1 shape with an integrated chat bubble tail — symbolizing social messaging & connection.</div>
+        <div class="brand-preview">
+          <span class="brand-text">HiMewo</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HiMewo — Luxury Minimalist Monoline Brand Duo (Main & Chat)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(18, 24, 38, 0.94);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --gold: #F5D061;
+      --gold-dark: #D4AF37;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 50px 20px 80px;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(245, 208, 97, 0.12) 0%, transparent 45%),
+        radial-gradient(circle at 85% 25%, rgba(168, 85, 247, 0.12) 0%, transparent 45%),
+        radial-gradient(circle at 50% 80%, rgba(56, 189, 248, 0.1) 0%, transparent 50%);
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 44px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 16px;
+      background: rgba(245, 208, 97, 0.15);
+      color: var(--gold);
+      border: 1px solid rgba(245, 208, 97, 0.3);
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 38px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    p.sub {
+      color: var(--text-muted);
+      font-size: 16px;
+    }
+
+    .duo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-bottom: 44px;
+    }
+
+    @media (max-width: 768px) {
+      .duo-grid { grid-template-columns: 1fr; }
+    }
+
+    .duo-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 28px;
+      padding: 36px 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      backdrop-filter: blur(24px);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+    }
+
+    .duo-card.main-app {
+      border: 1.5px solid rgba(245, 208, 97, 0.4);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5), 0 0 30px rgba(245, 208, 97, 0.15);
+    }
+
+    .duo-card.chat-app {
+      border: 1.5px solid rgba(168, 85, 247, 0.4);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5), 0 0 30px rgba(168, 85, 247, 0.15);
+    }
+
+    .app-tag {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 5px 14px;
+      border-radius: 9999px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .app-tag.main {
+      background: rgba(245, 208, 97, 0.15);
+      color: var(--gold);
+      border: 1px solid rgba(245, 208, 97, 0.3);
+    }
+
+    .app-tag.chat {
+      background: rgba(168, 85, 247, 0.15);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.3);
+    }
+
+    .icon-holder {
+      width: 140px;
+      height: 140px;
+      border-radius: 32px;
+      background: #0d121f;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      box-shadow: 0 16px 36px rgba(0,0,0,0.6);
+      transition: transform 0.2s ease;
+      cursor: pointer;
+    }
+
+    .icon-holder:hover {
+      transform: scale(1.08);
+    }
+
+    .brand-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+
+    .gold-text {
+      background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 50%, #D97706 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .chat-text {
+      background: linear-gradient(135deg, #FDE68A 0%, #A855F7 60%, #38BDF8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .app-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      max-width: 320px;
+    }
+
+    /* 4 Chat Options Section */
+    .chat-options-box {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 32px 24px;
+      margin-bottom: 40px;
+    }
+
+    .chat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-top: 24px;
+    }
+
+    .chat-opt-card {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 18px;
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .chat-opt-card:hover {
+      border-color: var(--gold);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4), 0 0 16px rgba(245, 208, 97, 0.2);
+    }
+
+    .chat-opt-num {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    .chat-opt-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .chat-opt-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .navbar-preview-box {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 28px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="badge">Official Monoline Brand Identity</div>
+      <h1>HiMewo Luxury Minimalist Monoline Duo</h1>
+      <p class="sub">Golden-Ratio continuous vector line artwork for HiMewo Main Social App and HiMewo Chat</p>
+    </header>
+
+    <!-- Side-by-Side Main & Chat Logos -->
+    <div class="duo-grid">
+
+      <!-- 1. Main Social App: Luxury Monoline Cat -->
+      <div class="duo-card main-app">
+        <span class="app-tag main">🌐 HiMewo Social App & Web</span>
+        
+        <div class="icon-holder">
+          <!-- Exact Golden Ratio Luxury Monoline Cat Vector -->
+          <svg width="86" height="86" viewBox="0 0 100 100" fill="none" style="filter: drop-shadow(0 0 14px rgba(245, 208, 97, 0.5));">
+            <!-- Continuous Single Gold Line Cat Profile -->
+            <path d="M24 76 C24 64, 30 52, 34 38 C36 32, 44 18, 48 24 C52 30, 60 30, 64 24 C68 18, 76 32, 74 44 C72 58, 66 74, 52 76 C46 76, 40 74, 36 74 C30 74, 26 76, 24 76 Z" stroke="url(#gold_grad_main)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+            <!-- Flowing Tail Curve -->
+            <path d="M24 76 C18 72, 16 60, 20 48 C22 42, 26 40, 26 36" stroke="url(#gold_grad_main)" stroke-width="4" stroke-linecap="round" fill="none" />
+            <!-- Heart Nose & Whiskers Contour -->
+            <path d="M48 46 C46 44, 43 47, 48 52 C53 47, 50 44, 48 46 Z" fill="url(#gold_grad_main)" />
+            <circle cx="40" cy="40" r="2.5" fill="url(#gold_grad_main)" />
+            <circle cx="56" cy="40" r="2.5" fill="url(#gold_grad_main)" />
+            <defs>
+              <linearGradient id="gold_grad_main" x1="16" y1="18" x2="76" y2="76" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#FDE68A" />
+                <stop offset="0.5" stop-color="#F59E0B" />
+                <stop offset="1" stop-color="#D97706" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+
+        <div class="brand-name gold-text">HiMewo</div>
+        <div class="app-subtitle">The Luxury Monoline Cat: Golden-ratio continuous line vector for Web, Mobile Social App, and Header.</div>
+      </div>
+
+      <!-- 2. Chat Standalone Messenger: Monoline Speech Bubble Cat -->
+      <div class="duo-card chat-app">
+        <span class="app-tag chat">💬 HiMewo Chat / Messenger</span>
+
+        <div class="icon-holder" style="border-color: rgba(168, 85, 247, 0.3);">
+          <!-- Continuous Monoline Cat Integrated with Speech Bubble Loop -->
+          <svg width="86" height="86" viewBox="0 0 100 100" fill="none" style="filter: drop-shadow(0 0 14px rgba(168, 85, 247, 0.5));">
+            <!-- Monoline Cat Head + Speech Bubble Tail Loop -->
+            <path d="M24 74 C24 64, 30 52, 34 38 C36 32, 44 18, 48 24 C52 30, 60 30, 64 24 C68 18, 76 32, 74 44 C72 58, 66 74, 52 74 C44 74, 34 72, 22 84 L24 72 C18 64, 18 52, 22 38" stroke="url(#gold_chat_grad)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+            <!-- 3 Monoline Messaging Dots inside -->
+            <circle cx="40" cy="50" r="3" fill="#FDE68A" />
+            <circle cx="49" cy="50" r="3" fill="#C084FC" />
+            <circle cx="58" cy="50" r="3" fill="#38BDF8" />
+            <defs>
+              <linearGradient id="gold_chat_grad" x1="18" y1="18" x2="76" y2="84" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#FDE68A" />
+                <stop offset="0.5" stop-color="#C084FC" />
+                <stop offset="1" stop-color="#38BDF8" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+
+        <div class="brand-name chat-text">HiMewo <span style="color: #c084fc; -webkit-text-fill-color: #c084fc; font-weight: 700; font-size: 24px;">Chat</span></div>
+        <div class="app-subtitle">The Monoline Chat Cat: Matching continuous line vector with messaging speech loop and communication dots.</div>
+      </div>
+
+    </div>
+
+    <!-- 4 Chat Style Variations in Monoline -->
+    <div class="chat-options-box">
+      <div style="font-family: 'Outfit', sans-serif; font-size: 22px; font-weight: 800; color: #fff; text-align: center; margin-bottom: 6px;">
+        💬 4 Matching Monoline Styles for HiMewo Chat
+      </div>
+      <div style="font-size: 14px; color: var(--text-muted); text-align: center;">
+        Choose your favorite continuous line treatment for the standalone messenger:
+      </div>
+
+      <div class="chat-grid">
+
+        <!-- Chat Option 1: Speech Tail & Tri-Color Dots -->
+        <div class="chat-opt-card">
+          <div class="chat-opt-num">Chat Option 1 (Top Pick)</div>
+          <svg width="64" height="64" viewBox="0 0 100 100" fill="none" style="margin: 10px 0;">
+            <path d="M24 74 C24 64, 30 52, 34 38 C36 32, 44 18, 48 24 C52 30, 60 30, 64 24 C68 18, 76 32, 74 44 C72 58, 66 74, 52 74 C44 74, 34 72, 22 84 L24 72 C18 64, 18 52, 22 38" stroke="url(#co1)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+            <circle cx="40" cy="50" r="3" fill="#FDE68A" />
+            <circle cx="49" cy="50" r="3" fill="#C084FC" />
+            <circle cx="58" cy="50" r="3" fill="#38BDF8" />
+            <defs>
+              <linearGradient id="co1" x1="18" y1="18" x2="76" y2="84" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#FDE68A" />
+                <stop offset="0.5" stop-color="#C084FC" />
+                <stop offset="1" stop-color="#38BDF8" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="chat-opt-title">Speech Loop & Dots</div>
+          <div class="chat-opt-desc">Continuous line cat flowing into a messaging speech tail with 3 glowing typing dots.</div>
+        </div>
+
+        <!-- Chat Option 2: Pure Gold Monoline Bubble Cat -->
+        <div class="chat-opt-card">
+          <div class="chat-opt-num">Chat Option 2</div>
+          <svg width="64" height="64" viewBox="0 0 100 100" fill="none" style="margin: 10px 0;">
+            <!-- Outer Monoline Chat Bubble -->
+            <path d="M20 44 C20 26, 34 18, 50 18 C68 18, 80 28, 80 46 C80 62, 68 72, 52 72 C42 72, 34 70, 24 78 L26 66 C21 58, 20 52, 20 44 Z" stroke="url(#co2)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+            <!-- Inner Monoline Cat Silhouette -->
+            <path d="M38 46 L43 38 L48 44 L52 44 L57 38 L62 46 C64 54, 58 60, 50 60 C42 60, 36 54, 38 46 Z" stroke="url(#co2)" stroke-width="3" stroke-linejoin="round" fill="none" />
+            <defs>
+              <linearGradient id="co2" x1="20" y1="18" x2="80" y2="78" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#FDE68A" />
+                <stop offset="1" stop-color="#D97706" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="chat-opt-title">Monoline Bubble Frame</div>
+          <div class="chat-opt-desc">Pure luxury gold vector chat bubble frame containing the sleek monoline cat profile.</div>
+        </div>
+
+        <!-- Chat Option 3: Dual Convo Monoline Cats -->
+        <div class="chat-opt-card">
+          <div class="chat-opt-num">Chat Option 3</div>
+          <svg width="64" height="64" viewBox="0 0 100 100" fill="none" style="margin: 10px 0;">
+            <!-- Back Purple Monoline Cat Bubble -->
+            <path d="M42 22 C46 16, 54 16, 58 22 C64 28, 74 38, 70 52 C66 62, 56 68, 46 68 C38 68, 32 66, 26 72 L28 62" stroke="#A855F7" stroke-width="3.5" stroke-linecap="round" fill="none" opacity="0.8" />
+            <!-- Front Gold Monoline Cat Bubble -->
+            <path d="M22 72 C22 62, 28 50, 32 36 C34 30, 42 16, 46 22 C50 28, 58 28, 62 22 C66 16, 74 30, 72 42 C70 56, 64 72, 50 72 C42 72, 32 70, 20 82 L22 70" stroke="#F5D061" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+          </svg>
+          <div class="chat-opt-title">Dual Convo Monolines</div>
+          <div class="chat-opt-desc">Two overlapping gold & purple continuous line cats symbolizing friends messaging.</div>
+        </div>
+
+        <!-- Chat Option 4: Acoustic Soundwave Monoline -->
+        <div class="chat-opt-card">
+          <div class="chat-opt-num">Chat Option 4</div>
+          <svg width="64" height="64" viewBox="0 0 100 100" fill="none" style="margin: 10px 0;">
+            <path d="M24 76 C24 64, 30 52, 34 38 C36 32, 44 18, 48 24 C52 30, 60 30, 64 24 C68 18, 76 32, 74 44 C72 58, 66 74, 52 76 C46 76, 40 74, 36 74 C30 74, 26 76, 24 76 Z" stroke="#F5D061" stroke-width="4" stroke-linecap="round" fill="none" />
+            <!-- 3 Soundwaves radiating outward -->
+            <path d="M72 44 C76 48, 76 54, 72 58" stroke="#38BDF8" stroke-width="3" stroke-linecap="round" fill="none" />
+            <path d="M78 38 C84 46, 84 56, 78 64" stroke="#A855F7" stroke-width="3" stroke-linecap="round" fill="none" />
+            <path d="M84 32 C92 42, 92 60, 84 70" stroke="#EC4899" stroke-width="3" stroke-linecap="round" fill="none" />
+          </svg>
+          <div class="chat-opt-title">Voice & Wave Monoline</div>
+          <div class="chat-opt-desc">Luxury monoline cat with radiating aurora soundwaves for voice chat & stories.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Live Desktop Navbar Placement -->
+    <div class="navbar-preview-box">
+      <div style="font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 16px; text-align: center;">
+        🖥️ Desktop Website Navbar Placement (Luxury Monoline Brand)
+      </div>
+      <div style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 18px; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <!-- Luxury Monoline Cat in Navbar -->
+          <svg width="34" height="34" viewBox="0 0 100 100" fill="none" style="filter: drop-shadow(0 0 8px rgba(245, 208, 97, 0.6));">
+            <path d="M24 76 C24 64, 30 52, 34 38 C36 32, 44 18, 48 24 C52 30, 60 30, 64 24 C68 18, 76 32, 74 44 C72 58, 66 74, 52 76 C46 76, 40 74, 36 74 C30 74, 26 76, 24 76 Z" stroke="url(#nav_gold)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M24 76 C18 72, 16 60, 20 48 C22 42, 26 40, 26 36" stroke="url(#nav_gold)" stroke-width="4.5" stroke-linecap="round" fill="none" />
+            <path d="M48 46 C46 44, 43 47, 48 52 C53 47, 50 44, 48 46 Z" fill="url(#nav_gold)" />
+            <defs>
+              <linearGradient id="nav_gold" x1="16" y1="18" x2="76" y2="76" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#FDE68A" />
+                <stop offset="0.5" stop-color="#F59E0B" />
+                <stop offset="1" stop-color="#D97706" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <span style="font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 800; background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 50%, #EC4899 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">HiMewo</span>
+        </div>
+
+        <div style="display: flex; gap: 16px; align-items: center;">
+          <div style="background: rgba(255,255,255,0.06); padding: 8px 20px; border-radius: 9999px; font-size: 13px; color: #94a3b8;">
+            🔍 Search HiMewo...
+          </div>
+          <div style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #F5D061, #A855F7);"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

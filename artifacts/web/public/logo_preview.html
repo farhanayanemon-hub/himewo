@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HiMewo — Exact Pixel Cat Logo Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(18, 24, 38, 0.9);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --cyan: #38bdf8;
+      --purple: #a855f7;
+      --pink: #ec4899;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 40px 20px 80px;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 85% 25%, rgba(168, 85, 247, 0.12) 0%, transparent 45%);
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 16px;
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 36px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    p.sub {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    @media (max-width: 768px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 24px;
+      backdrop-filter: blur(20px);
+    }
+
+    .card-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .tag-sm {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.06);
+      color: var(--cyan);
+      font-weight: 600;
+    }
+
+    /* Light Box */
+    .light-box {
+      background: #ffffff;
+      color: #0f172a;
+      border-radius: 14px;
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 140px;
+      border: 1px solid rgba(0,0,0,0.08);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    /* Dark Box */
+    .dark-box {
+      background: #0f1422;
+      border-radius: 14px;
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 140px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    /* Header Nav Mockup */
+    .nav-mockup {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(12px);
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    .brand-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 24px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #38bdf8 0%, #a855f7 50%, #ec4899 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+    }
+
+    .sizes-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 20px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.05);
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .size-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .size-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* SVG Crisp Vector */
+    .pixel-cat-svg {
+      image-rendering: pixelated;
+      shape-rendering: crispEdges;
+      transition: transform 0.2s ease;
+    }
+
+    .pixel-cat-svg:hover {
+      transform: scale(1.1);
+    }
+
+    .sticker-cat {
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+    }
+
+    .glow-cat {
+      filter: drop-shadow(0 0 10px #38bdf8) drop-shadow(0 0 20px rgba(168, 85, 247, 0.4));
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="badge">Option A: Exact Vector Logo</div>
+      <h1>HiMewo Exact Pixel Cat</h1>
+      <p class="sub">100% Scalable Vector (SVG) — Shob screen-e razor-sharp dekhabe (No blur / No quality loss)</p>
+    </header>
+
+    <!-- Top Grid: Light Mode vs Dark Mode -->
+    <div class="grid-2">
+      <!-- Light Mode Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>☀️ Light Mode Appearance</span>
+          <span class="tag-sm">Exact 1:1 Sticker</span>
+        </div>
+        <div class="light-box">
+          <div class="brand-group">
+            <!-- Exact Pixel Cat SVG with Sticker Border -->
+            <svg class="pixel-cat-svg sticker-cat" width="56" height="36" viewBox="0 0 28 18" fill="none">
+              <!-- White Die-cut Sticker Outline -->
+              <path d="M4 8h2v-2h4v-2h3v-2h3v-2h3v2h2v-2h3v5h2v6h-2v3h-3v2h-13v-2h-5v-3h-3v-4h2v-1z" fill="#ffffff" stroke="#e2e8f0" stroke-width="0.6"/>
+              <!-- Black Cat Silhouette -->
+              <!-- Tail -->
+              <rect x="2" y="10" width="4" height="3" fill="#000000"/>
+              <!-- Body -->
+              <rect x="5" y="8" width="4" height="6" fill="#000000"/>
+              <rect x="8" y="6" width="5" height="9" fill="#000000"/>
+              <!-- Left Ear -->
+              <rect x="13" y="3" width="3" height="4" fill="#000000"/>
+              <rect x="14" y="4" width="1" height="1" fill="#ffffff"/><!-- Left ear inner hole -->
+              <!-- Valley & Right Ear -->
+              <rect x="16" y="5" width="2" height="7" fill="#000000"/>
+              <rect x="18" y="2" width="4" height="5" fill="#000000"/>
+              <rect x="19" y="3" width="2" height="2" fill="#ffffff"/><!-- Right ear inner hole -->
+              <!-- Face / Head -->
+              <rect x="18" y="6" width="5" height="7" fill="#000000"/>
+              <rect x="13" y="7" width="10" height="7" fill="#000000"/>
+              <rect x="5" y="10" width="18" height="4" fill="#000000"/>
+              <rect x="9" y="14" width="12" height="1" fill="#000000"/>
+              <!-- Chill Sleepy Eyes -->
+              <rect x="12" y="10" width="3" height="1" fill="#ffffff"/>
+              <rect x="18" y="10" width="3" height="1" fill="#ffffff"/>
+            </svg>
+            <span class="brand-title" style="background: #0f172a; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">HiMewo</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dark Mode Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>🌙 Dark Mode (Aurora Glow)</span>
+          <span class="tag-sm">Neon Glowing Eyes</span>
+        </div>
+        <div class="dark-box">
+          <div class="brand-group">
+            <svg class="pixel-cat-svg glow-cat" width="56" height="36" viewBox="0 0 28 18" fill="none">
+              <!-- Cat Body in Pure Crisp White or Obsidian with Cyan Glow -->
+              <rect x="2" y="10" width="4" height="3" fill="#ffffff"/>
+              <rect x="5" y="8" width="4" height="6" fill="#ffffff"/>
+              <rect x="8" y="6" width="5" height="9" fill="#ffffff"/>
+              <rect x="13" y="3" width="3" height="4" fill="#ffffff"/>
+              <rect x="14" y="4" width="1" height="1" fill="#090d16"/>
+              <rect x="16" y="5" width="2" height="7" fill="#ffffff"/>
+              <rect x="18" y="2" width="4" height="5" fill="#ffffff"/>
+              <rect x="19" y="3" width="2" height="2" fill="#090d16"/>
+              <rect x="18" y="6" width="5" height="7" fill="#ffffff"/>
+              <rect x="13" y="7" width="10" height="7" fill="#ffffff"/>
+              <rect x="5" y="10" width="18" height="4" fill="#ffffff"/>
+              <rect x="9" y="14" width="12" height="1" fill="#ffffff"/>
+              <!-- Glowing Cyan Eyes -->
+              <rect x="12" y="10" width="3" height="1" fill="#38bdf8"/>
+              <rect x="18" y="10" width="3" height="1" fill="#38bdf8"/>
+            </svg>
+            <span class="brand-title">HiMewo</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Website Header Mockup -->
+    <div class="card" style="margin-bottom: 32px;">
+      <div class="card-title">
+        <span>🖥️ Live Website Navbar Placement</span>
+        <span class="tag-sm">Desktop & Mobile Header</span>
+      </div>
+      <div class="nav-mockup">
+        <div class="brand-group">
+          <!-- Exact Cat Icon -->
+          <svg class="pixel-cat-svg" width="38" height="24" viewBox="0 0 28 18" fill="none">
+            <rect x="2" y="10" width="4" height="3" fill="#ffffff"/>
+            <rect x="5" y="8" width="4" height="6" fill="#ffffff"/>
+            <rect x="8" y="6" width="5" height="9" fill="#ffffff"/>
+            <rect x="13" y="3" width="3" height="4" fill="#ffffff"/>
+            <rect x="14" y="4" width="1" height="1" fill="#090d16"/>
+            <rect x="16" y="5" width="2" height="7" fill="#ffffff"/>
+            <rect x="18" y="2" width="4" height="5" fill="#ffffff"/>
+            <rect x="19" y="3" width="2" height="2" fill="#090d16"/>
+            <rect x="18" y="6" width="5" height="7" fill="#ffffff"/>
+            <rect x="13" y="7" width="10" height="7" fill="#ffffff"/>
+            <rect x="5" y="10" width="18" height="4" fill="#ffffff"/>
+            <rect x="9" y="14" width="12" height="1" fill="#ffffff"/>
+            <rect x="12" y="10" width="3" height="1" fill="#38bdf8"/>
+            <rect x="18" y="10" width="3" height="1" fill="#38bdf8"/>
+          </svg>
+          <span class="brand-title" style="font-size: 22px;">HiMewo</span>
+        </div>
+
+        <div style="display: flex; gap: 16px; align-items: center;">
+          <div style="background: rgba(255,255,255,0.06); padding: 8px 16px; border-radius: 9999px; font-size: 13px; color: #94a3b8; display: flex; align-items: center; gap: 8px;">
+            🔍 <span>Search HiMewo...</span>
+          </div>
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #38bdf8, #a855f7);"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scalability Across All Screen Sizes -->
+    <div class="card">
+      <div class="card-title">
+        <span>📱 Responsive Scalability (Shob Screen-e 100% Sharp)</span>
+        <span class="tag-sm">16px to 96px</span>
+      </div>
+      <div class="sizes-row">
+        <!-- 16px Favicon -->
+        <div class="size-item">
+          <svg class="pixel-cat-svg" width="16" height="11" viewBox="0 0 28 18" fill="none">
+            <rect width="28" height="18" fill="#38bdf8"/>
+            <rect x="2" y="10" width="4" height="3" fill="#000"/>
+            <rect x="5" y="8" width="18" height="6" fill="#000"/>
+            <rect x="13" y="3" width="9" height="7" fill="#000"/>
+          </svg>
+          <span class="size-label">16px (Favicon)</span>
+        </div>
+
+        <!-- 24px Mobile Tab -->
+        <div class="size-item">
+          <svg class="pixel-cat-svg" width="24" height="16" viewBox="0 0 28 18" fill="none">
+            <rect x="2" y="10" width="4" height="3" fill="#ffffff"/>
+            <rect x="5" y="8" width="18" height="6" fill="#ffffff"/>
+            <rect x="13" y="3" width="3" height="4" fill="#ffffff"/>
+            <rect x="18" y="2" width="4" height="5" fill="#ffffff"/>
+            <rect x="12" y="10" width="3" height="1" fill="#38bdf8"/>
+            <rect x="18" y="10" width="3" height="1" fill="#38bdf8"/>
+          </svg>
+          <span class="size-label">24px (Mobile Nav)</span>
+        </div>
+
+        <!-- 36px Desktop Nav -->
+        <div class="size-item">
+          <svg class="pixel-cat-svg" width="36" height="24" viewBox="0 0 28 18" fill="none">
+            <rect x="2" y="10" width="4" height="3" fill="#ffffff"/>
+            <rect x="5" y="8" width="18" height="6" fill="#ffffff"/>
+            <rect x="13" y="3" width="3" height="4" fill="#ffffff"/>
+            <rect x="18" y="2" width="4" height="5" fill="#ffffff"/>
+            <rect x="12" y="10" width="3" height="1" fill="#38bdf8"/>
+            <rect x="18" y="10" width="3" height="1" fill="#38bdf8"/>
+          </svg>
+          <span class="size-label">36px (Navbar)</span>
+        </div>
+
+        <!-- 56px App Icon -->
+        <div class="size-item">
+          <svg class="pixel-cat-svg" width="56" height="36" viewBox="0 0 28 18" fill="none">
+            <rect x="2" y="10" width="4" height="3" fill="#ffffff"/>
+            <rect x="5" y="8" width="18" height="6" fill="#ffffff"/>
+            <rect x="13" y="3" width="3" height="4" fill="#ffffff"/>
+            <rect x="14" y="4" width="1" height="1" fill="#090d16"/>
+            <rect x="18" y="2" width="4" height="5" fill="#ffffff"/>
+            <rect x="19" y="3" width="2" height="2" fill="#090d16"/>
+            <rect x="12" y="10" width="3" height="1" fill="#38bdf8"/>
+            <rect x="18" y="10" width="3" height="1" fill="#38bdf8"/>
+          </svg>
+          <span class="size-label">56px (App Icon)</span>
+        </div>
+
+        <!-- 84px Splash / Hero -->
+        <div class="size-item">
+          <svg class="pixel-cat-svg" width="84" height="54" viewBox="0 0 28 18" fill="none">
+            <rect x="2" y="10" width="4" height="3" fill="#ffffff"/>
+            <rect x="5" y="8" width="18" height="6" fill="#ffffff"/>
+            <rect x="13" y="3" width="3" height="4" fill="#ffffff"/>
+            <rect x="14" y="4" width="1" height="1" fill="#090d16"/>
+            <rect x="18" y="2" width="4" height="5" fill="#ffffff"/>
+            <rect x="19" y="3" width="2" height="2" fill="#090d16"/>
+            <rect x="12" y="10" width="3" height="1" fill="#38bdf8"/>
+            <rect x="18" y="10" width="3" height="1" fill="#38bdf8"/>
+          </svg>
+          <span class="size-label">84px (Hero/Auth)</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

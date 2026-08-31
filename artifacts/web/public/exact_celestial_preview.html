@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HiMewo — Exact Celestial Aurora Mewo Brand Showcase</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(18, 24, 38, 0.94);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 50px 20px 80px;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(6, 182, 212, 0.18) 0%, transparent 45%),
+        radial-gradient(circle at 85% 25%, rgba(168, 85, 247, 0.18) 0%, transparent 45%),
+        radial-gradient(circle at 50% 80%, rgba(236, 72, 153, 0.12) 0%, transparent 50%);
+    }
+
+    .container {
+      max-width: 1060px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 16px;
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 38px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    p.sub {
+      color: var(--text-muted);
+      font-size: 16px;
+    }
+
+    .duo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 36px;
+      margin-bottom: 44px;
+    }
+
+    @media (max-width: 768px) {
+      .duo-grid { grid-template-columns: 1fr; }
+    }
+
+    .duo-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 28px;
+      padding: 40px 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      backdrop-filter: blur(24px);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+    }
+
+    .duo-card.main-app {
+      border: 1.5px solid rgba(56, 189, 248, 0.4);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5), 0 0 30px rgba(56, 189, 248, 0.15);
+    }
+
+    .duo-card.chat-app {
+      border: 1.5px solid rgba(168, 85, 247, 0.4);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5), 0 0 30px rgba(168, 85, 247, 0.15);
+    }
+
+    .app-tag {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 5px 14px;
+      border-radius: 9999px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .app-tag.main {
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .app-tag.chat {
+      background: rgba(168, 85, 247, 0.15);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.3);
+    }
+
+    .image-crop-box {
+      width: 140px;
+      height: 140px;
+      border-radius: 32px;
+      background: #090d16;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      overflow: hidden;
+      box-shadow: 0 16px 36px rgba(0,0,0,0.6);
+      position: relative;
+    }
+
+    .exact-cat-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      transition: transform 0.2s ease;
+    }
+
+    .exact-cat-img:hover {
+      transform: scale(1.08);
+    }
+
+    .brand-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+
+    .grad-main {
+      background: linear-gradient(135deg, #38bdf8 0%, #a855f7 50%, #ec4899 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .grad-chat {
+      background: linear-gradient(135deg, #a855f7 0%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .app-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      max-width: 340px;
+    }
+
+    .navbar-preview-section {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 28px;
+    }
+
+    .nav-box {
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(12px);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="badge">Official Exact Brand Identity</div>
+      <h1>Exact Celestial Aurora Mewo Duo</h1>
+      <p class="sub">Direct from your approved Concept 1 artwork — Main Social Web/App & Dedicated Messenger</p>
+    </header>
+
+    <div class="duo-grid">
+
+      <!-- 1. Main Social App: Exact Concept 1 Artwork -->
+      <div class="duo-card main-app">
+        <span class="app-tag main">🌐 Main Social App & Web</span>
+        
+        <div class="image-crop-box">
+          <img src="/celestial_aurora_mewo.png" alt="Concept 1 Celestial Aurora Mewo" class="exact-cat-img" />
+        </div>
+
+        <div class="brand-name grad-main">HiMewo</div>
+        <div class="app-subtitle">The Exact Celestial Aurora Mewo (Concept 1): Smooth 3D glowing aurora cat head for Main Social App.</div>
+      </div>
+
+      <!-- 2. Chat App: The Celestial Aurora Chat Edition -->
+      <div class="duo-card chat-app">
+        <span class="app-tag chat">💬 HiMewo Chat / Messenger</span>
+
+        <div class="image-crop-box" style="border-color: rgba(168, 85, 247, 0.3);">
+          <img src="/celestial_aurora_mewo.png" alt="Celestial Aurora Chat Mewo" class="exact-cat-img" style="filter: hue-rotate(20deg) brightness(1.05);" />
+          <div style="position: absolute; bottom: 8px; right: 8px; width: 14px; height: 14px; background: #06b6d4; border-radius: 50%; border: 2px solid #090d16;"></div>
+        </div>
+
+        <div class="brand-name grad-chat">HiMewo <span style="color: #c084fc; -webkit-text-fill-color: #c084fc; font-weight: 700; font-size: 24px;">Chat</span></div>
+        <div class="app-subtitle">HiMewo Chat: Matching Celestial Aurora icon with active messaging indicator for standalone chat & calls.</div>
+      </div>
+
+    </div>
+
+    <!-- Live Desktop Navbar Placement with Exact Image -->
+    <div class="navbar-preview-section">
+      <div style="font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 16px; text-align: center;">
+        🖥️ Desktop Website Navbar Placement (Live Exact Image)
+      </div>
+      <div class="nav-box">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <!-- Exact Concept 1 Cat in Navbar -->
+          <img src="/celestial_aurora_mewo.png" alt="Logo" style="width: 38px; height: 38px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6));" />
+          <span style="font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 800; background: linear-gradient(135deg, #38bdf8, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">HiMewo</span>
+        </div>
+
+        <div style="display: flex; gap: 16px; align-items: center;">
+          <div style="background: rgba(255,255,255,0.06); padding: 8px 20px; border-radius: 9999px; font-size: 13px; color: #94a3b8;">
+            🔍 Search HiMewo...
+          </div>
+          <div style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #38bdf8, #a855f7);"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

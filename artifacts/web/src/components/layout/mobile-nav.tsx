@@ -17,6 +17,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { PixelCatIcon } from "@/components/logo";
 
 type IconType = ComponentType<{ className?: string; fill?: string }>;
 export type MobileNavItem = { href: string; icon: IconType; label: string; color?: string; iconUrl?: string };
@@ -62,7 +63,8 @@ export function MobileMenuButton({
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
         <SheetContent side="right" className="w-[300px] overflow-y-auto p-0">
           <SheetHeader className="px-4 pt-4 pb-2 text-left">
-            <SheetTitle className="text-xl font-extrabold aurora-gradient-text">
+            <SheetTitle className="text-xl font-extrabold aurora-gradient-text flex items-center gap-2">
+              <PixelCatIcon size={24} glow />
               HiMewo
             </SheetTitle>
           </SheetHeader>

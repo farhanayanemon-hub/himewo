@@ -109,9 +109,9 @@ export function mentionsToPlainText(content: string): string {
   return content.replace(MENTION_RE, "@$1");
 }
 
-// Facebook-style hashtags: "#word" (letters, digits, underscore) becomes a
-// link to the hashtag feed. Shared shape with the mobile apps.
-export const HASHTAG_RE = /#(\w{1,64})/g;
+// Facebook-style hashtags: "#word" (letters, digits, underscore, Bangla Unicode) becomes a
+// link to the hashtag feed. Rendered in purple.
+export const HASHTAG_RE = /#([a-zA-Z0-9_\u0980-\u09FF]{1,64})/g;
 
 function withHashtags(text: string, keyBase: string): React.ReactNode[] {
   const out: React.ReactNode[] = [];
@@ -122,8 +122,8 @@ function withHashtags(text: string, keyBase: string): React.ReactNode[] {
     out.push(
       <Link
         key={`${keyBase}-h${i++}`}
-        href={`/hashtag/${m[1]}`}
-        className="text-primary font-semibold hover:underline"
+        href={`/hashtag/${encodeURIComponent(m[1])}`}
+        className="text-purple-600 dark:text-purple-400 font-semibold hover:text-purple-500 hover:underline transition-colors"
       >
         #{m[1]}
       </Link>,

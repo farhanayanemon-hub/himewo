@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HiMewo — Celestial Aurora Mewo (10 Discord-Style Variations)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(18, 24, 38, 0.94);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 40px 20px 80px;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(6, 182, 212, 0.15) 0%, transparent 45%),
+        radial-gradient(circle at 85% 25%, rgba(168, 85, 247, 0.15) 0%, transparent 45%);
+    }
+
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 16px;
+      background: rgba(88, 101, 242, 0.15);
+      color: #5865F2;
+      border: 1px solid rgba(88, 101, 242, 0.3);
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 36px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    p.sub {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+
+    .grid-5 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 36px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 22px;
+      padding: 22px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      backdrop-filter: blur(20px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      position: relative;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(88, 101, 242, 0.5);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 25px rgba(88, 101, 242, 0.25);
+    }
+
+    .card.top-pick {
+      border: 1.5px solid rgba(56, 189, 248, 0.6);
+    }
+
+    .card.top-pick::before {
+      content: '★ TOP PICK';
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: linear-gradient(135deg, #00C6FF, #0072FF);
+      color: white;
+      font-size: 8px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 9999px;
+      letter-spacing: 0.5px;
+    }
+
+    .logo-container {
+      width: 90px;
+      height: 90px;
+      margin: 10px 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease;
+    }
+
+    .card:hover .logo-container {
+      transform: scale(1.08);
+    }
+
+    .v-num {
+      font-size: 11px;
+      font-weight: 800;
+      color: #5865F2;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .v-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .v-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .navbar-preview-box {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 28px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="badge">Discord Style Fusion</div>
+      <h1>Celestial Aurora Mewo in Discord Style</h1>
+      <p class="sub">10 distinct Discord-inspired squircle emblems featuring the Celestial Aurora cat geometry</p>
+    </header>
+
+    <div class="grid-5">
+
+      <!-- 1. The Classic Aurora Discord Squircle -->
+      <div class="card top-pick">
+        <div class="v-num">Variation 1 (Top Pick)</div>
+        <div class="logo-container">
+          <svg width="84" height="84" viewBox="0 0 100 100" fill="none">
+            <!-- Discord Squircle with Aurora Gradient -->
+            <rect width="100" height="100" rx="26" fill="url(#disc_grad1)" />
+            <rect x="2" y="2" width="96" height="96" rx="24" stroke="rgba(255,255,255,0.25)" stroke-width="2" />
+            <!-- Celestial Cat Silhouette Cutout inside -->
+            <path d="M22 36 C22 32, 32 18, 38 24 C44 29, 56 29, 62 24 C68 18, 78 32, 78 36 C82 52, 78 74, 50 74 C22 74, 18 52, 22 36 Z" fill="#090d16" />
+            <!-- Clean White Circle Eyes -->
+            <circle cx="40" cy="48" r="4.5" fill="#ffffff" />
+            <circle cx="60" cy="48" r="4.5" fill="#ffffff" />
+            <defs>
+              <linearGradient id="disc_grad1" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#5865F2" />
+                <stop offset="0.5" stop-color="#7c3aed" />
+                <stop offset="1" stop-color="#a855f7" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="v-title">Classic Aurora Squircle</div>
+        <div class="v-desc">Discord indigo squircle with bold minimalist Celestial Cat cutout and white round eyes.</div>
+      </div>
+
+      <!-- 2. The Electric Cyan Mesh Squircle -->
+      <div class="card">
+        <div class="v-num">Variation 2</div>
+        <div class="logo-container">
+          <svg width="84" height="84" viewBox="0 0 100 100" fill="none">
+            <rect width="100" height="100" rx="26" fill="#0b0f19" stroke="url(#disc_grad2)" stroke-width="3" />
+            <!-- Glowing Aurora Cat Inside -->
+            <path d="M22 36 C22 32, 32 18, 38 24 C44 29, 56 29, 62 24 C68 18, 78 32, 78 36 C82 52, 78 74, 50 74 C22 74, 18 52, 22 36 Z" fill="url(#disc_grad2)" />
+            <circle cx="40" cy="48" r="4.5" fill="#0b0f19" />
+            <circle cx="60" cy="48" r="4.5" fill="#0b0f19" />
+            <defs>
+              <linearGradient id="disc_grad2" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#00F0FF" />
+                <stop offset="0.5" stop-color="#8B5CF6" />
+                <stop offset="1" stop-color="#EC4899" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="v-title">Obsidian Mesh Glow</div>
+        <div class="v-desc">Obsidian dark squircle with vivid floating cyan-pink-purple glowing Celestial Cat.</div>
+      </div>
+
+      <!-- 3. The Gamer Headset Discord Mewo -->
+      <div class="card">
+        <div class="v-num">Variation 3</div>
+        <div class="logo-container">
+          <svg width="84" height="84" viewBox="0 0 100 100" fill="none">
+            <rect width="100" height="100" rx="26" fill="url(#disc_grad3)" />
+            <!-- Headset Arc -->
+            <path d="M20 48 C20 22, 80 22, 80 48" stroke="#ffffff" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.95" />
+            <rect x="16" y="44" width="8" height="16" rx="4" fill="#ffffff" />
+            <rect x="76" y="44" width="8" height="16" rx="4" fill="#ffffff" />
+            <!-- Cat Head -->
+            <path d="M24 40 C24 36, 33 24, 39 30 C44 34, 56 34, 61 30 C67 24, 76 36, 76 40 C80 54, 76 74, 50 74 C24 74, 20 54, 24 40 Z" fill="#090d16" />
+            <circle cx="41" cy="52" r="4" fill="#38BDF8" />
+            <circle cx="59" cy="52" r="4" fill="#38BDF8" />
+            <defs>
+              <linearGradient id="disc_grad3" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#EC4899" />
+                <stop offset="1" stop-color="#8B5CF6" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="v-title">Headset Voice Mewo</div>
+        <div class="v-desc">Discord-style squircle with cat wearing minimalist gaming headphones for voice & calls.</div>
+      </div>
+
+      <!-- 4. The Winking & Blushing Mewo -->
+      <div class="card">
+        <div class="v-num">Variation 4</div>
+        <div class="logo-container">
+          <svg width="84" height="84" viewBox="0 0 100 100" fill="none">
+            <rect width="100" height="100" rx="26" fill="url(#disc_grad4)" />
+            <path d="M22 36 C22 32, 32 18, 38 24 C44 29, 56 29, 62 24 C68 18, 78 32, 78 36 C82 52, 78 74, 50 74 C22 74, 18 52, 22 36 Z" fill="#090d16" />
+            <!-- Wink Left -->
+            <path d="M35 48 Q40 43 45 48" stroke="#ffffff" stroke-width="3" stroke-linecap="round" fill="none" />
+            <!-- Dot Right -->
+            <circle cx="60" cy="47" r="4.5" fill="#ffffff" />
+            <!-- Blush -->
+            <circle cx="32" cy="54" r="3" fill="#EC4899" opacity="0.8" />
+            <circle cx="68" cy="54" r="3" fill="#EC4899" opacity="0.8" />
+            <defs>
+              <linearGradient id="disc_grad4" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#0284C7" />
+                <stop offset="1" stop-color="#6366F1" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="v-title">Winking & Blushing</div>
+        <div class="v-desc">Playful winking eye (^ •) with glowing blush dots. Warm, engaging, and social.</div>
+      </div>
+
+      <!-- 5. 3D Frosted Glass VisionOS Squircle -->
+      <div class="card">
+        <div class="v-num">Variation 5</div>
+        <div class="logo-container">
+          <svg width="84" height="84" viewBox="0 0 100 100" fill="none">
+            <rect width="100" height="100" rx="26" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.3)" stroke-width="2" />
+            <circle cx="50" cy="50" r="28" fill="url(#disc_grad5)" opacity="0.5" style="filter: blur(14px);" />
+            <path d="M22 36 C22 32, 32 18, 38 24 C44 29, 56 29, 62 24 C68 18, 78 32, 78 36 C82 52, 78 74, 50 74 C22 74, 18 52, 22 36 Z" fill="#ffffff" />
+            <circle cx="40" cy="48" r="4" fill="#090d16" />
+            <circle cx="60" cy="48" r="4" fill="#090d16" />
+            <defs>
+              <linearGradient id="disc_grad5" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#00F0FF" />
+                <stop offset="1" stop-color="#A855F7" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="v-title">3D Frosted Glass Prism</div>
+        <div class="v-desc">VisionOS frosted glass tile with floating clean white cat glyph and aurora ambient light.</div>
+      </div>
+
+      <!-- 6. Chat Speech Bubble Squircle (For Chat App) -->
+      <div class="card">
+        <div class="v-num">Variation 6 (Chat App)</div>
+        <div class="logo-container">
+          <svg width="84" height="84" viewBox="0 0 100 100" fill="none">
+            <!-- Discord Squircle with Integrated Chat Tail -->
+            <path d="M26 14 C12 14, 14 26, 14 36 C14 56, 14 74, 14 74 C14 74, 20 86, 10 92 L28 86 C32 86, 74 86, 74 86 C88 86, 86 74, 86 64 C86 44, 86 26, 86 26 C86 12, 74 14, 60 14 Z" fill="url(#disc_grad6)" />
+            <path d="M26 38 C26 34, 34 22, 39 28 C44 32, 56 32, 61 28 C66 22, 74 34, 74 38 C76 50, 74 68, 50 68 C26 68, 24 50, 26 38 Z" fill="#090d16" />
+            <circle cx="40" cy="48" r="4" fill="#38BDF8" />
+            <circle cx="60" cy="48" r="4" fill="#38BDF8" />
+            <defs>
+              <linearGradient id="disc_grad6" x1="14" y1="14" x2="86" y2="92" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#38BDF8" />
+                <stop offset="0.5" stop-color="#A855F7" />
+                <stop offset="1" stop-color="#EC4899" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="v-title">Discord Speech Bubble</div>
+        <div class="v-desc">Discord squircle shaped with a messaging tail. Perfect twin match for HiMewo Chat.</div>
+      </div>
+
+      <!-- 7. Dual Overlapping Squad Mewos -->
+      <div class="card">
+        <div class="v-num">Variation 7</div>
+        <div class="logo-container">
+          <svg width="84" height="84" viewBox="0 0 100 100" fill="none">
+            <!-- Back Purple Squircle -->
+            <rect x="25" y="10" width="65" height="65" rx="18" fill="#8B5CF6" opacity="0.8" />
+            <!-- Front Cyan Squircle -->
+            <rect x="10" y="25" width="65" height="65" rx="18" fill="#00C6FF" />
+            <circle cx="34" cy="54" r="3.5" fill="#090d16" />
+            <circle cx="50" cy="54" r="3.5" fill="#090d16" />
+          </svg>
+        </div>
+        <div class="v-title">Dual Squad Squircles</div>
+        <div class="v-desc">Two interlocking Discord squircles showing multiplayer squad, friends, and active chatting.</div>
+      </div>
+
+      <!-- 8. Minimalist Cyber Line Squircle -->
+      <div class="card">
+        <div class="v-num">Variation 8</div>
+        <div class="logo-container">
+          <svg width="84" height="84" viewBox="0 0 100 100" fill="none">
+            <rect width="100" height="100" rx="26" fill="#090d16" stroke="#1e293b" stroke-width="2" />
+            <!-- Single Line Glowing Neon Cat -->
+            <path d="M22 36 C22 32, 32 18, 38 24 C44 29, 56 29, 62 24 C68 18, 78 32, 78 36 C82 52, 78 74, 50 74 C22 74, 18 52, 22 36 Z" stroke="#00F0FF" stroke-width="3" fill="none" style="filter: drop-shadow(0 0 8px #00F0FF);" />
+            <rect x="34" y="47" width="8" height="3" rx="1.5" fill="#00F0FF" />
+            <rect x="58" y="47" width="8" height="3" rx="1.5" fill="#00F0FF" />
+          </svg>
+        </div>
+        <div class="v-title">Cyber Neon Line</div>
+        <div class="v-desc">Dark obsidian squircle with razor-sharp electric cyan glowing neon line vector cat.</div>
+      </div>
+
+      <!-- 9. Chill Sleepy Loaf Discord Mewo -->
+      <div class="card">
+        <div class="v-num">Variation 9</div>
+        <div class="logo-container">
+          <svg width="84" height="84" viewBox="0 0 100 100" fill="none">
+            <rect width="100" height="100" rx="26" fill="url(#disc_grad9)" />
+            <path d="M22 36 C22 32, 32 18, 38 24 C44 29, 56 29, 62 24 C68 18, 78 32, 78 36 C82 52, 78 74, 50 74 C22 74, 18 52, 22 36 Z" fill="#090d16" />
+            <!-- Sleepy Chill Bar Eyes (-- --) -->
+            <rect x="34" y="46" width="10" height="3.5" rx="1.7" fill="#ffffff" />
+            <rect x="56" y="46" width="10" height="3.5" rx="1.7" fill="#ffffff" />
+            <defs>
+              <linearGradient id="disc_grad9" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#4F46E5" />
+                <stop offset="1" stop-color="#7C3AED" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="v-title">Chill Sleepy Bar Eyes</div>
+        <div class="v-desc">Discord squircle + the chill relaxed horizontal bar eyes inspired by your favorite sticker.</div>
+      </div>
+
+      <!-- 10. Cosmic Sparkle Star Mewo -->
+      <div class="card">
+        <div class="v-num">Variation 10</div>
+        <div class="logo-container">
+          <svg width="84" height="84" viewBox="0 0 100 100" fill="none">
+            <rect width="100" height="100" rx="26" fill="url(#disc_grad10)" />
+            <path d="M22 36 C22 32, 32 18, 38 24 C44 29, 56 29, 62 24 C68 18, 78 32, 78 36 C82 52, 78 74, 50 74 C22 74, 18 52, 22 36 Z" fill="#090d16" />
+            <!-- 4-point Star Sparkle Eyes -->
+            <path d="M40 44 L41.5 47.5 L45 49 L41.5 50.5 L40 54 L38.5 50.5 L35 49 L38.5 47.5 Z" fill="#38BDF8" />
+            <path d="M60 44 L61.5 47.5 L65 49 L61.5 50.5 L60 54 L58.5 50.5 L55 49 L58.5 47.5 Z" fill="#38BDF8" />
+            <defs>
+              <linearGradient id="disc_grad10" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#06B6D4" />
+                <stop offset="0.5" stop-color="#3B82F6" />
+                <stop offset="1" stop-color="#8B5CF6" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="v-title">Cosmic Star Sparkle</div>
+        <div class="v-desc">Deep cosmic gradient squircle with glowing 4-point star sparkle eyes. Magical & vibrant.</div>
+      </div>
+
+    </div>
+
+    <!-- Live Navbar Placement -->
+    <div class="navbar-preview-box">
+      <div style="font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 16px; text-align: center;">
+        🖥️ Desktop Website Navbar Placement (Variation 1)
+      </div>
+      <div style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 18px; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <!-- 36px Variation 1 Squircle Badge -->
+          <svg width="36" height="36" viewBox="0 0 100 100" fill="none" style="filter: drop-shadow(0 0 8px rgba(88, 101, 242, 0.6));">
+            <rect width="100" height="100" rx="26" fill="url(#nav_disc_grad)" />
+            <path d="M22 36 C22 32, 32 18, 38 24 C44 29, 56 29, 62 24 C68 18, 78 32, 78 36 C82 52, 78 74, 50 74 C22 74, 18 52, 22 36 Z" fill="#090d16" />
+            <circle cx="40" cy="48" r="4.5" fill="#ffffff" />
+            <circle cx="60" cy="48" r="4.5" fill="#ffffff" />
+            <defs>
+              <linearGradient id="nav_disc_grad" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#5865F2" />
+                <stop offset="1" stop-color="#A855F7" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <span style="font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 800; background: linear-gradient(135deg, #38bdf8, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">HiMewo</span>
+        </div>
+
+        <div style="display: flex; gap: 16px; align-items: center;">
+          <div style="background: rgba(255,255,255,0.06); padding: 8px 20px; border-radius: 9999px; font-size: 13px; color: #94a3b8;">
+            🔍 Search HiMewo...
+          </div>
+          <div style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #38bdf8, #a855f7);"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

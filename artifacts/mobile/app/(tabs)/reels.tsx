@@ -35,9 +35,11 @@ import {
 import * as Haptics from "expo-haptics";
 import { Avatar } from "@/components/Avatar";
 import { EmojiPickerSheet } from "@/components/EmojiPickerSheet";
+import { MentionText } from "@/components/Mention";
 import { reactionConfig, reactionOrder } from "@/constants/reactions";
 import { useColors } from "@/hooks/useColors";
 import { formatCount, timeAgo } from "@/lib/format";
+import { parseReelOverlays } from "../create-reel";
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -143,6 +145,8 @@ function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
     }
   };
 
+  const { cleanCaption, overlays } = parseReelOverlays(reel.caption);
+
   return (
     <View style={{ height, width: SCREEN_WIDTH, backgroundColor: "#000" }}>
       <VideoView
@@ -151,6 +155,46 @@ function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
         contentFit="cover"
         nativeControls={false}
       />
+
+      {/* On-Screen Text & Emoji Overlays */}
+      {overlays.map((ov) => {
+        const bgStyle = ov.bgStyle ?? "pill";
+        return (
+          <View
+            key={ov.id}
+            pointerEvents="none"
+            style={[
+              styles.viewerOverlayContainer,
+              { left: `${ov.x}%`, top: `${ov.y}%` },
+            ]}
+          >
+            {ov.type === "emoji" ? (
+              <Text style={{ fontSize: ov.fontSize ?? 44 }}>{ov.content}</Text>
+            ) : (
+              <View
+                style={[
+                  styles.textBadgeCommon,
+                  bgStyle === "pill" && styles.textBadgePill,
+                  bgStyle === "glass" && styles.textBadgeGlass,
+                  bgStyle === "neon" && styles.textBadgeNeon,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.textBadgeContent,
+                    {
+                      color: ov.color || "#ffffff",
+                      fontSize: ov.fontSize ?? 18,
+                    },
+                  ]}
+                >
+                  {ov.content}
+                </Text>
+              </View>
+            )}
+          </View>
+        );
+      })}
 
       <View style={styles.overlay} pointerEvents="box-none">
         <View style={styles.bottomInfo} pointerEvents="box-none">
@@ -166,10 +210,11 @@ function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
             />
             <Text style={styles.authorName}>{reel.author.displayName}</Text>
           </Pressable>
-          {!!reel.caption && (
-            <Text style={styles.caption} numberOfLines={3}>
-              {reel.caption}
-            </Text>
+          {!!cleanCaption && (
+            <MentionText
+              content={cleanCaption}
+              style={styles.caption}
+            />
           )}
         </View>
 
@@ -384,9 +429,10 @@ function ReelCommentsSheet({
                       >
                         {item.author.displayName}
                       </Text>
-                      <Text style={{ color: c.foreground, fontSize: 14, marginTop: 2 }}>
-                        {item.content}
-                      </Text>
+                      <MentionText
+                        content={item.content}
+                        style={{ color: c.foreground, fontSize: 14, marginTop: 2 }}
+                      />
                     </View>
                     <Text
                       style={{ color: c.mutedForeground, fontSize: 11, marginTop: 4, marginLeft: 6 }}
@@ -415,7 +461,7 @@ function ReelCommentsSheet({
               <TextInput
                 value={text}
                 onChangeText={setText}
-                placeholder="Write a comment..."
+                placeholder="Write a comment... (#hashtags)"
                 placeholderTextColor={c.mutedForeground}
                 underlineColorAndroid="transparent"
                 style={[styles.input, { backgroundColor: c.secondary, color: c.foreground }]}
@@ -425,7 +471,7 @@ function ReelCommentsSheet({
                 <Ionicons
                   name="send"
                   size={22}
-                  color={text.trim() ? c.primary : c.mutedForeground}
+                  color={text.trim() ? "#a855f7" : c.mutedForeground}
                 />
               </Pressable>
             </View>
@@ -463,6 +509,38 @@ const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: "flex-end",
+  },
+  viewerOverlayContainer: {
+    position: "absolute",
+    transform: [{ translateX: -50 }, { translateY: -50 }],
+    zIndex: 20,
+    padding: 4,
+  },
+  textBadgeCommon: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  textBadgePill: {
+    backgroundColor: "#000000cc",
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "#ffffff33",
+  },
+  textBadgeGlass: {
+    backgroundColor: "#ffffff33",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#ffffff66",
+  },
+  textBadgeNeon: {
+    backgroundColor: "#000000ee",
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "#a855f7",
+  },
+  textBadgeContent: {
+    fontFamily: "Inter_700Bold",
   },
   bottomInfo: {
     position: "absolute",

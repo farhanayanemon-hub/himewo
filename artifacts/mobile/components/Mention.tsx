@@ -12,9 +12,9 @@ import { useColors } from "@/hooks/useColors";
 //   @[Display Name](user:<uuid>)
 export const MENTION_RE = /@\[([^\]]+)\]\(user:([^)]+)\)/g;
 
-// Facebook-style hashtags: "#word" becomes a link to the hashtag feed.
-// Shared shape with the web app.
-export const HASHTAG_RE = /#(\w{1,64})/g;
+// Facebook-style hashtags: "#word" (letters, digits, underscore, Bangla Unicode) becomes a link to the hashtag feed.
+// Rendered in purple color.
+export const HASHTAG_RE = /#([a-zA-Z0-9_\u0980-\u09FF]{1,64})/g;
 
 export function activeMentionQuery(text: string): string | null {
   const m = /(?:^|\s)@([^\s@[\]()]{1,30})$/.exec(text);
@@ -53,8 +53,8 @@ export function MentionText({
       parts.push(
         <Text
           key={`h-${i++}`}
-          style={{ color: c.primary, fontFamily: "Inter_600SemiBold" }}
-          onPress={() => router.push(`/hashtag/${tag}` as never)}
+          style={{ color: "#a855f7", fontFamily: "Inter_600SemiBold" }}
+          onPress={() => router.push(`/hashtag/${encodeURIComponent(tag)}` as never)}
         >
           #{tag}
         </Text>,

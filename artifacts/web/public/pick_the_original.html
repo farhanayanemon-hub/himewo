@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HiMewo — Original Logo Selector</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(18, 24, 38, 0.94);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --cyan: #38bdf8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 40px 20px 80px;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(6, 182, 212, 0.15) 0%, transparent 45%),
+        radial-gradient(circle at 85% 25%, rgba(168, 85, 247, 0.15) 0%, transparent 45%);
+    }
+
+    .container {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 16px;
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 36px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    p.sub {
+      color: var(--text-muted);
+      font-size: 16px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    .candidate-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      backdrop-filter: blur(20px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      position: relative;
+    }
+
+    .candidate-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(56, 189, 248, 0.5);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 25px rgba(56, 189, 248, 0.2);
+    }
+
+    .cand-badge {
+      font-size: 12px;
+      font-weight: 800;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+      padding: 4px 12px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+    }
+
+    .cand-img-box {
+      width: 100%;
+      height: 200px;
+      border-radius: 18px;
+      background: #090d16;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      overflow: hidden;
+      padding: 12px;
+    }
+
+    .cand-img-box img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 12px;
+    }
+
+    .cand-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .cand-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="badge">Original Candidate Selector</div>
+      <h1>Which Original Artwork Are You Referring To?</h1>
+      <p class="sub">Please tell me the exact Letter (A, B, C, D, E, or F) of the original image you want:</p>
+    </header>
+
+    <div class="grid-3">
+
+      <!-- Candidate A: The User's Uploaded Sticker -->
+      <div class="candidate-card">
+        <div class="cand-badge">Candidate A (Your Uploaded Sticker)</div>
+        <div class="cand-img-box">
+          <img src="/media_1788170262464.jpg" alt="Candidate A" />
+        </div>
+        <div class="cand-title">Your Uploaded Black Pixel Cat</div>
+        <div class="cand-desc">The original black pixel art cat sticker with sleepy horizontal eyes that you uploaded at the start.</div>
+      </div>
+
+      <!-- Candidate B: Concept 5 (Golden Ratio Monoline Cat) -->
+      <div class="candidate-card">
+        <div class="cand-badge">Candidate B (Concept 5)</div>
+        <div class="cand-img-box">
+          <img src="/original_concept5_monoline.png" alt="Candidate B" />
+        </div>
+        <div class="cand-title">Golden Ratio Monoline Cat</div>
+        <div class="cand-desc">Concept 5 from the World-Class Showcase: Single continuous luxury gold vector line cat.</div>
+      </div>
+
+      <!-- Candidate C: Concept 1 (The Celestial Aurora Mewo) -->
+      <div class="candidate-card">
+        <div class="cand-badge">Candidate C (Concept 1)</div>
+        <div class="cand-img-box">
+          <img src="/celestial_aurora_mewo.png" alt="Candidate C" />
+        </div>
+        <div class="cand-title">The Celestial Aurora Mewo</div>
+        <div class="cand-desc">Concept 1 from the World-Class Showcase: 3D smooth glowing cyan-purple aurora cat head.</div>
+      </div>
+
+      <!-- Candidate D: Logo 4 (The Minimalist Mewo Silhouette) -->
+      <div class="candidate-card">
+        <div class="cand-badge">Candidate D (Logo 4 from Sheet 1)</div>
+        <div class="cand-img-box">
+          <img src="/original_logo4_silhouette.png" alt="Candidate D" />
+        </div>
+        <div class="cand-title">Minimalist Mewo Silhouette</div>
+        <div class="cand-desc">Logo 4 from the 10 Logos Sheet 1: Smooth dark cat silhouette profile with curved tail.</div>
+      </div>
+
+      <!-- Candidate E: Logo 9 (The Golden Ratio Feline) -->
+      <div class="candidate-card">
+        <div class="cand-badge">Candidate E (Logo 9 from Sheet 2)</div>
+        <div class="cand-img-box">
+          <img src="/original_logo9_golden_ratio.png" alt="Candidate E" />
+        </div>
+        <div class="cand-title">The Golden Ratio Feline</div>
+        <div class="cand-desc">Logo 9 from the 10 Logos Sheet 2: Precision geometric golden ratio spirals and circular grid.</div>
+      </div>
+
+      <!-- Candidate F: Logo 1 (The Aurora H-Wave Ribbon) -->
+      <div class="candidate-card">
+        <div class="cand-badge">Candidate F (Logo 1 from Sheet 1)</div>
+        <div class="cand-img-box">
+          <img src="/himewo_10_logos_sheet1_1788169950345.jpg" alt="Candidate F" style="object-position: top left; transform: scale(1.5); transform-origin: top left;" />
+        </div>
+        <div class="cand-title">The Aurora H-Wave Monogram</div>
+        <div class="cand-desc">Logo 1 from Sheet 1: 3D fluid cyan-pink-purple metallic ribbon loop forming H & M.</div>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>

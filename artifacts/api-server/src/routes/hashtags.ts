@@ -12,9 +12,8 @@ import {
 
 const router: IRouter = Router();
 
-// Hashtags are word characters only (letters, digits, underscore) — the same
-// rule the clients use to linkify "#tag" in post content.
-const TAG_RE = /^\w{1,64}$/;
+// Hashtags are word characters + Unicode Bengali characters (letters, digits, underscore)
+const TAG_RE = /^[\w\u0980-\u09FF]{1,64}$/;
 
 router.get(
   "/hashtags/:tag/posts",
@@ -26,7 +25,7 @@ router.get(
       res.status(400).json({ error: "Invalid hashtag request" });
       return;
     }
-    const tag = params.data.tag.replace(/^#/, "").trim();
+    const tag = decodeURIComponent(params.data.tag).replace(/^#/, "").trim();
     if (!TAG_RE.test(tag)) {
       res.status(400).json({ error: "Invalid hashtag" });
       return;
@@ -48,9 +47,8 @@ router.get(
     );
     const visibleAuthors = [viewer, ...friendIds];
 
-    // Exact-tag match: "#himewo" must not match "#himewolove". ILIKE is the
-    // coarse SQL net; the word-boundary check below is authoritative.
-    const exactTag = new RegExp(`#${tag}(?![\\w])`, "i");
+    // Exact-tag match: "#himewo" must not match "#himewolove".
+    const exactTag = new RegExp(`#${tag}(?![\\w\\u0980-\\u09FF])`, "i");
 
     // filterVisiblePosts can drop rows AFTER the SQL limit, so scan in
     // batches until we collect a full page or run out of rows (same pattern

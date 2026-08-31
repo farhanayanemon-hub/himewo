@@ -27,6 +27,7 @@ import {
   reelLikesTable,
   reelCommentsTable,
   notificationsTable,
+  musicTracksTable,
 } from "@workspace/db";
 import { sql } from "drizzle-orm";
 
@@ -316,6 +317,98 @@ async function main() {
   await db.insert(reelCommentsTable).values([
     { reelId: reelRows[0].id, authorId: uid(5), content: "Joss edit! 🔥" },
     { reelId: reelRows[1].id, authorId: uid(1), content: "Khide lege gelo 😋" },
+  ]);
+
+  // Music Library Tracks (Bangla, Hindi, Lo-Fi, Trending)
+  console.log("Seeding music tracks library...");
+  await db.insert(musicTracksTable).values([
+    // Bangla Tracks
+    {
+      title: "Purano Sei Diner Kotha",
+      artist: "Rabindra Sangeet Acoustic",
+      url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+      mood: "Bangla Classic",
+      source: "library",
+    },
+    {
+      title: "Majhe Majhe Tobo Dekha Pai",
+      artist: "Bengali Lo-Fi Chill",
+      url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+      mood: "Bangla Lo-Fi",
+      source: "library",
+    },
+    {
+      title: "Gram Chhara Oi Ranga Matir Poth",
+      artist: "Bangla Folk Flute",
+      url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+      mood: "Bangla Folk",
+      source: "library",
+    },
+    {
+      title: "Dhaka City Nights",
+      artist: "Urban Bangla Beats",
+      url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
+      mood: "Bangla Pop",
+      source: "library",
+    },
+    {
+      title: "Bhatiyali Nodir Deshe",
+      artist: "Baul & Dotara Fusion",
+      url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
+      mood: "Bangla Folk",
+      source: "library",
+    },
+    // Hindi & Bollywood Tracks
+    {
+      title: "Tum Hi Ho (Acoustic Guitar Cover)",
+      artist: "Bollywood Melody",
+      url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3",
+      mood: "Hindi Romantic",
+      source: "library",
+    },
+    {
+      title: "Kesariya (Flute & Piano Melody)",
+      artist: "Indian Instrumental Chill",
+      url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
+      mood: "Hindi Chill",
+      source: "library",
+    },
+    {
+      title: "Raabta (Strings & Piano)",
+      artist: "Bollywood Acoustic",
+      url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3",
+      mood: "Hindi Melodic",
+      source: "library",
+    },
+    {
+      title: "Midnight Mumbai Lo-Fi",
+      artist: "Desi Chillhop Beat",
+      url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3",
+      mood: "Hindi Lo-Fi",
+      source: "library",
+    },
+    {
+      title: "Dhol & Beats Party Anthem",
+      artist: "Bollywood Dance Party",
+      url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3",
+      mood: "Hindi Dance",
+      source: "library",
+    },
+    // Trending & Chill
+    {
+      title: "Sunset Vibes (Acoustic Guitar)",
+      artist: "Chill Waves",
+      url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-11.mp3",
+      mood: "Trending",
+      source: "library",
+    },
+    {
+      title: "Summer Morning Energy",
+      artist: "Sunny Beats",
+      url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3",
+      mood: "Upbeat",
+      source: "library",
+    },
   ]);
 
   // Notifications for user 1 (the default dev login)

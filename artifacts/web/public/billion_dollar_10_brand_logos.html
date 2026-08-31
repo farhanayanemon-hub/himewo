@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HiMewo — 10 Billion-Dollar Global Brand Cat Logos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070B14;
+      --card-bg: rgba(15, 22, 38, 0.94);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --cyan: #00F0FF;
+      --purple: #8B5CF6;
+      --pink: #EC4899;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 50px 20px 100px;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(0, 240, 255, 0.12) 0%, transparent 45%),
+        radial-gradient(circle at 85% 25%, rgba(139, 92, 246, 0.12) 0%, transparent 45%);
+    }
+
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 18px;
+      background: rgba(0, 240, 255, 0.12);
+      color: var(--cyan);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 42px;
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+
+    p.sub {
+      color: var(--text-muted);
+      font-size: 16px;
+      max-width: 700px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    .grid-5 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 22px;
+      margin-bottom: 44px;
+    }
+
+    .brand-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 26px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      backdrop-filter: blur(24px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      position: relative;
+    }
+
+    .brand-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(0, 240, 255, 0.5);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 25px rgba(0, 240, 255, 0.2);
+    }
+
+    .brand-card.featured {
+      border: 1.5px solid rgba(0, 240, 255, 0.6);
+    }
+
+    .brand-card.featured::before {
+      content: '★ TOP PICK';
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: linear-gradient(135deg, #00F0FF, #8B5CF6);
+      color: #000;
+      font-size: 8px;
+      font-weight: 900;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      letter-spacing: 0.5px;
+    }
+
+    .logo-box {
+      width: 100px;
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 10px 0 18px;
+      transition: transform 0.2s ease;
+    }
+
+    .brand-card:hover .logo-box {
+      transform: scale(1.1);
+    }
+
+    .b-num {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .b-tier {
+      font-size: 11px;
+      font-weight: 700;
+      color: #c084fc;
+      background: rgba(168, 85, 247, 0.12);
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    .b-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 17px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .b-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .navbar-section {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 26px;
+      padding: 30px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="badge">Global Brand Standards</div>
+      <h1>HiMewo 10 Global Brand Cat Logos</h1>
+      <p class="sub">Inspired by Apple, Twitter/X, Discord, Puma, Meta, and GitHub — billion-dollar brand identity marks in feline geometry</p>
+    </header>
+
+    <div class="grid-5">
+
+      <!-- Brand 1: The Luminous Apex Mewo (Puma / Apple Tier) -->
+      <div class="brand-card featured">
+        <div class="b-num">Brand 1</div>
+        <div class="b-tier">Puma & Apple Tier</div>
+        <div class="logo-box">
+          <svg width="86" height="86" viewBox="0 0 100 100" fill="none" style="filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.6));">
+            <!-- Dynamic Leaping Cat Silhouette with Aerodynamic Waves -->
+            <path d="M18 64 C18 42, 38 22, 60 22 C66 22, 70 14, 76 18 C82 22, 78 30, 78 36 C86 42, 88 56, 76 68 C64 80, 42 82, 28 72 L18 64 Z" fill="url(#b1_grad)" />
+            <path d="M22 66 C14 54, 12 40, 16 28 C18 24, 22 24, 22 28 C20 36, 22 46, 28 54" stroke="url(#b1_grad)" stroke-width="4.5" stroke-linecap="round" fill="none" />
+            <circle cx="64" cy="38" r="3.5" fill="#080C16" />
+            <defs>
+              <linearGradient id="b1_grad" x1="14" y1="18" x2="86" y2="82" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#00F0FF" />
+                <stop offset="0.5" stop-color="#8B5CF6" />
+                <stop offset="1" stop-color="#EC4899" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="b-title">The Luminous Apex</div>
+        <div class="b-desc">Razor-sharp aerodynamic feline silhouette with glowing leap momentum. High-energy & iconic.</div>
+      </div>
+
+      <!-- Brand 2: The Orbit Mewo Ring (Twitter / Meta Tier) -->
+      <div class="brand-card">
+        <div class="b-num">Brand 2</div>
+        <div class="b-tier">Meta & Twitter Tier</div>
+        <div class="logo-box">
+          <svg width="86" height="86" viewBox="0 0 100 100" fill="none" style="filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.6));">
+            <!-- Two Golden Ratio Planetary Orbital Rings forming Cat Ears & Loop -->
+            <ellipse cx="50" cy="50" rx="38" ry="24" transform="rotate(-30 50 50)" stroke="url(#b2_grad)" stroke-width="6" stroke-linecap="round" fill="none" />
+            <path d="M34 26 L42 16 L50 26" stroke="url(#b2_grad)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+            <path d="M58 24 L68 14 L74 24" stroke="url(#b2_grad)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+            <circle cx="50" cy="50" r="7" fill="#00F0FF" />
+            <defs>
+              <linearGradient id="b2_grad" x1="20" y1="14" x2="80" y2="86" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#00F0FF" />
+                <stop offset="1" stop-color="#EC4899" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="b-title">The Orbit Mewo</div>
+        <div class="b-desc">Two sweeping planetary orbital rings forming cat ears and an infinity social connection core.</div>
+      </div>
+
+      <!-- Brand 3: The Geometric Shield Mewo (Discord / Porsche Tier) -->
+      <div class="brand-card">
+        <div class="b-num">Brand 3</div>
+        <div class="b-tier">Discord & Tech Tier</div>
+        <div class="logo-box">
+          <svg width="86" height="86" viewBox="0 0 100 100" fill="none" style="filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.6));">
+            <!-- Symmetrical Architectural Shield with Cat Geometry -->
+            <polygon points="50,14 82,32 76,74 50,90 24,74 18,32" fill="url(#b3_grad)" />
+            <!-- Cat Head Cutout inside -->
+            <polygon points="34,44 42,30 50,40 58,30 66,44 64,66 50,74 36,66" fill="#080C16" />
+            <circle cx="44" cy="52" r="2.5" fill="#00F0FF" />
+            <circle cx="56" cy="52" r="2.5" fill="#00F0FF" />
+            <defs>
+              <linearGradient id="b3_grad" x1="18" y1="14" x2="82" y2="90" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#5865F2" />
+                <stop offset="0.5" stop-color="#7C3AED" />
+                <stop offset="1" stop-color="#00F0FF" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="b-title">Geometric Tech Shield</div>
+        <div class="b-desc">Automotive-grade symmetrical architectural shield badge with precision cat face geometry.</div>
+      </div>
+
+      <!-- Brand 4: The Fluid Monogram H-Mewo (Airbnb & Threads Tier) -->
+      <div class="brand-card">
+        <div class="b-num">Brand 4</div>
+        <div class="b-tier">Airbnb & Threads Tier</div>
+        <div class="logo-box">
+          <svg width="86" height="86" viewBox="0 0 100 100" fill="none" style="filter: drop-shadow(0 0 12px rgba(236, 72, 153, 0.6));">
+            <!-- Single Fluid Line forming H + Cat Ears + Speech Loop -->
+            <path d="M28 80 C28 44, 38 18, 48 18 C54 18, 56 24, 60 24 C64 24, 66 18, 72 18 C82 18, 92 44, 92 80 C92 86, 84 86, 82 80 C78 52, 70 34, 60 34 C50 34, 42 52, 38 80 C36 86, 28 86, 28 80 Z" fill="url(#b4_grad)" />
+            <!-- Bridge Loop -->
+            <path d="M38 52 C46 46, 54 46, 62 52 C70 58, 62 68, 50 68 C38 68, 30 58, 38 52 Z" fill="#080C16" />
+            <defs>
+              <linearGradient id="b4_grad" x1="28" y1="18" x2="92" y2="86" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#EC4899" />
+                <stop offset="0.5" stop-color="#8B5CF6" />
+                <stop offset="1" stop-color="#00F0FF" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="b-title">Fluid 'H' Monogram</div>
+        <div class="b-desc">Single continuous architectural ribbon forming the letter 'H' with cat ear apexes and central loop.</div>
+      </div>
+
+      <!-- Brand 5: The Cyber Prism Mewo (Linear & Stripe Tier) -->
+      <div class="brand-card">
+        <div class="b-num">Brand 5</div>
+        <div class="b-tier">Linear & Stripe Tier</div>
+        <div class="logo-box">
+          <svg width="86" height="86" viewBox="0 0 100 100" fill="none" style="filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.6));">
+            <!-- Faceted Multi-Layer Polygon Cat -->
+            <polygon points="50,18 72,12 68,38 50,48 32,38 28,12" fill="#00F0FF" opacity="0.9" />
+            <polygon points="50,48 68,38 76,68 50,84 24,68 32,38" fill="#8B5CF6" opacity="0.95" />
+            <polygon points="50,48 62,54 50,72 38,54" fill="#EC4899" />
+          </svg>
+        </div>
+        <div class="b-title">Cyber Prism Facets</div>
+        <div class="b-desc">Faceted vector refractive planes forming a high-tech geometric feline mark. Linear-grade precision.</div>
+      </div>
+
+      <!-- Brand 6: The Messenger Bubble Mewo (Telegram / Snapchat Tier) -->
+      <div class="brand-card featured">
+        <div class="b-num">Brand 6</div>
+        <div class="b-tier">Telegram & Discord Tier</div>
+        <div class="logo-box">
+          <svg width="86" height="86" viewBox="0 0 100 100" fill="none" style="filter: drop-shadow(0 0 14px rgba(0, 240, 255, 0.7));">
+            <!-- Pure Organic Speech Bubble Cat Silhouette -->
+            <path d="M16 36 C16 22, 28 8, 36 16 C44 23, 56 23, 64 16 C72 8, 84 22, 84 36 C88 56, 82 80, 50 80 C36 80, 24 76, 12 88 L16 70 C8 58, 10 46, 16 36 Z" fill="url(#b6_grad)" />
+            <!-- Minimal Clean Eyes -->
+            <circle cx="39" cy="46" r="4.5" fill="#080C16" />
+            <circle cx="61" cy="46" r="4.5" fill="#080C16" />
+            <circle cx="40.5" cy="44" r="1.6" fill="#fff" />
+            <circle cx="62.5" cy="44" r="1.6" fill="#fff" />
+            <path d="M47 55 Q50 58 53 55" stroke="#080C16" stroke-width="2.5" stroke-linecap="round" fill="none" />
+            <defs>
+              <linearGradient id="b6_grad" x1="12" y1="8" x2="88" y2="88" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#00F0FF" />
+                <stop offset="0.5" stop-color="#8B5CF6" />
+                <stop offset="1" stop-color="#EC4899" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="b-title">Messenger Bubble Mewo</div>
+        <div class="b-desc">Universally recognizable speech bubble cat silhouette in vibrant aurora mesh. Warm, iconic & social.</div>
+      </div>
+
+      <!-- Brand 7: The Golden Ratio Zen Cat (GitHub & Nike Tier) -->
+      <div class="brand-card">
+        <div class="b-num">Brand 7</div>
+        <div class="b-tier">GitHub & Nike Tier</div>
+        <div class="logo-box">
+          <svg width="86" height="86" viewBox="0 0 100 100" fill="none" style="filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.5));">
+            <path d="M26 76 C26 62, 32 50, 36 38 C38 32, 44 18, 48 24 C52 30, 60 30, 64 24 C68 18, 74 32, 72 44 C70 58, 64 74, 52 76 C42 76, 34 74, 20 86 L22 72" stroke="url(#b7_grad)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+            <path d="M26 76 C18 72, 14 58, 20 46 C22 40, 26 38, 26 34" stroke="url(#b7_grad)" stroke-width="4.5" stroke-linecap="round" fill="none" />
+            <circle cx="48" cy="44" r="2.5" fill="#00F0FF" />
+            <circle cx="62" cy="44" r="2.5" fill="#00F0FF" />
+            <defs>
+              <linearGradient id="b7_grad" x1="14" y1="18" x2="74" y2="86" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#00F0FF" />
+                <stop offset="1" stop-color="#8B5CF6" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="b-title">Zen Silhouette Line</div>
+        <div class="b-desc">Unbroken golden-ratio single vector line of a seated cat. Clean, timeless, and supreme luxury.</div>
+      </div>
+
+      <!-- Brand 8: The Intersecting Eclipse Mewo (Mastercard & Instagram Tier) -->
+      <div class="brand-card">
+        <div class="b-num">Brand 8</div>
+        <div class="b-tier">Mastercard & IG Tier</div>
+        <div class="logo-box">
+          <svg width="86" height="86" viewBox="0 0 100 100" fill="none" style="filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.6));">
+            <!-- Intersecting Cyan & Violet Glowing Discs -->
+            <circle cx="38" cy="50" r="26" fill="#00F0FF" opacity="0.8" />
+            <circle cx="62" cy="50" r="26" fill="#EC4899" opacity="0.8" />
+            <!-- Cat Head in Center Overlap -->
+            <path d="M38 38 L44 26 L50 36 L56 26 L62 38 C64 48, 60 62, 50 62 C40 62, 36 48, 38 38 Z" fill="#080C16" />
+            <circle cx="45" cy="44" r="2" fill="#fff" />
+            <circle cx="55" cy="44" r="2" fill="#fff" />
+          </svg>
+        </div>
+        <div class="b-title">Intersecting Eclipse</div>
+        <div class="b-desc">Two translucent glowing gradient spheres with negative space forming an iconic cat silhouette.</div>
+      </div>
+
+      <!-- Brand 9: The Acoustic Equalizer Mewo (Spotify & TikTok Tier) -->
+      <div class="brand-card">
+        <div class="b-num">Brand 9</div>
+        <div class="b-tier">Spotify & TikTok Tier</div>
+        <div class="logo-box">
+          <svg width="86" height="86" viewBox="0 0 100 100" fill="none" style="filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.6));">
+            <!-- Equalizer Vertical Bars Sculpting Cat Head -->
+            <rect x="22" y="32" width="6" height="36" rx="3" fill="#00F0FF" />
+            <rect x="32" y="18" width="6" height="58" rx="3" fill="#00F0FF" />
+            <rect x="42" y="36" width="6" height="38" rx="3" fill="#8B5CF6" />
+            <rect x="52" y="36" width="6" height="38" rx="3" fill="#8B5CF6" />
+            <rect x="62" y="18" width="6" height="58" rx="3" fill="#EC4899" />
+            <rect x="72" y="32" width="6" height="36" rx="3" fill="#EC4899" />
+          </svg>
+        </div>
+        <div class="b-title">Equalizer Frequency</div>
+        <div class="b-desc">Vibrant vertical equalizer bars sculpting a cat head — representing reels, voice, stories & music.</div>
+      </div>
+
+      <!-- Brand 10: The 3D Refractive Crystal (VisionOS & OpenAI Tier) -->
+      <div class="brand-card">
+        <div class="b-num">Brand 10</div>
+        <div class="b-tier">Apple VisionOS Tier</div>
+        <div class="logo-box">
+          <svg width="86" height="86" viewBox="0 0 100 100" fill="none" style="filter: drop-shadow(0 0 16px rgba(0, 240, 255, 0.4));">
+            <!-- Frosted Crystal Squircle -->
+            <rect x="4" y="4" width="92" height="92" rx="26" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.25)" stroke-width="2" />
+            <circle cx="50" cy="50" r="26" fill="url(#b10_grad)" opacity="0.6" style="filter: blur(14px);" />
+            <!-- Floating Minimalist Cat -->
+            <path d="M26 38 C26 34, 34 22, 39 28 C44 32, 56 32, 61 28 C66 22, 74 34, 74 38 C76 50, 74 68, 50 68 C26 68, 24 50, 26 38 Z" fill="#ffffff" />
+            <circle cx="40" cy="48" r="4" fill="#080C16" />
+            <circle cx="60" cy="48" r="4" fill="#080C16" />
+            <defs>
+              <linearGradient id="b10_grad" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#00F0FF" />
+                <stop offset="1" stop-color="#8B5CF6" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="b-title">Refractive Crystal Prism</div>
+        <div class="b-desc">VisionOS translucent frosted glass prism with internal floating glowing neon core and white cat glyph.</div>
+      </div>
+
+    </div>
+
+    <!-- Live Navbar Placement -->
+    <div class="navbar-section">
+      <div style="font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 16px; text-align: center;">
+        🖥️ Desktop Website Navbar Placement (Brand 1 & Brand 6)
+      </div>
+      <div style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 18px; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 14px; cursor: pointer;">
+          <!-- 36px Vector in Navbar -->
+          <svg width="36" height="36" viewBox="0 0 100 100" fill="none" style="filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.7));">
+            <path d="M16 36 C16 22, 28 8, 36 16 C44 23, 56 23, 64 16 C72 8, 84 22, 84 36 C88 56, 82 80, 50 80 C36 80, 24 76, 12 86 L16 70 C8 58, 10 46, 16 36 Z" fill="url(#nav_b6)" />
+            <circle cx="39" cy="46" r="4.5" fill="#080C16" />
+            <circle cx="61" cy="46" r="4.5" fill="#080C16" />
+            <circle cx="40.5" cy="44" r="1.6" fill="#fff" />
+            <circle cx="62.5" cy="44" r="1.6" fill="#fff" />
+            <defs>
+              <linearGradient id="nav_b6" x1="12" y1="8" x2="88" y2="88" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#00F0FF" />
+                <stop offset="0.5" stop-color="#8B5CF6" />
+                <stop offset="1" stop-color="#EC4899" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <span style="font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 800; background: linear-gradient(135deg, #00F0FF, #8B5CF6, #EC4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">HiMewo</span>
+        </div>
+
+        <div style="display: flex; gap: 16px; align-items: center;">
+          <div style="background: rgba(255,255,255,0.06); padding: 8px 20px; border-radius: 9999px; font-size: 13px; color: #94a3b8;">
+            🔍 Search HiMewo...
+          </div>
+          <div style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #00F0FF, #8B5CF6);"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

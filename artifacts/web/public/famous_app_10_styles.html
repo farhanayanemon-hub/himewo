@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HiMewo — 10 Famous App Brand Styles Showcase</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(18, 24, 38, 0.94);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 40px 20px 80px;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(6, 182, 212, 0.15) 0%, transparent 45%),
+        radial-gradient(circle at 85% 25%, rgba(168, 85, 247, 0.15) 0%, transparent 45%);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 16px;
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 36px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    p.sub {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+
+    .grid-5 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 22px;
+      margin-bottom: 40px;
+    }
+
+    .style-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 22px;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      backdrop-filter: blur(20px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      position: relative;
+    }
+
+    .style-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(56, 189, 248, 0.5);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 25px rgba(56, 189, 248, 0.2);
+    }
+
+    .style-num {
+      font-size: 11px;
+      font-weight: 800;
+      color: #38bdf8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .style-ref {
+      font-size: 12px;
+      font-weight: 700;
+      color: #c084fc;
+      background: rgba(168, 85, 247, 0.12);
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      display: inline-block;
+    }
+
+    .icon-box {
+      width: 100px;
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      transition: transform 0.2s ease;
+    }
+
+    .style-card:hover .icon-box {
+      transform: scale(1.08);
+    }
+
+    .style-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .style-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .duo-pair-preview {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      width: 100%;
+      justify-content: center;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="badge">10 Top-Tier App Styles</div>
+      <h1>HiMewo 10 Famous App Brand Directions</h1>
+      <p class="sub">Pick your favorite aesthetic inspired by the world's most successful social & tech apps</p>
+    </header>
+
+    <div class="grid-5">
+
+      <!-- 1. The Discord Style -->
+      <div class="style-card">
+        <div class="style-num">Style 1</div>
+        <div class="style-ref">Inspired by Discord</div>
+        <div class="icon-box">
+          <svg width="84" height="84" viewBox="0 0 100 100" fill="none">
+            <rect width="100" height="100" rx="26" fill="#5865F2" />
+            <path d="M26 38 C26 34, 34 22, 39 28 C44 32, 56 32, 61 28 C66 22, 74 34, 74 38 C76 50, 74 68, 50 68 C26 68, 24 50, 26 38 Z" fill="#ffffff" />
+            <circle cx="40" cy="48" r="4.5" fill="#5865F2" />
+            <circle cx="60" cy="48" r="4.5" fill="#5865F2" />
+          </svg>
+        </div>
+        <div class="style-title">The Game-Tech Squircle</div>
+        <div class="style-desc">Royal blurple squircle with clean iconic white mascot face cutout. Friendly, modern, and high-tech.</div>
+        <div class="duo-pair-preview">Main App: Blurple • Chat App: Cyan Bubble</div>
+      </div>
+
+      <!-- 2. The Telegram Style -->
+      <div class="style-card">
+        <div class="style-num">Style 2</div>
+        <div class="style-ref">Inspired by Telegram</div>
+        <div class="icon-box">
+          <svg width="84" height="84" viewBox="0 0 100 100" fill="none">
+            <circle cx="50" cy="50" r="48" fill="url(#tg_grad)" />
+            <!-- Aerodynamic Origami Paper Plane / Ear Wave -->
+            <path d="M26 48 L76 28 L58 72 L48 56 L68 38 L42 52 Z" fill="#ffffff" />
+            <defs>
+              <linearGradient id="tg_grad" x1="50" y1="2" x2="50" y2="98" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#2AABEE" />
+                <stop offset="1" stop-color="#229ED9" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="style-title">The Aerodynamic Flight</div>
+        <div class="style-desc">Clean sky-cyan circular badge with razor-sharp origami origami flight symbol. Ultra-fast messenger vibe.</div>
+        <div class="duo-pair-preview">Main App: Cyan Circle • Chat App: Deep Blue</div>
+      </div>
+
+      <!-- 3. The Instagram / Threads Style -->
+      <div class="style-card">
+        <div class="style-num">Style 3</div>
+        <div class="style-ref">Inspired by Instagram / Threads</div>
+        <div class="icon-box">
+          <svg width="84" height="84" viewBox="0 0 100 100" fill="none">
+            <rect width="100" height="100" rx="26" fill="url(#ig_grad)" />
+            <!-- Single Continuous Line Loop forming H / Camera / Cat -->
+            <path d="M30 42 C30 28, 42 24, 50 24 C58 24, 70 28, 70 42 C70 58, 58 72, 42 72 C32 72, 28 64, 34 56 C40 48, 54 48, 62 56" stroke="#ffffff" stroke-width="6" stroke-linecap="round" fill="none" />
+            <defs>
+              <linearGradient id="ig_grad" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#833AB4" />
+                <stop offset="0.5" stop-color="#FD1D1D" />
+                <stop offset="1" stop-color="#FCB045" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="style-title">Continuous Fluid Loop</div>
+        <div class="style-desc">Sunset neon gradient squircle with a single unbroken continuous fluid thread line mark.</div>
+        <div class="duo-pair-preview">Main App: Sunset Loop • Chat App: Violet Thread</div>
+      </div>
+
+      <!-- 4. The Twitter / X Style -->
+      <div class="style-card">
+        <div class="style-num">Style 4</div>
+        <div class="style-ref">Inspired by Twitter / X</div>
+        <div class="icon-box">
+          <svg width="84" height="84" viewBox="0 0 100 100" fill="none">
+            <rect width="100" height="100" rx="24" fill="#000000" stroke="#262626" stroke-width="2" />
+            <!-- Razor Sharp Architectural Monogram 'H' -->
+            <path d="M28 24 L40 24 L40 44 L60 44 L60 24 L72 24 L72 76 L60 76 L60 56 L40 56 L40 76 L28 76 Z" fill="#ffffff" />
+          </svg>
+        </div>
+        <div class="style-title">Monochrome Architectural</div>
+        <div class="style-desc">Pitch black obsidian tile with ultra-bold stark white architectural lettermark. Powerful & authoritative.</div>
+        <div class="duo-pair-preview">Main App: Pitch Black H • Chat App: Inverted White</div>
+      </div>
+
+      <!-- 5. The GitHub Octocat Style -->
+      <div class="style-card">
+        <div class="style-num">Style 5</div>
+        <div class="style-ref">Inspired by GitHub</div>
+        <div class="icon-box">
+          <svg width="84" height="84" viewBox="0 0 100 100" fill="none">
+            <circle cx="50" cy="50" r="46" fill="#181717" stroke="#30363d" stroke-width="2" />
+            <!-- Clean Iconic Cat Silhouette inside Circle -->
+            <path d="M26 40 C26 36, 33 24, 38 28 C43 32, 57 32, 62 28 C67 24, 74 36, 74 40 C76 56, 72 74, 50 74 C28 74, 24 56, 26 40 Z" fill="#ffffff" />
+          </svg>
+        </div>
+        <div class="style-title">The Developer Icon</div>
+        <div class="style-desc">Dark carbon circle with timeless flat white silhouette contour. Clean, iconic, and legendary.</div>
+        <div class="duo-pair-preview">Main App: Carbon Disc • Chat App: Cyan Border</div>
+      </div>
+
+      <!-- 6. The Snapchat Style -->
+      <div class="style-card">
+        <div class="style-num">Style 6</div>
+        <div class="style-ref">Inspired by Snapchat</div>
+        <div class="icon-box">
+          <svg width="84" height="84" viewBox="0 0 100 100" fill="none">
+            <rect width="100" height="100" rx="26" fill="#FFFC00" />
+            <!-- Bold Outlined Mascot with High Contrast -->
+            <path d="M30 40 C30 36, 36 28, 40 32 C44 35, 56 35, 60 32 C64 28, 70 36, 70 40 C72 54, 70 68, 50 68 C30 68, 28 54, 30 40 Z" fill="#ffffff" stroke="#000000" stroke-width="5" stroke-linejoin="round" />
+          </svg>
+        </div>
+        <div class="style-title">High-Contrast Pop</div>
+        <div class="style-desc">Bright neon punchy background with thick bold outlined character silhouette. Maximum instant recognition.</div>
+        <div class="duo-pair-preview">Main App: Neon Yellow • Chat App: Electric Purple</div>
+      </div>
+
+      <!-- 7. The Apple / VisionOS Style -->
+      <div class="style-card">
+        <div class="style-num">Style 7</div>
+        <div class="style-ref">Inspired by Apple VisionOS</div>
+        <div class="icon-box">
+          <svg width="84" height="84" viewBox="0 0 100 100" fill="none">
+            <!-- Frosted Glass Squircle Layer -->
+            <rect width="100" height="100" rx="26" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.3)" stroke-width="2" />
+            <!-- Glowing Neon Core -->
+            <circle cx="50" cy="50" r="26" fill="url(#vis_grad)" style="filter: blur(12px);" />
+            <!-- Floating Clean Minimal Glyph -->
+            <path d="M32 38 C32 34, 38 26, 42 30 C46 33, 54 33, 58 30 C62 26, 68 34, 68 38 C70 50, 68 64, 50 64 C32 64, 30 50, 32 38 Z" fill="#ffffff" />
+            <defs>
+              <linearGradient id="vis_grad" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#00F0FF" />
+                <stop offset="1" stop-color="#A855F7" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="style-title">3D Frosted Glass Prism</div>
+        <div class="style-desc">Translucent refractive frosted glass tile with floating glowing neon core. Luxury futuristic look.</div>
+        <div class="duo-pair-preview">Main App: Glass Aurora • Chat App: Glass Sapphire</div>
+      </div>
+
+      <!-- 8. The Linear / Arc Style -->
+      <div class="style-card">
+        <div class="style-num">Style 8</div>
+        <div class="style-ref">Inspired by Linear / Arc</div>
+        <div class="icon-box">
+          <svg width="84" height="84" viewBox="0 0 100 100" fill="none">
+            <rect width="100" height="100" rx="26" fill="#18181b" stroke="#27272a" stroke-width="2" />
+            <!-- Precision Golden Ratio Arc / Loop -->
+            <path d="M26 68 C26 44, 44 26, 68 26 L74 32 C54 32, 38 48, 38 68 Z" fill="url(#lin_grad)" />
+            <circle cx="68" cy="62" r="8" fill="#38BDF8" />
+            <defs>
+              <linearGradient id="lin_grad" x1="26" y1="26" x2="74" y2="68" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#38BDF8" />
+                <stop offset="1" stop-color="#818CF8" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="style-title">Precision Geometric Arc</div>
+        <div class="style-desc">Dark matte obsidian with razor-sharp mathematical vector arcs and glowing cyan jewel dot.</div>
+        <div class="duo-pair-preview">Main App: Arc Glow • Chat App: Pulse Ring</div>
+      </div>
+
+      <!-- 9. The TikTok / Glitch-Pop Style -->
+      <div class="style-card">
+        <div class="style-num">Style 9</div>
+        <div class="style-ref">Inspired by TikTok</div>
+        <div class="icon-box">
+          <svg width="84" height="84" viewBox="0 0 100 100" fill="none">
+            <rect width="100" height="100" rx="26" fill="#000000" />
+            <!-- Chromatic Cyan & Pink Offset Layer -->
+            <path d="M38 28 L48 28 L48 52 C48 60, 42 66, 34 66 C26 66, 20 60, 20 52 C20 44, 26 38, 34 38 L34 46 C30 46, 28 48, 28 52 C28 56, 30 58, 34 58 C38 58, 40 56, 40 52 Z" fill="#00F2FE" opacity="0.9" />
+            <path d="M42 28 L52 28 C52 38, 60 44, 70 44 L70 52 C62 52, 54 48, 50 44 L50 60 C50 68, 44 74, 36 74 C28 74, 22 68, 22 60 L30 60 C30 64, 32 66, 36 66 C40 66, 42 64, 42 60 Z" fill="#FE2C55" opacity="0.9" />
+          </svg>
+        </div>
+        <div class="style-title">Chromatic Neon Split</div>
+        <div class="style-desc">Electric cyan and hot pink 3D chromatic aberration offset on black. Viral video & reels energy.</div>
+        <div class="duo-pair-preview">Main App: Glitch Pop • Chat App: Split Pulse</div>
+      </div>
+
+      <!-- 10. The Spotify / SoundWave Style -->
+      <div class="style-card">
+        <div class="style-num">Style 10</div>
+        <div class="style-ref">Inspired by Spotify</div>
+        <div class="icon-box">
+          <svg width="84" height="84" viewBox="0 0 100 100" fill="none">
+            <circle cx="50" cy="50" r="48" fill="#121212" stroke="#1DB954" stroke-width="2" />
+            <!-- 3 Acoustic Radiating Communication Soundwaves -->
+            <path d="M24 44 C42 38, 62 40, 78 50" stroke="#1DB954" stroke-width="6" stroke-linecap="round" fill="none" />
+            <path d="M28 56 C42 50, 58 52, 72 60" stroke="#1DB954" stroke-width="5" stroke-linecap="round" fill="none" />
+            <path d="M34 68 C44 64, 56 66, 66 72" stroke="#1DB954" stroke-width="4" stroke-linecap="round" fill="none" />
+          </svg>
+        </div>
+        <div class="style-title">Acoustic Radiating Waves</div>
+        <div class="style-desc">Matte black disc with vivid neon acoustic soundwaves. Symbolizes social voice, music, and feed broadcasts.</div>
+        <div class="duo-pair-preview">Main App: Neon Soundwave • Chat App: Voice Bubble</div>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>
