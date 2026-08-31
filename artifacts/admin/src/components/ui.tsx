@@ -148,10 +148,12 @@ type Tone = "neutral" | "green" | "amber" | "red" | "blue" | "violet";
 export function Badge({
   children,
   tone = "neutral",
+  variant,
   className,
 }: {
   children: ReactNode;
   tone?: Tone;
+  variant?: string;
   className?: string;
 }) {
   const tones: Record<Tone, string> = {
@@ -166,7 +168,7 @@ export function Badge({
     <span
       className={cn(
         "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
-        tones[tone],
+        tones[tone] || tones.neutral,
         className,
       )}
     >
@@ -410,5 +412,39 @@ export function ErrorNote({ error }: { error: unknown }) {
     <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
       {message}
     </div>
+  );
+}
+
+export function Switch({
+  checked = false,
+  onCheckedChange,
+  disabled = false,
+  className,
+}: {
+  checked?: boolean;
+  onCheckedChange?: (checked: boolean) => void;
+  disabled?: boolean;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={() => onCheckedChange && onCheckedChange(!checked)}
+      className={cn(
+        "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 disabled:cursor-not-allowed disabled:opacity-50",
+        checked ? "bg-purple-600" : "bg-slate-200",
+        className,
+      )}
+    >
+      <span
+        className={cn(
+          "pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform",
+          checked ? "translate-x-5" : "translate-x-0",
+        )}
+      />
+    </button>
   );
 }

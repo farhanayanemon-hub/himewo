@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   Smartphone,
   MessageSquare,
+  MessageCircle,
   Globe,
   Save,
   ExternalLink,

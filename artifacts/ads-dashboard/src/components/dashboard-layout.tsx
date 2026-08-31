@@ -55,11 +55,9 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen w-full bg-background">
       {/* Top bar */}
       <header className="aurora-header sticky top-0 z-30 flex h-14 items-center gap-3 border-b px-4">
-        <Link href="/campaigns" className="flex items-center gap-2 font-semibold">
-          <span className="aurora-brand-icon flex h-8 w-8 items-center justify-center rounded-lg text-white shadow-[0_0_15px_rgba(192,132,252,0.4)]">
-            <Megaphone className="h-4 w-4" />
-          </span>
-          <span className="hidden sm:inline aurora-gradient-text">HiMewo Ads</span>
+        <Link href="/campaigns" className="flex items-center gap-2.5 font-semibold" aria-label="HiMewo Ads Home">
+          <img src="/favicon.png" alt="HiMewo" className="h-9 w-9 object-contain rounded-xl hover:scale-105 transition-transform" />
+          <span className="hidden sm:inline text-white font-extrabold text-lg tracking-tight">HiMewo <span className="text-purple-400 text-sm font-semibold">Ads</span></span>
         </Link>
 
         <div className="ml-2 flex items-center gap-2">

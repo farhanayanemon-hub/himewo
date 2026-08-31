@@ -33,11 +33,7 @@ export function OriginalPixelCatLogo({
         height: size,
       }}
     >
-      <div
-        className={`w-full h-full flex items-center justify-center bg-[#090D16] ${
-          isChat ? "rounded-2xl" : "rounded-2xl"
-        } overflow-hidden shadow-md`}
-      >
+      <div className="w-full h-full flex items-center justify-center bg-transparent overflow-hidden">
         <img
           src={
             isChat
@@ -45,7 +41,7 @@ export function OriginalPixelCatLogo({
               : "/original_user_pixel_cat_zoomed.png"
           }
           alt={isChat ? "HiMewo Chat Logo" : "HiMewo Logo"}
-          className="w-full h-full object-contain"
+          className="w-full h-full object-contain rounded-2xl"
         />
       </div>
       {isChat && (

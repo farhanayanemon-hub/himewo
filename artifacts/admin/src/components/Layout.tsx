@@ -85,13 +85,11 @@ export function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen">
       <aside className="aurora-glass-header fixed inset-y-0 left-0 flex w-64 flex-col border-r">
-        <div className="flex items-center gap-2 px-5 py-5">
-          <div className="aurora-gradient flex h-9 w-9 items-center justify-center rounded-xl text-lg font-bold text-white">
-            H
-          </div>
+        <div className="flex items-center gap-3 px-5 py-5">
+          <img src="/favicon.png" alt="HiMewo" className="h-10 w-10 object-contain rounded-xl" />
           <div>
-            <p className="aurora-gradient-text text-sm font-bold">HiMewo</p>
-            <p className="text-xs text-slate-500">Admin Console</p>
+            <p className="text-sm font-extrabold text-slate-900 tracking-tight">HiMewo</p>
+            <p className="text-[11px] font-medium text-slate-500">Admin Console</p>
           </div>
         </div>
 
