@@ -20,13 +20,13 @@ import {
 import { PixelCatIcon } from "@/components/logo";
 
 type IconType = ComponentType<{ className?: string; fill?: string }>;
-export type MobileNavItem = { href: string; icon: IconType; label: string; color?: string; iconUrl?: string };
+export type MobileNavItem = { href: string; icon: IconType; label: string; iconUrl?: string };
 
-function NavIcon({ icon: Icon, iconUrl, color }: { icon: IconType; iconUrl?: string; color?: string }) {
+function NavIcon({ icon: Icon, iconUrl }: { icon: IconType; iconUrl?: string }) {
   if (iconUrl) {
     return <img src={iconUrl} alt="" className="w-5 h-5 object-contain" />;
   }
-  return <Icon className={`w-5 h-5 ${color ?? "text-muted-foreground"}`} />;
+  return <Icon className="w-5 h-5 text-muted-foreground" />;
 }
 
 /**
@@ -93,7 +93,7 @@ export function MobileMenuButton({
                   onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
                 >
-                  <NavIcon icon={Icon} iconUrl={item.iconUrl} color={item.color} />
+                  <NavIcon icon={Icon} iconUrl={item.iconUrl} />
                   <span className="font-medium">{item.label}</span>
                 </Link>
               );
@@ -108,7 +108,7 @@ export function MobileMenuButton({
                   onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
                 >
-                  <NavIcon icon={Icon} iconUrl={item.iconUrl} color={item.color} />
+                  <NavIcon icon={Icon} iconUrl={item.iconUrl} />
                   <span className="font-medium">{item.label}</span>
                 </Link>
               );
@@ -121,7 +121,7 @@ export function MobileMenuButton({
               onClick={() => setMenuOpen(false)}
               className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
             >
-              <NavIcon icon={Settings} color="text-slate-500" />
+              <NavIcon icon={Settings} />
               <span className="font-medium">Settings</span>
             </Link>
             <button
@@ -131,7 +131,7 @@ export function MobileMenuButton({
               }}
               className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
             >
-              <NavIcon icon={LogOut} color="text-red-500" />
+              <NavIcon icon={LogOut} />
               <span className="font-medium">Log Out</span>
             </button>
           </div>
@@ -188,7 +188,9 @@ export function MobileNav({
         }`}
       >
         <Icon
-          className={`w-6 h-6 ${active ? "text-[#c084fc]" : "text-muted-foreground"}`}
+          className={`w-6 h-6 ${
+            active ? "text-violet-500 dark:text-violet-400" : "text-muted-foreground"
+          }`}
           {...(active ? { fill: "currentColor" } : {})}
         />
         {badge && badge > 0 ? (
@@ -199,7 +201,7 @@ export function MobileNav({
       </span>
       <span
         className={`text-[10px] leading-none ${
-          active ? "text-[#c084fc] font-bold" : "text-muted-foreground font-medium"
+          active ? "text-violet-500 dark:text-violet-400 font-bold" : "text-muted-foreground font-medium"
         }`}
       >
         {label}
@@ -224,7 +226,7 @@ export function MobileNav({
           className="relative flex flex-1 flex-col items-center justify-end h-full pb-2 press"
         >
           <span
-            className={`absolute bottom-[18px] flex items-center justify-center w-[58px] h-[58px] rounded-[20px] bg-[#c084fc] text-white shadow-[0_12px_28px_-6px_rgba(192,132,252,0.6)] ring-4 ring-background transition-transform duration-200 ${
+            className={`absolute bottom-[18px] flex items-center justify-center w-[58px] h-[58px] rounded-[20px] bg-violet-500 dark:bg-violet-500 text-white shadow-[0_12px_28px_-6px_rgba(139,92,246,0.55)] ring-4 ring-background transition-transform duration-200 ${
               reelsActive ? "scale-105" : ""
             }`}
           >
@@ -235,7 +237,7 @@ export function MobileNav({
           </span>
           <span
             className={`text-[10px] leading-none ${
-              reelsActive ? "text-[#c084fc] font-bold" : "text-muted-foreground font-medium"
+              reelsActive ? "text-violet-500 dark:text-violet-400 font-bold" : "text-muted-foreground font-medium"
             }`}
           >
             Reels

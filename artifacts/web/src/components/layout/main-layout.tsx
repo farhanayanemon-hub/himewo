@@ -77,19 +77,17 @@ function ThemeToggle() {
 function NavIcon({
   icon: Icon,
   iconUrl,
-  color,
   size = "md",
 }: {
   icon: LucideIcon;
   iconUrl?: string;
-  color?: string;
   size?: "sm" | "md";
 }) {
   const ic = size === "sm" ? "w-5 h-5" : "w-[22px] h-[22px]";
   if (iconUrl) {
-    return <img src={iconUrl} alt="" className={`${ic} object-contain`} />;
+    return <img src={iconUrl} alt="" className={`${ic} object-contain opacity-70`} />;
   }
-  return <Icon className={`${ic} ${color ?? "text-muted-foreground"}`} />;
+  return <Icon className={`${ic} text-muted-foreground`} />;
 }
 
 // Lets the user post/react/comment as a page they manage, Facebook-style.
@@ -219,25 +217,25 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
   };
 
   const navItems = [
-    { href: "/", icon: Home, label: "Feed", color: "text-teal-500", iconUrl: navIcons.home },
-    { href: "/friends", icon: Users, label: "Friends", color: "text-purple-500", iconUrl: navIcons.friends },
-    { href: "/reels", icon: Video, label: "Reels", color: "text-pink-500", iconUrl: navIcons.reels },
-    { href: "/groups", icon: UsersRound, label: "Circles", color: "text-emerald-500", iconUrl: navIcons.circles },
-    { href: "/pages", icon: FileText, label: "Hubs", color: "text-orange-500", iconUrl: navIcons.hubs },
-    { href: "/shop", icon: Store, label: "Shop", color: "text-amber-500", iconUrl: navIcons.shop },
+    { href: "/", icon: Home, label: "Feed", iconUrl: navIcons.home },
+    { href: "/friends", icon: Users, label: "Friends", iconUrl: navIcons.friends },
+    { href: "/reels", icon: Video, label: "Reels", iconUrl: navIcons.reels },
+    { href: "/groups", icon: UsersRound, label: "Circles", iconUrl: navIcons.circles },
+    { href: "/pages", icon: FileText, label: "Hubs", iconUrl: navIcons.hubs },
+    { href: "/shop", icon: Store, label: "Shop", iconUrl: navIcons.shop },
     ...(earnings?.enabled
-      ? [{ href: "/earnings", icon: Wallet, label: "Earnings", color: "text-green-500", iconUrl: navIcons.earnings }]
+      ? [{ href: "/earnings", icon: Wallet, label: "Earnings", iconUrl: navIcons.earnings }]
       : []),
   ];
 
   const shortcutItems = [
-    { href: "/live", icon: Radio, label: "Live", color: "text-red-500", iconUrl: navIcons.live },
-    { href: "/watch", icon: MonitorPlay, label: "Watch", color: "text-teal-500", iconUrl: navIcons.watch },
-    { href: "/events", icon: CalendarDays, label: "Events", color: "text-rose-500", iconUrl: navIcons.events },
-    { href: "/stories", icon: Clapperboard, label: "Stories", color: "text-purple-500", iconUrl: navIcons.stories },
-    { href: "/memories", icon: Clock, label: "Memories", color: "text-cyan-500", iconUrl: navIcons.memories },
-    { href: "/saved", icon: Bookmark, label: "Saved", color: "text-pink-500", iconUrl: navIcons.saved },
-    { href: "/verified", icon: BadgeCheck, label: "Verified Badge", color: "text-purple-600 dark:text-purple-400", iconUrl: navIcons.verified },
+    { href: "/live", icon: Radio, label: "Live", iconUrl: navIcons.live },
+    { href: "/watch", icon: MonitorPlay, label: "Watch", iconUrl: navIcons.watch },
+    { href: "/events", icon: CalendarDays, label: "Events", iconUrl: navIcons.events },
+    { href: "/stories", icon: Clapperboard, label: "Stories", iconUrl: navIcons.stories },
+    { href: "/memories", icon: Clock, label: "Memories", iconUrl: navIcons.memories },
+    { href: "/saved", icon: Bookmark, label: "Saved", iconUrl: navIcons.saved },
+    { href: "/verified", icon: BadgeCheck, label: "Verified Badge", iconUrl: navIcons.verified },
   ];
 
   return (
@@ -278,10 +276,10 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className={`rounded-2xl w-14 h-12 press transition-all duration-200 [&_svg]:!size-6 ${
+                      className={`rounded-xl w-14 h-12 press transition-all duration-200 [&_svg]:!size-6 ${
                         isActive 
-                          ? "bg-accent/80 text-foreground shadow-sm shadow-primary/20 backdrop-blur-md" 
-                          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                          ? "text-violet-500 dark:text-violet-400" 
+                          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                       }`}
                     >
                       {item.iconUrl ? (
@@ -289,14 +287,22 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
                           src={item.iconUrl} 
                           alt="" 
                           className={`w-7 h-7 object-contain transition-all ${
-                            isActive ? "scale-110 drop-shadow-[0_0_8px_rgba(56,189,248,0.5)]" : "opacity-75 saturate-[.85]"
+                            isActive 
+                              ? "scale-110 drop-shadow-[0_0_10px_rgba(139,92,246,0.6)]" 
+                              : "opacity-60 grayscale-[30%]"
                           }`} 
                         />
                       ) : (
-                        <Icon className={`transition-all ${isActive ? `${item.color} scale-110 drop-shadow-[0_0_8px_currentColor]` : ""}`} />
+                        <Icon className={`transition-all ${
+                          isActive 
+                            ? "scale-110 drop-shadow-[0_0_10px_rgba(139,92,246,0.55)]" 
+                            : ""
+                        }`} />
                       )}
                     </Button>
-                    {isActive && <span className="absolute -bottom-[14px] left-2 right-2 h-1 rounded-full bg-gradient-to-r from-teal-400 via-purple-400 to-pink-400" />}
+                    {isActive && (
+                      <span className="absolute -bottom-[14px] left-2 right-2 h-[3px] rounded-full bg-violet-500 dark:bg-violet-400" />
+                    )}
                   </Link>
                 );
               })}
@@ -340,7 +346,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
               const Icon = item.icon;
               return (
                 <Link key={item.href} href={item.href} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
-                  <NavIcon icon={Icon} iconUrl={item.iconUrl} color={item.color} size="sm" />
+                  <NavIcon icon={Icon} iconUrl={item.iconUrl} size="sm" />
                   <span className="font-medium">{item.label}</span>
                 </Link>
               );
@@ -349,7 +355,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
               const Icon = item.icon;
               return (
                 <Link key={item.href} href={item.href} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
-                  <NavIcon icon={Icon} iconUrl={item.iconUrl} color={item.color} size="sm" />
+                  <NavIcon icon={Icon} iconUrl={item.iconUrl} size="sm" />
                   <span className="font-medium">{item.label}</span>
                 </Link>
               );
@@ -359,15 +365,15 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
               onClick={openAdsManager}
               className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
             >
-              <NavIcon icon={Megaphone} color="text-blue-500" size="sm" />
+              <NavIcon icon={Megaphone} size="sm" />
               <span className="font-medium">Ads Manager</span>
             </button>
             <Link href="/settings" className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
-              <NavIcon icon={Settings} color="text-slate-500" size="sm" />
+              <NavIcon icon={Settings} size="sm" />
               <span className="font-medium">Settings</span>
             </Link>
             <button onClick={signOut} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
-              <NavIcon icon={LogOut} color="text-red-500" size="sm" />
+              <NavIcon icon={LogOut} size="sm" />
               <span className="font-medium">Log Out</span>
             </button>
           </nav>
