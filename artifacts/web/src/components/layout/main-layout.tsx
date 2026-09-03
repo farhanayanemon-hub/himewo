@@ -22,14 +22,13 @@ import {
   Users, 
   MessageCircle, 
   Bell, 
-  Video, 
   Search, 
   Menu,
   Settings,
   LogOut,
-  UsersRound,
-  FileText,
-  Store,
+  Globe,
+  LayoutGrid,
+  ShoppingBag,
   Clock,
   Bookmark,
   BadgeCheck,
@@ -41,6 +40,7 @@ import {
   Moon,
   Sun,
   Megaphone,
+  Film,
   type LucideIcon,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -217,25 +217,25 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
   };
 
   const navItems = [
-    { href: "/", icon: Home, label: "Feed", iconUrl: navIcons.home },
-    { href: "/friends", icon: Users, label: "Friends", iconUrl: navIcons.friends },
-    { href: "/reels", icon: Video, label: "Reels", iconUrl: navIcons.reels },
-    { href: "/groups", icon: UsersRound, label: "Circles", iconUrl: navIcons.circles },
-    { href: "/pages", icon: FileText, label: "Hubs", iconUrl: navIcons.hubs },
-    { href: "/shop", icon: Store, label: "Shop", iconUrl: navIcons.shop },
+    { href: "/",        icon: Home,        label: "Feed",    iconUrl: navIcons.home },
+    { href: "/friends", icon: Users,       label: "Friends", iconUrl: navIcons.friends },
+    { href: "/reels",   icon: Clapperboard,label: "Reels",   iconUrl: navIcons.reels },
+    { href: "/groups",  icon: Globe,       label: "Circles", iconUrl: navIcons.circles },
+    { href: "/pages",   icon: LayoutGrid,  label: "Hubs",    iconUrl: navIcons.hubs },
+    { href: "/shop",    icon: ShoppingBag, label: "Shop",    iconUrl: navIcons.shop },
     ...(earnings?.enabled
-      ? [{ href: "/earnings", icon: Wallet, label: "Earnings", iconUrl: navIcons.earnings }]
+      ? [{ href: "/earnings", icon: Wallet, label: "Wallet", iconUrl: navIcons.earnings }]
       : []),
   ];
 
   const shortcutItems = [
-    { href: "/live", icon: Radio, label: "Live", iconUrl: navIcons.live },
-    { href: "/watch", icon: MonitorPlay, label: "Watch", iconUrl: navIcons.watch },
-    { href: "/events", icon: CalendarDays, label: "Events", iconUrl: navIcons.events },
-    { href: "/stories", icon: Clapperboard, label: "Stories", iconUrl: navIcons.stories },
-    { href: "/memories", icon: Clock, label: "Memories", iconUrl: navIcons.memories },
-    { href: "/saved", icon: Bookmark, label: "Saved", iconUrl: navIcons.saved },
-    { href: "/verified", icon: BadgeCheck, label: "Verified Badge", iconUrl: navIcons.verified },
+    { href: "/live",     icon: Radio,       label: "Live",          iconUrl: navIcons.live },
+    { href: "/watch",    icon: MonitorPlay, label: "Watch",         iconUrl: navIcons.watch },
+    { href: "/events",   icon: CalendarDays,label: "Events",        iconUrl: navIcons.events },
+    { href: "/stories",  icon: Film,        label: "Stories",       iconUrl: navIcons.stories },
+    { href: "/memories", icon: Clock,       label: "Memories",      iconUrl: navIcons.memories },
+    { href: "/saved",    icon: Bookmark,    label: "Saved",         iconUrl: navIcons.saved },
+    { href: "/verified", icon: BadgeCheck,  label: "Verified Badge",iconUrl: navIcons.verified },
   ];
 
   return (
@@ -270,38 +270,45 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
             <div className="hidden md:flex items-center gap-1">
               {navItems.map(item => {
                 const Icon = item.icon;
-                const isActive = location === item.href;
+                const isActive = item.href === "/"
+                  ? location === "/"
+                  : location.startsWith(item.href);
                 return (
-                  <Link key={item.href} href={item.href} className="relative">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className={`rounded-xl w-14 h-12 press transition-all duration-200 [&_svg]:!size-6 ${
-                        isActive 
-                          ? "text-violet-500 dark:text-violet-400" 
-                          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                  <Link key={item.href} href={item.href} className="relative pb-[3px]">
+                    <button
+                      className={`relative flex items-center justify-center w-14 h-12 rounded-xl transition-all duration-200 press ${
+                        isActive
+                          ? "bg-violet-50 dark:bg-violet-500/15"
+                          : "hover:bg-muted/60"
                       }`}
                     >
                       {item.iconUrl ? (
-                        <img 
-                          src={item.iconUrl} 
-                          alt="" 
+                        <img
+                          src={item.iconUrl}
+                          alt=""
                           className={`w-7 h-7 object-contain transition-all ${
-                            isActive 
-                              ? "scale-110 drop-shadow-[0_0_10px_rgba(139,92,246,0.6)]" 
-                              : "opacity-60 grayscale-[30%]"
-                          }`} 
+                            isActive
+                              ? "scale-110"
+                              : "opacity-50 grayscale-[20%]"
+                          }`}
+                          style={isActive ? { filter: "drop-shadow(0 0 8px rgba(139,92,246,0.5)) hue-rotate(0deg)" } : {}}
                         />
                       ) : (
-                        <Icon className={`transition-all ${
-                          isActive 
-                            ? "scale-110 drop-shadow-[0_0_10px_rgba(139,92,246,0.55)]" 
-                            : ""
-                        }`} />
+                        <Icon
+                          className="w-6 h-6 transition-all"
+                          style={{
+                            color: isActive ? "#8b5cf6" : undefined,
+                            filter: isActive ? "drop-shadow(0 0 8px rgba(139,92,246,0.4))" : undefined,
+                            transform: isActive ? "scale(1.1)" : undefined,
+                          }}
+                        />
                       )}
-                    </Button>
+                    </button>
                     {isActive && (
-                      <span className="absolute -bottom-[14px] left-2 right-2 h-[3px] rounded-full bg-violet-500 dark:bg-violet-400" />
+                      <span
+                        className="absolute bottom-0 left-2 right-2 h-[3px] rounded-full"
+                        style={{ background: "#8b5cf6" }}
+                      />
                     )}
                   </Link>
                 );
