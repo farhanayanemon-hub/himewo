@@ -4,6 +4,7 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { PostCard } from "@/components/post-card";
 import { PostComposer } from "@/components/post-composer";
 import { SponsoredCard } from "@/components/sponsored-card";
+import { ReelsShelf } from "@/components/reels-shelf";
 import {
   useGetFeed,
   useServeAds,
@@ -371,6 +372,8 @@ export default function HomePage() {
         <StoryRow />
 
         <PostComposer />
+
+        <ReelsShelf />
 
         {/* Feed */}
         <div className="space-y-4">

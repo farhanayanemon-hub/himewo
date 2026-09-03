@@ -4,16 +4,21 @@ import {
   pointTransactionsTable,
   withdrawalAccountsTable,
   withdrawalRequestsTable,
+  dailyTasksTable,
+  dailyTaskClaimsTable,
+  dailyUserActivitiesTable,
   type PointTransaction,
   type WithdrawalAccount,
   type WithdrawalRequest,
 } from "@workspace/db";
-import { and, desc, eq, gte, lt, sql } from "drizzle-orm";
+import { and, desc, asc, eq, gte, lt, sql } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import {
   getPointConfig,
   getBalancePoints,
   pointsToDollars,
+  getTodayDateString,
+  recordUserActivity,
 } from "../lib/earnings";
 import {
   GetEarningsSummaryResponse,
@@ -75,7 +80,7 @@ async function sumEarned(userId: string, since?: Date): Promise<number> {
     .where(
       and(
         eq(pointTransactionsTable.userId, userId),
-        sql`${pointTransactionsTable.action} in ('post','like','comment','share')`,
+        sql`${pointTransactionsTable.action} in ('post','like','comment','share','reel','task_claim')`,
         since ? gte(pointTransactionsTable.createdAt, since) : undefined,
       ),
     );
@@ -347,5 +352,203 @@ router.post(
     res.status(201).json(CreateWithdrawalResponse.parse(toWithdrawal(created)));
   },
 );
+
+/** Helper to seed default daily tasks if table is empty */
+async function ensureDefaultDailyTasks() {
+  const existing = await db.select().from(dailyTasksTable).limit(1);
+  if (existing.length === 0) {
+    await db.insert(dailyTasksTable).values([
+      {
+        title: "Watch Reels",
+        description: "Watch a short video reel on HiMewo",
+        action: "reel",
+        rewardPoints: 20,
+        targetCount: 1,
+        active: true,
+      },
+      {
+        title: "React to 3 Posts",
+        description: "Like or react to 3 posts in your feed",
+        action: "like",
+        rewardPoints: 10,
+        targetCount: 3,
+        active: true,
+      },
+      {
+        title: "Create a Post",
+        description: "Share an update or photo with friends",
+        action: "post",
+        rewardPoints: 15,
+        targetCount: 1,
+        active: true,
+      },
+      {
+        title: "Leave a Comment",
+        description: "Leave a comment on any friend or community post",
+        action: "comment",
+        rewardPoints: 10,
+        targetCount: 1,
+        active: true,
+      },
+      {
+        title: "Share a Post",
+        description: "Share content to your timeline or groups",
+        action: "share",
+        rewardPoints: 10,
+        targetCount: 1,
+        active: true,
+      },
+    ]);
+  }
+}
+
+/** Get today's daily tasks with current progress & claimed state */
+router.get("/earnings/daily-tasks", requireAuth, async (req, res): Promise<void> => {
+  try {
+    const userId = req.userId!;
+    await ensureDefaultDailyTasks();
+    const today = getTodayDateString();
+
+    const tasks = await db
+      .select()
+      .from(dailyTasksTable)
+      .where(eq(dailyTasksTable.active, true))
+      .orderBy(asc(dailyTasksTable.id));
+
+    // User's claims today
+    const claims = await db
+      .select()
+      .from(dailyTaskClaimsTable)
+      .where(and(eq(dailyTaskClaimsTable.userId, userId), eq(dailyTaskClaimsTable.date, today)));
+    const claimedTaskIds = new Set(claims.map((c) => c.taskId));
+
+    // User's activities today
+    const activities = await db
+      .select()
+      .from(dailyUserActivitiesTable)
+      .where(and(eq(dailyUserActivitiesTable.userId, userId), eq(dailyUserActivitiesTable.date, today)));
+    const activityMap = new Map<string, number>();
+    for (const act of activities) {
+      activityMap.set(act.action, act.count);
+    }
+
+    const result = tasks.map((task) => {
+      const currentCount = activityMap.get(task.action) ?? 0;
+      const isClaimed = claimedTaskIds.has(task.id);
+      const isCompleted = currentCount >= task.targetCount;
+      return {
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        action: task.action,
+        rewardPoints: task.rewardPoints,
+        targetCount: task.targetCount,
+        progress: Math.min(currentCount, task.targetCount),
+        completed: isCompleted,
+        claimed: isClaimed,
+      };
+    });
+
+    res.json({ tasks: result, today });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message ?? "Failed to fetch daily tasks" });
+  }
+});
+
+/** Claim points for a completed daily task */
+router.post("/earnings/daily-tasks/:id/claim", requireAuth, async (req, res): Promise<void> => {
+  try {
+    const userId = req.userId!;
+    const taskId = Number(req.params.id);
+    if (!taskId || isNaN(taskId)) {
+      res.status(400).json({ error: "Invalid task ID" });
+      return;
+    }
+
+    const [task] = await db
+      .select()
+      .from(dailyTasksTable)
+      .where(and(eq(dailyTasksTable.id, taskId), eq(dailyTasksTable.active, true)));
+    if (!task) {
+      res.status(404).json({ error: "Daily task not found or inactive" });
+      return;
+    }
+
+    const today = getTodayDateString();
+
+    // Check if already claimed
+    const [existingClaim] = await db
+      .select()
+      .from(dailyTaskClaimsTable)
+      .where(
+        and(
+          eq(dailyTaskClaimsTable.userId, userId),
+          eq(dailyTaskClaimsTable.taskId, taskId),
+          eq(dailyTaskClaimsTable.date, today),
+        ),
+      );
+    if (existingClaim) {
+      res.status(400).json({ error: "You have already claimed this task today." });
+      return;
+    }
+
+    // Check progress
+    const [userActivity] = await db
+      .select()
+      .from(dailyUserActivitiesTable)
+      .where(
+        and(
+          eq(dailyUserActivitiesTable.userId, userId),
+          eq(dailyUserActivitiesTable.action, task.action),
+          eq(dailyUserActivitiesTable.date, today),
+        ),
+      );
+    const currentCount = userActivity?.count ?? 0;
+    if (currentCount < task.targetCount) {
+      res.status(400).json({
+        error: `Task requirement not met yet (${currentCount}/${task.targetCount})`,
+      });
+      return;
+    }
+
+    // Claim points transaction
+    await db.transaction(async (tx) => {
+      await tx.insert(dailyTaskClaimsTable).values({
+        userId,
+        taskId,
+        date: today,
+        points: task.rewardPoints,
+      });
+      await tx.insert(pointTransactionsTable).values({
+        userId,
+        action: "task_claim",
+        points: task.rewardPoints,
+        entityType: "daily_task",
+        entityId: taskId,
+        note: `Claimed Daily Task: ${task.title}`,
+      });
+    });
+
+    const newBalance = await getBalancePoints(userId);
+    res.json({
+      success: true,
+      claimedPoints: task.rewardPoints,
+      newBalancePoints: newBalance,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message ?? "Failed to claim daily task points" });
+  }
+});
+
+/** Track a reel view for the daily task progress */
+router.post("/earnings/reels/track", requireAuth, async (req, res): Promise<void> => {
+  try {
+    const userId = req.userId!;
+    await recordUserActivity(userId, "reel", 1);
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message ?? "Failed to track reel watch" });
+  }
+});
 
 export default router;

@@ -4,12 +4,13 @@ import {
   pointConfigTable,
   pointTransactionsTable,
   withdrawalRequestsTable,
+  dailyTasksTable,
   profilesTable,
   type PointConfig,
   type WithdrawalRequest,
   type Profile,
 } from "@workspace/db";
-import { and, desc, eq, lt, inArray, sql } from "drizzle-orm";
+import { and, desc, asc, eq, lt, inArray, sql } from "drizzle-orm";
 import { requireAdmin } from "../lib/auth";
 import { toProfile } from "../lib/serialize";
 import {
@@ -43,6 +44,7 @@ function toConfig(row: PointConfig) {
     pointsPerLike: row.pointsPerLike,
     pointsPerComment: row.pointsPerComment,
     pointsPerShare: row.pointsPerShare,
+    pointsPerReel: (row as any).pointsPerReel ?? 20,
     pointsPerDollar: row.pointsPerDollar,
     minWithdrawDollars: row.minWithdrawDollars,
     dailyPointCap: row.dailyPointCap,
@@ -118,22 +120,27 @@ router.put(
   "/admin/earnings/config",
   requireAdmin,
   async (req, res): Promise<void> => {
-    const parsed = UpdatePointConfigBody.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.message });
-      return;
-    }
+    const rawUpdates = req.body;
     await getPointConfig();
-    const updates = parsed.data;
-    const hasUpdates = Object.values(updates).some((v) => v !== undefined);
-    if (hasUpdates) {
+    const updates: Record<string, any> = {};
+    if (typeof rawUpdates.enabled === "boolean") updates.enabled = rawUpdates.enabled;
+    if (typeof rawUpdates.pointsPerPost === "number") updates.pointsPerPost = rawUpdates.pointsPerPost;
+    if (typeof rawUpdates.pointsPerLike === "number") updates.pointsPerLike = rawUpdates.pointsPerLike;
+    if (typeof rawUpdates.pointsPerComment === "number") updates.pointsPerComment = rawUpdates.pointsPerComment;
+    if (typeof rawUpdates.pointsPerShare === "number") updates.pointsPerShare = rawUpdates.pointsPerShare;
+    if (typeof rawUpdates.pointsPerReel === "number") updates.pointsPerReel = rawUpdates.pointsPerReel;
+    if (typeof rawUpdates.pointsPerDollar === "number") updates.pointsPerDollar = rawUpdates.pointsPerDollar;
+    if (typeof rawUpdates.minWithdrawDollars === "number") updates.minWithdrawDollars = rawUpdates.minWithdrawDollars;
+    if (typeof rawUpdates.dailyPointCap === "number") updates.dailyPointCap = rawUpdates.dailyPointCap;
+
+    if (Object.keys(updates).length > 0) {
       await db
         .update(pointConfigTable)
         .set(updates)
         .where(eq(pointConfigTable.id, 1));
     }
     const config = await getPointConfig();
-    res.json(UpdatePointConfigResponse.parse(toConfig(config)));
+    res.json(toConfig(config));
   },
 );
 
@@ -346,6 +353,106 @@ router.post(
         balanceDollars: pointsToDollars(balancePoints, config.pointsPerDollar),
       }),
     );
+  },
+);
+
+/* ------------------------- Daily Tasks Admin CRUD ------------------------- */
+
+router.get(
+  "/admin/earnings/daily-tasks",
+  requireAdmin,
+  async (_req, res): Promise<void> => {
+    try {
+      const tasks = await db
+        .select()
+        .from(dailyTasksTable)
+        .orderBy(asc(dailyTasksTable.id));
+      res.json(tasks);
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message ?? "Failed to list daily tasks" });
+    }
+  },
+);
+
+router.post(
+  "/admin/earnings/daily-tasks",
+  requireAdmin,
+  async (req, res): Promise<void> => {
+    try {
+      const { title, description, action, rewardPoints, targetCount, active } = req.body;
+      if (!title || !action) {
+        res.status(400).json({ error: "Title and Action are required." });
+        return;
+      }
+      const [created] = await db
+        .insert(dailyTasksTable)
+        .values({
+          title: String(title).trim(),
+          description: description ? String(description).trim() : null,
+          action: String(action).trim(),
+          rewardPoints: Number(rewardPoints) || 20,
+          targetCount: Number(targetCount) || 1,
+          active: active !== false,
+        })
+        .returning();
+      res.status(201).json(created);
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message ?? "Failed to create daily task" });
+    }
+  },
+);
+
+router.put(
+  "/admin/earnings/daily-tasks/:id",
+  requireAdmin,
+  async (req, res): Promise<void> => {
+    try {
+      const id = Number(req.params.id);
+      if (!id || isNaN(id)) {
+        res.status(400).json({ error: "Invalid task ID" });
+        return;
+      }
+      const { title, description, action, rewardPoints, targetCount, active } = req.body;
+      const updates: Record<string, any> = { updatedAt: new Date() };
+      if (title !== undefined) updates.title = String(title).trim();
+      if (description !== undefined) updates.description = description ? String(description).trim() : null;
+      if (action !== undefined) updates.action = String(action).trim();
+      if (rewardPoints !== undefined) updates.rewardPoints = Number(rewardPoints);
+      if (targetCount !== undefined) updates.targetCount = Number(targetCount);
+      if (active !== undefined) updates.active = Boolean(active);
+
+      const [updated] = await db
+        .update(dailyTasksTable)
+        .set(updates)
+        .where(eq(dailyTasksTable.id, id))
+        .returning();
+
+      if (!updated) {
+        res.status(404).json({ error: "Daily task not found" });
+        return;
+      }
+      res.json(updated);
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message ?? "Failed to update daily task" });
+    }
+  },
+);
+
+router.delete(
+  "/admin/earnings/daily-tasks/:id",
+  requireAdmin,
+  async (req, res): Promise<void> => {
+    try {
+      const id = Number(req.params.id);
+      if (!id || isNaN(id)) {
+        res.status(400).json({ error: "Invalid task ID" });
+        return;
+      }
+      await db.delete(dailyTasksTable).where(eq(dailyTasksTable.id, id));
+      res.json({ success: true, id });
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message ?? "Failed to delete daily task" });
+    }
   },
 );
 

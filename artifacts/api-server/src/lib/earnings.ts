@@ -2,6 +2,8 @@ import {
   db,
   pointConfigTable,
   pointTransactionsTable,
+  dailyUserActivitiesTable,
+  dailyTasksTable,
   type PointConfig,
 } from "@workspace/db";
 import { and, eq, gte, sql } from "drizzle-orm";
@@ -10,8 +12,8 @@ import { logger } from "./logger";
 const CONFIG_ID = 1;
 
 /** Actions that grant points (i.e. positive engagement earns). */
-export type EarnAction = "post" | "like" | "comment" | "share";
-const EARN_ACTIONS: EarnAction[] = ["post", "like", "comment", "share"];
+export type EarnAction = "post" | "like" | "comment" | "share" | "reel" | "task_claim";
+const EARN_ACTIONS: EarnAction[] = ["post", "like", "comment", "share", "reel", "task_claim"];
 
 /** Read the single-row config, creating it with defaults on first access. */
 export async function getPointConfig(): Promise<PointConfig> {
@@ -43,14 +45,54 @@ function pointsForAction(config: PointConfig, action: EarnAction): number {
       return config.pointsPerComment;
     case "share":
       return config.pointsPerShare;
+    case "reel":
+      return (config as any).pointsPerReel ?? 20;
+    case "task_claim":
+      return 0; // handled dynamically per task
   }
 }
 
-function startOfUtcDay(): Date {
+export function startOfUtcDay(): Date {
   const now = new Date();
   return new Date(
     Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
   );
+}
+
+export function getTodayDateString(): string {
+  return startOfUtcDay().toISOString().slice(0, 10);
+}
+
+/** Record user activity for today's daily task progress */
+export async function recordUserActivity(
+  userId: string,
+  action: string,
+  incrementBy = 1,
+): Promise<void> {
+  try {
+    const today = getTodayDateString();
+    await db
+      .insert(dailyUserActivitiesTable)
+      .values({
+        userId,
+        action,
+        date: today,
+        count: incrementBy,
+      })
+      .onConflictDoUpdate({
+        target: [
+          dailyUserActivitiesTable.userId,
+          dailyUserActivitiesTable.action,
+          dailyUserActivitiesTable.date,
+        ],
+        set: {
+          count: sql`${dailyUserActivitiesTable.count} + ${incrementBy}`,
+          updatedAt: new Date(),
+        },
+      });
+  } catch (err) {
+    logger.error({ err, userId, action }, "recordUserActivity failed");
+  }
 }
 
 /** Sum of a user's whole ledger (earns positive, withdrawals negative). */
@@ -132,6 +174,7 @@ export async function awardPoints(params: {
         })
         .onConflictDoNothing();
     });
+    await recordUserActivity(params.userId, params.action);
   } catch (err) {
     logger.error({ err, params }, "awardPoints failed");
   }

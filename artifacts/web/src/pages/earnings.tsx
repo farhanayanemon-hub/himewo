@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Redirect } from "wouter";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   useGetEarningsSummary,
@@ -40,6 +40,8 @@ import {
   Coins,
   ArrowDownToLine,
   Info,
+  Sparkles,
+  Check,
 } from "lucide-react";
 
 /** A saved-account method and the field(s) the user must fill for it. */
@@ -106,6 +108,8 @@ const ACTION_LABELS: Record<string, string> = {
   like: "Reacted to a post",
   comment: "Commented on a post",
   share: "Shared a post",
+  reel: "Watched a Reel",
+  task_claim: "Daily Task Claim",
   withdraw: "Withdrawal",
   withdraw_refund: "Withdrawal refund",
   admin_adjust: "Admin adjustment",
@@ -196,6 +200,7 @@ function EarningsContent({ summary }: { summary: EarningsSummary }) {
         </div>
 
         <BalanceHeader summary={summary} rate={rate} />
+        <DailyTasksSection />
         <RulesSection summary={summary} rate={rate} />
         <WithdrawalAccountsSection />
         <WithdrawSection summary={summary} rate={rate} />
@@ -253,6 +258,167 @@ function BalanceHeader({
   );
 }
 
+type DailyTaskItem = {
+  id: number;
+  title: string;
+  description?: string;
+  action: string;
+  rewardPoints: number;
+  targetCount: number;
+  progress: number;
+  completed: boolean;
+  claimed: boolean;
+};
+
+function DailyTasksSection() {
+  const qc = useQueryClient();
+  const [claimingId, setClaimingId] = useState<number | null>(null);
+
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ["daily-tasks"],
+    queryFn: async () => {
+      const res = await fetch("/api/earnings/daily-tasks", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch daily tasks");
+      return (await res.json()) as { tasks: DailyTaskItem[]; today: string };
+    },
+  });
+
+  const handleClaim = async (task: DailyTaskItem) => {
+    setClaimingId(task.id);
+    try {
+      const res = await fetch(`/api/earnings/daily-tasks/${task.id}/claim`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        toast.error(json.error || "Failed to claim reward");
+        return;
+      }
+      toast.success(`🎉 Claimed +${task.rewardPoints} points for "${task.title}"!`);
+      refetch();
+      qc.invalidateQueries({ queryKey: getGetEarningsSummaryQueryKey() });
+      qc.invalidateQueries({ queryKey: getGetEarningsHistoryQueryKey() });
+    } catch {
+      toast.error("Network error while claiming");
+    } finally {
+      setClaimingId(null);
+    }
+  };
+
+  if (isLoading && !data) {
+    return (
+      <Card className="p-5">
+        <div className="flex items-center justify-center py-6">
+          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+        </div>
+      </Card>
+    );
+  }
+
+  const tasks = data?.tasks ?? [];
+  if (tasks.length === 0) return null;
+
+  return (
+    <Card className="p-5 border-violet-200 dark:border-violet-900/40">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-violet-500/15 text-violet-600 dark:text-violet-400 flex items-center justify-center">
+            <Sparkles className="w-4 h-4" />
+          </div>
+          <div>
+            <SectionTitle>Daily Tasks & Rewards</SectionTitle>
+            <p className="text-xs text-muted-foreground -mt-2">
+              Complete daily tasks and click Claim to collect your points
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-3 mt-4">
+        {tasks.map((task) => {
+          const percent = Math.min(100, Math.round((task.progress / task.targetCount) * 100));
+          return (
+            <div
+              key={task.id}
+              className={`p-3.5 rounded-xl border transition-all ${
+                task.claimed
+                  ? "bg-muted/30 border-border opacity-70"
+                  : task.completed
+                  ? "bg-violet-500/5 border-violet-500/30 shadow-sm"
+                  : "bg-card border-border"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm text-foreground">
+                      {task.title}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-500/10 px-2 py-0.5 rounded-full">
+                      +{task.rewardPoints} pts
+                    </span>
+                  </div>
+                  {task.description && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {task.description}
+                    </p>
+                  )}
+
+                  {/* Progress bar */}
+                  <div className="mt-2 flex items-center gap-2">
+                    <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-violet-500 rounded-full transition-all duration-300"
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
+                    <span className="text-[11px] font-medium text-muted-foreground shrink-0">
+                      {task.progress}/{task.targetCount}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Claim / Status Button */}
+                <div className="shrink-0 self-center">
+                  {task.claimed ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground bg-muted px-3 py-1.5 rounded-lg">
+                      <Check className="w-3.5 h-3.5" /> Claimed
+                    </span>
+                  ) : task.completed ? (
+                    <Button
+                      size="sm"
+                      onClick={() => handleClaim(task)}
+                      disabled={claimingId === task.id}
+                      className="bg-violet-600 hover:bg-violet-700 text-white font-bold shadow-md shadow-violet-500/25"
+                    >
+                      {claimingId === task.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        `Claim +${task.rewardPoints} Pts`
+                      )}
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled
+                      className="text-xs text-muted-foreground opacity-60"
+                    >
+                      {task.progress}/{task.targetCount}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
 function RulesSection({
   summary,
   rate,
@@ -261,6 +427,7 @@ function RulesSection({
   rate: number;
 }) {
   const rules = [
+    { label: "Watch a Reel", points: (summary.rewards as any)?.reel ?? 20 },
     { label: "Create a post", points: summary.rewards.post },
     { label: "React to a post", points: summary.rewards.like },
     { label: "Comment on a post", points: summary.rewards.comment },

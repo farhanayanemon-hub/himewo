@@ -80,6 +80,7 @@ export function Earnings() {
       <div className="space-y-6">
         <StatsSection />
         <ConfigSection canManage={canManage} />
+        <DailyTasksAdminSection canManage={canManage} />
         <WithdrawalsSection canManage={canManage} />
         <AdjustSection canManage={canManage} />
       </div>
@@ -171,6 +172,7 @@ type NumKey =
   | "pointsPerLike"
   | "pointsPerComment"
   | "pointsPerShare"
+  | "pointsPerReel"
   | "pointsPerDollar"
   | "minWithdrawDollars"
   | "dailyPointCap";
@@ -180,6 +182,7 @@ const NUM_FIELDS: { key: NumKey; label: string; hint?: string }[] = [
   { key: "pointsPerLike", label: "Points per like" },
   { key: "pointsPerComment", label: "Points per comment" },
   { key: "pointsPerShare", label: "Points per share" },
+  { key: "pointsPerReel", label: "Points per reel", hint: "Points granted for watching a reel (default 20)." },
   { key: "pointsPerDollar", label: "Points per $1", hint: "How many points equal one US dollar." },
   { key: "minWithdrawDollars", label: "Minimum withdrawal (USD)" },
   { key: "dailyPointCap", label: "Daily points cap", hint: "Max points a user can earn per day. 0 = no cap." },
@@ -203,6 +206,7 @@ function ConfigSection({ canManage }: { canManage: boolean }) {
     pointsPerLike: "",
     pointsPerComment: "",
     pointsPerShare: "",
+    pointsPerReel: "20",
     pointsPerDollar: "",
     minWithdrawDollars: "",
     dailyPointCap: "",
@@ -216,6 +220,7 @@ function ConfigSection({ canManage }: { canManage: boolean }) {
         pointsPerLike: String(query.data.pointsPerLike),
         pointsPerComment: String(query.data.pointsPerComment),
         pointsPerShare: String(query.data.pointsPerShare),
+        pointsPerReel: String((query.data as any).pointsPerReel ?? 20),
         pointsPerDollar: String(query.data.pointsPerDollar),
         minWithdrawDollars: String(query.data.minWithdrawDollars),
         dailyPointCap: String(query.data.dailyPointCap),
@@ -239,16 +244,17 @@ function ConfigSection({ canManage }: { canManage: boolean }) {
 
   const save = () => {
     if (validationError) return;
-    const body: PointConfigUpdate = {
+    const body = {
       pointsPerPost: Number(form.pointsPerPost),
       pointsPerLike: Number(form.pointsPerLike),
       pointsPerComment: Number(form.pointsPerComment),
       pointsPerShare: Number(form.pointsPerShare),
+      pointsPerReel: Number(form.pointsPerReel),
       pointsPerDollar: Number(form.pointsPerDollar),
       minWithdrawDollars: Number(form.minWithdrawDollars),
       dailyPointCap: Number(form.dailyPointCap),
     };
-    update.mutate(body, {
+    update.mutate(body as any, {
       onSuccess: () => {
         setSaved(true);
         window.setTimeout(() => setSaved(false), 2500);
@@ -335,7 +341,288 @@ function ConfigSection({ canManage }: { canManage: boolean }) {
   );
 }
 
+/* ----------------------------- Daily Tasks ---------------------------- */
+
+interface AdminDailyTask {
+  id: number;
+  title: string;
+  description: string | null;
+  action: string;
+  rewardPoints: number;
+  targetCount: number;
+  active: boolean;
+  createdAt: string;
+}
+
+function DailyTasksAdminSection({ canManage }: { canManage: boolean }) {
+  const qc = useQueryClient();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [action, setAction] = useState("reel");
+  const [rewardPoints, setRewardPoints] = useState("20");
+  const [targetCount, setTargetCount] = useState("1");
+  const [active, setActive] = useState(true);
+
+  const query = useQuery({
+    queryKey: ["admin-daily-tasks"],
+    queryFn: () => api.get<AdminDailyTask[]>("/admin/earnings/daily-tasks"),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (body: any) => api.post("/admin/earnings/daily-tasks", body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-daily-tasks"] });
+      setModalOpen(false);
+      resetForm();
+    },
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: ({ id, active }: { id: number; active: boolean }) =>
+      api.put(`/admin/earnings/daily-tasks/${id}`, { active }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-daily-tasks"] }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => api.del(`/admin/earnings/daily-tasks/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-daily-tasks"] }),
+  });
+
+  const resetForm = () => {
+    setTitle("");
+    setDescription("");
+    setAction("reel");
+    setRewardPoints("20");
+    setTargetCount("1");
+    setActive(true);
+  };
+
+  const handleCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+    createMutation.mutate({
+      title: title.trim(),
+      description: description.trim() || null,
+      action,
+      rewardPoints: Number(rewardPoints) || 20,
+      targetCount: Number(targetCount) || 1,
+      active,
+    });
+  };
+
+  const tasks = query.data ?? [];
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+        <div>
+          <h2 className="text-base font-semibold text-slate-900">Daily Tasks Management</h2>
+          <p className="text-xs text-slate-500">
+            Configure daily tasks users complete on HiMewo to claim reward points.
+          </p>
+        </div>
+        {canManage && (
+          <Button
+            size="sm"
+            onClick={() => setModalOpen(true)}
+            className="flex items-center gap-1.5"
+          >
+            <Plus className="h-4 w-4" /> Add Daily Task
+          </Button>
+        )}
+      </div>
+
+      {query.isLoading && <Loading />}
+      <ErrorNote error={query.error || createMutation.error || toggleMutation.error} />
+
+      {!query.isLoading && tasks.length === 0 ? (
+        <EmptyState
+          title="No daily tasks configured"
+          description="Add your first daily task so users can earn points."
+        />
+      ) : (
+        <Table>
+          <thead>
+            <tr>
+              <Th>Title & Description</Th>
+              <Th>Action</Th>
+              <Th>Target</Th>
+              <Th>Reward</Th>
+              <Th>Status</Th>
+              {canManage && <Th>Actions</Th>}
+            </tr>
+          </thead>
+          <tbody>
+            {tasks.map((task) => (
+              <tr key={task.id} className="hover:bg-slate-50/50">
+                <Td>
+                  <div>
+                    <span className="font-medium text-slate-900">{task.title}</span>
+                    {task.description && (
+                      <p className="text-xs text-slate-500">{task.description}</p>
+                    )}
+                  </div>
+                </Td>
+                <Td>
+                  <Badge tone="violet">{task.action.toUpperCase()}</Badge>
+                </Td>
+                <Td className="text-slate-700 font-medium">{task.targetCount}x</Td>
+                <Td className="text-emerald-600 font-semibold">+{task.rewardPoints} pts</Td>
+                <Td>
+                  <Badge tone={task.active ? "green" : "neutral"}>
+                    {task.active ? "Active" : "Disabled"}
+                  </Badge>
+                </Td>
+                {canManage && (
+                  <Td>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() =>
+                          toggleMutation.mutate({ id: task.id, active: !task.active })
+                        }
+                      >
+                        {task.active ? "Disable" : "Enable"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        onClick={() => {
+                          if (confirm(`Delete daily task "${task.title}"?`)) {
+                            deleteMutation.mutate(task.id);
+                          }
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </Td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      )}
+
+      {/* Add Daily Task Modal */}
+      {modalOpen && (
+        <Modal
+          open={modalOpen}
+          title="Add New Daily Task"
+          onClose={() => {
+            setModalOpen(false);
+            resetForm();
+          }}
+        >
+          <form onSubmit={handleCreate} className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                Task Title *
+              </label>
+              <Input
+                placeholder="e.g. Watch Reels"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                Description
+              </label>
+              <Textarea
+                placeholder="Explanation of how to complete the task"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={2}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Trigger Action *
+                </label>
+                <Select
+                  value={action}
+                  onChange={(e) => setAction(e.target.value)}
+                >
+                  <option value="reel">Watch Reels (reel)</option>
+                  <option value="like">React/Like Posts (like)</option>
+                  <option value="post">Create a Post (post)</option>
+                  <option value="comment">Comment on Post (comment)</option>
+                  <option value="share">Share a Post (share)</option>
+                  <option value="custom">Custom Activity (custom)</option>
+                </Select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Target Count *
+                </label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={targetCount}
+                  onChange={(e) => setTargetCount(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Reward Points *
+                </label>
+                <Input
+                  type="number"
+                  min="1"
+                  placeholder="e.g. 20"
+                  value={rewardPoints}
+                  onChange={(e) => setRewardPoints(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-6">
+                <Toggle checked={active} onChange={setActive} />
+                <span className="text-xs font-medium text-slate-700">
+                  {active ? "Active immediately" : "Disabled"}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setModalOpen(false);
+                  resetForm();
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={createMutation.isPending || !title.trim()}
+              >
+                {createMutation.isPending ? "Creating..." : "Save Daily Task"}
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+    </Card>
+  );
+}
+
 /* ----------------------------- Withdrawals ---------------------------- */
+
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "pending", label: "Pending" },

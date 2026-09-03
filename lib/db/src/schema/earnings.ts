@@ -30,6 +30,7 @@ export const pointConfigTable = pgTable("point_config", {
   pointsPerLike: integer("points_per_like").notNull().default(1),
   pointsPerComment: integer("points_per_comment").notNull().default(2),
   pointsPerShare: integer("points_per_share").notNull().default(3),
+  pointsPerReel: integer("points_per_reel").notNull().default(20),
   // Conversion: how many points equal one US dollar.
   pointsPerDollar: integer("points_per_dollar").notNull().default(1000),
   // Minimum payout (in whole US dollars) a user may request.
@@ -157,3 +158,86 @@ export type InsertWithdrawalRequest = z.infer<
   typeof insertWithdrawalRequestSchema
 >;
 export type WithdrawalRequest = typeof withdrawalRequestsTable.$inferSelect;
+
+/**
+ * Configured daily tasks users can complete to earn points (manageable by admin).
+ */
+export const dailyTasksTable = pgTable("daily_tasks", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  // reel | post | like | comment | share | custom
+  action: text("action").notNull().default("reel"),
+  rewardPoints: integer("reward_points").notNull().default(20),
+  targetCount: integer("target_count").notNull().default(1),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export type DailyTask = typeof dailyTasksTable.$inferSelect;
+
+/**
+ * Daily record of claims made by users.
+ * Guarantees that a user can only claim a specific task once per UTC date.
+ */
+export const dailyTaskClaimsTable = pgTable(
+  "daily_task_claims",
+  {
+    id: serial("id").primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => profilesTable.id, { onDelete: "cascade" }),
+    taskId: integer("task_id")
+      .notNull()
+      .references(() => dailyTasksTable.id, { onDelete: "cascade" }),
+    date: text("date").notNull(), // "YYYY-MM-DD"
+    points: integer("points").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("daily_task_claims_user_date_idx").on(t.userId, t.date),
+    uniqueIndex("daily_task_claims_unique_claim_idx").on(
+      t.userId,
+      t.taskId,
+      t.date,
+    ),
+  ],
+);
+
+export type DailyTaskClaim = typeof dailyTaskClaimsTable.$inferSelect;
+
+/**
+ * Tracks user daily action counters (e.g. reels watched, posts created, likes given).
+ */
+export const dailyUserActivitiesTable = pgTable(
+  "daily_user_activities",
+  {
+    id: serial("id").primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => profilesTable.id, { onDelete: "cascade" }),
+    // reel | post | like | comment | share
+    action: text("action").notNull(),
+    date: text("date").notNull(), // "YYYY-MM-DD"
+    count: integer("count").notNull().default(0),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("daily_user_activity_unique_idx").on(
+      t.userId,
+      t.action,
+      t.date,
+    ),
+  ],
+);
+
+export type DailyUserActivity = typeof dailyUserActivitiesTable.$inferSelect;
