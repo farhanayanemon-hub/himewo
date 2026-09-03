@@ -43,7 +43,7 @@ export default function FriendsPage() {
               No friends yet — send some requests below!
             </p>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
               {friends.map(friend => (
                 <Link
                   key={friend.id}
@@ -66,7 +66,7 @@ export default function FriendsPage() {
           {requests?.length === 0 ? (
             <p className="text-muted-foreground text-sm">No pending requests</p>
           ) : (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {requests?.map(req => (
                 <div key={req.id} className="border border-border rounded-xl p-4 flex flex-col items-center text-center gap-3">
                   <img src={avatarSrc(req.requester.avatarUrl)} className="w-20 h-20 rounded-full object-cover" alt="" />
@@ -101,7 +101,7 @@ export default function FriendsPage() {
 
         <div className="aurora-glass-card rounded-2xl p-4">
           <h2 className="text-xl font-bold mb-4">People You May Know</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {suggestions?.map(user => (
               <div key={user.id} className="border border-border rounded-xl p-4 flex flex-col items-center text-center gap-3">
                 <img src={avatarSrc(user.avatarUrl)} className="w-20 h-20 rounded-full object-cover" alt="" />

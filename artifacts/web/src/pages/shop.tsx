@@ -242,7 +242,7 @@ export default function ShopPage() {
       {!activeCategory && categories && categories.length > 0 && (
         <div className="mb-5">
           <h2 className="font-bold text-lg px-1 mb-3">Categories</h2>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
             {categories.map((cat) => (
               <button
                 key={cat.id}
@@ -306,7 +306,7 @@ export default function ShopPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {products.map((item) => (
             <ProductCard key={item.id} product={item} />
           ))}

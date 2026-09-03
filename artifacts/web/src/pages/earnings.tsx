@@ -186,7 +186,7 @@ function EarningsContent({ summary }: { summary: EarningsSummary }) {
 
   return (
     <MainLayout>
-      <div className="max-w-2xl mx-auto animate-in fade-in space-y-4 pb-10">
+      <div className="w-full max-w-5xl mx-auto animate-in fade-in space-y-6 pb-10">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
             <Wallet className="w-5 h-5 text-primary" />

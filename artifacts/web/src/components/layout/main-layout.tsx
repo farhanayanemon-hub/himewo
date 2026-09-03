@@ -251,7 +251,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
     <div className="min-h-screen bg-background flex flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
       {/* Top Navbar */}
       <header className="sticky top-0 z-50 w-full aurora-glass-header">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="w-full max-w-[1720px] mx-auto px-4 lg:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <MobileMenuButton
               navItems={navItems}
@@ -350,9 +350,17 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
         </div>
       </header>
 
-      <div className={`flex-1 w-full flex gap-6 ${location === "/reels" ? "px-0 pt-0" : "px-4 pt-6"}`}>
+      <div
+        className={`flex-1 w-full max-w-[1720px] mx-auto flex gap-6 lg:gap-8 ${
+          location === "/reels"
+            ? "px-0 pt-0 max-w-none"
+            : rightSidebar
+            ? "px-4 lg:px-6 pt-5 justify-center"
+            : "px-4 lg:px-6 pt-5"
+        }`}
+      >
         {/* Left Sidebar */}
-        <aside className="hidden lg:block w-[280px] shrink-0 sticky top-[88px] h-[calc(100vh-88px)] overflow-y-auto pb-6">
+        <aside className="hidden lg:block w-[280px] shrink-0 sticky top-[80px] h-[calc(100vh-80px)] overflow-y-auto pb-6 scrollbar-none">
           <nav className="space-y-1">
             <Link href={profileHref} className="flex items-center gap-3 p-3 mb-2 rounded-2xl aurora-glass-card hover:bg-muted/40 transition-colors">
               <img src={avatarSrc(profileAvatar)} alt="" className="w-8 h-8 rounded-full object-cover" />
@@ -360,8 +368,19 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
             </Link>
             {navItems.map(item => {
               const Icon = item.icon;
+              const isActive = item.href === "/"
+                ? location === "/"
+                : location.startsWith(item.href);
               return (
-                <Link key={item.href} href={item.href} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${
+                    isActive
+                      ? "bg-violet-500/10 text-violet-600 dark:text-violet-400 font-semibold"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  }`}
+                >
                   <NavIcon icon={Icon} iconUrl={item.iconUrl} size="sm" />
                   <span className="font-medium">{item.label}</span>
                 </Link>
@@ -396,23 +415,24 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
         </aside>
 
         {/* Main Content */}
-        <main className={`flex-1 min-w-0 ${location === "/reels" ? "max-w-none p-0" : "max-w-[740px] mx-auto"}`}>
+        <main
+          className={`flex-1 min-w-0 ${
+            location === "/reels"
+              ? "max-w-none p-0"
+              : rightSidebar
+              ? "max-w-[840px] 2xl:max-w-[920px]"
+              : "w-full max-w-[1380px]"
+          }`}
+        >
           {children}
         </main>
 
-        {/* Right Sidebar */}
-        <aside className="hidden xl:block w-[300px] shrink-0 sticky top-[88px] h-[calc(100vh-88px)] overflow-y-auto pb-6">
-          {rightSidebar ?? (
-            <>
-              <div className="mb-4">
-                <h3 className="text-muted-foreground font-semibold px-2">Contacts</h3>
-              </div>
-              <div className="space-y-1 p-2 text-sm text-muted-foreground text-center">
-                No contacts yet.
-              </div>
-            </>
-          )}
-        </aside>
+        {/* Right Sidebar - only rendered when explicitly provided */}
+        {rightSidebar && (
+          <aside className="hidden xl:block w-[320px] shrink-0 sticky top-[80px] h-[calc(100vh-80px)] overflow-y-auto pb-6 scrollbar-none">
+            {rightSidebar}
+          </aside>
+        )}
       </div>
 
       <MobileNav user={user} unreadCount={unreadCount?.count ?? 0} />
