@@ -3,8 +3,10 @@ import { avatarSrc } from "@/lib/avatar";
 import { useActingPage } from "@/lib/acting-page";
 import { Link, useLocation } from "wouter";
 import {
-  Home,
-  Users,
+  NavHomeIcon,
+  NavFriendsIcon,
+} from "@/components/nav-icons";
+import {
   Bell,
   UserCircle,
   Menu as MenuIcon,
@@ -19,7 +21,7 @@ import {
 } from "@/components/ui/sheet";
 import { PixelCatIcon } from "@/components/logo";
 
-type IconType = ComponentType<{ className?: string; fill?: string }>;
+type IconType = ComponentType<any>;
 export type MobileNavItem = { href: string; icon: IconType; label: string; iconUrl?: string };
 
 function NavIcon({ icon: Icon, iconUrl }: { icon: IconType; iconUrl?: string }) {
@@ -217,8 +219,8 @@ export function MobileNav({
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="relative flex items-end justify-around h-16 px-1">
-        <StdItem href="/" icon={Home} label="Feed" active={isActive("/")} />
-        <StdItem href="/friends" icon={Users} label="Friends" active={isActive("/friends")} />
+        <StdItem href="/" icon={NavHomeIcon} label="Feed" active={isActive("/")} />
+        <StdItem href="/friends" icon={NavFriendsIcon} label="Friends" active={isActive("/friends")} />
 
         {/* Reels — raised center button */}
         <Link

@@ -43,6 +43,15 @@ import {
   Film,
   type LucideIcon,
 } from "lucide-react";
+import {
+  NavHomeIcon,
+  NavFriendsIcon,
+  NavReelsIcon,
+  NavCirclesIcon,
+  NavHubsIcon,
+  NavShopIcon,
+  NavWalletIcon,
+} from "@/components/nav-icons";
 import { supabase } from "@/lib/supabase";
 import { useNavIcons } from "@/lib/nav-icons";
 import { Button } from "@/components/ui/button";
@@ -79,11 +88,11 @@ function NavIcon({
   iconUrl,
   size = "md",
 }: {
-  icon: LucideIcon;
+  icon: any;
   iconUrl?: string;
   size?: "sm" | "md";
 }) {
-  const ic = size === "sm" ? "w-5 h-5" : "w-[22px] h-[22px]";
+  const ic = size === "sm" ? "w-5 h-5" : "w-[24px] h-[24px]";
   if (iconUrl) {
     return <img src={iconUrl} alt="" className={`${ic} object-contain opacity-70`} />;
   }
@@ -217,14 +226,14 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
   };
 
   const navItems = [
-    { href: "/",        icon: Home,        label: "Feed",    iconUrl: navIcons.home },
-    { href: "/friends", icon: Users,       label: "Friends", iconUrl: navIcons.friends },
-    { href: "/reels",   icon: Clapperboard,label: "Reels",   iconUrl: navIcons.reels },
-    { href: "/groups",  icon: Globe,       label: "Circles", iconUrl: navIcons.circles },
-    { href: "/pages",   icon: LayoutGrid,  label: "Hubs",    iconUrl: navIcons.hubs },
-    { href: "/shop",    icon: ShoppingBag, label: "Shop",    iconUrl: navIcons.shop },
+    { href: "/",        icon: NavHomeIcon,    label: "Feed",    iconUrl: navIcons.home },
+    { href: "/friends", icon: NavFriendsIcon, label: "Friends", iconUrl: navIcons.friends },
+    { href: "/reels",   icon: NavReelsIcon,   label: "Reels",   iconUrl: navIcons.reels },
+    { href: "/groups",  icon: NavCirclesIcon, label: "Circles", iconUrl: navIcons.circles },
+    { href: "/pages",   icon: NavHubsIcon,    label: "Hubs",    iconUrl: navIcons.hubs },
+    { href: "/shop",    icon: NavShopIcon,    label: "Shop",    iconUrl: navIcons.shop },
     ...(earnings?.enabled
-      ? [{ href: "/earnings", icon: Wallet, label: "Wallet", iconUrl: navIcons.earnings }]
+      ? [{ href: "/earnings", icon: NavWalletIcon, label: "Wallet", iconUrl: navIcons.earnings }]
       : []),
   ];
 
@@ -295,11 +304,11 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
                         />
                       ) : (
                         <Icon
-                          className="w-6 h-6 transition-all"
+                          className="w-7 h-7 transition-all"
                           style={{
-                            color: isActive ? "#8b5cf6" : undefined,
-                            filter: isActive ? "drop-shadow(0 0 8px rgba(139,92,246,0.4))" : undefined,
-                            transform: isActive ? "scale(1.1)" : undefined,
+                            color: isActive ? "#8b5cf6" : "#64748b",
+                            filter: isActive ? "drop-shadow(0 0 10px rgba(139,92,246,0.6))" : undefined,
+                            transform: isActive ? "scale(1.08)" : undefined,
                           }}
                         />
                       )}
