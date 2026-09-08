@@ -7,6 +7,9 @@ import {
   useGetStallProducts,
   useBrowseStalls,
   useCreateStall,
+  useUpdateStall,
+  useFollowStall,
+  useUnfollowStall,
   useGetMyStall,
   useCreateProduct,
   useUpdateProduct,
@@ -29,6 +32,7 @@ import {
   getGetStallQueryKey,
   getGetStallProductsQueryKey,
   getGetMyStallQueryKey,
+  getBrowseStallsQueryKey,
   getListOrdersQueryKey,
   getGetOrderQueryKey,
   getGetShopWalletQueryKey,
@@ -39,6 +43,7 @@ import {
   type ShopOrderStatus,
   type ShopWithdrawal,
   type ShopCategory,
+  type ShopStall,
   CreateStallInputProductType,
 } from "@workspace/api-client-react";
 import { useParams, Link, useLocation } from "wouter";
@@ -76,6 +81,14 @@ import {
   Package,
   ClipboardList,
   Star,
+  Globe,
+  MapPin,
+  Phone,
+  Mail,
+  Camera,
+  Check,
+  ExternalLink,
+  Settings,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -363,12 +376,301 @@ function ProductCard({ product }: { product: ShopProduct }) {
   );
 }
 
+/* ---------------- Stall Edit Dialog ---------------- */
+function EditStallDialog({
+  stall,
+  open,
+  onOpenChange,
+}: {
+  stall: any;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const queryClient = useQueryClient();
+  const updateStall = useUpdateStall();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [coverUrl, setCoverUrl] = useState(stall?.coverUrl || "");
+  const [description, setDescription] = useState(stall?.description || "");
+  const [website, setWebsite] = useState(stall?.website || "");
+  const [address, setAddress] = useState(stall?.address || "");
+  const [contactPhone, setContactPhone] = useState(stall?.contactPhone || "");
+  const [contactEmail, setContactEmail] = useState(stall?.contactEmail || "");
+  const [uploadingCover, setUploadingCover] = useState(false);
+
+  useEffect(() => {
+    if (open && stall) {
+      setCoverUrl(stall.coverUrl || "");
+      setDescription(stall.description || "");
+      setWebsite(stall.website || "");
+      setAddress(stall.address || "");
+      setContactPhone(stall.contactPhone || "");
+      setContactEmail(stall.contactEmail || "");
+    }
+  }, [open, stall]);
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingCover(true);
+    try {
+      const res = await uploadMedia(file);
+      setCoverUrl(res.url);
+      toast({ title: "Cover photo uploaded!" });
+    } catch {
+      toast({ title: "Upload failed", variant: "destructive" });
+    } finally {
+      setUploadingCover(false);
+    }
+  };
+
+  const handleSave = () => {
+    updateStall.mutate(
+      {
+        data: {
+          coverUrl: coverUrl.trim() || undefined,
+          description: description.trim(),
+          website: website.trim(),
+          address: address.trim(),
+          contactPhone: contactPhone.trim(),
+          contactEmail: contactEmail.trim(),
+        },
+      },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetStallQueryKey(stall.id) });
+          queryClient.invalidateQueries({ queryKey: getGetMyStallQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getBrowseStallsQueryKey() });
+          toast({ title: "Shop profile updated successfully!" });
+          onOpenChange(false);
+        },
+        onError: () => {
+          toast({ title: "Failed to update shop", variant: "destructive" });
+        },
+      },
+    );
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-lg font-bold">Edit Shop Profile</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          {/* Cover Photo */}
+          <div>
+            <Label className="mb-1.5 block text-xs font-semibold">Shop Cover Photo</Label>
+            <div className="relative w-full h-32 rounded-2xl border border-border bg-muted overflow-hidden">
+              {coverUrl ? (
+                <img src={coverUrl} alt="Cover" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground gap-1">
+                  <ImagePlus className="w-6 h-6" />
+                  <span className="text-xs">No cover photo set</span>
+                </div>
+              )}
+              {uploadingCover && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white">
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2 mt-2">
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/*"
+                className="hidden"
+                onChange={handleCoverUpload}
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={uploadingCover}
+                onClick={() => fileInputRef.current?.click()}
+                className="text-xs"
+              >
+                <Camera className="w-3.5 h-3.5 mr-1" /> Upload Cover
+              </Button>
+              {coverUrl && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setCoverUrl("")}
+                  className="text-xs text-destructive hover:bg-destructive/10"
+                >
+                  Remove
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Shop Details / Description */}
+          <div>
+            <Label htmlFor="stall-desc" className="mb-1.5 block text-xs font-semibold">
+              Shop Details & Description
+            </Label>
+            <Textarea
+              id="stall-desc"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Tell customers about your shop, what you sell, shipping info, etc."
+              rows={3}
+              className="resize-none text-sm"
+            />
+          </div>
+
+          {/* Website Link */}
+          <div>
+            <Label htmlFor="stall-web" className="mb-1.5 block text-xs font-semibold">
+              Website Link
+            </Label>
+            <div className="relative">
+              <Globe className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+              <Input
+                id="stall-web"
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+                placeholder="https://yourshop.com"
+                className="pl-9 text-sm"
+              />
+            </div>
+          </div>
+
+          {/* Shop Address */}
+          <div>
+            <Label htmlFor="stall-addr" className="mb-1.5 block text-xs font-semibold">
+              Shop Address / Location
+            </Label>
+            <div className="relative">
+              <MapPin className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+              <Input
+                id="stall-addr"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="Shop address, market, city"
+                className="pl-9 text-sm"
+              />
+            </div>
+          </div>
+
+          {/* Contact Phone & Email */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="stall-phone" className="mb-1.5 block text-xs font-semibold">
+                Contact Phone
+              </Label>
+              <div className="relative">
+                <Phone className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                <Input
+                  id="stall-phone"
+                  value={contactPhone}
+                  onChange={(e) => setContactPhone(e.target.value)}
+                  placeholder="01XXXXXXXXX"
+                  className="pl-9 text-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="stall-email" className="mb-1.5 block text-xs font-semibold">
+                Contact Email
+              </Label>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                <Input
+                  id="stall-email"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                  placeholder="shop@email.com"
+                  className="pl-9 text-sm"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={updateStall.isPending}
+            className="bg-purple-600 hover:bg-purple-700 text-white font-bold"
+          >
+            {updateStall.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 /* ---------------- Stall page ---------------- */
 export function ShopStallPage() {
   const { id } = useParams<{ id: string }>();
   const stallId = Number(id);
+  const queryClient = useQueryClient();
   const { data: stall, isLoading } = useGetStall(stallId);
   const { data: products, isLoading: productsLoading } = useGetStallProducts(stallId);
+  const [editOpen, setEditOpen] = useState(false);
+
+  const followStall = useFollowStall();
+  const unfollowStall = useUnfollowStall();
+  const [isFollowing, setIsFollowing] = useState<boolean>(false);
+  const [followersCount, setFollowersCount] = useState<number>(0);
+
+  useEffect(() => {
+    if (stall) {
+      setIsFollowing(Boolean((stall as any).isFollowing));
+      setFollowersCount(Number((stall as any).followerCount ?? 0));
+    }
+  }, [stall]);
+
+  const handleToggleFollow = () => {
+    if (!stall) return;
+    if (isFollowing) {
+      setIsFollowing(false);
+      setFollowersCount((c) => Math.max(0, c - 1));
+      unfollowStall.mutate(
+        { id: stall.id },
+        {
+          onSuccess: (data: any) => {
+            setFollowersCount(data.count ?? 0);
+            setIsFollowing(Boolean(data.isFollowing));
+            queryClient.invalidateQueries({ queryKey: getGetStallQueryKey(stall.id) });
+          },
+          onError: () => {
+            setIsFollowing(true);
+            setFollowersCount((c) => c + 1);
+          },
+        },
+      );
+    } else {
+      setIsFollowing(true);
+      setFollowersCount((c) => c + 1);
+      followStall.mutate(
+        { id: stall.id },
+        {
+          onSuccess: (data: any) => {
+            setFollowersCount(data.count ?? 0);
+            setIsFollowing(Boolean(data.isFollowing));
+            queryClient.invalidateQueries({ queryKey: getGetStallQueryKey(stall.id) });
+            toast({ title: `You are now following ${stall.name}!` });
+          },
+          onError: () => {
+            setIsFollowing(false);
+            setFollowersCount((c) => Math.max(0, c - 1));
+          },
+        },
+      );
+    }
+  };
 
   if (isLoading) {
     return (
@@ -396,72 +698,174 @@ export function ShopStallPage() {
         </Button>
       </Link>
 
-      <div className="bg-card border border-border rounded-2xl p-5 card-depth mb-5 flex items-center gap-4">
-        <div className="w-16 h-16 rounded-2xl bg-muted overflow-hidden shrink-0">
-          {stall.avatarUrl ? (
-            <img src={avatarSrc(stall.avatarUrl)} alt="" className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-              <Store className="w-7 h-7" />
-            </div>
-          )}
-        </div>
-        <div className="min-w-0">
-          <h1 className="text-xl font-extrabold truncate">{stall.name}</h1>
-          <p className="text-sm text-muted-foreground">
-            {stall.productCount ?? products?.length ?? 0} products
-          </p>
-          <div className="mt-0.5">
-            <RatingSummary avg={stall.ratingAvg} count={stall.ratingCount} size={3} />
+      {/* Cover Banner */}
+      <div className="relative w-full h-44 sm:h-64 rounded-3xl overflow-hidden border border-border bg-gradient-to-tr from-purple-900/30 via-muted to-background mb-4 shadow-sm">
+        {stall.coverUrl ? (
+          <img
+            src={stall.coverUrl}
+            alt={stall.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-purple-600/15 via-pink-600/10 to-amber-500/10">
+            <Store className="w-16 h-16 text-purple-500/30" />
           </div>
-          <Link
-            href={`/pages/${stall.pageId}`}
-            className="text-xs text-primary hover:underline"
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+
+        {stall.isOwner && (
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => setEditOpen(true)}
+            className="absolute bottom-3 right-3 bg-black/60 hover:bg-black/80 text-white backdrop-blur-md rounded-xl text-xs font-semibold gap-1.5 border border-white/20"
           >
-            View Hub
-          </Link>
-        </div>
+            <Camera className="w-3.5 h-3.5" /> Edit Shop Profile
+          </Button>
+        )}
       </div>
 
-      {(stall.address || stall.contactPhone || stall.contactEmail || stall.productType) && (
-        <div className="bg-card border border-border rounded-2xl p-5 card-depth mb-5 space-y-1.5 text-sm">
-          {stall.productType && (
-            <p>
-              <span className="text-muted-foreground">Sells: </span>
-              <span className="font-semibold">
-                {stall.productType === "digital"
-                  ? "Digital products"
-                  : "Physical products"}
-              </span>
-            </p>
-          )}
-          {stall.address && (
-            <p>
-              <span className="text-muted-foreground">Address: </span>
-              {stall.address}
-            </p>
-          )}
-          {stall.contactPhone && (
-            <p>
-              <span className="text-muted-foreground">Phone: </span>
-              {stall.contactPhone}
-            </p>
-          )}
-          {stall.contactEmail && (
-            <p>
-              <span className="text-muted-foreground">Email: </span>
-              {stall.contactEmail}
-            </p>
-          )}
+      {/* Shop Info Card */}
+      <div className="bg-card border border-border rounded-3xl p-5 card-depth mb-5 relative">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-4">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-muted overflow-hidden shrink-0 border-4 border-card shadow-md -mt-12 sm:-mt-14 z-10 relative">
+              {stall.avatarUrl ? (
+                <img src={avatarSrc(stall.avatarUrl)} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-secondary">
+                  <Store className="w-10 h-10 text-purple-500" />
+                </div>
+              )}
+            </div>
+
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl sm:text-2xl font-black truncate">{stall.name}</h1>
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 font-semibold border border-purple-500/20">
+                  Shop
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
+                <span className="font-semibold text-foreground">
+                  {followersCount} {followersCount === 1 ? "follower" : "followers"}
+                </span>
+                <span>·</span>
+                <span>{stall.productCount ?? products?.length ?? 0} products</span>
+                {stall.pageId && (
+                  <>
+                    <span>·</span>
+                    <Link
+                      href={`/pages/${stall.pageId}`}
+                      className="text-purple-600 dark:text-purple-400 hover:underline font-medium"
+                    >
+                      Connected Hub →
+                    </Link>
+                  </>
+                )}
+              </div>
+
+              <div className="mt-1">
+                <RatingSummary avg={stall.ratingAvg} count={stall.ratingCount} size={3} />
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2 shrink-0">
+            {!stall.isOwner ? (
+              <Button
+                onClick={handleToggleFollow}
+                disabled={followStall.isPending || unfollowStall.isPending}
+                className={
+                  isFollowing
+                    ? "bg-secondary text-foreground hover:bg-secondary/80 font-bold rounded-xl px-5 gap-1.5"
+                    : "bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl px-5 shadow-sm gap-1.5"
+                }
+              >
+                {isFollowing ? (
+                  <>
+                    <Check className="w-4 h-4 text-green-500" /> Following
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4" /> Follow Shop
+                  </>
+                )}
+              </Button>
+            ) : (
+              <Button
+                onClick={() => setEditOpen(true)}
+                variant="outline"
+                className="rounded-xl font-semibold gap-1.5"
+              >
+                <Pencil className="w-3.5 h-3.5" /> Edit Profile
+              </Button>
+            )}
+          </div>
         </div>
-      )}
+
+        {/* Details, Address, Website row */}
+        {(stall.description || stall.website || stall.address || stall.contactPhone || stall.contactEmail) && (
+          <div className="mt-5 pt-4 border-t border-border/60 space-y-2.5">
+            {stall.description && (
+              <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
+                {stall.description}
+              </p>
+            )}
+
+            <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-muted-foreground">
+              {stall.address && (
+                <div className="flex items-center gap-1.5 bg-muted/60 px-3 py-1.5 rounded-xl border border-border/50">
+                  <MapPin className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                  <span className="font-medium text-foreground">{stall.address}</span>
+                </div>
+              )}
+
+              {stall.website && (
+                <a
+                  href={stall.website.startsWith("http") ? stall.website : `https://${stall.website}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 px-3 py-1.5 rounded-xl border border-purple-500/20 font-medium transition-colors"
+                >
+                  <Globe className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate max-w-[200px]">{stall.website.replace(/^https?:\/\//, "")}</span>
+                  <ExternalLink className="w-3 h-3 ml-0.5 opacity-70" />
+                </a>
+              )}
+
+              {stall.contactPhone && (
+                <div className="flex items-center gap-1.5 bg-muted/60 px-3 py-1.5 rounded-xl border border-border/50">
+                  <Phone className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                  <span>{stall.contactPhone}</span>
+                </div>
+              )}
+
+              {stall.contactEmail && (
+                <div className="flex items-center gap-1.5 bg-muted/60 px-3 py-1.5 rounded-xl border border-border/50">
+                  <Mail className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                  <span>{stall.contactEmail}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-bold text-foreground">
+          Products ({stall.productCount ?? products?.length ?? 0})
+        </h2>
+      </div>
 
       {productsLoading ? (
         <div className="py-16 flex justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
       ) : !products || products.length === 0 ? (
-        <div className="py-16 text-center bg-card border border-border rounded-2xl card-depth">
+        <div className="py-16 text-center bg-card border border-border rounded-3xl card-depth">
           <p className="text-muted-foreground">This stall has no products yet.</p>
         </div>
       ) : (
@@ -470,6 +874,14 @@ export function ShopStallPage() {
             <ProductCard key={item.id} product={item} />
           ))}
         </div>
+      )}
+
+      {stall && (
+        <EditStallDialog
+          stall={stall}
+          open={editOpen}
+          onOpenChange={setEditOpen}
+        />
       )}
     </MainLayout>
   );
@@ -1225,6 +1637,7 @@ export function ShopMyStallPage() {
     query: { queryKey: getGetMyStallQueryKey(), retry: false },
   });
   const [tab, setTab] = useState<"products" | "orders" | "wallet">("products");
+  const [editOpen, setEditOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -1248,29 +1661,40 @@ export function ShopMyStallPage() {
         <StallSetup />
       ) : (
         <>
-          <div className="bg-card border border-border rounded-2xl p-5 card-depth mb-5 flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-muted overflow-hidden shrink-0">
-              {myStall.avatarUrl ? (
-                <img
-                  src={avatarSrc(myStall.avatarUrl)}
-                  alt=""
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                  <Store className="w-6 h-6" />
-                </div>
-              )}
+          <div className="bg-card border border-border rounded-3xl p-5 card-depth mb-5 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="w-14 h-14 rounded-2xl bg-muted overflow-hidden shrink-0 border border-border">
+                {myStall.avatarUrl ? (
+                  <img
+                    src={avatarSrc(myStall.avatarUrl)}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                    <Store className="w-6 h-6" />
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-xl font-extrabold truncate">{myStall.name}</h1>
+                <Link
+                  href={`/shop/stalls/${myStall.id}`}
+                  className="text-xs text-primary hover:underline"
+                >
+                  View public stall →
+                </Link>
+              </div>
             </div>
-            <div className="min-w-0">
-              <h1 className="text-xl font-extrabold truncate">{myStall.name}</h1>
-              <Link
-                href={`/shop/stalls/${myStall.id}`}
-                className="text-xs text-primary hover:underline"
-              >
-                View public stall
-              </Link>
-            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setEditOpen(true)}
+              className="rounded-xl font-semibold gap-1.5 shrink-0"
+            >
+              <Pencil className="w-3.5 h-3.5" /> Edit Shop Profile
+            </Button>
           </div>
 
           <div className="flex gap-2 mb-5">
@@ -1303,6 +1727,12 @@ export function ShopMyStallPage() {
           {tab === "products" && <StallProductsTab stallId={myStall.id} />}
           {tab === "orders" && <OrdersList role="seller" />}
           {tab === "wallet" && <WalletTab />}
+
+          <EditStallDialog
+            stall={myStall}
+            open={editOpen}
+            onOpenChange={setEditOpen}
+          />
         </>
       )}
     </MainLayout>

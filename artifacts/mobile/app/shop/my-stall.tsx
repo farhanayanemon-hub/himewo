@@ -19,6 +19,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetMyStall,
   useCreateStall,
+  useUpdateStall,
   useGetStallProducts,
   useCreateProduct,
   useUpdateProduct,
@@ -35,6 +36,7 @@ import {
   getBrowseProductsQueryKey,
   getListShopCategoriesQueryKey,
   type ShopProduct,
+  type ShopStall,
   type CreateStallInputProductType,
 } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
@@ -284,7 +286,7 @@ function SellerDashboard({
   stall,
   c,
 }: {
-  stall: { id: number; name: string; avatarUrl?: string | null };
+  stall: ShopStall;
   c: Colors;
 }) {
   const qc = useQueryClient();
@@ -302,6 +304,7 @@ function SellerDashboard({
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<ShopProduct | null>(null);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
 
   const refreshProducts = () => {
     qc.invalidateQueries({ queryKey: getGetStallProductsQueryKey(stall.id) });
@@ -330,20 +333,85 @@ function SellerDashboard({
         <View
           style={[
             styles.stallCard,
-            { backgroundColor: c.card, borderColor: c.border },
+            { backgroundColor: c.card, borderColor: c.border, overflow: "hidden", padding: 0, flexDirection: "column", alignItems: "stretch" },
             shadow("sm"),
           ]}
         >
-          <Avatar uri={stall.avatarUrl} name={stall.name} size={52} />
-          <View style={{ flex: 1 }}>
+          {/* Cover banner */}
+          <View style={{ height: 110, width: "100%", backgroundColor: c.border }}>
+            {stall.coverUrl ? (
+              <Image source={{ uri: stall.coverUrl }} style={{ width: "100%", height: "100%" }} contentFit="cover" />
+            ) : (
+              <View style={{ flex: 1, backgroundColor: c.primary + "18", alignItems: "center", justifyContent: "center" }}>
+                <Ionicons name="storefront-outline" size={32} color={c.primary} />
+              </View>
+            )}
+          </View>
+
+          <View style={{ padding: 14, paddingTop: 6 }}>
+            <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: -32, marginBottom: 8 }}>
+              <View style={{ borderRadius: 32, borderWidth: 3, borderColor: c.card, overflow: "hidden" }}>
+                <Avatar uri={stall.avatarUrl} name={stall.name} size={54} />
+              </View>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <Pressable
+                  style={[
+                    styles.actionBtn,
+                    { backgroundColor: c.primary + "15", borderColor: c.primary + "40" },
+                  ]}
+                  onPress={() => setEditProfileOpen(true)}
+                >
+                  <Ionicons name="pencil-outline" size={14} color={c.primary} />
+                  <Text style={{ color: c.primary, fontFamily: "Inter_600SemiBold", fontSize: 12 }}>
+                    Edit Profile
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  style={[
+                    styles.actionBtn,
+                    { backgroundColor: c.secondary, borderColor: c.border },
+                  ]}
+                  onPress={() => router.push(`/shop/stall/${stall.id}`)}
+                >
+                  <Ionicons name="eye-outline" size={14} color={c.foreground} />
+                  <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 12 }}>
+                    Public Shop
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+
             <Text style={[styles.hubName, { color: c.foreground }]} numberOfLines={1}>
               {stall.name}
             </Text>
-            <Pressable onPress={() => router.push(`/shop/stall/${stall.id}`)}>
-              <Text style={{ color: c.primary, fontSize: 13, fontFamily: "Inter_600SemiBold" }}>
-                View public stall
+            <Text style={{ color: c.mutedForeground, fontSize: 12, marginTop: 2, marginBottom: stall.description ? 8 : 4 }}>
+              {stall.followerCount ?? 0} {stall.followerCount === 1 ? "follower" : "followers"}
+            </Text>
+
+            {stall.description ? (
+              <Text style={{ color: c.foreground, fontSize: 13, lineHeight: 18, marginBottom: 8 }} numberOfLines={3}>
+                {stall.description}
               </Text>
-            </Pressable>
+            ) : null}
+
+            {stall.website ? (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                <Ionicons name="globe-outline" size={13} color={c.primary} />
+                <Text style={{ color: c.primary, fontSize: 12, fontFamily: "Inter_500Medium" }} numberOfLines={1}>
+                  {stall.website}
+                </Text>
+              </View>
+            ) : null}
+
+            {stall.address ? (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                <Ionicons name="location-outline" size={13} color={c.mutedForeground} />
+                <Text style={{ color: c.mutedForeground, fontSize: 12 }} numberOfLines={1}>
+                  {stall.address}
+                </Text>
+              </View>
+            ) : null}
           </View>
         </View>
 
@@ -531,6 +599,15 @@ function SellerDashboard({
           setWithdrawOpen(false);
           qc.invalidateQueries({ queryKey: getListShopWithdrawalsQueryKey() });
           qc.invalidateQueries({ queryKey: getGetShopWalletQueryKey() });
+        }}
+      />
+      <EditStallModal
+        visible={editProfileOpen}
+        stall={stall}
+        c={c}
+        onClose={() => setEditProfileOpen(false)}
+        onSaved={() => {
+          qc.invalidateQueries({ queryKey: getGetMyStallQueryKey() });
         }}
       />
     </SafeAreaView>
@@ -1004,11 +1081,280 @@ function Field({
   );
 }
 
+/* -------------------------------------------------------- edit stall modal --- */
+
+function EditStallModal({
+  visible,
+  stall,
+  c,
+  onClose,
+  onSaved,
+}: {
+  visible: boolean;
+  stall: ShopStall;
+  c: Colors;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const updateStall = useUpdateStall();
+  const [coverUrl, setCoverUrl] = useState<string | null>(stall.coverUrl ?? null);
+  const [description, setDescription] = useState(stall.description ?? "");
+  const [website, setWebsite] = useState(stall.website ?? "");
+  const [address, setAddress] = useState(stall.address ?? "");
+  const [contactPhone, setContactPhone] = useState(stall.contactPhone ?? "");
+  const [contactEmail, setContactEmail] = useState(stall.contactEmail ?? "");
+  const [uploading, setUploading] = useState(false);
+  const [ready, setReady] = useState(false);
+
+  if (visible && !ready) {
+    setCoverUrl(stall.coverUrl ?? null);
+    setDescription(stall.description ?? "");
+    setWebsite(stall.website ?? "");
+    setAddress(stall.address ?? "");
+    setContactPhone(stall.contactPhone ?? "");
+    setContactEmail(stall.contactEmail ?? "");
+    setReady(true);
+  }
+  if (!visible && ready) setReady(false);
+
+  const pickCover = async () => {
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsMultipleSelection: false,
+      quality: 0.85,
+    });
+    if (res.canceled || !res.assets?.[0]) return;
+    setUploading(true);
+    try {
+      const uploaded = await uploadMedia(res.assets[0]);
+      setCoverUrl(uploaded.url);
+    } catch (err) {
+      if (err instanceof UploadUnavailableError) {
+        Alert.alert("Upload unavailable", "Direct upload isn't available in this environment.");
+      } else {
+        Alert.alert("Upload failed", "Please try again.");
+      }
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSave = () => {
+    if (updateStall.isPending || uploading) return;
+    updateStall.mutate(
+      {
+        data: {
+          coverUrl: coverUrl ?? null,
+          description: description.trim(),
+          website: website.trim(),
+          address: address.trim(),
+          contactPhone: contactPhone.trim(),
+          contactEmail: contactEmail.trim(),
+        },
+      },
+      {
+        onSuccess: () => {
+          onSaved();
+          onClose();
+        },
+        onError: () =>
+          Alert.alert(
+            "Error",
+            "Could not update shop profile. Please verify your inputs and try again.",
+          ),
+      },
+    );
+  };
+
+  const inputStyle = [
+    styles.input,
+    { backgroundColor: c.card, borderColor: c.border, color: c.foreground },
+  ];
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top", "bottom"]}>
+        <View style={[styles.modalHeader, { borderBottomColor: c.border }]}>
+          <Text style={[styles.h1, { color: c.foreground }]}>Edit Shop Profile</Text>
+          <Pressable onPress={onClose} style={styles.iconBtn}>
+            <Ionicons name="close" size={24} color={c.foreground} />
+          </Pressable>
+        </View>
+
+        <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}>
+          {/* Cover Photo */}
+          <View style={{ gap: 8 }}>
+            <Text style={[styles.label, { color: c.foreground }]}>Shop Cover Banner</Text>
+            <View
+              style={[
+                styles.coverBox,
+                { backgroundColor: c.card, borderColor: c.border },
+              ]}
+            >
+              {coverUrl ? (
+                <>
+                  <Image source={{ uri: coverUrl }} style={{ width: "100%", height: "100%" }} contentFit="cover" />
+                  <Pressable
+                    style={styles.coverRemoveBtn}
+                    onPress={() => setCoverUrl(null)}
+                  >
+                    <Ionicons name="trash-outline" size={16} color="#fff" />
+                  </Pressable>
+                </>
+              ) : (
+                <View style={{ alignItems: "center", justifyContent: "center", gap: 6 }}>
+                  {uploading ? (
+                    <ActivityIndicator color={c.primary} size="small" />
+                  ) : (
+                    <>
+                      <Ionicons name="image-outline" size={32} color={c.mutedForeground} />
+                      <Text style={{ color: c.mutedForeground, fontSize: 13, fontFamily: "Inter_500Medium" }}>
+                        Upload a shop cover photo
+                      </Text>
+                    </>
+                  )}
+                </View>
+              )}
+            </View>
+            <Pressable
+              style={[
+                styles.selectChip,
+                { alignSelf: "flex-start", backgroundColor: c.secondary, borderColor: c.border, flexDirection: "row", gap: 6 },
+              ]}
+              onPress={pickCover}
+              disabled={uploading}
+            >
+              <Ionicons name="camera-outline" size={16} color={c.foreground} />
+              <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 13 }}>
+                {coverUrl ? "Change banner image" : "Choose from library"}
+              </Text>
+            </Pressable>
+          </View>
+
+          {/* Details / Bio */}
+          <Field label="Shop details & bio" c={c}>
+            <TextInput
+              value={description}
+              onChangeText={setDescription}
+              placeholder="Tell shoppers about your store, products, policies, and store hours..."
+              placeholderTextColor={c.mutedForeground}
+              underlineColorAndroid="transparent"
+              multiline
+              numberOfLines={4}
+              style={[...inputStyle, { height: 96, textAlignVertical: "top", paddingTop: 12 }]}
+            />
+          </Field>
+
+          {/* Website */}
+          <Field label="Website link" c={c}>
+            <TextInput
+              value={website}
+              onChangeText={setWebsite}
+              placeholder="https://yourstore.com"
+              placeholderTextColor={c.mutedForeground}
+              autoCapitalize="none"
+              keyboardType="url"
+              underlineColorAndroid="transparent"
+              style={inputStyle}
+            />
+          </Field>
+
+          {/* Address */}
+          <Field label="Shop address / location" c={c}>
+            <TextInput
+              value={address}
+              onChangeText={setAddress}
+              placeholder="Store location or pickup point"
+              placeholderTextColor={c.mutedForeground}
+              underlineColorAndroid="transparent"
+              style={inputStyle}
+            />
+          </Field>
+
+          {/* Phone */}
+          <Field label="Contact phone" c={c}>
+            <TextInput
+              value={contactPhone}
+              onChangeText={setContactPhone}
+              placeholder="01XXXXXXXXX"
+              placeholderTextColor={c.mutedForeground}
+              keyboardType="phone-pad"
+              underlineColorAndroid="transparent"
+              style={inputStyle}
+            />
+          </Field>
+
+          {/* Email */}
+          <Field label="Contact email (optional)" c={c}>
+            <TextInput
+              value={contactEmail}
+              onChangeText={setContactEmail}
+              placeholder="shop@example.com"
+              placeholderTextColor={c.mutedForeground}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              underlineColorAndroid="transparent"
+              style={inputStyle}
+            />
+          </Field>
+
+          {/* Save Button */}
+          <Pressable
+            style={[
+              styles.submit,
+              { backgroundColor: c.primary },
+              glow(c.primary),
+            ]}
+            onPress={handleSave}
+            disabled={updateStall.isPending || uploading}
+          >
+            {updateStall.isPending || uploading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: 16 }}>
+                Save shop profile
+              </Text>
+            )}
+          </Pressable>
+        </ScrollView>
+      </SafeAreaView>
+    </Modal>
+  );
+}
+
 const styles = StyleSheet.create({
   h1: { fontFamily: "Inter_700Bold", fontSize: 20 },
   sectionTitle: { fontFamily: "Inter_700Bold", fontSize: 17 },
   subTitle: { fontFamily: "Inter_600SemiBold", fontSize: 13 },
   label: { fontFamily: "Inter_700Bold", fontSize: 14 },
+  actionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 12,
+    height: 32,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  coverBox: {
+    height: 130,
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  coverRemoveBtn: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: 16,
+    width: 30,
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   hubRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1027,10 +1373,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   stallCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 14,
     borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
   },

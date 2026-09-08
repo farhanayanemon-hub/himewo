@@ -14,6 +14,10 @@ export interface ShopStall {
   name: string;
   /** @nullable */
   avatarUrl?: string | null;
+  /** @nullable */
+  coverUrl?: string | null;
+  description?: string;
+  website?: string;
   address?: string;
   productType: ShopStallProductType;
   contactPhone?: string;
@@ -25,4 +29,6 @@ export interface ShopStall {
   /** @nullable */
   ratingAvg?: number | null;
   ratingCount?: number;
+  followerCount?: number;
+  isFollowing?: boolean;
 }

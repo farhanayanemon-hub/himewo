@@ -4,17 +4,20 @@ import {
   FlatList,
   Pressable,
   RefreshControl,
+  ScrollView,
   Text,
   View,
   StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
   getFeed,
   getGetFeedQueryKey,
   useGetTodaysBirthdays,
+  useGetFollowedShopShowcase,
   useServeAds,
   useRecordAdImpression,
   type Post,
@@ -31,6 +34,8 @@ import { ShareSheet } from "@/components/ShareSheet";
 import { useAuth } from "@/lib/auth";
 import { useActingPage } from "@/lib/acting-page";
 import { useColors } from "@/hooks/useColors";
+import { formatTaka } from "@/constants/shop";
+import { shadow } from "@/constants/shadows";
 
 const FEED_LIMIT = 10;
 
@@ -192,6 +197,7 @@ export default function HomeScreen() {
                   <Ionicons name="images" size={24} color="#31a24c" />
                 </Pressable>
               </Pressable>
+              <FollowedShopsShowcase />
             </>
           }
           renderItem={({ item }) =>
@@ -252,6 +258,114 @@ function BirthdayBanner() {
   );
 }
 
+function FollowedShopsShowcase() {
+  const c = useColors();
+  const { data: showcases } = useGetFollowedShopShowcase();
+
+  if (!showcases || showcases.length === 0) return null;
+
+  return (
+    <View style={{ marginBottom: 8 }}>
+      {showcases.map(({ stall, products }) => {
+        if (!products || products.length === 0) return null;
+        return (
+          <View
+            key={stall.id}
+            style={[
+              styles.showcaseCard,
+              { backgroundColor: c.card, borderColor: c.border },
+              shadow("sm"),
+            ]}
+          >
+            {/* Header: Shop Info */}
+            <View style={styles.showcaseHeader}>
+              <Pressable
+                style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}
+                onPress={() => router.push(`/shop/stall/${stall.id}`)}
+              >
+                <Avatar uri={stall.avatarUrl} name={stall.name} size={38} />
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                    <Text
+                      style={{ color: c.foreground, fontFamily: "Inter_700Bold", fontSize: 14 }}
+                      numberOfLines={1}
+                    >
+                      {stall.name}
+                    </Text>
+                    <View style={styles.shopBadge}>
+                      <Text style={styles.shopBadgeText}>Shop</Text>
+                    </View>
+                  </View>
+                  <Text style={{ color: c.mutedForeground, fontSize: 11 }} numberOfLines={1}>
+                    {stall.followerCount ?? 0} {stall.followerCount === 1 ? "follower" : "followers"}
+                    {stall.address ? ` • ${stall.address}` : ""}
+                  </Text>
+                </View>
+              </Pressable>
+
+              <Pressable
+                style={[styles.visitBtn, { backgroundColor: c.secondary }]}
+                onPress={() => router.push(`/shop/stall/${stall.id}`)}
+              >
+                <Text style={{ color: c.primary, fontFamily: "Inter_600SemiBold", fontSize: 11 }}>
+                  Visit Shop
+                </Text>
+                <Ionicons name="chevron-forward" size={13} color={c.primary} />
+              </Pressable>
+            </View>
+
+            {/* Horizontal Swipeable Products */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 10, paddingHorizontal: 12, paddingBottom: 2 }}
+            >
+              {products.map((prod) => {
+                const thumb = prod.photos?.[0];
+                return (
+                  <Pressable
+                    key={prod.id}
+                    style={[
+                      styles.productCard,
+                      { backgroundColor: c.background, borderColor: c.border },
+                    ]}
+                    onPress={() => router.push(`/shop/product/${prod.id}`)}
+                  >
+                    <View style={[styles.productThumbBox, { backgroundColor: c.secondary }]}>
+                      {thumb ? (
+                        <Image
+                          source={{ uri: thumb }}
+                          style={{ width: "100%", height: "100%" }}
+                          contentFit="cover"
+                        />
+                      ) : (
+                        <Ionicons name="cube-outline" size={24} color={c.mutedForeground} />
+                      )}
+                    </View>
+                    <View style={{ padding: 8, gap: 3 }}>
+                      <Text
+                        style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 12 }}
+                        numberOfLines={1}
+                      >
+                        {prod.name}
+                      </Text>
+                      <Text
+                        style={{ color: c.primary, fontFamily: "Inter_700Bold", fontSize: 13 }}
+                      >
+                        {formatTaka(prod.priceCents)}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
@@ -295,5 +409,51 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
+  },
+  showcaseCard: {
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 12,
+    marginBottom: 8,
+  },
+  showcaseHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    marginBottom: 10,
+    gap: 8,
+  },
+  shopBadge: {
+    backgroundColor: "rgba(147, 51, 234, 0.12)",
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 6,
+  },
+  shopBadgeText: {
+    color: "#9333ea",
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+  },
+  visitBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  productCard: {
+    width: 135,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: "hidden",
+  },
+  productThumbBox: {
+    width: 135,
+    height: 100,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
   },
 });

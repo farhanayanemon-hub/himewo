@@ -1227,11 +1227,6 @@ export interface AdAccount {
   id: number;
   ownerId: string;
   name: string;
-  accountNumber?: string | null;
-  phone?: string | null;
-  businessAddress?: string | null;
-  tin?: string | null;
-  bin?: string | null;
   currency: string;
   timezone: string;
   balanceCents: number;
@@ -1254,10 +1249,6 @@ export interface AdAccount {
 export interface AdAccountInput {
   /** @minLength 1 */
   name: string;
-  phone?: string;
-  businessAddress?: string;
-  tin?: string;
-  bin?: string;
   currency?: string;
   timezone?: string;
 }
@@ -2769,6 +2760,10 @@ export interface ShopStall {
   name: string;
   /** @nullable */
   avatarUrl?: string | null;
+  /** @nullable */
+  coverUrl?: string | null;
+  description?: string;
+  website?: string;
   address?: string;
   productType: ShopStallProductType;
   contactPhone?: string;
@@ -2780,6 +2775,23 @@ export interface ShopStall {
   /** @nullable */
   ratingAvg?: number | null;
   ratingCount?: number;
+  followerCount?: number;
+  isFollowing?: boolean;
+}
+
+export interface UpdateStallInput {
+  /** @nullable */
+  coverUrl?: string | null;
+  /** @maxLength 2000 */
+  description?: string;
+  /** @maxLength 500 */
+  website?: string;
+  /** @maxLength 500 */
+  address?: string;
+  /** @maxLength 30 */
+  contactPhone?: string;
+  /** @maxLength 200 */
+  contactEmail?: string;
 }
 
 export type CreateStallInputProductType = typeof CreateStallInputProductType[keyof typeof CreateStallInputProductType];
@@ -3421,6 +3433,21 @@ cursor?: number;
  * @maximum 50
  */
 limit?: number;
+};
+
+export type FollowStall200 = {
+  count: number;
+  isFollowing: boolean;
+};
+
+export type UnfollowStall200 = {
+  count: number;
+  isFollowing: boolean;
+};
+
+export type GetFollowedShopShowcase200Item = {
+  stall: ShopStall;
+  products: ShopProduct[];
 };
 
 export type BrowseProductsParams = {

@@ -5,6 +5,7 @@ import { PostCard } from "@/components/post-card";
 import { PostComposer } from "@/components/post-composer";
 import { SponsoredCard } from "@/components/sponsored-card";
 import { ReelsShelf } from "@/components/reels-shelf";
+import { ShopShowcaseShelf } from "@/components/shop-showcase-shelf";
 import {
   useGetFeed,
   useServeAds,
@@ -374,6 +375,8 @@ export default function HomePage() {
         <PostComposer />
 
         <ReelsShelf />
+
+        <ShopShowcaseShelf />
 
         {/* Feed */}
         <div className="space-y-4">

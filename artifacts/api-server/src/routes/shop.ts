@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import {
   db,
   shopStallsTable,
+  shopFollowersTable,
   shopCategoriesTable,
   shopProductsTable,
   shopOrdersTable,
@@ -26,6 +27,7 @@ import {
   GetMyStallResponse,
   CreateStallBody,
   CreateStallResponse,
+  UpdateStallBody,
   BrowseStallsQueryParams,
   BrowseStallsResponse,
   GetStallParams,
@@ -70,7 +72,14 @@ const router: IRouter = Router();
 // Serialization helpers
 // ---------------------------------------------------------------------------
 
-type PageRef = { name: string; avatarUrl: string | null };
+type PageRef = {
+  name: string;
+  avatarUrl: string | null;
+  coverUrl: string | null;
+  description: string | null;
+  website: string | null;
+  address: string | null;
+};
 
 async function loadPageRefs(ids: number[]): Promise<Map<number, PageRef>> {
   const unique = [...new Set(ids)];
@@ -80,10 +89,95 @@ async function loadPageRefs(ids: number[]): Promise<Map<number, PageRef>> {
       id: pagesTable.id,
       name: pagesTable.name,
       avatarUrl: pagesTable.avatarUrl,
+      coverUrl: pagesTable.coverUrl,
+      description: pagesTable.description,
+      website: pagesTable.website,
+      address: pagesTable.address,
     })
     .from(pagesTable)
     .where(inArray(pagesTable.id, unique));
-  return new Map(rows.map((r) => [r.id, { name: r.name, avatarUrl: r.avatarUrl }]));
+  return new Map(
+    rows.map((r) => [
+      r.id,
+      {
+        name: r.name,
+        avatarUrl: r.avatarUrl,
+        coverUrl: r.coverUrl,
+        description: r.description,
+        website: r.website,
+        address: r.address,
+      },
+    ]),
+  );
+}
+
+async function stallFollowerInfo(
+  stallId: number,
+  viewerId?: string,
+): Promise<{ count: number; isFollowing: boolean }> {
+  const [[cnt], viewerFollow] = await Promise.all([
+    db
+      .select({ value: count() })
+      .from(shopFollowersTable)
+      .where(eq(shopFollowersTable.stallId, stallId)),
+    viewerId
+      ? db
+          .select({ id: shopFollowersTable.id })
+          .from(shopFollowersTable)
+          .where(
+            and(
+              eq(shopFollowersTable.stallId, stallId),
+              eq(shopFollowersTable.userId, viewerId),
+            ),
+          )
+          .limit(1)
+      : Promise.resolve([]),
+  ]);
+  return {
+    count: cnt?.value ?? 0,
+    isFollowing: viewerFollow.length > 0,
+  };
+}
+
+async function stallsFollowerInfo(
+  stallIds: number[],
+  viewerId?: string,
+): Promise<Map<number, { count: number; isFollowing: boolean }>> {
+  const unique = [...new Set(stallIds)];
+  if (unique.length === 0) return new Map();
+  const [counts, viewerFollows] = await Promise.all([
+    db
+      .select({
+        stallId: shopFollowersTable.stallId,
+        count: count(),
+      })
+      .from(shopFollowersTable)
+      .where(inArray(shopFollowersTable.stallId, unique))
+      .groupBy(shopFollowersTable.stallId),
+    viewerId
+      ? db
+          .select({
+            stallId: shopFollowersTable.stallId,
+          })
+          .from(shopFollowersTable)
+          .where(
+            and(
+              inArray(shopFollowersTable.stallId, unique),
+              eq(shopFollowersTable.userId, viewerId),
+            ),
+          )
+      : Promise.resolve([]),
+  ]);
+  const countMap = new Map(counts.map((c) => [c.stallId, c.count]));
+  const followSet = new Set(viewerFollows.map((f) => f.stallId));
+  const res = new Map<number, { count: number; isFollowing: boolean }>();
+  for (const id of unique) {
+    res.set(id, {
+      count: countMap.get(id) ?? 0,
+      isFollowing: followSet.has(id),
+    });
+  }
+  return res;
 }
 
 function toStallDto(
@@ -92,6 +186,7 @@ function toStallDto(
   viewerId: string,
   productCount?: number,
   rating?: { avg: number | null; count: number },
+  followerInfo?: { count: number; isFollowing: boolean },
 ) {
   return {
     id: stall.id,
@@ -99,7 +194,10 @@ function toStallDto(
     pageId: stall.pageId,
     name: page?.name ?? "Stall",
     avatarUrl: page?.avatarUrl ?? null,
-    address: stall.address,
+    coverUrl: stall.coverUrl || page?.coverUrl || null,
+    description: stall.description || page?.description || "",
+    website: stall.website || page?.website || "",
+    address: stall.address || page?.address || "",
     productType: stall.productType,
     contactPhone: stall.contactPhone,
     contactEmail: stall.contactEmail,
@@ -109,6 +207,8 @@ function toStallDto(
     createdAt: stall.createdAt,
     ratingAvg: rating?.avg ?? null,
     ratingCount: rating?.count ?? 0,
+    followerCount: followerInfo?.count ?? 0,
+    isFollowing: followerInfo?.isFollowing ?? false,
   };
 }
 
@@ -314,14 +414,73 @@ router.get("/shop/stall", requireAuth, async (req, res): Promise<void> => {
     res.status(404).json({ error: "Stall not found" });
     return;
   }
-  const pageRefs = await loadPageRefs([stall.pageId]);
-  const [productCount] = await db
-    .select({ value: count() })
-    .from(shopProductsTable)
-    .where(eq(shopProductsTable.stallId, stall.id));
+  const [pageRefs, [productCount], followerInfo] = await Promise.all([
+    loadPageRefs([stall.pageId]),
+    db
+      .select({ value: count() })
+      .from(shopProductsTable)
+      .where(eq(shopProductsTable.stallId, stall.id)),
+    stallFollowerInfo(stall.id, req.userId!),
+  ]);
   res.json(
     GetMyStallResponse.parse(
-      toStallDto(stall, pageRefs.get(stall.pageId), req.userId!, productCount?.value ?? 0),
+      toStallDto(
+        stall,
+        pageRefs.get(stall.pageId),
+        req.userId!,
+        productCount?.value ?? 0,
+        undefined,
+        followerInfo,
+      ),
+    ),
+  );
+});
+
+router.patch("/shop/stall", requireAuth, async (req, res): Promise<void> => {
+  const stall = await loadMyStall(req.userId!);
+  if (!stall) {
+    res.status(404).json({ error: "Stall not found" });
+    return;
+  }
+  const parsed = UpdateStallBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const data = parsed.data;
+  const updates: Partial<typeof shopStallsTable.$inferInsert> = {};
+  if (data.coverUrl !== undefined) updates.coverUrl = data.coverUrl;
+  if (data.description !== undefined) updates.description = data.description.trim();
+  if (data.website !== undefined) updates.website = data.website.trim();
+  if (data.address !== undefined) updates.address = data.address.trim();
+  if (data.contactPhone !== undefined) updates.contactPhone = data.contactPhone.trim();
+  if (data.contactEmail !== undefined) updates.contactEmail = data.contactEmail.trim();
+
+  const [updated] = await db
+    .update(shopStallsTable)
+    .set(updates)
+    .where(eq(shopStallsTable.id, stall.id))
+    .returning();
+
+  const [pageRefs, [productCount], followerInfo] = await Promise.all([
+    loadPageRefs([updated.pageId]),
+    db
+      .select({ value: count() })
+      .from(shopProductsTable)
+      .where(eq(shopProductsTable.stallId, updated.id)),
+    stallFollowerInfo(updated.id, req.userId!),
+  ]);
+
+  res.json(
+    GetMyStallResponse.parse(
+      toStallDto(
+        updated,
+        pageRefs.get(updated.pageId),
+        req.userId!,
+        productCount?.value ?? 0,
+        undefined,
+        followerInfo,
+      ),
     ),
   );
 });
@@ -380,12 +539,15 @@ router.post("/shop/stall", requireAuth, async (req, res): Promise<void> => {
     res.status(409).json({ error: "You already have a stall for this Hub" });
     return;
   }
-  const pageRefs = await loadPageRefs([stall.pageId]);
+  const [pageRefs, followerInfo] = await Promise.all([
+    loadPageRefs([stall.pageId]),
+    stallFollowerInfo(stall.id, userId),
+  ]);
   res
     .status(201)
     .json(
       CreateStallResponse.parse(
-        toStallDto(stall, pageRefs.get(stall.pageId), userId, 0),
+        toStallDto(stall, pageRefs.get(stall.pageId), userId, 0, undefined, followerInfo),
       ),
     );
 });
@@ -408,10 +570,22 @@ router.get("/shop/stalls", requireAuth, async (req, res): Promise<void> => {
     )
     .orderBy(desc(shopStallsTable.id))
     .limit(limit ?? 20);
-  const pageRefs = await loadPageRefs(rows.map((r) => r.pageId));
+  const [pageRefs, followersMap] = await Promise.all([
+    loadPageRefs(rows.map((r) => r.pageId)),
+    stallsFollowerInfo(rows.map((r) => r.id), req.userId!),
+  ]);
   res.json(
     BrowseStallsResponse.parse(
-      rows.map((s) => toStallDto(s, pageRefs.get(s.pageId), req.userId!)),
+      rows.map((s) =>
+        toStallDto(
+          s,
+          pageRefs.get(s.pageId),
+          req.userId!,
+          undefined,
+          undefined,
+          followersMap.get(s.id),
+        ),
+      ),
     ),
   );
 });
@@ -430,8 +604,8 @@ router.get("/shop/stalls/:id", requireAuth, async (req, res): Promise<void> => {
     res.status(404).json({ error: "Stall not found" });
     return;
   }
-  const pageRefs = await loadPageRefs([stall.pageId]);
-  const [[productCount], rating] = await Promise.all([
+  const [pageRefs, [productCount], rating, followerInfo] = await Promise.all([
+    loadPageRefs([stall.pageId]),
     db
       .select({ value: count() })
       .from(shopProductsTable)
@@ -442,6 +616,7 @@ router.get("/shop/stalls/:id", requireAuth, async (req, res): Promise<void> => {
         ),
       ),
     ratingForStall(stall.id),
+    stallFollowerInfo(stall.id, req.userId!),
   ]);
   res.json(
     GetStallResponse.parse(
@@ -451,9 +626,157 @@ router.get("/shop/stalls/:id", requireAuth, async (req, res): Promise<void> => {
         req.userId!,
         productCount?.value ?? 0,
         rating,
+        followerInfo,
       ),
     ),
   );
+});
+
+router.post("/shop/stalls/:id/follow", requireAuth, async (req, res): Promise<void> => {
+  const stallId = Number(req.params.id);
+  if (!Number.isFinite(stallId)) {
+    res.status(400).json({ error: "Invalid stall ID" });
+    return;
+  }
+  const [stall] = await db
+    .select({ id: shopStallsTable.id })
+    .from(shopStallsTable)
+    .where(eq(shopStallsTable.id, stallId));
+  if (!stall) {
+    res.status(404).json({ error: "Stall not found" });
+    return;
+  }
+  try {
+    await db
+      .insert(shopFollowersTable)
+      .values({
+        userId: req.userId!,
+        stallId,
+      })
+      .onConflictDoNothing();
+  } catch {
+    // Ignore duplicate
+  }
+  const followerInfo = await stallFollowerInfo(stallId, req.userId!);
+  res.json(followerInfo);
+});
+
+router.delete("/shop/stalls/:id/follow", requireAuth, async (req, res): Promise<void> => {
+  const stallId = Number(req.params.id);
+  if (!Number.isFinite(stallId)) {
+    res.status(400).json({ error: "Invalid stall ID" });
+    return;
+  }
+  await db
+    .delete(shopFollowersTable)
+    .where(
+      and(
+        eq(shopFollowersTable.stallId, stallId),
+        eq(shopFollowersTable.userId, req.userId!),
+      ),
+    );
+  const followerInfo = await stallFollowerInfo(stallId, req.userId!);
+  res.json(followerInfo);
+});
+
+router.get("/shop/feed/followed-showcase", requireAuth, async (req, res): Promise<void> => {
+  const userId = req.userId!;
+  // 1. Find all stalls followed by user
+  const followed = await db
+    .select({ stallId: shopFollowersTable.stallId })
+    .from(shopFollowersTable)
+    .where(eq(shopFollowersTable.userId, userId));
+
+  let stallIds = followed.map((f) => f.stallId);
+
+  // If viewer does not follow any stalls, or fewer than 2, supplement with active stalls
+  if (stallIds.length < 2) {
+    const popularStalls = await db
+      .select({ id: shopStallsTable.id })
+      .from(shopStallsTable)
+      .where(eq(shopStallsTable.active, true))
+      .limit(6);
+    const popularIds = popularStalls.map((s) => s.id);
+    stallIds = [...new Set([...stallIds, ...popularIds])];
+  }
+
+  if (stallIds.length === 0) {
+    res.json([]);
+    return;
+  }
+
+  // Load stalls
+  const stalls = await db
+    .select()
+    .from(shopStallsTable)
+    .where(
+      and(
+        inArray(shopStallsTable.id, stallIds),
+        eq(shopStallsTable.active, true),
+      ),
+    );
+
+  if (stalls.length === 0) {
+    res.json([]);
+    return;
+  }
+
+  // Load products for these stalls
+  const products = await db
+    .select()
+    .from(shopProductsTable)
+    .where(
+      and(
+        inArray(shopProductsTable.stallId, stalls.map((s) => s.id)),
+        eq(shopProductsTable.active, true),
+      ),
+    )
+    .orderBy(desc(shopProductsTable.id));
+
+  // Group products by stall
+  const productsByStall = new Map<number, typeof products>();
+  for (const p of products) {
+    const list = productsByStall.get(p.stallId) ?? [];
+    if (list.length < 10) {
+      list.push(p);
+      productsByStall.set(p.stallId, list);
+    }
+  }
+
+  const [pageRefs, followersMap, ratings, categories] = await Promise.all([
+    loadPageRefs(stalls.map((s) => s.pageId)),
+    stallsFollowerInfo(stalls.map((s) => s.id), userId),
+    ratingsByProduct(products.map((p) => p.id)),
+    categoryNamesByIds(products.map((p) => p.categoryId)),
+  ]);
+
+  const showcase = stalls
+    .filter((s) => (productsByStall.get(s.id) ?? []).length > 0)
+    .map((stall) => {
+      const stallProducts = productsByStall.get(stall.id) ?? [];
+      const stallDto = toStallDto(
+        stall,
+        pageRefs.get(stall.pageId),
+        userId,
+        stallProducts.length,
+        undefined,
+        followersMap.get(stall.id),
+      );
+      const productDtos = stallProducts.map((p) =>
+        toProductDto(
+          p,
+          stallDto.name,
+          ratings.get(p.id),
+          categories.get(p.categoryId ?? -1),
+        ),
+      );
+      return {
+        stall: stallDto,
+        products: productDtos,
+      };
+    });
+
+  res.json(showcase);
 });
 
 router.get(

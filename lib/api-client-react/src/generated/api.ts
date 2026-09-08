@@ -89,6 +89,7 @@ import type {
   FindAccountInput,
   FindAccountResult,
   FollowPageParams,
+  FollowStall200,
   ForbiddenResponse,
   FriendRequest,
   FriendRequestInput,
@@ -99,6 +100,7 @@ import type {
   GetAdAccountInsightsParams,
   GetEarningsHistoryParams,
   GetFeedParams,
+  GetFollowedShopShowcase200Item,
   GetFriendSuggestionsParams,
   GetGroupPostsParams,
   GetHashtagPostsParams,
@@ -217,10 +219,12 @@ import type {
   StoryReplyResponse,
   UnauthorizedResponse,
   UnfollowPageParams,
+  UnfollowStall200,
   UnreadCount,
   UpdateOrderStatusInput,
   UpdateProductInput,
   UpdateShopCategoryInput,
+  UpdateStallInput,
   UploadUrlInput,
   UploadUrlResponse,
   UpsertShopCategoryInput,
@@ -16615,6 +16619,76 @@ export const useCreateStall = <TError = ErrorType<BadRequestResponse | Unauthori
       return useMutation(getCreateStallMutationOptions(options));
     }
 
+export const getUpdateStallUrl = () => {
+
+
+
+
+  return `/api/shop/stall`
+}
+
+/**
+ * @summary Update the authenticated user's stall profile
+ */
+export const updateStall = async (updateStallInput: UpdateStallInput, options?: RequestInit): Promise<ShopStall> => {
+
+  return customFetch<ShopStall>(getUpdateStallUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateStallInput)
+  }
+);}
+
+
+
+
+export const getUpdateStallMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateStall>>, TError,{data: BodyType<UpdateStallInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateStall>>, TError,{data: BodyType<UpdateStallInput>}, TContext> => {
+
+const mutationKey = ['updateStall'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateStall>>, {data: BodyType<UpdateStallInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateStall(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateStallMutationResult = NonNullable<Awaited<ReturnType<typeof updateStall>>>
+    export type UpdateStallMutationBody = BodyType<UpdateStallInput>
+    export type UpdateStallMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse>
+
+    /**
+ * @summary Update the authenticated user's stall profile
+ */
+export const useUpdateStall = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateStall>>, TError,{data: BodyType<UpdateStallInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateStall>>,
+        TError,
+        {data: BodyType<UpdateStallInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateStallMutationOptions(options));
+    }
+
 export const getBrowseStallsUrl = (params?: BrowseStallsParams,) => {
   const normalizedParams = new URLSearchParams();
 
@@ -16853,6 +16927,223 @@ export function useGetStallProducts<TData = Awaited<ReturnType<typeof getStallPr
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetStallProductsQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getFollowStallUrl = (id: number,) => {
+
+
+
+
+  return `/api/shop/stalls/${id}/follow`
+}
+
+/**
+ * @summary Follow a stall
+ */
+export const followStall = async (id: number, options?: RequestInit): Promise<FollowStall200> => {
+
+  return customFetch<FollowStall200>(getFollowStallUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getFollowStallMutationOptions = <TError = ErrorType<UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof followStall>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof followStall>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['followStall'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof followStall>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  followStall(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type FollowStallMutationResult = NonNullable<Awaited<ReturnType<typeof followStall>>>
+
+    export type FollowStallMutationError = ErrorType<UnauthorizedResponse | NotFoundResponse>
+
+    /**
+ * @summary Follow a stall
+ */
+export const useFollowStall = <TError = ErrorType<UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof followStall>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof followStall>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getFollowStallMutationOptions(options));
+    }
+
+export const getUnfollowStallUrl = (id: number,) => {
+
+
+
+
+  return `/api/shop/stalls/${id}/follow`
+}
+
+/**
+ * @summary Unfollow a stall
+ */
+export const unfollowStall = async (id: number, options?: RequestInit): Promise<UnfollowStall200> => {
+
+  return customFetch<UnfollowStall200>(getUnfollowStallUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getUnfollowStallMutationOptions = <TError = ErrorType<UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unfollowStall>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof unfollowStall>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['unfollowStall'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unfollowStall>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  unfollowStall(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnfollowStallMutationResult = NonNullable<Awaited<ReturnType<typeof unfollowStall>>>
+
+    export type UnfollowStallMutationError = ErrorType<UnauthorizedResponse | NotFoundResponse>
+
+    /**
+ * @summary Unfollow a stall
+ */
+export const useUnfollowStall = <TError = ErrorType<UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unfollowStall>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof unfollowStall>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getUnfollowStallMutationOptions(options));
+    }
+
+export const getGetFollowedShopShowcaseUrl = () => {
+
+
+
+
+  return `/api/shop/feed/followed-showcase`
+}
+
+/**
+ * @summary Get showcase of followed shops and their products for the feed
+ */
+export const getFollowedShopShowcase = async ( options?: RequestInit): Promise<GetFollowedShopShowcase200Item[]> => {
+
+  return customFetch<GetFollowedShopShowcase200Item[]>(getGetFollowedShopShowcaseUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetFollowedShopShowcaseQueryKey = () => {
+    return [
+    `/api/shop/feed/followed-showcase`
+    ] as const;
+    }
+
+
+export const getGetFollowedShopShowcaseQueryOptions = <TData = Awaited<ReturnType<typeof getFollowedShopShowcase>>, TError = ErrorType<UnauthorizedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFollowedShopShowcase>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetFollowedShopShowcaseQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFollowedShopShowcase>>> = ({ signal }) => getFollowedShopShowcase({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFollowedShopShowcase>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetFollowedShopShowcaseQueryResult = NonNullable<Awaited<ReturnType<typeof getFollowedShopShowcase>>>
+export type GetFollowedShopShowcaseQueryError = ErrorType<UnauthorizedResponse>
+
+
+/**
+ * @summary Get showcase of followed shops and their products for the feed
+ */
+
+export function useGetFollowedShopShowcase<TData = Awaited<ReturnType<typeof getFollowedShopShowcase>>, TError = ErrorType<UnauthorizedResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFollowedShopShowcase>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetFollowedShopShowcaseQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

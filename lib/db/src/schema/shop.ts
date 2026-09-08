@@ -41,6 +41,12 @@ export const shopStallsTable = pgTable(
       .references(() => pagesTable.id, { onDelete: "cascade" }),
     // Seller's business address (shown to buyers, used for physical goods).
     address: text("address").notNull().default(""),
+    // Shop cover banner photo.
+    coverUrl: text("cover_url"),
+    // Shop details / bio / description.
+    description: text("description").notNull().default(""),
+    // Shop website link.
+    website: text("website").notNull().default(""),
     // physical | digital — digital stalls cannot accept cash-on-delivery.
     productType: text("product_type").notNull().default("physical"),
     contactPhone: text("contact_phone").notNull().default(""),
@@ -302,3 +308,29 @@ export type ShopOrder = typeof shopOrdersTable.$inferSelect;
 export type ShopLedgerEntry = typeof shopLedgerTable.$inferSelect;
 export type ShopWithdrawal = typeof shopWithdrawalsTable.$inferSelect;
 export type ShopReview = typeof shopReviewsTable.$inferSelect;
+
+/**
+ * Users following a shop / stall.
+ */
+export const shopFollowersTable = pgTable(
+  "shop_followers",
+  {
+    id: serial("id").primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => profilesTable.id, { onDelete: "cascade" }),
+    stallId: integer("stall_id")
+      .notNull()
+      .references(() => shopStallsTable.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("shop_followers_user_stall_uniq").on(t.userId, t.stallId),
+    index("shop_followers_stall_idx").on(t.stallId),
+    index("shop_followers_user_idx").on(t.userId),
+  ],
+);
+
+export type ShopFollower = typeof shopFollowersTable.$inferSelect;

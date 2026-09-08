@@ -6194,11 +6194,6 @@ export const ListAdAccountsResponseItem = zod.object({
   "id": zod.number(),
   "ownerId": zod.string(),
   "name": zod.string(),
-  "accountNumber": zod.string().nullish(),
-  "phone": zod.string().nullish(),
-  "businessAddress": zod.string().nullish(),
-  "tin": zod.string().nullish(),
-  "bin": zod.string().nullish(),
   "currency": zod.string(),
   "timezone": zod.string(),
   "balanceCents": zod.number(),
@@ -6221,10 +6216,6 @@ export const ListAdAccountsResponse = zod.array(ListAdAccountsResponseItem)
 
 export const CreateAdAccountBody = zod.object({
   "name": zod.string().min(1),
-  "phone": zod.string().optional(),
-  "businessAddress": zod.string().optional(),
-  "tin": zod.string().optional(),
-  "bin": zod.string().optional(),
   "currency": zod.string().optional(),
   "timezone": zod.string().optional()
 })
@@ -6233,11 +6224,6 @@ export const CreateAdAccountResponse = zod.object({
   "id": zod.number(),
   "ownerId": zod.string(),
   "name": zod.string(),
-  "accountNumber": zod.string().nullish(),
-  "phone": zod.string().nullish(),
-  "businessAddress": zod.string().nullish(),
-  "tin": zod.string().nullish(),
-  "bin": zod.string().nullish(),
   "currency": zod.string(),
   "timezone": zod.string(),
   "balanceCents": zod.number(),
@@ -6262,11 +6248,6 @@ export const GetAdAccountResponse = zod.object({
   "id": zod.number(),
   "ownerId": zod.string(),
   "name": zod.string(),
-  "accountNumber": zod.string().nullish(),
-  "phone": zod.string().nullish(),
-  "businessAddress": zod.string().nullish(),
-  "tin": zod.string().nullish(),
-  "bin": zod.string().nullish(),
   "currency": zod.string(),
   "timezone": zod.string(),
   "balanceCents": zod.number(),
@@ -10398,6 +10379,9 @@ export const GetMyStallResponse = zod.object({
   "pageId": zod.number(),
   "name": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "description": zod.string().optional(),
+  "website": zod.string().optional(),
   "address": zod.string().optional(),
   "productType": zod.enum(['physical', 'digital']),
   "contactPhone": zod.string().optional(),
@@ -10407,7 +10391,9 @@ export const GetMyStallResponse = zod.object({
   "isOwner": zod.boolean().optional(),
   "createdAt": zod.coerce.date(),
   "ratingAvg": zod.number().nullish(),
-  "ratingCount": zod.number().optional()
+  "ratingCount": zod.number().optional(),
+  "followerCount": zod.number().optional(),
+  "isFollowing": zod.boolean().optional()
 })
 
 
@@ -10436,6 +10422,9 @@ export const CreateStallResponse = zod.object({
   "pageId": zod.number(),
   "name": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "description": zod.string().optional(),
+  "website": zod.string().optional(),
   "address": zod.string().optional(),
   "productType": zod.enum(['physical', 'digital']),
   "contactPhone": zod.string().optional(),
@@ -10445,7 +10434,57 @@ export const CreateStallResponse = zod.object({
   "isOwner": zod.boolean().optional(),
   "createdAt": zod.coerce.date(),
   "ratingAvg": zod.number().nullish(),
-  "ratingCount": zod.number().optional()
+  "ratingCount": zod.number().optional(),
+  "followerCount": zod.number().optional(),
+  "isFollowing": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Update the authenticated user's stall profile
+ */
+export const updateStallBodyDescriptionMax = 2000;
+
+export const updateStallBodyWebsiteMax = 500;
+
+export const updateStallBodyAddressMax = 500;
+
+export const updateStallBodyContactPhoneMax = 30;
+
+export const updateStallBodyContactEmailMax = 200;
+
+
+
+export const UpdateStallBody = zod.object({
+  "coverUrl": zod.string().nullish(),
+  "description": zod.string().max(updateStallBodyDescriptionMax).optional(),
+  "website": zod.string().max(updateStallBodyWebsiteMax).optional(),
+  "address": zod.string().max(updateStallBodyAddressMax).optional(),
+  "contactPhone": zod.string().max(updateStallBodyContactPhoneMax).optional(),
+  "contactEmail": zod.string().max(updateStallBodyContactEmailMax).optional()
+})
+
+export const UpdateStallResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "pageId": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "description": zod.string().optional(),
+  "website": zod.string().optional(),
+  "address": zod.string().optional(),
+  "productType": zod.enum(['physical', 'digital']),
+  "contactPhone": zod.string().optional(),
+  "contactEmail": zod.string().optional(),
+  "active": zod.boolean(),
+  "productCount": zod.number().optional(),
+  "isOwner": zod.boolean().optional(),
+  "createdAt": zod.coerce.date(),
+  "ratingAvg": zod.number().nullish(),
+  "ratingCount": zod.number().optional(),
+  "followerCount": zod.number().optional(),
+  "isFollowing": zod.boolean().optional()
 })
 
 
@@ -10469,6 +10508,9 @@ export const BrowseStallsResponseItem = zod.object({
   "pageId": zod.number(),
   "name": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "description": zod.string().optional(),
+  "website": zod.string().optional(),
   "address": zod.string().optional(),
   "productType": zod.enum(['physical', 'digital']),
   "contactPhone": zod.string().optional(),
@@ -10478,7 +10520,9 @@ export const BrowseStallsResponseItem = zod.object({
   "isOwner": zod.boolean().optional(),
   "createdAt": zod.coerce.date(),
   "ratingAvg": zod.number().nullish(),
-  "ratingCount": zod.number().optional()
+  "ratingCount": zod.number().optional(),
+  "followerCount": zod.number().optional(),
+  "isFollowing": zod.boolean().optional()
 })
 export const BrowseStallsResponse = zod.array(BrowseStallsResponseItem)
 
@@ -10496,6 +10540,9 @@ export const GetStallResponse = zod.object({
   "pageId": zod.number(),
   "name": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "description": zod.string().optional(),
+  "website": zod.string().optional(),
   "address": zod.string().optional(),
   "productType": zod.enum(['physical', 'digital']),
   "contactPhone": zod.string().optional(),
@@ -10505,7 +10552,9 @@ export const GetStallResponse = zod.object({
   "isOwner": zod.boolean().optional(),
   "createdAt": zod.coerce.date(),
   "ratingAvg": zod.number().nullish(),
-  "ratingCount": zod.number().optional()
+  "ratingCount": zod.number().optional(),
+  "followerCount": zod.number().optional(),
+  "isFollowing": zod.boolean().optional()
 })
 
 
@@ -10544,6 +10593,78 @@ export const GetStallProductsResponseItem = zod.object({
   "ratingCount": zod.number().optional()
 })
 export const GetStallProductsResponse = zod.array(GetStallProductsResponseItem)
+
+
+/**
+ * @summary Follow a stall
+ */
+export const FollowStallParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const FollowStallResponse = zod.object({
+  "count": zod.number(),
+  "isFollowing": zod.boolean()
+})
+
+
+/**
+ * @summary Unfollow a stall
+ */
+export const UnfollowStallParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UnfollowStallResponse = zod.object({
+  "count": zod.number(),
+  "isFollowing": zod.boolean()
+})
+
+
+/**
+ * @summary Get showcase of followed shops and their products for the feed
+ */
+export const GetFollowedShopShowcaseResponseItem = zod.object({
+  "stall": zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "pageId": zod.number(),
+  "name": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "description": zod.string().optional(),
+  "website": zod.string().optional(),
+  "address": zod.string().optional(),
+  "productType": zod.enum(['physical', 'digital']),
+  "contactPhone": zod.string().optional(),
+  "contactEmail": zod.string().optional(),
+  "active": zod.boolean(),
+  "productCount": zod.number().optional(),
+  "isOwner": zod.boolean().optional(),
+  "createdAt": zod.coerce.date(),
+  "ratingAvg": zod.number().nullish(),
+  "ratingCount": zod.number().optional(),
+  "followerCount": zod.number().optional(),
+  "isFollowing": zod.boolean().optional()
+}),
+  "products": zod.array(zod.object({
+  "id": zod.number(),
+  "stallId": zod.number(),
+  "stallName": zod.string().nullish(),
+  "photos": zod.array(zod.string()),
+  "name": zod.string(),
+  "priceCents": zod.number(),
+  "description": zod.string(),
+  "stockQty": zod.number(),
+  "active": zod.boolean(),
+  "categoryId": zod.number().nullish(),
+  "categoryName": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "ratingAvg": zod.number().nullish(),
+  "ratingCount": zod.number().optional()
+}))
+})
+export const GetFollowedShopShowcaseResponse = zod.array(GetFollowedShopShowcaseResponseItem)
 
 
 /**

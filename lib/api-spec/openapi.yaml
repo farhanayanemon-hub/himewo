@@ -3816,6 +3816,27 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
+    patch:
+      operationId: updateStall
+      tags: [shop]
+      summary: Update the authenticated user's stall profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateStallInput" }
+      responses:
+        "200":
+          description: Updated stall
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShopStall" }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /shop/stalls:
     get:
       operationId: browseStalls
@@ -3872,6 +3893,71 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+  /shop/stalls/{id}/follow:
+    post:
+      operationId: followStall
+      tags: [shop]
+      summary: Follow a stall
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Follow status
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [count, isFollowing]
+                properties:
+                  count: { type: integer }
+                  isFollowing: { type: boolean }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: unfollowStall
+      tags: [shop]
+      summary: Unfollow a stall
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Follow status
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [count, isFollowing]
+                properties:
+                  count: { type: integer }
+                  isFollowing: { type: boolean }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /shop/feed/followed-showcase:
+    get:
+      operationId: getFollowedShopShowcase
+      tags: [shop]
+      summary: Get showcase of followed shops and their products for the feed
+      responses:
+        "200":
+          description: Followed shops showcase
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [stall, products]
+                  properties:
+                    stall: { $ref: "#/components/schemas/ShopStall" }
+                    products:
+                      type: array
+                      items: { $ref: "#/components/schemas/ShopProduct" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /shop/categories:
     get:
       operationId: listShopCategories
@@ -6603,6 +6689,9 @@ components:
         pageId: { type: integer }
         name: { type: string }
         avatarUrl: { type: ["string", "null"] }
+        coverUrl: { type: ["string", "null"] }
+        description: { type: string }
+        website: { type: string }
         address: { type: string }
         productType: { type: string, enum: [physical, digital] }
         contactPhone: { type: string }
@@ -6613,6 +6702,17 @@ components:
         createdAt: { type: string, format: date-time }
         ratingAvg: { type: ["number", "null"] }
         ratingCount: { type: integer }
+        followerCount: { type: integer }
+        isFollowing: { type: boolean }
+    UpdateStallInput:
+      type: object
+      properties:
+        coverUrl: { type: ["string", "null"] }
+        description: { type: string, maxLength: 2000 }
+        website: { type: string, maxLength: 500 }
+        address: { type: string, maxLength: 500 }
+        contactPhone: { type: string, maxLength: 30 }
+        contactEmail: { type: string, maxLength: 200 }
     CreateStallInput:
       type: object
       required: [pageId, address, productType, contactPhone]
