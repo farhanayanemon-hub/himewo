@@ -233,7 +233,7 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
           <Ionicons
             name={saved ? "bookmark" : "bookmark-outline"}
             size={20}
-            color={saved ? c.primary : c.mutedForeground}
+            color={saved ? "#f59e0b" : c.mutedForeground}
           />
         </Pressable>
         {isOwner && (
@@ -302,7 +302,7 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
           </Pressable>
         )}
         <Pressable style={styles.actionItem} onPress={onShare} hitSlop={6}>
-          <Ionicons name="arrow-redo-outline" size={18} color={c.mutedForeground} />
+          <Ionicons name="paper-plane-outline" size={18} color={c.mutedForeground} />
           <Text style={[styles.actionLabel, { color: c.mutedForeground }]}>Share</Text>
         </Pressable>
       </View>

@@ -92,7 +92,7 @@ export function ShareSheet({ postId, visible, onClose, onShared }: ShareSheetPro
                 onPress={submit}
                 disabled={sharePost.isPending}
               >
-                <Ionicons name="arrow-redo" size={18} color={c.primaryForeground} />
+                <Ionicons name="paper-plane" size={18} color={c.primaryForeground} />
                 <Text style={[styles.btnLabel, { color: c.primaryForeground }]}>
                   {sharePost.isPending ? "Sharing..." : "Share now"}
                 </Text>

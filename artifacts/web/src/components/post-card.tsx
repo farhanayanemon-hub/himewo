@@ -8,6 +8,7 @@ import { RenderWithMentions } from "@/components/mention";
 import {
   MessageCircle,
   Share2,
+  Send,
   Loader2,
   Bookmark,
   MoreHorizontal,
@@ -276,12 +277,21 @@ export function PostCard({ post }: { post: Post }) {
             disabled={savePending}
             aria-label={post.viewerHasSaved ? "Unsave post" : "Save post"}
             title={post.viewerHasSaved ? "Saved — click to unsave" : "Save post"}
-            className={`rounded-full hover:text-foreground ${post.viewerHasSaved ? "text-primary" : "text-muted-foreground"}`}
+            className={`rounded-full transition-colors ${
+              post.viewerHasSaved
+                ? "text-amber-500 hover:text-amber-600 bg-amber-500/10"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
           >
             {savePending ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
-              <Bookmark className="w-5 h-5" fill={post.viewerHasSaved ? "currentColor" : "none"} />
+              <Bookmark
+                className={`w-5 h-5 transition-transform duration-200 ${
+                  post.viewerHasSaved ? "fill-amber-500 text-amber-500 scale-105" : ""
+                }`}
+                fill={post.viewerHasSaved ? "currentColor" : "none"}
+              />
             )}
           </Button>
 
@@ -500,7 +510,7 @@ export function PostCard({ post }: { post: Post }) {
           className="flex-1 text-muted-foreground hover:bg-muted/60 rounded-lg flex items-center gap-2 press"
           onClick={() => setShowShare((s) => !s)}
         >
-          <Share2 className="w-5 h-5" />
+          <Send className="w-4 h-4 -translate-y-0.5" />
           <span className="font-semibold">Share</span>
         </Button>
       </div>

@@ -60,7 +60,7 @@ export default function SavedPage() {
     <MainLayout>
       <div className="bg-card border border-border rounded-2xl p-6 card-depth animate-in fade-in mb-5">
         <h1 className="text-xl font-bold flex items-center gap-2 mb-2">
-          <Bookmark className="w-6 h-6 text-primary" /> Saved
+          <Bookmark className="w-6 h-6 text-amber-500 fill-amber-500/20" /> Saved
         </h1>
         <p className="text-muted-foreground text-sm">
           Your saved posts, reels, and items will live here.

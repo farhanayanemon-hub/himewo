@@ -7,6 +7,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  Share,
   Text,
   TextInput,
   View,
@@ -145,6 +146,17 @@ function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
     }
   };
 
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `Watch this reel on HiMewo: https://himewo.com/reels?reelId=${reel.id}`,
+        url: `https://himewo.com/reels?reelId=${reel.id}`,
+      });
+    } catch {
+      // ignore
+    }
+  };
+
   const { cleanCaption, overlays } = parseReelOverlays(reel.caption);
 
   return (
@@ -246,12 +258,14 @@ function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
             <Ionicons
               name={saved ? "bookmark" : "bookmark-outline"}
               size={30}
-              color={saved ? c.primary : "#fff"}
+              color={saved ? "#facc15" : "#fff"}
             />
-            <Text style={styles.actionLabel}>{saved ? "Saved" : "Save"}</Text>
+            <Text style={[styles.actionLabel, saved ? { color: "#facc15", fontWeight: "700" } : null]}>
+              {saved ? "Saved" : "Save"}
+            </Text>
           </Pressable>
-          <Pressable style={styles.action}>
-            <Ionicons name="arrow-redo-outline" size={32} color="#fff" />
+          <Pressable style={styles.action} onPress={handleShare}>
+            <Ionicons name="paper-plane-outline" size={28} color="#fff" />
             <Text style={styles.actionLabel}>Share</Text>
           </Pressable>
         </View>

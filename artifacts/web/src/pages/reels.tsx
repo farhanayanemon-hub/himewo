@@ -1479,30 +1479,38 @@ function ReelCard({
           <div className="flex flex-col items-center">
             <button
               onClick={handleToggleSave}
-              className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md flex items-center justify-center text-white transition-all active:scale-75 shadow-lg group/btn"
+              className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full backdrop-blur-md flex items-center justify-center transition-all active:scale-75 shadow-lg group/btn ${
+                saved
+                  ? "bg-amber-500/25 border border-amber-400/50 text-amber-400"
+                  : "bg-black/40 hover:bg-black/60 text-white"
+              }`}
               title={saved ? "Unsave" : "Save"}
             >
               <Bookmark
                 className={`w-6 h-6 transition-all duration-200 ${
                   saved
-                    ? "fill-primary text-primary scale-110"
+                    ? "fill-amber-400 text-amber-400 scale-110 drop-shadow-[0_0_10px_rgba(251,191,36,0.7)]"
                     : "text-white group-hover/btn:scale-110"
                 }`}
               />
             </button>
-            <span className="text-white text-xs font-bold mt-1 drop-shadow-md">
+            <span
+              className={`text-xs font-bold mt-1 drop-shadow-md transition-colors ${
+                saved ? "text-amber-400" : "text-white"
+              }`}
+            >
               {saved ? "Saved" : "Save"}
             </span>
           </div>
 
-          {/* Share Button */}
+          {/* Share Button (Instagram paper airplane style) */}
           <div className="flex flex-col items-center">
             <button
               onClick={() => setShareOpen(true)}
               className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md flex items-center justify-center text-white transition-all active:scale-75 shadow-lg group/btn"
               title="Share"
             >
-              <Share2 className="w-6 h-6 text-white group-hover/btn:scale-110 transition-transform" />
+              <Send className="w-5 h-5 text-white group-hover/btn:scale-110 transition-transform -translate-y-0.5 translate-x-0.5" />
             </button>
             <span className="text-white text-xs font-bold mt-1 drop-shadow-md">
               Share
@@ -1598,7 +1606,7 @@ function ReelCard({
                   }}
                   className="w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl hover:bg-muted/70 text-foreground transition-colors text-left"
                 >
-                  <Bookmark className={`w-5 h-5 shrink-0 ${saved ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                  <Bookmark className={`w-5 h-5 shrink-0 ${saved ? "fill-amber-500 text-amber-500" : "text-muted-foreground"}`} />
                   <div>
                     <div className="font-semibold text-sm">{saved ? "Remove from Saved" : "Save Reel"}</div>
                     <div className="text-xs text-muted-foreground">Add this to your saved collection</div>
@@ -1659,7 +1667,7 @@ function ReelCard({
                   }}
                   className="w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl hover:bg-muted/70 text-foreground transition-colors text-left"
                 >
-                  <Bookmark className={`w-5 h-5 shrink-0 ${saved ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                  <Bookmark className={`w-5 h-5 shrink-0 ${saved ? "fill-amber-500 text-amber-500" : "text-muted-foreground"}`} />
                   <div>
                     <div className="font-semibold text-sm">{saved ? "Remove from Saved" : "Save Reel"}</div>
                     <div className="text-xs text-muted-foreground">Save to your bookmarked collection</div>
