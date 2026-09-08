@@ -6,7 +6,7 @@ import {
   reelLikesTable,
   reelCommentsTable,
 } from "@workspace/db";
-import { and, eq, lt, asc, desc, inArray } from "drizzle-orm";
+import { and, eq, lt, asc, desc, inArray, isNull, isNotNull } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import { filterVisibleReels, canViewReel } from "../lib/authz";
 import { toProfile, buildReels, buildReelById } from "../lib/serialize";
@@ -44,11 +44,42 @@ router.get("/reels", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   const { cursor, limit } = query.data;
-  // filterVisibleReels drops reels from locked/friends-only/only-me authors
-  // AFTER the SQL limit, so a single limited query could return a short page
-  // while older visible reels still exist (the client treats a short page as
-  // end of feed). Scan in batches until we collect a full page or run out.
+  const authorId = typeof req.query.authorId === "string" ? req.query.authorId : undefined;
   const pageLimit = limit ?? 10;
+
+  // Auto-purge reels in trash older than 30 days in the background
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  db.delete(reelsTable)
+    .where(
+      and(
+        isNotNull(reelsTable.deletedAt),
+        lt(reelsTable.deletedAt, thirtyDaysAgo)
+      )
+    )
+    .catch(() => {});
+
+  if (authorId) {
+    // Specific author's reels (e.g. Profile view)
+    const rows = await db
+      .select()
+      .from(reelsTable)
+      .where(
+        and(
+          eq(reelsTable.authorId, authorId),
+          isNull(reelsTable.deletedAt),
+          cursor ? lt(reelsTable.id, cursor) : undefined
+        )
+      )
+      .orderBy(desc(reelsTable.id))
+      .limit(pageLimit);
+
+    const vis = await filterVisibleReels(rows, req.userId!);
+    const built = await buildReels(vis, req.userId);
+    res.json(ListReelsResponse.parse(built));
+    return;
+  }
+
+  // General feed scan
   const SCAN_BATCH = 50;
   const MAX_SCANS = 8;
   const visibleRows: (typeof reelsTable.$inferSelect)[] = [];
@@ -57,7 +88,13 @@ router.get("/reels", requireAuth, async (req, res): Promise<void> => {
     const rows = await db
       .select()
       .from(reelsTable)
-      .where(scanCursor ? lt(reelsTable.id, scanCursor) : undefined)
+      .where(
+        and(
+          scanCursor ? lt(reelsTable.id, scanCursor) : undefined,
+          isNull(reelsTable.deletedAt),
+          eq(reelsTable.hidden, false)
+        )
+      )
       .orderBy(desc(reelsTable.id))
       .limit(SCAN_BATCH);
     if (rows.length === 0) break;
@@ -104,12 +141,78 @@ router.get("/reels/:id", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: params.error.message });
     return;
   }
+  const [row] = await db
+    .select()
+    .from(reelsTable)
+    .where(and(eq(reelsTable.id, params.data.id), isNull(reelsTable.deletedAt)));
+  if (!row) {
+    res.status(404).json({ error: "Reel not found" });
+    return;
+  }
   const built = await buildReelById(params.data.id, req.userId);
   if (!built || !(await canViewReel(built.author.id, req.userId!))) {
     res.status(404).json({ error: "Reel not found" });
     return;
   }
   res.json(GetReelResponse.parse(built));
+});
+
+// Edit reel caption (own reel only)
+router.patch("/reels/:id", requireAuth, async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid reel id" });
+    return;
+  }
+  const [reel] = await db
+    .select()
+    .from(reelsTable)
+    .where(and(eq(reelsTable.id, id), isNull(reelsTable.deletedAt)));
+  if (!reel) {
+    res.status(404).json({ error: "Reel not found" });
+    return;
+  }
+  if (reel.authorId !== req.userId) {
+    res.status(403).json({ error: "You can only edit your own reel" });
+    return;
+  }
+  const caption = typeof req.body.caption === "string" ? req.body.caption : undefined;
+  if (caption === undefined) {
+    res.status(400).json({ error: "Caption is required" });
+    return;
+  }
+  await db
+    .update(reelsTable)
+    .set({ caption })
+    .where(eq(reelsTable.id, id));
+  const built = await buildReelById(id, req.userId);
+  res.json(built);
+});
+
+// Delete reel to trash (own reel only - auto-purged after 30 days)
+router.delete("/reels/:id", requireAuth, async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid reel id" });
+    return;
+  }
+  const [reel] = await db
+    .select()
+    .from(reelsTable)
+    .where(and(eq(reelsTable.id, id), isNull(reelsTable.deletedAt)));
+  if (!reel) {
+    res.status(404).json({ error: "Reel not found" });
+    return;
+  }
+  if (reel.authorId !== req.userId) {
+    res.status(403).json({ error: "You can only delete your own reel" });
+    return;
+  }
+  await db
+    .update(reelsTable)
+    .set({ deletedAt: new Date() })
+    .where(eq(reelsTable.id, id));
+  res.json({ success: true, message: "Reel moved to trash (auto-deletes in 30 days)" });
 });
 
 const likeReelHandler = async (

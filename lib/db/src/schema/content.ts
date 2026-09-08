@@ -109,6 +109,7 @@ export const reelsTable = pgTable("reels", {
   // Moderation / curation flags (managed from the admin panel).
   hidden: boolean("hidden").notNull().default(false),
   featured: boolean("featured").notNull().default(false),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

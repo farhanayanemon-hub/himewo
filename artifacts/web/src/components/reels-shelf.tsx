@@ -35,17 +35,7 @@ function ReelCard({ reel }: { reel: Reel }) {
     };
   }, [reel.videoUrl]);
 
-  const handleClick = async () => {
-    // Track reel watch for daily task (20 points)
-    try {
-      await fetch("/api/earnings/reels/track", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
-    } catch {
-      // ignore track error
-    }
+  const handleClick = () => {
     setLocation("/reels");
   };
 

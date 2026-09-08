@@ -427,7 +427,7 @@ function RulesSection({
   rate: number;
 }) {
   const rules = [
-    { label: "Watch a Reel", points: (summary.rewards as any)?.reel ?? 20 },
+    { label: "Create a Reel", points: (summary.rewards as any)?.reel ?? 20 },
     { label: "Create a post", points: summary.rewards.post },
     { label: "React to a post", points: summary.rewards.like },
     { label: "Comment on a post", points: summary.rewards.comment },

@@ -11,8 +11,9 @@ import {
   getGetUserQueryKey,
   type Profile,
   type Post,
+  type Reel,
 } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { PhotoActionMenu, usePhotoEditor } from "@/components/photo-editor";
 import { PostCard } from "@/components/post-card";
@@ -20,6 +21,8 @@ import { VerifiedBadge } from "@/components/verified-badge";
 import { PostComposer } from "@/components/post-composer";
 import { CreateAlbumDialog } from "@/components/create-album-dialog";
 import { MediaLightbox } from "@/components/media-grid";
+import { parseReelOverlays } from "@/pages/reels";
+import { Button } from "@/components/ui/button";
 import {
   Loader2,
   Briefcase,
@@ -33,6 +36,9 @@ import {
   Phone,
   Lock,
   Images,
+  Play,
+  MessageCircle,
+  Plus,
 } from "lucide-react";
 
 function IntroRow({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
@@ -64,6 +70,7 @@ export function ProfileView({
   const updateProfile = useUpdateMyProfile();
   const [createAlbumOpen, setCreateAlbumOpen] = useState(false);
   const [photoOpen, setPhotoOpen] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<"posts" | "reels" | "photos">("posts");
 
   const afterPhotoSave = async (data: { avatarUrl?: string; coverUrl?: string }) => {
     await updateProfile.mutateAsync({ data });
@@ -100,6 +107,17 @@ export function ProfileView({
       enabled: !!userId && !showLocked,
       queryKey: getGetUserAlbumsQueryKey(userId),
     },
+  });
+
+  // Fetch reels uploaded by this user
+  const { data: userReels, isLoading: reelsLoading } = useQuery<Reel[]>({
+    queryKey: ["user-reels", userId],
+    queryFn: async () => {
+      const res = await fetch(`/api/reels?authorId=${encodeURIComponent(userId)}&limit=50`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!userId && !showLocked,
   });
 
   const photoUrls = (posts ?? [])
@@ -176,6 +194,47 @@ export function ProfileView({
             <div className="flex items-center justify-center sm:justify-end gap-2 pb-1 flex-wrap">{headerActions}</div>
           </div>
         </div>
+
+        {/* Profile Tabs Navigation */}
+        <div className="flex items-center gap-2 border-t border-border/60 px-6 pt-1 overflow-x-auto">
+          <button
+            onClick={() => setActiveTab("posts")}
+            className={`px-4 py-3 font-semibold text-sm transition-all border-b-2 flex items-center gap-1.5 ${
+              activeTab === "posts"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <span>Posts</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("reels")}
+            className={`px-4 py-3 font-semibold text-sm transition-all border-b-2 flex items-center gap-1.5 ${
+              activeTab === "reels"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Play className="w-3.5 h-3.5 fill-current" />
+            <span>Reels</span>
+            {userReels && userReels.length > 0 && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
+                {userReels.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("photos")}
+            className={`px-4 py-3 font-semibold text-sm transition-all border-b-2 flex items-center gap-1.5 ${
+              activeTab === "photos"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Images className="w-3.5 h-3.5" />
+            <span>Photos</span>
+          </button>
+        </div>
       </div>
 
       {showLocked ? (
@@ -189,7 +248,7 @@ export function ProfileView({
           </p>
         </div>
       ) : (
-      /* Two-column: Intro + Friends + Photos | Posts */
+      /* Two-column: Intro + Friends + Photos + Reels | Main Tab Content */
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-start">
         <div className="lg:col-span-2 space-y-4">
           {/* Intro */}
@@ -252,7 +311,7 @@ export function ProfileView({
             )}
           </div>
 
-          {/* Groups */}
+          {/* Circles / Groups */}
           {isOwnProfile && (
             <div className="aurora-glass-card rounded-2xl p-4">
               <div className="flex items-center justify-between">
@@ -267,9 +326,66 @@ export function ProfileView({
             </div>
           )}
 
-          {/* Photos */}
+          {/* Reels Sidebar Widget */}
           <div className="aurora-glass-card rounded-2xl p-4">
-            <h2 className="font-bold text-lg mb-3">Photos</h2>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Play className="w-4 h-4 text-primary fill-primary" />
+                <h2 className="font-bold text-lg">Reels</h2>
+              </div>
+              {userReels && userReels.length > 0 && (
+                <button
+                  onClick={() => setActiveTab("reels")}
+                  className="text-primary text-sm hover:underline font-medium"
+                >
+                  See all ({userReels.length})
+                </button>
+              )}
+            </div>
+            {reelsLoading ? (
+              <div className="py-4 text-center">
+                <Loader2 className="w-5 h-5 animate-spin mx-auto text-primary" />
+              </div>
+            ) : userReels && userReels.length > 0 ? (
+              <div className="grid grid-cols-3 gap-2">
+                {userReels.slice(0, 6).map((r) => (
+                  <Link key={r.id} href={`/reels?id=${r.id}`}>
+                    <div className="aspect-[9/16] rounded-xl overflow-hidden relative bg-black group cursor-pointer shadow-sm hover:shadow-md transition-all">
+                      <video
+                        src={r.videoUrl}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        muted
+                        preload="metadata"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+                      <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 text-[11px] font-bold text-white drop-shadow">
+                        <Play className="w-3 h-3 fill-white" />
+                        <span>{r.likeCount ?? 0}</span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">
+                {isOwnProfile ? "No reels yet. Share short videos with your followers!" : "No reels yet."}
+              </p>
+            )}
+          </div>
+
+          {/* Photos Sidebar */}
+          <div className="aurora-glass-card rounded-2xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-bold text-lg">Photos</h2>
+              {photoUrls.length > 0 && (
+                <button
+                  onClick={() => setActiveTab("photos")}
+                  className="text-primary text-sm hover:underline font-medium"
+                >
+                  See all
+                </button>
+              )}
+            </div>
             {photoUrls.length > 0 ? (
               <div className="grid grid-cols-3 gap-2">
                 {photoUrls.map((url, i) => (
@@ -295,14 +411,14 @@ export function ProfileView({
             )}
           </div>
 
-          {/* Albums */}
+          {/* Albums Sidebar */}
           <div className="aurora-glass-card rounded-2xl p-4">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-bold text-lg">Albums</h2>
               {isOwnProfile && (
                 <button
                   onClick={() => setCreateAlbumOpen(true)}
-                  className="text-primary text-sm hover:underline"
+                  className="text-primary text-sm hover:underline font-medium"
                 >
                   Create album
                 </button>
@@ -351,24 +467,187 @@ export function ProfileView({
           )}
         </div>
 
-        {/* Posts */}
+        {/* Right Main Content Column */}
         <div className="lg:col-span-3 space-y-4">
-          {isOwnProfile && (
-            <PostComposer
-              onPosted={() =>
-                queryClient.invalidateQueries({ queryKey: getGetUserPostsQueryKey(userId) })
-              }
-            />
+          {/* TAB 1: POSTS */}
+          {activeTab === "posts" && (
+            <>
+              {isOwnProfile && (
+                <PostComposer
+                  onPosted={() =>
+                    queryClient.invalidateQueries({ queryKey: getGetUserPostsQueryKey(userId) })
+                  }
+                />
+              )}
+              <h2 className="font-bold text-lg px-2">Posts</h2>
+              {postsLoading ? (
+                <div className="py-4 text-center">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
+                </div>
+              ) : posts?.length === 0 ? (
+                <div className="text-center py-10 aurora-glass-card rounded-2xl text-muted-foreground">
+                  {isOwnProfile ? "You haven't posted anything yet." : "No posts yet"}
+                </div>
+              ) : (
+                posts?.map((post) => <PostCard key={post.id} post={post} />)
+              )}
+            </>
           )}
-          <h2 className="font-bold text-lg px-2">Posts</h2>
-          {postsLoading ? (
-            <div className="py-4 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" /></div>
-          ) : posts?.length === 0 ? (
-            <div className="text-center py-10 aurora-glass-card rounded-2xl text-muted-foreground">
-              {isOwnProfile ? "You haven't posted anything yet." : "No posts yet"}
+
+          {/* TAB 2: REELS */}
+          {activeTab === "reels" && (
+            <div className="aurora-glass-card rounded-2xl p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="font-bold text-xl flex items-center gap-2">
+                  <Play className="w-5 h-5 text-primary fill-primary" />
+                  <span>Reels</span>
+                  {userReels && (
+                    <span className="text-sm font-normal text-muted-foreground">({userReels.length})</span>
+                  )}
+                </h2>
+                {isOwnProfile && (
+                  <Link href="/reels">
+                    <Button size="sm" className="rounded-xl gap-1.5">
+                      <Plus className="w-4 h-4" />
+                      <span>Create Reel</span>
+                    </Button>
+                  </Link>
+                )}
+              </div>
+
+              {reelsLoading ? (
+                <div className="py-12 text-center">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+                  <p className="text-sm text-muted-foreground mt-2">Loading reels...</p>
+                </div>
+              ) : !userReels || userReels.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Play className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
+                  <p className="font-medium text-foreground">No reels uploaded yet</p>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                    {isOwnProfile
+                      ? "Share short, fun videos with your friends and followers."
+                      : `${profile.displayName} hasn't uploaded any reels yet.`}
+                  </p>
+                  {isOwnProfile && (
+                    <Link href="/reels">
+                      <Button className="rounded-xl mt-4 gap-2">
+                        <Plus className="w-4 h-4" /> Create First Reel
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
+                  {userReels.map((reel) => {
+                    const cleanCaption = parseReelOverlays(reel.caption).cleanCaption;
+                    return (
+                      <Link key={reel.id} href={`/reels?id=${reel.id}`}>
+                        <div className="group relative aspect-[9/16] rounded-2xl overflow-hidden bg-black cursor-pointer shadow-md hover:shadow-xl transition-all duration-300">
+                          <video
+                            src={reel.videoUrl}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            muted
+                            preload="metadata"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/20" />
+
+                          {/* Bottom Caption & Stats */}
+                          <div className="absolute bottom-3 left-3 right-3 text-white space-y-1">
+                            {cleanCaption && (
+                              <p className="text-xs line-clamp-2 drop-shadow font-medium">
+                                {cleanCaption}
+                              </p>
+                            )}
+                            <div className="flex items-center justify-between text-[11px] text-white/90 pt-1 font-semibold">
+                              <span className="flex items-center gap-1">
+                                <Heart className="w-3.5 h-3.5 fill-white" />
+                                {reel.likeCount ?? 0}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <MessageCircle className="w-3.5 h-3.5" />
+                                {reel.commentCount ?? 0}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Center Play Icon on Hover */}
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
+                            <div className="w-12 h-12 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center text-white shadow-xl">
+                              <Play className="w-6 h-6 fill-white ml-0.5" />
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          ) : (
-            posts?.map((post) => <PostCard key={post.id} post={post} />)
+          )}
+
+          {/* TAB 3: PHOTOS */}
+          {activeTab === "photos" && (
+            <div className="aurora-glass-card rounded-2xl p-5 space-y-6">
+              <h2 className="font-bold text-xl flex items-center gap-2">
+                <Images className="w-5 h-5 text-primary" />
+                <span>Photos & Albums</span>
+              </h2>
+
+              {photoUrls.length > 0 ? (
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground mb-3">All Photos</h3>
+                  <div className="grid grid-cols-3 gap-2.5">
+                    {photoUrls.map((url, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setPhotoOpen(i)}
+                        className="aspect-square rounded-xl overflow-hidden bg-muted group cursor-pointer"
+                      >
+                        <img
+                          src={url}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          alt="Photo"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">No photos uploaded yet.</p>
+              )}
+
+              {albums && albums.length > 0 && (
+                <div className="pt-4 border-t border-border">
+                  <h3 className="font-semibold text-sm text-muted-foreground mb-3">Albums</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {albums.map((a) => (
+                      <Link key={a.id} href={`/albums/${a.id}`}>
+                        <div className="cursor-pointer group">
+                          {a.coverUrl ? (
+                            <img
+                              src={a.coverUrl}
+                              className="w-full aspect-square rounded-xl object-cover bg-muted group-hover:opacity-90 transition-opacity"
+                              alt={a.name}
+                            />
+                          ) : (
+                            <div className="w-full aspect-square rounded-xl bg-muted flex items-center justify-center">
+                              <Images className="w-8 h-8 text-muted-foreground" />
+                            </div>
+                          )}
+                          <p className="text-sm font-medium mt-1 truncate group-hover:underline">
+                            {a.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {a.photoCount} photo{a.photoCount === 1 ? "" : "s"}
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>

@@ -37,6 +37,13 @@ import {
   Trash2,
   Sparkles,
   Move,
+  MoreHorizontal,
+  Pencil,
+  ThumbsUp,
+  ThumbsDown,
+  Flag,
+  EyeOff,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,6 +53,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Sheet,
   SheetContent,
@@ -939,14 +957,22 @@ function ReelCard({
   isActive,
   isGlobalMuted,
   onToggleGlobalMute,
+  onNext,
+  onHideReel,
+  onHideAuthor,
 }: {
   reel: Reel;
   isActive: boolean;
   isGlobalMuted: boolean;
   onToggleGlobalMute: () => void;
+  onNext?: () => void;
+  onHideReel?: (reelId: number) => void;
+  onHideAuthor?: (authorId: string) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { user } = useAuth();
+  const isAuthor = Boolean(user && (user.id === reel.author.id || user.username === reel.author.username));
 
   // Optimistic UI states
   const [liked, setLiked] = useState(reel.viewerHasLiked ?? false);
@@ -970,6 +996,22 @@ function ReelCard({
   // Modal states
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+
+  // Edit Caption state
+  const [editOpen, setEditOpen] = useState(false);
+  const [editCaption, setEditCaption] = useState(parseReelOverlays(reel.caption).cleanCaption);
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Delete / Trash state
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Report state
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportDetails, setReportDetails] = useState("");
+  const [isReporting, setIsReporting] = useState(false);
 
   const queryClient = useQueryClient();
   const likeMutation = useLikeReel();
@@ -983,6 +1025,7 @@ function ReelCard({
     setLikeCount(reel.likeCount ?? 0);
     setSaved(reel.viewerHasSaved ?? false);
     setCommentCount(reel.commentCount ?? 0);
+    setEditCaption(parseReelOverlays(reel.caption).cleanCaption);
   }, [reel]);
 
   // Handle Play/Pause when active state changes
@@ -1138,6 +1181,136 @@ function ReelCard({
       );
     }
   }, [saved, reel.id, saveMutation, unsaveMutation, queryClient]);
+
+  // Edit caption handler
+  const handleSaveCaption = async () => {
+    if (!editCaption.trim()) {
+      toast({ title: "Caption cannot be empty", variant: "destructive" });
+      return;
+    }
+    setIsEditing(true);
+    try {
+      const { overlays } = parseReelOverlays(reel.caption);
+      const fullCaption = serializeReelCaption(editCaption.trim(), overlays);
+      const res = await fetch(`/api/reels/${reel.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ caption: fullCaption }),
+      });
+      if (!res.ok) throw new Error("Failed to update caption");
+      queryClient.setQueryData<Reel[]>(getListReelsQueryKey(), (old) => {
+        if (!old) return old;
+        return old.map((r) => (r.id === reel.id ? { ...r, caption: fullCaption } : r));
+      });
+      queryClient.invalidateQueries({ queryKey: ["user-reels"] });
+      setEditOpen(false);
+      setMoreMenuOpen(false);
+      toast({ title: "Caption updated successfully" });
+    } catch (err: any) {
+      toast({ title: err.message || "Failed to update caption", variant: "destructive" });
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
+  // Move to trash handler
+  const handleMoveToTrash = async () => {
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/reels/${reel.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete reel");
+      queryClient.setQueryData<Reel[]>(getListReelsQueryKey(), (old) => {
+        if (!old) return old;
+        return old.filter((r) => r.id !== reel.id);
+      });
+      queryClient.invalidateQueries({ queryKey: ["user-reels"] });
+      setDeleteOpen(false);
+      setMoreMenuOpen(false);
+      toast({
+        title: "Reel moved to trash",
+        description: "Items in trash are automatically deleted after 30 days.",
+      });
+      if (onHideReel) onHideReel(reel.id);
+      if (onNext) onNext();
+    } catch (err: any) {
+      toast({ title: err.message || "Failed to delete reel", variant: "destructive" });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Interested handler
+  const handleInterested = () => {
+    setMoreMenuOpen(false);
+    toast({
+      title: "Thanks for your feedback!",
+      description: "We will recommend more reels like this to you.",
+    });
+  };
+
+  // Not Interested handler
+  const handleNotInterested = () => {
+    setMoreMenuOpen(false);
+    toast({
+      title: "Reel hidden",
+      description: "We will show fewer reels like this in your feed.",
+    });
+    if (onHideReel) onHideReel(reel.id);
+    if (onNext) onNext();
+  };
+
+  // Copy link handler
+  const handleCopyLink = () => {
+    const url = `${window.location.origin}/reels?id=${reel.id}`;
+    navigator.clipboard.writeText(url);
+    setMoreMenuOpen(false);
+    toast({ title: "Link copied to clipboard" });
+  };
+
+  // Report handler
+  const handleSubmitReport = async () => {
+    if (!reportReason) {
+      toast({ title: "Please select a reason for reporting", variant: "destructive" });
+      return;
+    }
+    setIsReporting(true);
+    try {
+      const res = await fetch("/api/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          targetType: "reel",
+          targetId: String(reel.id),
+          reason: reportReason,
+          details: reportDetails.trim() || undefined,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to submit report");
+      setReportOpen(false);
+      setMoreMenuOpen(false);
+      toast({
+        title: "Report submitted",
+        description: "Thank you for helping keep HiMewo safe. Our moderation team will review this reel.",
+      });
+    } catch (err: any) {
+      toast({ title: err.message || "Failed to submit report", variant: "destructive" });
+    } finally {
+      setIsReporting(false);
+    }
+  };
+
+  // Hide all from author handler
+  const handleHideAllFromAuthor = () => {
+    setMoreMenuOpen(false);
+    toast({
+      title: `All reels from @${reel.author.username} hidden`,
+      description: "You will not see reels from this creator in your feed.",
+    });
+    if (onHideAuthor) onHideAuthor(reel.author.id);
+    if (onNext) onNext();
+  };
 
   return (
     <div
@@ -1328,6 +1501,20 @@ function ReelCard({
               Share
             </span>
           </div>
+
+          {/* 3-Dot More Options Button */}
+          <div className="flex flex-col items-center">
+            <button
+              onClick={() => setMoreMenuOpen(true)}
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md flex items-center justify-center text-white transition-all active:scale-75 shadow-lg group/btn"
+              title="More options"
+            >
+              <MoreHorizontal className="w-6 h-6 text-white group-hover/btn:scale-110 transition-transform" />
+            </button>
+            <span className="text-white text-xs font-bold mt-1 drop-shadow-md">
+              More
+            </span>
+          </div>
         </div>
 
         {/* Video Bottom Progress Bar */}
@@ -1352,6 +1539,306 @@ function ReelCard({
         open={shareOpen}
         onOpenChange={setShareOpen}
       />
+
+      {/* Facebook-style 3-Dot More Options Dialog */}
+      <Dialog open={moreMenuOpen} onOpenChange={setMoreMenuOpen}>
+        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border rounded-2xl p-0 overflow-hidden shadow-2xl z-50">
+          <div className="p-4 border-b border-border/60">
+            <h3 className="font-bold text-base text-foreground text-center">Reel Options</h3>
+          </div>
+          <div className="p-2 space-y-1">
+            {isAuthor ? (
+              <>
+                {/* Own Reel Actions */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMoreMenuOpen(false);
+                    setEditCaption(parseReelOverlays(reel.caption).cleanCaption);
+                    setEditOpen(true);
+                  }}
+                  className="w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl hover:bg-muted/70 text-foreground transition-colors text-left"
+                >
+                  <Pencil className="w-5 h-5 text-primary shrink-0" />
+                  <div>
+                    <div className="font-semibold text-sm">Edit caption</div>
+                    <div className="text-xs text-muted-foreground">Modify your reel description or hashtags</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMoreMenuOpen(false);
+                    setDeleteOpen(true);
+                  }}
+                  className="w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl hover:bg-destructive/10 text-destructive transition-colors text-left"
+                >
+                  <Trash2 className="w-5 h-5 text-destructive shrink-0" />
+                  <div>
+                    <div className="font-semibold text-sm">Move to Trash</div>
+                    <div className="text-xs text-destructive/80">Reel will be permanently deleted after 30 days</div>
+                  </div>
+                </button>
+
+                <div className="my-1 border-t border-border/50" />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleToggleSave();
+                    setMoreMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl hover:bg-muted/70 text-foreground transition-colors text-left"
+                >
+                  <Bookmark className={`w-5 h-5 shrink-0 ${saved ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                  <div>
+                    <div className="font-semibold text-sm">{saved ? "Remove from Saved" : "Save Reel"}</div>
+                    <div className="text-xs text-muted-foreground">Add this to your saved collection</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl hover:bg-muted/70 text-foreground transition-colors text-left"
+                >
+                  <Copy className="w-5 h-5 text-muted-foreground shrink-0" />
+                  <div>
+                    <div className="font-semibold text-sm">Copy link</div>
+                    <div className="text-xs text-muted-foreground">Share this reel via URL</div>
+                  </div>
+                </button>
+
+                <div className="px-3.5 py-2.5 mt-1 bg-muted/40 rounded-xl flex items-center gap-2 text-xs text-muted-foreground">
+                  <Globe className="w-4 h-4 shrink-0 text-primary" />
+                  <span>Audience: <b>Public</b> · Anyone on or off HiMewo can watch</span>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Other Creator's Reel Actions */}
+                <button
+                  type="button"
+                  onClick={handleInterested}
+                  className="w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl hover:bg-muted/70 text-foreground transition-colors text-left"
+                >
+                  <ThumbsUp className="w-5 h-5 text-emerald-500 shrink-0" />
+                  <div>
+                    <div className="font-semibold text-sm">Interested</div>
+                    <div className="text-xs text-muted-foreground">We'll show you more reels like this</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleNotInterested}
+                  className="w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl hover:bg-muted/70 text-foreground transition-colors text-left"
+                >
+                  <ThumbsDown className="w-5 h-5 text-amber-500 shrink-0" />
+                  <div>
+                    <div className="font-semibold text-sm">Not interested</div>
+                    <div className="text-xs text-muted-foreground">Hide this reel and recommend fewer like it</div>
+                  </div>
+                </button>
+
+                <div className="my-1 border-t border-border/50" />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleToggleSave();
+                    setMoreMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl hover:bg-muted/70 text-foreground transition-colors text-left"
+                >
+                  <Bookmark className={`w-5 h-5 shrink-0 ${saved ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                  <div>
+                    <div className="font-semibold text-sm">{saved ? "Remove from Saved" : "Save Reel"}</div>
+                    <div className="text-xs text-muted-foreground">Save to your bookmarked collection</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl hover:bg-muted/70 text-foreground transition-colors text-left"
+                >
+                  <Copy className="w-5 h-5 text-muted-foreground shrink-0" />
+                  <div>
+                    <div className="font-semibold text-sm">Copy link</div>
+                    <div className="text-xs text-muted-foreground">Copy direct link to this reel</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleHideAllFromAuthor}
+                  className="w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl hover:bg-muted/70 text-foreground transition-colors text-left"
+                >
+                  <EyeOff className="w-5 h-5 text-muted-foreground shrink-0" />
+                  <div>
+                    <div className="font-semibold text-sm">Hide all from @{reel.author.username}</div>
+                    <div className="text-xs text-muted-foreground">Stop seeing reels from this creator</div>
+                  </div>
+                </button>
+
+                <div className="my-1 border-t border-border/50" />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMoreMenuOpen(false);
+                    setReportReason("");
+                    setReportDetails("");
+                    setReportOpen(true);
+                  }}
+                  className="w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl hover:bg-destructive/10 text-destructive transition-colors text-left"
+                >
+                  <Flag className="w-5 h-5 text-destructive shrink-0" />
+                  <div>
+                    <div className="font-semibold text-sm">Report Reel</div>
+                    <div className="text-xs text-destructive/80">Help us keep the community safe and clean</div>
+                  </div>
+                </button>
+              </>
+            )}
+          </div>
+          <div className="p-3 bg-muted/20 border-t border-border/60 flex justify-end">
+            <Button variant="ghost" size="sm" onClick={() => setMoreMenuOpen(false)} className="rounded-xl w-full">
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Caption Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-lg bg-card rounded-2xl p-6 shadow-2xl z-50">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <Pencil className="w-5 h-5 text-primary" />
+              <span>Edit Reel Caption</span>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <Textarea
+              value={editCaption}
+              onChange={(e) => setEditCaption(e.target.value)}
+              placeholder="Write a caption for your reel..."
+              rows={4}
+              className="w-full rounded-xl bg-muted/40 border-border resize-none"
+            />
+            <p className="text-xs text-muted-foreground">
+              Tip: You can edit the caption and hashtags. Video and audio cannot be modified.
+            </p>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setEditOpen(false)} disabled={isEditing} className="rounded-xl">
+              Cancel
+            </Button>
+            <Button onClick={handleSaveCaption} disabled={isEditing} className="rounded-xl gap-2">
+              {isEditing && <Loader2 className="w-4 h-4 animate-spin" />}
+              <span>Save Changes</span>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Move to Trash Confirmation Dialog */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent className="sm:max-w-md bg-card rounded-2xl p-6 shadow-2xl z-50">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-lg font-bold flex items-center gap-2 text-destructive">
+              <Trash2 className="w-5 h-5 text-destructive" />
+              <span>Move Reel to Trash?</span>
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-muted-foreground pt-2">
+              This reel will be removed from your profile and the public feed immediately. Items moved to trash are permanently deleted after <b>30 days</b>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 gap-2 sm:gap-0">
+            <AlertDialogCancel disabled={isDeleting} className="rounded-xl">
+              Keep Reel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleMoveToTrash}
+              disabled={isDeleting}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-xl gap-2"
+            >
+              {isDeleting && <Loader2 className="w-4 h-4 animate-spin" />}
+              <span>Move to Trash</span>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Report Reel Dialog */}
+      <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+        <DialogContent className="sm:max-w-md bg-card rounded-2xl p-6 shadow-2xl z-50 max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold flex items-center gap-2">
+              <Flag className="w-5 h-5 text-destructive" />
+              <span>Report Reel</span>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-xs text-muted-foreground">
+              Please select why you are reporting this reel:
+            </p>
+            <div className="space-y-1.5">
+              {[
+                { id: "spam", label: "Spam or misleading" },
+                { id: "nudity", label: "Nudity or sexual content" },
+                { id: "harassment", label: "Harassment or hate speech" },
+                { id: "violence", label: "Violence or dangerous acts" },
+                { id: "false_info", label: "False information or fraud" },
+                { id: "copyright", label: "Intellectual property infringement" },
+                { id: "other", label: "Something else" },
+              ].map((reason) => (
+                <button
+                  key={reason.id}
+                  type="button"
+                  onClick={() => setReportReason(reason.label)}
+                  className={`w-full text-left px-3.5 py-2.5 rounded-xl border transition-all text-sm flex items-center justify-between ${
+                    reportReason === reason.label
+                      ? "border-primary bg-primary/10 font-semibold text-primary"
+                      : "border-border hover:bg-muted/60 text-foreground"
+                  }`}
+                >
+                  <span>{reason.label}</span>
+                  {reportReason === reason.label && <Check className="w-4 h-4 text-primary" />}
+                </button>
+              ))}
+            </div>
+            <div className="pt-2">
+              <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                Additional details (optional):
+              </label>
+              <Textarea
+                value={reportDetails}
+                onChange={(e) => setReportDetails(e.target.value)}
+                placeholder="Describe what is wrong with this reel..."
+                rows={2}
+                className="w-full rounded-xl bg-muted/40 border-border text-sm resize-none"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0 mt-2">
+            <Button variant="outline" onClick={() => setReportOpen(false)} disabled={isReporting} className="rounded-xl">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmitReport}
+              disabled={isReporting || !reportReason}
+              className="rounded-xl gap-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+            >
+              {isReporting && <Loader2 className="w-4 h-4 animate-spin" />}
+              <span>Submit Report</span>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -1364,7 +1851,13 @@ export default function ReelsPage() {
   const { data: reels, isLoading } = useListReels();
   const [activeIndex, setActiveIndex] = useState(0);
   const [globalMuted, setGlobalMuted] = useState(false);
+  const [hiddenReelIds, setHiddenReelIds] = useState<number[]>([]);
+  const [hiddenAuthorIds, setHiddenAuthorIds] = useState<string[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const filteredReels = (reels ?? []).filter(
+    (r) => !hiddenReelIds.includes(r.id) && !hiddenAuthorIds.includes(r.author.id)
+  );
 
   // IntersectionObserver to determine active reel on scroll
   useEffect(() => {
@@ -1390,20 +1883,33 @@ export default function ReelsPage() {
 
     cards.forEach((card) => observer.observe(card));
     return () => observer.disconnect();
-  }, [reels]);
+  }, [filteredReels]);
 
   // Scroll to index
   const scrollToIndex = useCallback(
     (index: number) => {
       const container = containerRef.current;
-      if (!container || !reels || index < 0 || index >= reels.length) return;
+      if (!container || !filteredReels || index < 0 || index >= filteredReels.length) return;
       const cards = container.querySelectorAll(".snap-start");
       if (cards[index]) {
         cards[index].scrollIntoView({ behavior: "smooth", block: "center" });
       }
     },
-    [reels],
+    [filteredReels],
   );
+
+  // Jump to specific reel if ?id=... query parameter is present in URL
+  useEffect(() => {
+    if (!filteredReels || filteredReels.length === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const targetId = params.get("id");
+    if (targetId) {
+      const idx = filteredReels.findIndex((r) => String(r.id) === targetId);
+      if (idx !== -1) {
+        scrollToIndex(idx);
+      }
+    }
+  }, [reels, scrollToIndex]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -1436,7 +1942,7 @@ export default function ReelsPage() {
         </div>
 
         {/* Desktop Side Navigation Chevrons */}
-        {reels && reels.length > 1 && (
+        {filteredReels && filteredReels.length > 1 && (
           <div className="hidden lg:flex flex-col gap-3 absolute right-8 top-1/2 -translate-y-1/2 z-20">
             <Button
               variant="secondary"
@@ -1451,7 +1957,7 @@ export default function ReelsPage() {
             <Button
               variant="secondary"
               size="icon"
-              disabled={activeIndex === reels.length - 1}
+              disabled={activeIndex === filteredReels.length - 1}
               onClick={() => scrollToIndex(activeIndex + 1)}
               className="w-10 h-10 rounded-full shadow-lg bg-background/80 hover:bg-background backdrop-blur-md disabled:opacity-30 border border-border"
               title="Next Reel (Down Arrow)"
@@ -1466,7 +1972,7 @@ export default function ReelsPage() {
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
             <p className="text-sm font-medium">Loading reels...</p>
           </div>
-        ) : !reels || reels.length === 0 ? (
+        ) : !filteredReels || filteredReels.length === 0 ? (
           <div className="flex flex-col items-center justify-center text-muted-foreground gap-4 max-w-sm text-center p-6 bg-card border border-border rounded-2xl shadow-sm">
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary">
               <Play className="w-8 h-8 fill-primary" />
@@ -1484,13 +1990,16 @@ export default function ReelsPage() {
             ref={containerRef}
             className="h-full w-full overflow-y-scroll snap-y snap-mandatory scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
-            {reels.map((reel, idx) => (
+            {filteredReels.map((reel, idx) => (
               <ReelCard
                 key={reel.id}
                 reel={reel}
                 isActive={idx === activeIndex}
                 isGlobalMuted={globalMuted}
                 onToggleGlobalMute={() => setGlobalMuted((m) => !m)}
+                onNext={() => scrollToIndex(idx + 1)}
+                onHideReel={(id) => setHiddenReelIds((prev) => [...prev, id])}
+                onHideAuthor={(authorId) => setHiddenAuthorIds((prev) => [...prev, authorId])}
               />
             ))}
           </div>
