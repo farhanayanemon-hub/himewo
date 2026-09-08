@@ -120,11 +120,21 @@ export function ProfileView({
     enabled: !!userId && !showLocked,
   });
 
-  const photoUrls = (posts ?? [])
+  // Fetch all photos uploaded by this user (posts + albums)
+  const { data: userPhotosData } = useQuery<{ photos: { url: string; createdAt: string }[] }>({
+    queryKey: ["user-uploaded-photos", userId],
+    queryFn: async () => {
+      const res = await fetch(`/api/users/${encodeURIComponent(userId)}/photos`);
+      if (!res.ok) return { photos: [] };
+      return res.json();
+    },
+    enabled: !!userId && !showLocked,
+  });
+
+  const photoUrls = userPhotosData?.photos?.map((p) => p.url) ?? (posts ?? [])
     .flatMap((p) => p.media ?? [])
     .filter((m) => m.type === "image")
-    .map((m) => m.url)
-    .slice(0, 9);
+    .map((m) => m.url);
 
   const hasIntro =
     profile.bio ||
@@ -388,7 +398,7 @@ export function ProfileView({
             </div>
             {photoUrls.length > 0 ? (
               <div className="grid grid-cols-3 gap-2">
-                {photoUrls.map((url, i) => (
+                {photoUrls.slice(0, 9).map((url, i) => (
                   <button key={i} onClick={() => setPhotoOpen(i)}>
                     <img
                       src={url}

@@ -5,6 +5,8 @@ import {
   albumPhotosTable,
   photoTagsTable,
   profilesTable,
+  postsTable,
+  postMediaTable,
 } from "@workspace/db";
 import { and, eq, desc, asc, inArray } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
@@ -407,6 +409,66 @@ router.delete(
     }
     await db.delete(photoTagsTable).where(eq(photoTagsTable.id, found.tagId));
     res.sendStatus(204);
+  },
+);
+
+// Get all uploaded photos by a user (posts + albums)
+router.get(
+  "/users/:id/photos",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const userId = req.params.id;
+    if (!userId) {
+      res.status(400).json({ error: "Missing user id" });
+      return;
+    }
+    if (userId !== req.userId && !(await canViewProfileDetails(userId, req.userId!))) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    try {
+      // 1. Photos attached to posts authored by this user
+      const postPhotos = await db
+        .select({
+          url: postMediaTable.url,
+          createdAt: postsTable.createdAt,
+        })
+        .from(postMediaTable)
+        .innerJoin(postsTable, eq(postsTable.id, postMediaTable.postId))
+        .where(
+          and(
+            eq(postsTable.authorId, userId),
+            eq(postMediaTable.type, "image")
+          )
+        )
+        .orderBy(desc(postsTable.createdAt));
+
+      // 2. Photos from user's custom albums
+      const albumPhotos = await db
+        .select({
+          url: albumPhotosTable.url,
+          createdAt: albumPhotosTable.createdAt,
+        })
+        .from(albumPhotosTable)
+        .innerJoin(albumsTable, eq(albumsTable.id, albumPhotosTable.albumId))
+        .where(eq(albumsTable.ownerId, userId))
+        .orderBy(desc(albumPhotosTable.createdAt));
+
+      // Combine and deduplicate
+      const seen = new Set<string>();
+      const all: { url: string; createdAt: string }[] = [];
+      for (const item of [...postPhotos, ...albumPhotos]) {
+        if (item.url && !seen.has(item.url)) {
+          seen.add(item.url);
+          all.push({ url: item.url, createdAt: item.createdAt ? item.createdAt.toISOString() : new Date().toISOString() });
+        }
+      }
+
+      res.json({ photos: all });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "Failed to fetch user photos" });
+    }
   },
 );
 

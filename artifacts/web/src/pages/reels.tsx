@@ -1315,7 +1315,7 @@ function ReelCard({
   return (
     <div
       ref={containerRef}
-      className="snap-start snap-always shrink-0 h-[calc(100dvh-56px)] sm:h-[calc(100vh-70px)] w-full flex items-center justify-center p-0 sm:p-4"
+      className="snap-start snap-always shrink-0 h-[calc(100dvh-130px)] sm:h-[calc(100vh-105px)] w-full flex items-center justify-center p-0 sm:p-2"
     >
       {/* Responsive Full-Height Video Container (Edge-to-Edge on Mobile) */}
       <div className="relative h-full w-full sm:max-h-[820px] sm:aspect-[9/16] sm:w-auto bg-black sm:rounded-2xl overflow-hidden sm:shadow-2xl flex items-center justify-center select-none group sm:border sm:border-border/20">
@@ -1935,7 +1935,7 @@ export default function ReelsPage() {
 
   return (
     <MainLayout>
-      <div className="relative h-[calc(100vh-70px)] w-full flex items-center justify-center overflow-hidden bg-background">
+      <div className="relative h-[calc(100dvh-130px)] sm:h-[calc(100vh-105px)] w-full flex items-center justify-center overflow-hidden bg-background rounded-2xl">
         {/* Top Right Create Button */}
         <div className="absolute top-4 right-4 z-30">
           <CreateReelDialog />

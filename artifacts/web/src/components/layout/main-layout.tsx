@@ -352,9 +352,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
 
       <div
         className={`flex-1 w-full max-w-[1720px] mx-auto flex gap-6 lg:gap-8 ${
-          location === "/reels"
-            ? "px-0 pt-0 max-w-none"
-            : rightSidebar
+          rightSidebar
             ? "px-4 lg:px-6 pt-5 justify-center"
             : "px-4 lg:px-6 pt-5"
         }`}
@@ -417,9 +415,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
         {/* Main Content */}
         <main
           className={`flex-1 min-w-0 ${
-            location === "/reels"
-              ? "max-w-none p-0"
-              : rightSidebar
+            rightSidebar
               ? "max-w-[840px] 2xl:max-w-[920px]"
               : "w-full max-w-[1380px]"
           }`}
