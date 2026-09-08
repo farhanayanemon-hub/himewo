@@ -413,14 +413,14 @@ function EditPageModal({
               <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold" }}>Cancel</Text>
             </Pressable>
             <Pressable
-              style={[styles.btn, { backgroundColor: name.trim() ? c.primary : c.secondary }]}
+              style={[styles.btn, { backgroundColor: c.primary }]}
               onPress={save}
-              disabled={!name.trim() || updatePage.isPending}
+              disabled={updatePage.isPending}
             >
               {updatePage.isPending ? (
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
-                <Text style={{ color: name.trim() ? "#fff" : c.mutedForeground, fontFamily: "Inter_700Bold" }}>Save</Text>
+                <Text style={{ color: "#fff", fontFamily: "Inter_700Bold" }}>Save</Text>
               )}
             </Pressable>
           </View>
