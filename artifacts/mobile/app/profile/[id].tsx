@@ -1,9 +1,10 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import {
   ActivityIndicator,
   FlatList,
   Pressable,
   RefreshControl,
+  ScrollView,
   Text,
   View,
   StyleSheet,
@@ -12,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   useGetUser,
   useGetUserPosts,
@@ -26,14 +27,152 @@ import {
   getGetUserPostsQueryKey,
   getGetUserFriendsQueryKey,
   ConversationType,
+  customFetch,
   type Post,
+  type Reel,
 } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
 import { PostCard } from "@/components/PostCard";
 import { CommentsSheet } from "@/components/CommentsSheet";
 import { useAuth } from "@/lib/auth";
 import { useColors } from "@/hooks/useColors";
-import { formatCount } from "@/lib/format";
+import { formatCount, timeAgo } from "@/lib/format";
+
+function MobileReelTimelineCard({ reel, c }: { reel: Reel; c: any }) {
+  const cleanCaption = (reel.caption ?? "").replace(/#\w+/g, "").trim();
+  return (
+    <Pressable
+      onPress={() => router.push("/reels")}
+      style={{
+        backgroundColor: c.card,
+        borderWidth: 1,
+        borderColor: c.border,
+        borderRadius: 16,
+        marginHorizontal: 16,
+        marginBottom: 12,
+        padding: 14,
+        gap: 10,
+      }}
+    >
+      {/* Header */}
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <Avatar uri={reel.author.avatarUrl} name={reel.author.displayName} size={40} />
+          <View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <Text style={{ fontSize: 14, fontWeight: "700", color: c.foreground }}>
+                {reel.author.displayName}
+              </Text>
+              {reel.author.isVerified && (
+                <Ionicons name="checkmark-circle" size={14} color="#a855f7" />
+              )}
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <Text style={{ fontSize: 12, color: c.mutedForeground }}>@{reel.author.username}</Text>
+              <Text style={{ fontSize: 12, color: c.mutedForeground }}>•</Text>
+              <Text style={{ fontSize: 12, color: c.mutedForeground }}>{timeAgo(reel.createdAt)}</Text>
+            </View>
+          </View>
+        </View>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 4,
+            paddingHorizontal: 8,
+            paddingVertical: 3,
+            borderRadius: 12,
+            backgroundColor: "rgba(168,85,247,0.12)",
+          }}
+        >
+          <Ionicons name="film" size={12} color="#a855f7" />
+          <Text style={{ fontSize: 11, fontWeight: "700", color: "#a855f7" }}>Reel</Text>
+        </View>
+      </View>
+
+      {/* Caption */}
+      {cleanCaption.length > 0 && (
+        <Text style={{ fontSize: 14, color: c.foreground, lineHeight: 20 }}>{cleanCaption}</Text>
+      )}
+
+      {/* Video Preview Box */}
+      <View
+        style={{
+          height: 240,
+          borderRadius: 12,
+          overflow: "hidden",
+          backgroundColor: "#000",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {reel.thumbnailUrl ? (
+          <Image source={{ uri: reel.thumbnailUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
+        ) : (
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              { backgroundColor: "#151518", alignItems: "center", justifyContent: "center" },
+            ]}
+          >
+            <Ionicons name="film-outline" size={48} color="rgba(255,255,255,0.4)" />
+          </View>
+        )}
+        <View
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: 24,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Ionicons name="play" size={24} color="#fff" style={{ marginLeft: 2 }} />
+        </View>
+        <View
+          style={{
+            position: "absolute",
+            bottom: 8,
+            right: 8,
+            paddingHorizontal: 8,
+            paddingVertical: 4,
+            borderRadius: 8,
+            backgroundColor: "rgba(0,0,0,0.6)",
+          }}
+        >
+          <Text style={{ color: "#fff", fontSize: 11, fontWeight: "600" }}>Watch Reel ↗</Text>
+        </View>
+      </View>
+
+      {/* Actions */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingTop: 4,
+        }}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <Ionicons name="heart" size={18} color="#ef4444" />
+            <Text style={{ fontSize: 12, fontWeight: "600", color: c.mutedForeground }}>
+              {formatCount(reel.likeCount)}
+            </Text>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <Ionicons name="chatbubble-outline" size={16} color={c.mutedForeground} />
+            <Text style={{ fontSize: 12, fontWeight: "600", color: c.mutedForeground }}>
+              {formatCount(reel.commentCount)}
+            </Text>
+          </View>
+        </View>
+        <Ionicons name="paper-plane-outline" size={16} color={c.mutedForeground} />
+      </View>
+    </Pressable>
+  );
+}
 
 export default function ProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -79,8 +218,39 @@ export function ProfileBody({
       },
     },
   );
+  const targetId = profile?.id || userId;
+  const { data: userReels, refetch: refetchReels } = useQuery<Reel[]>({
+    queryKey: ["user-reels", targetId],
+    queryFn: async () => {
+      return customFetch<Reel[]>(
+        `/api/reels?authorId=${encodeURIComponent(targetId)}&limit=50`,
+      ).catch(() => []);
+    },
+    enabled: !!targetId && !showLocked,
+  });
+
   const posts = (postsData ?? []) as Post[];
   const friends = friendsData ?? [];
+
+  type MobileTimelineItem =
+    | { type: "post"; id: string; date: number; post: Post }
+    | { type: "reel"; id: string; date: number; reel: Reel };
+
+  const timelineItems: MobileTimelineItem[] = useMemo(() => {
+    const pList: MobileTimelineItem[] = (posts ?? []).map((p) => ({
+      type: "post",
+      id: `post-${p.id}`,
+      date: new Date(p.createdAt).getTime(),
+      post: p,
+    }));
+    const rList: MobileTimelineItem[] = (userReels ?? []).map((r) => ({
+      type: "reel",
+      id: `reel-${r.id}`,
+      date: new Date(r.createdAt).getTime(),
+      reel: r,
+    }));
+    return [...pList, ...rList].sort((a, b) => b.date - a.date);
+  }, [posts, userReels]);
 
   const photoUrls = posts
     .flatMap((p) => p.media ?? [])
@@ -102,10 +272,12 @@ export function ProfileBody({
     qc.invalidateQueries({ queryKey: getGetUserQueryKey(userId) });
     qc.invalidateQueries({ queryKey: getGetUserPostsQueryKey(userId) });
     qc.invalidateQueries({ queryKey: getGetUserFriendsQueryKey(userId) });
+    qc.invalidateQueries({ queryKey: ["user-reels", targetId] });
     refetch();
     refetchPosts();
     refetchFriends();
-  }, [qc, userId, refetch, refetchPosts, refetchFriends]);
+    refetchReels?.();
+  }, [qc, userId, targetId, refetch, refetchPosts, refetchFriends, refetchReels]);
 
   const onToggleFriend = () => {
     if (!profile) return;
@@ -198,8 +370,8 @@ export function ProfileBody({
         </View>
       ) : (
         <FlatList
-          data={showLocked ? [] : posts}
-          keyExtractor={(item) => String(item.id)}
+          data={showLocked ? [] : timelineItems}
+          keyExtractor={(item) => item.id}
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={onRefresh} tintColor={c.primary} />
           }
@@ -422,6 +594,81 @@ export function ProfileBody({
                 )}
               </View>
 
+              {/* Reels Section */}
+              {userReels && userReels.length > 0 && (
+                <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginBottom: 12,
+                    }}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                      <Ionicons name="film-outline" size={18} color="#a855f7" />
+                      <Text style={[styles.cardTitle, { color: c.foreground, marginBottom: 0 }]}>
+                        Reels
+                      </Text>
+                    </View>
+                    <Text style={{ color: c.mutedForeground, fontSize: 13, fontWeight: "600" }}>
+                      {userReels.length}
+                    </Text>
+                  </View>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ gap: 10 }}
+                  >
+                    {userReels.map((reel) => (
+                      <Pressable
+                        key={reel.id}
+                        onPress={() => router.push("/reels")}
+                        style={{
+                          width: 110,
+                          height: 180,
+                          borderRadius: 12,
+                          overflow: "hidden",
+                          backgroundColor: "#000",
+                        }}
+                      >
+                        {reel.thumbnailUrl ? (
+                          <Image
+                            source={{ uri: reel.thumbnailUrl }}
+                            style={StyleSheet.absoluteFill}
+                            contentFit="cover"
+                          />
+                        ) : (
+                          <View
+                            style={[
+                              StyleSheet.absoluteFill,
+                              { backgroundColor: "#1e1e24", alignItems: "center", justifyContent: "center" },
+                            ]}
+                          >
+                            <Ionicons name="play" size={28} color="#fff" />
+                          </View>
+                        )}
+                        <View
+                          style={{
+                            position: "absolute",
+                            bottom: 6,
+                            left: 6,
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 4,
+                          }}
+                        >
+                          <Ionicons name="heart" size={12} color="#fff" />
+                          <Text style={{ color: "#fff", fontSize: 11, fontWeight: "600" }}>
+                            {formatCount(reel.likeCount)}
+                          </Text>
+                        </View>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+
               {isOwn && (
                 <Pressable
                   onPress={() => router.push("/create-post")}
@@ -451,21 +698,25 @@ export function ProfileBody({
               )}
 
               <View style={[styles.sectionHeader, { borderTopColor: c.border }]}>
-                <Text style={[styles.sectionTitle, { color: c.foreground }]}>Posts</Text>
+                <Text style={[styles.sectionTitle, { color: c.foreground }]}>Timeline</Text>
               </View>
               </>
               )}
             </View>
           }
-          renderItem={({ item }) => (
-            <PostCard post={item} onComment={() => setActivePost(item.id)} />
-          )}
+          renderItem={({ item }) =>
+            item.type === "post" ? (
+              <PostCard post={item.post} onComment={() => setActivePost(item.post.id)} />
+            ) : (
+              <MobileReelTimelineCard reel={item.reel} c={c} />
+            )
+          }
           ListEmptyComponent={
             showLocked ? null : (
               <View style={{ alignItems: "center", marginTop: 30, paddingHorizontal: 20 }}>
                 <Ionicons name="newspaper-outline" size={40} color={c.mutedForeground} />
                 <Text style={{ color: c.mutedForeground, marginTop: 10, textAlign: "center" }}>
-                  No posts yet.
+                  No posts or reels yet.
                 </Text>
               </View>
             )

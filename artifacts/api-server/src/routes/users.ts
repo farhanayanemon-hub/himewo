@@ -456,11 +456,20 @@ router.get("/users/:id", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: params.error.message });
     return;
   }
-  if (!UUID_RE.test(params.data.id)) {
-    res.status(404).json({ error: "User not found" });
-    return;
+  let targetId = params.data.id;
+  if (!UUID_RE.test(targetId)) {
+    const uname = targetId.trim().toLowerCase();
+    const [byUsername] = await db
+      .select({ id: profilesTable.id })
+      .from(profilesTable)
+      .where(sql`lower(${profilesTable.username}) = ${uname}`);
+    if (!byUsername) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+    targetId = byUsername.id;
   }
-  const profile = await buildProfileDetail(params.data.id, req.userId);
+  const profile = await buildProfileDetail(targetId, req.userId);
   if (!profile) {
     res.status(404).json({ error: "User not found" });
     return;
@@ -476,7 +485,19 @@ router.get("/users/:id/posts", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   const viewer = req.userId!;
-  const target = params.data.id;
+  let target = params.data.id;
+  if (!UUID_RE.test(target)) {
+    const uname = target.trim().toLowerCase();
+    const [byUsername] = await db
+      .select({ id: profilesTable.id })
+      .from(profilesTable)
+      .where(sql`lower(${profilesTable.username}) = ${uname}`);
+    if (!byUsername) {
+      res.json(GetUserPostsResponse.parse([]));
+      return;
+    }
+    target = byUsername.id;
+  }
   const isOwner = viewer === target;
   const friend = isOwner ? false : await areFriends(viewer, target);
   // Restricted profile (lock / profileVisibility): unauthorized viewers get an

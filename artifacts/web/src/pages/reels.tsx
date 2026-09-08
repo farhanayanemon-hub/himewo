@@ -318,6 +318,7 @@ function CreateReelDialog() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListReelsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: ["user-reels"] });
           reset();
           setOpen(false);
           toast({ title: "Reel shared with overlays!" });
@@ -793,7 +794,7 @@ function ReelCommentsSheet({
           ) : (
             comments.map((c) => (
               <div key={c.id} className="flex gap-3 items-start group">
-                <Link href={`/profile/${c.author.username}`}>
+                <Link href={`/profile/${c.author.id}`}>
                   <img
                     src={avatarSrc(c.author.avatarUrl)}
                     alt=""
@@ -803,7 +804,7 @@ function ReelCommentsSheet({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline gap-2">
                     <Link
-                      href={`/profile/${c.author.username}`}
+                      href={`/profile/${c.author.id}`}
                       className="font-semibold text-xs text-foreground hover:underline"
                     >
                       {c.author.displayName}
@@ -1404,7 +1405,7 @@ function ReelCard({
         {/* Bottom Left Info Area */}
         <div className="absolute bottom-4 left-3 right-16 sm:bottom-4 sm:left-4 sm:right-20 text-white z-10 space-y-2 pointer-events-auto">
           <div className="flex items-center gap-2.5">
-            <Link href={`/profile/${reel.author.username}`} className="shrink-0 group/author">
+            <Link href={`/profile/${reel.author.id}`} className="shrink-0 group/author">
               <img
                 src={avatarSrc(reel.author.avatarUrl)}
                 className="w-10 h-10 rounded-full object-cover border-2 border-white/40 group-hover/author:border-white transition-all shadow-md"
@@ -1413,7 +1414,7 @@ function ReelCard({
             </Link>
             <div className="min-w-0">
               <Link
-                href={`/profile/${reel.author.username}`}
+                href={`/profile/${reel.author.id}`}
                 className="font-bold text-sm drop-shadow-md hover:underline truncate block"
               >
                 {reel.author.displayName}
@@ -1917,7 +1918,7 @@ export default function ReelsPage() {
   useEffect(() => {
     if (!filteredReels || filteredReels.length === 0) return;
     const params = new URLSearchParams(window.location.search);
-    const targetId = params.get("id");
+    const targetId = params.get("id") || params.get("reelId");
     if (targetId) {
       const idx = filteredReels.findIndex((r) => String(r.id) === targetId);
       if (idx !== -1) {

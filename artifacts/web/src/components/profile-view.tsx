@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo, useRef } from "react";
 import { avatarSrc } from "@/lib/avatar";
 import { Link } from "wouter";
+import { formatDistanceToNow } from "date-fns";
 import {
   useGetUserFriends,
   getGetUserFriendsQueryKey,
@@ -9,6 +10,12 @@ import {
   getGetUserAlbumsQueryKey,
   useUpdateMyProfile,
   getGetUserQueryKey,
+  useLikeReel,
+  useUnlikeReel,
+  useSaveItem,
+  useUnsaveItem,
+  getListSavedItemsQueryKey,
+  customFetch,
   type Profile,
   type Post,
   type Reel,
@@ -39,6 +46,13 @@ import {
   Play,
   MessageCircle,
   Plus,
+  Volume2,
+  VolumeX,
+  Bookmark,
+  Send,
+  ExternalLink,
+  Music,
+  Film,
 } from "lucide-react";
 
 function IntroRow({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
@@ -46,6 +60,270 @@ function IntroRow({ icon, children }: { icon: React.ReactNode; children: React.R
     <div className="flex items-start gap-3 text-[15px]">
       <span className="text-muted-foreground mt-0.5 shrink-0">{icon}</span>
       <span className="text-foreground">{children}</span>
+    </div>
+  );
+}
+
+function ProfileReelTimelineCard({ reel }: { reel: Reel }) {
+  const queryClient = useQueryClient();
+  const likeReel = useLikeReel();
+  const unlikeReel = useUnlikeReel();
+  const saveItem = useSaveItem();
+  const unsaveItem = useUnsaveItem();
+
+  const [liked, setLiked] = useState(Boolean(reel.viewerLiked));
+  const [likeCount, setLikeCount] = useState(reel.likeCount ?? 0);
+  const [saved, setSaved] = useState(Boolean(reel.viewerSaved));
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const cleanCaption = parseReelOverlays(reel.caption).cleanCaption;
+
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+    if (isPlaying) {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      videoRef.current.play().catch(() => {});
+      setIsPlaying(true);
+    }
+  };
+
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!videoRef.current) return;
+    videoRef.current.muted = !isMuted;
+    setIsMuted(!isMuted);
+  };
+
+  const handleToggleLike = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (liked) {
+      setLiked(false);
+      setLikeCount((c) => Math.max(0, c - 1));
+      unlikeReel.mutate(
+        { id: reel.id },
+        {
+          onError: () => {
+            setLiked(true);
+            setLikeCount((c) => c + 1);
+          },
+        },
+      );
+    } else {
+      setLiked(true);
+      setLikeCount((c) => c + 1);
+      likeReel.mutate(
+        { id: reel.id },
+        {
+          onError: () => {
+            setLiked(false);
+            setLikeCount((c) => Math.max(0, c - 1));
+          },
+        },
+      );
+    }
+  };
+
+  const handleToggleSave = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const invalidate = () => {
+      queryClient.invalidateQueries({ queryKey: getListSavedItemsQueryKey() });
+    };
+    if (saved) {
+      setSaved(false);
+      unsaveItem.mutate(
+        { entityType: "reel", entityId: reel.id },
+        { onSuccess: invalidate, onError: () => setSaved(true) },
+      );
+    } else {
+      setSaved(true);
+      saveItem.mutate(
+        { data: { entityType: "reel", entityId: reel.id } },
+        { onSuccess: invalidate, onError: () => setSaved(false) },
+      );
+    }
+  };
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/reels?id=${reel.id}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "HiMewo Reel",
+          text: cleanCaption || "Watch this reel on HiMewo",
+          url,
+        });
+      } catch {}
+    } else {
+      await navigator.clipboard.writeText(url);
+      alert("Reel link copied to clipboard!");
+    }
+  };
+
+  return (
+    <div className="aurora-glass-card rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-sm hover:shadow-md transition-shadow">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Link href={`/profile/${reel.author.id}`}>
+            <img
+              src={avatarSrc(reel.author.avatarUrl)}
+              className="w-10 h-10 rounded-full object-cover bg-muted border border-border cursor-pointer"
+              alt=""
+            />
+          </Link>
+          <div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <Link href={`/profile/${reel.author.id}`}>
+                <span className="font-bold text-sm hover:underline text-foreground cursor-pointer">
+                  {reel.author.displayName}
+                </span>
+              </Link>
+              {reel.author.isVerified && <VerifiedBadge className="w-4 h-4" />}
+            </div>
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <span>@{reel.author.username}</span>
+              <span>•</span>
+              <span title={new Date(reel.createdAt).toLocaleString()}>
+                {formatDistanceToNow(new Date(reel.createdAt), { addSuffix: true })}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 🎬 Reel Badge */}
+        <Link href={`/reels?id=${reel.id}`}>
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/20 text-xs font-bold transition-colors cursor-pointer">
+            <Film className="w-3.5 h-3.5" />
+            <span>Reel</span>
+          </div>
+        </Link>
+      </div>
+
+      {/* Caption */}
+      {cleanCaption && (
+        <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+          {cleanCaption}
+        </p>
+      )}
+
+      {/* Music Tag */}
+      {reel.musicTitle && (
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/30 px-3 py-1.5 rounded-lg w-fit">
+          <Music className="w-3.5 h-3.5 text-primary shrink-0" />
+          <span className="font-medium truncate max-w-xs">
+            {reel.musicTitle} {reel.musicArtist ? `• ${reel.musicArtist}` : ""}
+          </span>
+        </div>
+      )}
+
+      {/* Video Box */}
+      <div
+        onClick={togglePlay}
+        className="relative aspect-[9/16] max-h-[520px] mx-auto rounded-2xl overflow-hidden bg-black cursor-pointer shadow-inner flex items-center justify-center group"
+      >
+        <video
+          ref={videoRef}
+          src={reel.videoUrl}
+          poster={reel.thumbnailUrl ?? undefined}
+          loop
+          playsInline
+          muted={isMuted}
+          className="w-full h-full object-contain"
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+        />
+
+        {/* Center Play Icon when Paused */}
+        {!isPlaying && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/25 backdrop-blur-[1px] transition-all">
+            <div className="w-14 h-14 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center text-white shadow-xl group-hover:scale-110 transition-transform">
+              <Play className="w-7 h-7 fill-white ml-0.5" />
+            </div>
+          </div>
+        )}
+
+        {/* Top Right "Open in Reels" button */}
+        <Link
+          href={`/reels?id=${reel.id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="absolute top-3 right-3 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-md transition-all z-10"
+          title="Watch in Reels fullscreen"
+        >
+          <ExternalLink className="w-4 h-4" />
+        </Link>
+
+        {/* Bottom Sound Toggle */}
+        <button
+          onClick={toggleMute}
+          className="absolute bottom-3 right-3 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-md transition-all z-10"
+          title={isMuted ? "Unmute" : "Mute"}
+        >
+          {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+        </button>
+      </div>
+
+      {/* Bottom Actions Bar */}
+      <div className="pt-2 border-t border-border flex items-center justify-between text-muted-foreground">
+        <div className="flex items-center gap-1 sm:gap-2">
+          {/* Like */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleToggleLike}
+            className={`rounded-xl gap-1.5 px-3 ${
+              liked
+                ? "text-red-500 hover:text-red-600 bg-red-500/10"
+                : "hover:text-foreground"
+            }`}
+          >
+            <Heart className={`w-4 h-4 ${liked ? "fill-red-500 text-red-500" : ""}`} />
+            <span className="text-xs font-semibold">{likeCount}</span>
+          </Button>
+
+          {/* Comment */}
+          <Link href={`/reels?id=${reel.id}`}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="rounded-xl gap-1.5 px-3 hover:text-foreground"
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span className="text-xs font-semibold">{reel.commentCount ?? 0}</span>
+            </Button>
+          </Link>
+
+          {/* Share (Instagram style paper airplane) */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleShare}
+            className="rounded-xl gap-1.5 px-3 hover:text-foreground"
+          >
+            <Send className="w-4 h-4 -translate-y-0.5" />
+            <span className="text-xs font-semibold">Share</span>
+          </Button>
+        </div>
+
+        {/* Save (Amber bookmark) */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleToggleSave}
+          className={`rounded-full ${
+            saved
+              ? "text-amber-500 hover:text-amber-600 bg-amber-500/10"
+              : "hover:text-foreground"
+          }`}
+          title={saved ? "Saved" : "Save"}
+        >
+          <Bookmark className={`w-4 h-4 ${saved ? "fill-amber-500 text-amber-500" : ""}`} />
+        </Button>
+      </div>
     </div>
   );
 }
@@ -109,27 +387,49 @@ export function ProfileView({
     },
   });
 
-  // Fetch reels uploaded by this user
+  // Fetch reels uploaded by this user via customFetch
+  const targetUserId = profile.id || userId;
   const { data: userReels, isLoading: reelsLoading } = useQuery<Reel[]>({
-    queryKey: ["user-reels", userId],
+    queryKey: ["user-reels", targetUserId],
     queryFn: async () => {
-      const res = await fetch(`/api/reels?authorId=${encodeURIComponent(userId)}&limit=50`);
-      if (!res.ok) return [];
-      return res.json();
+      return customFetch<Reel[]>(
+        `/api/reels?authorId=${encodeURIComponent(targetUserId)}&limit=50`,
+      ).catch(() => []);
     },
-    enabled: !!userId && !showLocked,
+    enabled: !!targetUserId && !showLocked,
   });
 
   // Fetch all photos uploaded by this user (posts + albums)
   const { data: userPhotosData } = useQuery<{ photos: { url: string; createdAt: string }[] }>({
-    queryKey: ["user-uploaded-photos", userId],
+    queryKey: ["user-uploaded-photos", targetUserId],
     queryFn: async () => {
-      const res = await fetch(`/api/users/${encodeURIComponent(userId)}/photos`);
-      if (!res.ok) return { photos: [] };
-      return res.json();
+      return customFetch<{ photos: { url: string; createdAt: string }[] }>(
+        `/api/users/${encodeURIComponent(targetUserId)}/photos`,
+      ).catch(() => ({ photos: [] }));
     },
-    enabled: !!userId && !showLocked,
+    enabled: !!targetUserId && !showLocked,
   });
+
+  // Merge posts and reels into a unified timeline sorted by createdAt date descending
+  type TimelineItem =
+    | { type: "post"; id: string; date: number; post: Post }
+    | { type: "reel"; id: string; date: number; reel: Reel };
+
+  const timelineItems: TimelineItem[] = useMemo(() => {
+    const pList: TimelineItem[] = (posts ?? []).map((p) => ({
+      type: "post",
+      id: `post-${p.id}`,
+      date: new Date(p.createdAt).getTime(),
+      post: p,
+    }));
+    const rList: TimelineItem[] = (userReels ?? []).map((r) => ({
+      type: "reel",
+      id: `reel-${r.id}`,
+      date: new Date(r.createdAt).getTime(),
+      reel: r,
+    }));
+    return [...pList, ...rList].sort((a, b) => b.date - a.date);
+  }, [posts, userReels]);
 
   const photoUrls = userPhotosData?.photos?.map((p) => p.url) ?? (posts ?? [])
     .flatMap((p) => p.media ?? [])
@@ -479,27 +779,41 @@ export function ProfileView({
 
         {/* Right Main Content Column */}
         <div className="lg:col-span-3 space-y-4">
-          {/* TAB 1: POSTS */}
+          {/* TAB 1: POSTS & REELS (Unified Profile Timeline) */}
           {activeTab === "posts" && (
             <>
               {isOwnProfile && (
                 <PostComposer
-                  onPosted={() =>
-                    queryClient.invalidateQueries({ queryKey: getGetUserPostsQueryKey(userId) })
-                  }
+                  onPosted={() => {
+                    queryClient.invalidateQueries({ queryKey: getGetUserPostsQueryKey(userId) });
+                    queryClient.invalidateQueries({ queryKey: ["user-reels", targetUserId] });
+                  }}
                 />
               )}
-              <h2 className="font-bold text-lg px-2">Posts</h2>
-              {postsLoading ? (
-                <div className="py-4 text-center">
+              <div className="flex items-center justify-between px-2">
+                <h2 className="font-bold text-lg">Timeline</h2>
+                {timelineItems.length > 0 && (
+                  <span className="text-xs text-muted-foreground font-medium">
+                    {timelineItems.length} {timelineItems.length === 1 ? "item" : "items"}
+                  </span>
+                )}
+              </div>
+              {postsLoading || reelsLoading ? (
+                <div className="py-8 text-center">
                   <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
                 </div>
-              ) : posts?.length === 0 ? (
+              ) : timelineItems.length === 0 ? (
                 <div className="text-center py-10 aurora-glass-card rounded-2xl text-muted-foreground">
                   {isOwnProfile ? "You haven't posted anything yet." : "No posts yet"}
                 </div>
               ) : (
-                posts?.map((post) => <PostCard key={post.id} post={post} />)
+                timelineItems.map((item) =>
+                  item.type === "post" ? (
+                    <PostCard key={item.id} post={item.post} />
+                  ) : (
+                    <ProfileReelTimelineCard key={item.id} reel={item.reel} />
+                  ),
+                )
               )}
             </>
           )}

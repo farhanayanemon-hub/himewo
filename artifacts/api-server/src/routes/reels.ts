@@ -6,7 +6,9 @@ import {
   reelLikesTable,
   reelCommentsTable,
 } from "@workspace/db";
-import { and, eq, lt, asc, desc, inArray, isNull, isNotNull } from "drizzle-orm";
+import { and, eq, lt, asc, desc, inArray, isNull, isNotNull, sql } from "drizzle-orm";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 import { requireAuth } from "../lib/auth";
 import { filterVisibleReels, canViewReel } from "../lib/authz";
 import { toProfile, buildReels, buildReelById } from "../lib/serialize";
@@ -43,8 +45,16 @@ router.get("/reels", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: query.error.message });
     return;
   }
-  const { cursor, limit } = query.data;
-  const authorId = typeof req.query.authorId === "string" ? req.query.authorId : undefined;
+  let authorId = typeof req.query.authorId === "string" ? req.query.authorId.trim() : undefined;
+  if (authorId && !UUID_RE.test(authorId)) {
+    const [u] = await db
+      .select({ id: profilesTable.id })
+      .from(profilesTable)
+      .where(sql`lower(${profilesTable.username}) = ${authorId.toLowerCase()}`);
+    if (u) {
+      authorId = u.id;
+    }
+  }
   const pageLimit = limit ?? 10;
 
   // Auto-purge reels in trash older than 30 days in the background
