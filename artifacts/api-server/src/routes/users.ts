@@ -24,6 +24,7 @@ import {
   type SQL,
 } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
+import { getSettings } from "../lib/flags";
 import {
   USERNAME_PATTERN,
   isReservedUsername,
@@ -89,6 +90,35 @@ router.get("/users", requireAuth, async (req, res): Promise<void> => {
   res.json(
     SearchUsersResponse.parse(await buildListProfiles(rows)),
   );
+});
+
+router.get("/onboarding/mandatory-accounts", requireAuth, async (_req, res): Promise<void> => {
+  const settings = await getSettings();
+  const raw = (settings.mandatory_follow_accounts ?? "").trim();
+  if (!raw) {
+    res.json([]);
+    return;
+  }
+  let usernames: string[] = [];
+  try {
+    if (raw.startsWith("[")) {
+      usernames = (JSON.parse(raw) as string[]).map((s) => s.trim().replace(/^@/, "")).filter(Boolean);
+    } else {
+      usernames = raw.split(",").map((s) => s.trim().replace(/^@/, "")).filter(Boolean);
+    }
+  } catch {
+    usernames = raw.split(",").map((s) => s.trim().replace(/^@/, "")).filter(Boolean);
+  }
+  if (usernames.length === 0) {
+    res.json([]);
+    return;
+  }
+  const rows = await db
+    .select()
+    .from(profilesTable)
+    .where(inArray(profilesTable.username, usernames));
+  const built = await buildListProfiles(rows);
+  res.json(built);
 });
 
 router.get(

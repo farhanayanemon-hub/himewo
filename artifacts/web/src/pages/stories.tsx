@@ -14,7 +14,7 @@ import {
   type StoryInputMediaType,
   type ReactionType,
 } from "@workspace/api-client-react";
-import { ChevronLeft, ChevronRight, Image as ImageIcon, Loader2, Music, Plus, Send, Trash2, Type, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Image as ImageIcon, Loader2, Music, Plus, Send, Trash2, Type, X, Camera, Sparkles, Scissors, FolderOpen } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +30,8 @@ import { uploadMedia, UploadUnavailableError, type UploadedMedia } from "@/lib/u
 import { toast } from "@/hooks/use-toast";
 import { GifPickerButton } from "@/components/gif-picker";
 import { MusicPickerButton, type SelectedMusic } from "@/components/music-picker";
+import { MediaCaptureModal } from "@/components/media-capture-modal";
+import { StoryReelEditor } from "@/components/story-reel-editor";
 import {
   MentionSuggestions,
   RenderWithMentions,
@@ -75,12 +77,18 @@ function CreateStoryDialog() {
   const [music, setMusic] = useState<SelectedMusic | null>(null);
   const [mentionTargets, setMentionTargets] = useState<MentionTarget[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [cameraModalOpen, setCameraModalOpen] = useState(false);
+  const [selectedRawFile, setSelectedRawFile] = useState<File | null>(null);
+  const [proEditorOpen, setProEditorOpen] = useState(false);
 
   const activeText = mode === "media" ? caption : textContent;
   const mentionQuery = activeMentionQuery(activeText);
 
   const reset = () => {
     setMedia(null);
+    setSelectedRawFile(null);
+    setCameraModalOpen(false);
+    setProEditorOpen(false);
     setCaption("");
     setTextContent("");
     setBackground(DEFAULT_BG);
@@ -94,6 +102,7 @@ function CreateStoryDialog() {
   const handleFile = async (files: FileList | null) => {
     const file = files?.[0];
     if (!file) return;
+    setSelectedRawFile(file);
     setUploading(true);
     try {
       const uploaded = await uploadMedia(file);
@@ -112,6 +121,20 @@ function CreateStoryDialog() {
     }
     setUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleCameraMedia = async (file: File) => {
+    setSelectedRawFile(file);
+    setCameraModalOpen(false);
+    setUploading(true);
+    try {
+      const uploaded = await uploadMedia(file);
+      setMedia(uploaded);
+    } catch {
+      toast({ title: "Upload failed", description: "Please try again." });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const canSubmit =
@@ -180,7 +203,8 @@ function CreateStoryDialog() {
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
+    <>
+      <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
       <Button onClick={() => setOpen(true)} className="rounded-full gap-2">
         <Plus className="w-4 h-4" /> Create Story
       </Button>
@@ -251,22 +275,47 @@ function CreateStoryDialog() {
               </button>
             </div>
           ) : (
-            <div className="space-y-2">
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="w-full py-8 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:bg-muted/50 transition-colors flex flex-col items-center gap-2"
-              >
-                {uploading ? (
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                ) : (
-                  <>
-                    <Plus className="w-6 h-6" />
-                    <span>Add photo or video</span>
-                  </>
-                )}
-              </button>
-              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setCameraModalOpen(true)}
+                  className="p-5 rounded-2xl border-2 border-purple-500/30 hover:border-purple-500 bg-purple-500/5 hover:bg-purple-500/10 transition-all flex flex-col items-center justify-center text-center gap-2 group shadow-sm"
+                >
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-600 via-pink-600 to-amber-500 text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <span className="font-bold text-xs text-foreground flex items-center gap-1">
+                    <Camera className="w-3.5 h-3.5 text-purple-500" /> Camera & Filters
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    Live filters & effects
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="p-5 rounded-2xl border-2 border-border hover:border-foreground/30 bg-muted/30 hover:bg-muted/60 transition-all flex flex-col items-center justify-center text-center gap-2 group shadow-sm"
+                >
+                  <div className="w-10 h-10 rounded-full bg-muted border border-border text-foreground flex items-center justify-center group-hover:scale-105 transition-transform">
+                    {uploading ? (
+                      <Loader2 className="w-5 h-5 animate-spin text-purple-500" />
+                    ) : (
+                      <FolderOpen className="w-5 h-5 text-muted-foreground" />
+                    )}
+                  </div>
+                  <span className="font-bold text-xs text-foreground">
+                    Gallery
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    Photos or videos
+                  </span>
+                </button>
+              </div>
+
+              <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pt-1">
                 <span>or pick a GIF:</span>
                 <GifPickerButton
                   onSelect={(url) => setMedia({ url, type: "image" })}
@@ -326,17 +375,71 @@ function CreateStoryDialog() {
           <MusicPickerButton selected={music} onSelect={setMusic} />
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex flex-row items-center justify-between gap-2">
+          {media && selectedRawFile && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setProEditorOpen(true)}
+              className="rounded-xl gap-1.5 border-purple-500/30 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 font-semibold"
+            >
+              <Scissors className="w-4 h-4" /> Pro Studio Editor
+            </Button>
+          )}
           <Button
             onClick={submit}
             disabled={!canSubmit || createStory.isPending}
-            className="rounded-lg"
+            className="rounded-xl font-semibold bg-purple-600 hover:bg-purple-700 text-white ml-auto"
           >
             {createStory.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Share Story"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Live Camera Modal */}
+    <MediaCaptureModal
+      open={cameraModalOpen}
+      onOpenChange={setCameraModalOpen}
+      mediaType="all"
+      title="Capture Story with Live Filters"
+      onMediaSelected={handleCameraMedia}
+    />
+
+    {/* Pro Fullscreen Editor */}
+    {proEditorOpen && selectedRawFile && (
+      <StoryReelEditor
+        file={selectedRawFile}
+        type="story"
+        onClose={() => setProEditorOpen(false)}
+        onSubmit={async (data) => {
+          await createStory.mutateAsync({
+            data: {
+              storyType: "media",
+              audience,
+              mediaUrl: data.mediaUrl,
+              mediaType: data.mediaType as StoryInputMediaType,
+              caption: data.caption || undefined,
+              ...(data.musicUrl
+                ? {
+                    musicUrl: data.musicUrl,
+                    musicTitle: data.musicTitle,
+                    musicArtist: data.musicArtist,
+                  }
+                : {}),
+              ...pageFields,
+            },
+          });
+          queryClient.invalidateQueries({ queryKey: getListStoriesQueryKey() });
+          setProEditorOpen(false);
+          setOpen(false);
+          reset();
+          toast({ title: "Story shared with pro effects!" });
+        }}
+      />
+    )}
+  </>
   );
 }
 

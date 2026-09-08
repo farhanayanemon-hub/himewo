@@ -30,7 +30,6 @@ export default function EditProfilePage() {
     education: user?.education || "",
     hobbies: user?.hobbies || "",
     interests: user?.interests || "",
-    website: user?.website || "",
     email: user?.email || "",
     phone: user?.phone || "",
   });
@@ -233,10 +232,6 @@ export default function EditProfilePage() {
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone</Label>
                 <Input id="phone" value={formData.phone} onChange={(e) => set("phone", e.target.value)} className="bg-muted/50" />
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="website">Website</Label>
-                <Input id="website" value={formData.website} onChange={(e) => set("website", e.target.value)} className="bg-muted/50" placeholder="https://..." />
               </div>
             </div>
           </div>

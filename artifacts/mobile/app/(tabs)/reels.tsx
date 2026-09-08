@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Dimensions,
   FlatList,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -27,6 +29,11 @@ import {
   useUnsaveItem,
   useListReelComments,
   useCreateReelComment,
+  useCreateStory,
+  useListConversations,
+  useCreateConversation,
+  useSendMessage,
+  useListFriends,
   getListReelCommentsQueryKey,
   getListSavedItemsQueryKey,
   useFollowUser,
@@ -170,16 +177,8 @@ function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
     }
   };
 
-  const handleShare = async () => {
-    try {
-      await Share.share({
-        message: `Watch this reel on HiMewo: https://himewo.com/reels?reelId=${reel.id}`,
-        url: `https://himewo.com/reels?reelId=${reel.id}`,
-      });
-    } catch {
-      // ignore
-    }
-  };
+  const [shareOpen, setShareOpen] = useState(false);
+  const handleShare = () => setShareOpen(true);
 
   const { cleanCaption, overlays } = parseReelOverlays(reel.caption);
 
@@ -346,6 +345,12 @@ function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
           </View>
         </Pressable>
       </Modal>
+
+      <ReelShareSheet
+        reel={reel}
+        visible={shareOpen}
+        onClose={() => setShareOpen(false)}
+      />
     </View>
   );
 }
@@ -558,6 +563,291 @@ function ReelCommentsSheet({
   );
 }
 
+function ReelShareSheet({
+  reel,
+  visible,
+  onClose,
+}: {
+  reel: Reel;
+  visible: boolean;
+  onClose: () => void;
+}) {
+  const c = useColors();
+  const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+  const [sharingToStory, setSharingToStory] = useState(false);
+  const [sentUsers, setSentUsers] = useState<Set<string>>(new Set());
+  const [sendingUser, setSendingUser] = useState<string | null>(null);
+
+  const createStory = useCreateStory();
+  const createConversation = useCreateConversation();
+  const sendMessage = useSendMessage();
+
+  const { data: convsData = [] } = useListConversations({
+    query: { enabled: visible && reel != null },
+  } as any);
+
+  const { data: friendsData = [] } = useListFriends({
+    query: { enabled: visible && reel != null },
+  } as any);
+
+  const shareUrl = `https://himewo.com/reels?id=${reel?.id ?? ""}`;
+  const shareText = `Check out this reel by ${reel?.author.displayName ?? "someone"} on HiMewo!`;
+
+  // Build list of chat friends
+  const chatFriends: { user: any; conversationId?: number }[] = [];
+  const seenIds = new Set<string>();
+
+  for (const conv of convsData as any[]) {
+    if (conv.type === "direct" && Array.isArray(conv.members)) {
+      const other = conv.members.find((m: any) => m.user?.id !== user?.id)?.user;
+      if (other && !seenIds.has(other.id)) {
+        seenIds.add(other.id);
+        chatFriends.push({ user: other, conversationId: conv.id });
+      }
+    }
+  }
+
+  for (const f of friendsData as any[]) {
+    const friendUser = f.friend || f;
+    if (friendUser?.id && friendUser.id !== user?.id && !seenIds.has(friendUser.id)) {
+      seenIds.add(friendUser.id);
+      chatFriends.push({ user: friendUser });
+      if (chatFriends.length >= 15) break;
+    }
+  }
+
+  const handleShareStory = async () => {
+    if (!reel) return;
+    setSharingToStory(true);
+    try {
+      await createStory.mutateAsync({
+        data: {
+          storyType: "media",
+          mediaUrl: reel.videoUrl,
+          mediaType: "video",
+          caption: reel.caption || `Reel by ${reel.author.displayName}`,
+          expiresInHours: 24,
+        },
+      });
+      Alert.alert("Added to Story", "Your reel has been shared to your story for 24 hours!");
+      onClose();
+    } catch {
+      Alert.alert("Failed", "Could not add reel to story.");
+    } finally {
+      setSharingToStory(false);
+    }
+  };
+
+  const handleSendToFriend = async (item: { user: any; conversationId?: number }) => {
+    const friendId = item.user.id;
+    if (sentUsers.has(friendId) || sendingUser) return;
+    setSendingUser(friendId);
+
+    try {
+      let convId = item.conversationId;
+      if (!convId) {
+        const res = await createConversation.mutateAsync({
+          data: { memberIds: [friendId], type: "direct" },
+        });
+        convId = (res as any)?.id;
+      }
+      if (convId) {
+        await sendMessage.mutateAsync({
+          id: convId,
+          data: {
+            content: `Check out this reel by @${reel.author.username || reel.author.displayName} on HiMewo:\n${shareUrl}`,
+          },
+        });
+        setSentUsers((prev) => new Set(prev).add(friendId));
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    } catch {
+      Alert.alert("Error", "Could not send message.");
+    } finally {
+      setSendingUser(null);
+    }
+  };
+
+  const openUrl = async (url: string, fallbackUrl?: string) => {
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else if (fallbackUrl) {
+        await Linking.openURL(fallbackUrl);
+      } else {
+        await Share.share({ message: shareText + "\n" + shareUrl, url: shareUrl });
+      }
+    } catch {
+      if (fallbackUrl) {
+        try {
+          await Linking.openURL(fallbackUrl);
+        } catch {
+          await Share.share({ message: shareText + "\n" + shareUrl, url: shareUrl });
+        }
+      } else {
+        await Share.share({ message: shareText + "\n" + shareUrl, url: shareUrl });
+      }
+    }
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.sheetBackdrop}>
+        <Pressable style={{ flex: 1 }} onPress={onClose} />
+        <View style={[styles.shareSheet, { backgroundColor: c.background, paddingBottom: insets.bottom + 12 }]}>
+          <View style={[styles.sheetHandle, { backgroundColor: c.border }]} />
+          <Text style={[styles.sheetTitle, { color: c.foreground }]}>Share Reel</Text>
+
+          {/* Share to Story Button */}
+          <Pressable
+            onPress={handleShareStory}
+            disabled={sharingToStory}
+            style={[styles.storyShareBtn, { backgroundColor: c.secondary }]}
+          >
+            <View style={styles.storyGradientRing}>
+              <Ionicons name="sparkles" size={18} color="#a855f7" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.storyBtnTitle, { color: c.foreground }]}>Add to Your Story</Text>
+              <Text style={[styles.storyBtnSub, { color: c.mutedForeground }]}>
+                Share this reel on your story (24 hours)
+              </Text>
+            </View>
+            {sharingToStory ? (
+              <ActivityIndicator size="small" color="#a855f7" />
+            ) : (
+              <View style={styles.shareBadge}>
+                <Text style={styles.shareBadgeText}>Share</Text>
+              </View>
+            )}
+          </Pressable>
+
+          {/* Send in Chat: Friends List */}
+          <Text style={[styles.shareSectionLabel, { color: c.mutedForeground }]}>SEND IN CHAT</Text>
+          <FlatList
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            data={chatFriends}
+            keyExtractor={(item) => item.user.id}
+            contentContainerStyle={{ paddingHorizontal: 16, gap: 14 }}
+            renderItem={({ item }) => {
+              const isSent = sentUsers.has(item.user.id);
+              const isSending = sendingUser === item.user.id;
+              return (
+                <View style={styles.chatFriendItem}>
+                  <Avatar uri={item.user.avatarUrl} name={item.user.displayName} size={50} />
+                  <Text style={[styles.chatFriendName, { color: c.foreground }]} numberOfLines={1}>
+                    {item.user.displayName}
+                  </Text>
+                  <Pressable
+                    onPress={() => handleSendToFriend(item)}
+                    disabled={isSent || isSending}
+                    style={[
+                      styles.sendBtn,
+                      isSent ? { backgroundColor: c.secondary } : { backgroundColor: "#a855f7" },
+                    ]}
+                  >
+                    {isSending ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <Text style={[styles.sendBtnText, isSent ? { color: c.mutedForeground } : { color: "#fff" }]}>
+                        {isSent ? "Sent" : "Send"}
+                      </Text>
+                    )}
+                  </Pressable>
+                </View>
+              );
+            }}
+          />
+
+          {/* Social Apps Row */}
+          <Text style={[styles.shareSectionLabel, { color: c.mutedForeground, marginTop: 12 }]}>
+            SHARE TO APPS
+          </Text>
+          <View style={styles.socialRow}>
+            {/* WhatsApp */}
+            <Pressable
+              style={styles.socialBtn}
+              onPress={() =>
+                openUrl(
+                  `whatsapp://send?text=${encodeURIComponent(shareText + "\n" + shareUrl)}`,
+                  `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + "\n" + shareUrl)}`
+                )
+              }
+            >
+              <View style={[styles.socialIconCircle, { backgroundColor: "#25D36622" }]}>
+                <Ionicons name="logo-whatsapp" size={24} color="#25D366" />
+              </View>
+              <Text style={[styles.socialBtnText, { color: c.mutedForeground }]}>WhatsApp</Text>
+            </Pressable>
+
+            {/* Messenger */}
+            <Pressable
+              style={styles.socialBtn}
+              onPress={() =>
+                openUrl(
+                  `fb-messenger://share?link=${encodeURIComponent(shareUrl)}`,
+                  `https://www.facebook.com/dialog/send?link=${encodeURIComponent(shareUrl)}`
+                )
+              }
+            >
+              <View style={[styles.socialIconCircle, { backgroundColor: "#0084FF22" }]}>
+                <Ionicons name="chatbubble-ellipses" size={24} color="#0084FF" />
+              </View>
+              <Text style={[styles.socialBtnText, { color: c.mutedForeground }]}>Messenger</Text>
+            </Pressable>
+
+            {/* Telegram */}
+            <Pressable
+              style={styles.socialBtn}
+              onPress={() =>
+                openUrl(
+                  `tg://msg?text=${encodeURIComponent(shareText + "\n" + shareUrl)}`,
+                  `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`
+                )
+              }
+            >
+              <View style={[styles.socialIconCircle, { backgroundColor: "#229ED922" }]}>
+                <Ionicons name="paper-plane" size={24} color="#229ED9" />
+              </View>
+              <Text style={[styles.socialBtnText, { color: c.mutedForeground }]}>Telegram</Text>
+            </Pressable>
+
+            {/* Instagram */}
+            <Pressable
+              style={styles.socialBtn}
+              onPress={() => openUrl("instagram://", "https://instagram.com")}
+            >
+              <View style={[styles.socialIconCircle, { backgroundColor: "#E1306C22" }]}>
+                <Ionicons name="logo-instagram" size={24} color="#E1306C" />
+              </View>
+              <Text style={[styles.socialBtnText, { color: c.mutedForeground }]}>Instagram</Text>
+            </Pressable>
+
+            {/* More Native */}
+            <Pressable
+              style={styles.socialBtn}
+              onPress={() =>
+                Share.share({
+                  message: `${shareText}\n${shareUrl}`,
+                  url: shareUrl,
+                })
+              }
+            >
+              <View style={[styles.socialIconCircle, { backgroundColor: "#a855f722" }]}>
+                <Ionicons name="share-social" size={24} color="#a855f7" />
+              </View>
+              <Text style={[styles.socialBtnText, { color: c.mutedForeground }]}>More</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 const styles = StyleSheet.create({
   header: {
     position: "absolute",
@@ -682,7 +972,100 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   sheetBackdrop: { flex: 1, backgroundColor: "#0006" },
-  sheet: { height: "82%", borderTopLeftRadius: 18, borderTopRightRadius: 18 },
+  sheet: { height: "52%", borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: "hidden" },
+  shareSheet: {
+    height: "58%",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+  },
+  storyShareBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginHorizontal: 16,
+    padding: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#a855f744",
+  },
+  storyGradientRing: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#a855f722",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  storyBtnTitle: {
+    fontFamily: "Inter_700Bold",
+    fontSize: 14,
+  },
+  storyBtnSub: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 11,
+    marginTop: 1,
+  },
+  shareBadge: {
+    backgroundColor: "#a855f722",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  shareBadgeText: {
+    color: "#a855f7",
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 12,
+  },
+  shareSectionLabel: {
+    fontFamily: "Inter_700Bold",
+    fontSize: 11,
+    letterSpacing: 0.8,
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  chatFriendItem: {
+    alignItems: "center",
+    gap: 6,
+    width: 68,
+  },
+  chatFriendName: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 11,
+    textAlign: "center",
+  },
+  sendBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    minWidth: 46,
+    alignItems: "center",
+  },
+  sendBtnText: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 11,
+  },
+  socialRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    paddingHorizontal: 10,
+    paddingTop: 4,
+  },
+  socialBtn: {
+    alignItems: "center",
+    gap: 6,
+  },
+  socialIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  socialBtnText: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 10,
+  },
   sheetHandle: { width: 40, height: 4, borderRadius: 2, alignSelf: "center", marginTop: 8 },
   sheetTitle: {
     textAlign: "center",

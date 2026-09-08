@@ -362,7 +362,6 @@ export function ProfileBody({
     if (profile.hometown) introRows.push({ icon: "home-outline", label: `From ${profile.hometown}` });
     if (profile.hobbies) introRows.push({ icon: "heart-outline", label: `Hobbies: ${profile.hobbies}` });
     if (profile.interests) introRows.push({ icon: "sparkles-outline", label: `Interests: ${profile.interests}` });
-    if (profile.website) introRows.push({ icon: "globe-outline", label: profile.website });
     if (profile.email) introRows.push({ icon: "mail-outline", label: profile.email });
     if (profile.phone) introRows.push({ icon: "call-outline", label: profile.phone });
   }

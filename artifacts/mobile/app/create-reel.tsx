@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   Text,
@@ -31,6 +32,7 @@ export interface MobileReelOverlay {
   y: number; // percentage 0-100
   color?: string;
   bgStyle?: "none" | "pill" | "glass" | "neon";
+  fontStyle?: "modern" | "serif" | "neon" | "script" | "impact";
   fontSize?: number;
 }
 
@@ -89,24 +91,7 @@ export default function CreateReelScreen() {
   const [textInput, setTextInput] = useState("");
   const [textColor, setTextColor] = useState("#ffffff");
   const [textBgStyle, setTextBgStyle] = useState<"none" | "pill" | "glass" | "neon">("pill");
-
-  // Facebook-style: opening the reel creator jumps straight to the gallery.
-  const autoOpened = useRef(false);
-  useEffect(() => {
-    if (autoOpened.current) return;
-    autoOpened.current = true;
-    (async () => {
-      const res = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["videos"],
-        quality: 0.8,
-      });
-      if (!res.canceled && res.assets[0]) {
-        setAsset(res.assets[0]);
-      } else {
-        router.back();
-      }
-    })();
-  }, []);
+  const [fontStyle, setFontStyle] = useState<"modern" | "serif" | "neon" | "script" | "impact">("modern");
 
   const pick = async () => {
     const res = await ImagePicker.launchImageLibraryAsync({
@@ -135,6 +120,7 @@ export default function CreateReelScreen() {
       y: 35,
       color: textColor,
       bgStyle: textBgStyle,
+      fontStyle,
       fontSize: 18,
     };
     setOverlays((prev) => [...prev, newOverlay]);
@@ -450,8 +436,32 @@ export default function CreateReelScreen() {
               ))}
             </ScrollView>
 
+            {/* Font Style */}
+            <Text style={styles.sectionHeading}>Font Style</Text>
+            <View style={{ flexDirection: "row", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+              {(["modern", "serif", "neon", "script", "impact"] as const).map((fn) => (
+                <Pressable
+                  key={fn}
+                  onPress={() => setFontStyle(fn)}
+                  style={[
+                    styles.styleChip,
+                    fontStyle === fn && styles.styleChipActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.styleChipText,
+                      fontStyle === fn && styles.styleChipTextActive,
+                    ]}
+                  >
+                    {fn.charAt(0).toUpperCase() + fn.slice(1)}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
             {/* Badges */}
-            <Text style={styles.sectionHeading}>Style</Text>
+            <Text style={styles.sectionHeading}>Badge Style</Text>
             <View style={{ flexDirection: "row", gap: 8, marginBottom: 14 }}>
               {(["none", "pill", "glass", "neon"] as const).map((st) => (
                 <Pressable
@@ -527,6 +537,41 @@ function DraggableOverlayItem({
   ).current;
 
   const bgStyle = overlay.bgStyle ?? "pill";
+  const fnStyle = overlay.fontStyle ?? "modern";
+
+  const getFontAttributes = () => {
+    switch (fnStyle) {
+      case "serif":
+        return {
+          fontFamily: Platform.select({ ios: "Georgia", default: "serif" }),
+          fontStyle: "italic" as const,
+        };
+      case "neon":
+        return {
+          fontFamily: "Inter_700Bold",
+          textShadowColor: overlay.color || "#a855f7",
+          textShadowOffset: { width: 0, height: 0 },
+          textShadowRadius: 8,
+        };
+      case "script":
+        return {
+          fontFamily: Platform.select({ ios: "Snell Roundhand", default: "serif" }),
+          fontStyle: "italic" as const,
+          fontWeight: "600" as const,
+        };
+      case "impact":
+        return {
+          fontFamily: "Inter_700Bold",
+          letterSpacing: 1.5,
+          textTransform: "uppercase" as const,
+        };
+      case "modern":
+      default:
+        return {
+          fontFamily: "Inter_700Bold",
+        };
+    }
+  };
 
   return (
     <View
@@ -551,6 +596,7 @@ function DraggableOverlayItem({
           <Text
             style={[
               styles.textBadgeContent,
+              getFontAttributes(),
               {
                 color: overlay.color || "#ffffff",
                 fontSize: overlay.fontSize ?? 18,

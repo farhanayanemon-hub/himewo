@@ -539,7 +539,6 @@ export function ProfileView({
     profile.hometown ||
     profile.hobbies ||
     profile.interests ||
-    profile.website ||
     profile.email ||
     profile.phone;
 
@@ -668,11 +667,6 @@ export function ProfileView({
                 {profile.hometown && <IntroRow icon={<Home className="w-5 h-5" />}>From <b>{profile.hometown}</b></IntroRow>}
                 {profile.hobbies && <IntroRow icon={<Heart className="w-5 h-5" />}>Hobbies: {profile.hobbies}</IntroRow>}
                 {profile.interests && <IntroRow icon={<Sparkles className="w-5 h-5" />}>Interests: {profile.interests}</IntroRow>}
-                {profile.website && (
-                  <IntroRow icon={<Globe className="w-5 h-5" />}>
-                    <a href={profile.website} target="_blank" rel="noreferrer" className="text-primary hover:underline break-all">{profile.website}</a>
-                  </IntroRow>
-                )}
                 {profile.email && <IntroRow icon={<Mail className="w-5 h-5" />}>{profile.email}</IntroRow>}
                 {profile.phone && <IntroRow icon={<Phone className="w-5 h-5" />}>{profile.phone}</IntroRow>}
               </div>

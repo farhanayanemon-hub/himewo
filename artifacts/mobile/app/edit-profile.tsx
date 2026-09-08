@@ -40,7 +40,6 @@ export default function EditProfileScreen() {
   const [hometown, setHometown] = useState(user?.hometown ?? "");
   const [hobbies, setHobbies] = useState(user?.hobbies ?? "");
   const [interests, setInterests] = useState(user?.interests ?? "");
-  const [website, setWebsite] = useState(user?.website ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
 
@@ -86,7 +85,6 @@ export default function EditProfileScreen() {
         hometown: hometown.trim(),
         hobbies: hobbies.trim(),
         interests: interests.trim(),
-        website: website.trim(),
         email: email.trim(),
         phone: phone.trim(),
       };
@@ -215,11 +213,8 @@ export default function EditProfileScreen() {
           <Field label="Email" c={c}>
             <TextInput value={email} onChangeText={setEmail} placeholder="you@example.com" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" autoCapitalize="none" keyboardType="email-address" style={[styles.input, { color: c.foreground }]} />
           </Field>
-          <Field label="Phone" c={c}>
+          <Field label="Phone" c={c} last>
             <TextInput value={phone} onChangeText={setPhone} placeholder="01XXXXXXXXX" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" keyboardType="phone-pad" style={[styles.input, { color: c.foreground }]} />
-          </Field>
-          <Field label="Website" c={c} last>
-            <TextInput value={website} onChangeText={setWebsite} placeholder="https://..." placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" autoCapitalize="none" style={[styles.input, { color: c.foreground }]} />
           </Field>
         </View>
       </ScrollView>

@@ -42,7 +42,8 @@ export const SITE_SETTING_DEFAULTS: Record<string, string> = {
   sms_hook_secret: "",
   // Master switches for account verification requirements.
   email_verification_enabled: "on",
-  phone_verification_enabled: "on",
+  // Comma-separated usernames or JSON array of accounts mandatory to follow in onboarding.
+  mandatory_follow_accounts: "",
   // JSON object mapping OTP event keys (see OTP_EVENT_KEYS) to booleans.
   // Missing keys default to true (enabled).
   otp_events: "{}",

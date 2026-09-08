@@ -53,6 +53,7 @@ export function Settings() {
   const [smsToken, setSmsToken] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [maintMsg, setMaintMsg] = useState("");
+  const [mandatoryAccounts, setMandatoryAccounts] = useState("");
   const [verif, setVerif] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -60,6 +61,7 @@ export function Settings() {
       setSiteName(query.data.settings.site_name ?? "");
       setLogoUrl(query.data.settings.logo_url ?? "");
       setMaintMsg(query.data.settings.maintenance_message ?? "");
+      setMandatoryAccounts(query.data.settings.mandatory_follow_accounts ?? "");
       const s = query.data.settings;
       setVerif({
         verification_min_account_age_days: s.verification_min_account_age_days ?? "15",
@@ -325,6 +327,44 @@ export function Settings() {
             rawValue={query.data.settings.nav_icons}
             canManage={canManage}
           />
+
+          <Card>
+            <CardHeader
+              title="Mandatory Follow Accounts (Onboarding)"
+              subtitle="Accounts that all new users are prompted and required to follow during onboarding. Enter comma-separated usernames (e.g. himewo, admin)."
+            />
+            <div className="space-y-4 px-5 py-4">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-600">
+                  Mandatory Usernames (comma-separated)
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    value={mandatoryAccounts}
+                    onChange={(e) => setMandatoryAccounts(e.target.value)}
+                    disabled={!canManage}
+                    placeholder="himewo, admin, himewo_official"
+                  />
+                  <Button
+                    variant="secondary"
+                    disabled={!canManage}
+                    loading={setSetting.isPending}
+                    onClick={() =>
+                      setSetting.mutate({
+                        key: "mandatory_follow_accounts",
+                        value: mandatoryAccounts.trim(),
+                      })
+                    }
+                  >
+                    <Save className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-slate-400">
+                  These accounts will be prominently pinned at the top of the onboarding suggestions screen with a purple Follow button.
+                </p>
+              </div>
+            </div>
+          </Card>
 
           <Card className={maintenanceOn ? "border-amber-300" : ""}>
             <CardHeader

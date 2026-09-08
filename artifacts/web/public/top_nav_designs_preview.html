@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HiMewo — Premium Nav Icon Design V2</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0A0E1A;
+      color: #e2e8f0;
+      min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse 60% 30% at 20% 0%, rgba(99, 102, 241, 0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 20% at 80% 0%, rgba(6, 182, 212, 0.06) 0%, transparent 50%);
+    }
+
+    /* =========================================
+       TOP HEADER — FACEBOOK-QUALITY DARK NAV
+    ========================================= */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      width: 100%;
+      height: 60px;
+      background: rgba(10, 14, 26, 0.96);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      backdrop-filter: blur(24px) saturate(180%);
+      display: flex;
+      align-items: stretch;
+    }
+
+    /* Logo zone */
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 16px;
+      min-width: 220px;
+      flex-shrink: 0;
+      cursor: pointer;
+      user-select: none;
+    }
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #06b6d4 0%, #818cf8 50%, #a855f7 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 19px;
+      flex-shrink: 0;
+    }
+    .logo-text {
+      font-family: 'Outfit', sans-serif;
+      font-size: 21px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #38bdf8 0%, #818cf8 45%, #c084fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.3px;
+    }
+
+    /* Search bar inside logo zone */
+    .header-search {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 24px;
+      padding: 6px 14px;
+      margin-left: 8px;
+      cursor: text;
+      transition: border-color 0.2s;
+    }
+    .header-search:hover { border-color: rgba(255,255,255,0.12); }
+    .header-search svg { color: #4b5563; flex-shrink: 0; }
+    .header-search span { font-size: 13px; color: #4b5563; white-space: nowrap; }
+
+    /* =========================================
+       CENTER NAV — Facebook-style pill buttons
+    ========================================= */
+    .header-nav {
+      flex: 1;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      gap: 4px;
+      padding: 0 8px;
+    }
+
+    .nav-tab {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      width: 112px;
+      height: 100%;
+      border: none;
+      background: transparent;
+      border-radius: 0;
+      cursor: pointer;
+      transition: background 0.15s;
+      color: #6b7280;
+      padding: 0;
+      outline: none;
+    }
+    .nav-tab:hover {
+      background: rgba(255,255,255,0.04);
+    }
+    .nav-tab .tab-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 34px;
+      border-radius: 8px;
+      transition: all 0.18s cubic-bezier(0.4,0,0.2,1);
+      margin-top: 2px;
+    }
+    .nav-tab .tab-icon svg {
+      width: 26px;
+      height: 26px;
+      transition: all 0.18s;
+    }
+    .nav-tab .tab-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: #6b7280;
+      margin-top: 1px;
+      transition: color 0.18s;
+      letter-spacing: 0;
+    }
+
+    /* Active state underline */
+    .nav-tab::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 12px;
+      right: 12px;
+      height: 3px;
+      border-radius: 3px 3px 0 0;
+      opacity: 0;
+      transition: opacity 0.18s;
+    }
+
+    /* ---- Tab-specific active colors ---- */
+    .nav-tab[data-color="violet"].active { color: #818cf8; }
+    .nav-tab[data-color="violet"].active .tab-icon svg { filter: drop-shadow(0 0 10px rgba(129, 140, 248, 0.55)); }
+    .nav-tab[data-color="violet"].active::after { background: linear-gradient(90deg, #818cf8, #a855f7); opacity: 1; }
+    .nav-tab[data-color="violet"].active .tab-label { color: #818cf8; }
+
+    .nav-tab[data-color="purple"].active { color: #a855f7; }
+    .nav-tab[data-color="purple"].active .tab-icon svg { filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.55)); }
+    .nav-tab[data-color="purple"].active::after { background: linear-gradient(90deg, #a855f7, #c084fc); opacity: 1; }
+    .nav-tab[data-color="purple"].active .tab-label { color: #a855f7; }
+
+    .nav-tab[data-color="pink"].active { color: #ec4899; }
+    .nav-tab[data-color="pink"].active .tab-icon svg { filter: drop-shadow(0 0 10px rgba(236, 72, 153, 0.55)); }
+    .nav-tab[data-color="pink"].active::after { background: linear-gradient(90deg, #ec4899, #f472b6); opacity: 1; }
+    .nav-tab[data-color="pink"].active .tab-label { color: #ec4899; }
+
+    .nav-tab[data-color="cyan"].active { color: #06b6d4; }
+    .nav-tab[data-color="cyan"].active .tab-icon svg { filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.55)); }
+    .nav-tab[data-color="cyan"].active::after { background: linear-gradient(90deg, #06b6d4, #38bdf8); opacity: 1; }
+    .nav-tab[data-color="cyan"].active .tab-label { color: #06b6d4; }
+
+    .nav-tab[data-color="amber"].active { color: #f59e0b; }
+    .nav-tab[data-color="amber"].active .tab-icon svg { filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.55)); }
+    .nav-tab[data-color="amber"].active::after { background: linear-gradient(90deg, #f59e0b, #fbbf24); opacity: 1; }
+    .nav-tab[data-color="amber"].active .tab-label { color: #f59e0b; }
+
+    .nav-tab[data-color="emerald"].active { color: #10b981; }
+    .nav-tab[data-color="emerald"].active .tab-icon svg { filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.55)); }
+    .nav-tab[data-color="emerald"].active::after { background: linear-gradient(90deg, #10b981, #34d399); opacity: 1; }
+    .nav-tab[data-color="emerald"].active .tab-label { color: #10b981; }
+
+    .nav-tab[data-color="green"].active { color: #22c55e; }
+    .nav-tab[data-color="green"].active .tab-icon svg { filter: drop-shadow(0 0 10px rgba(34, 197, 94, 0.55)); }
+    .nav-tab[data-color="green"].active::after { background: linear-gradient(90deg, #22c55e, #4ade80); opacity: 1; }
+    .nav-tab[data-color="green"].active .tab-label { color: #22c55e; }
+
+    /* Active tab bg highlight */
+    .nav-tab.active .tab-icon { background: rgba(255,255,255,0.05); }
+
+    /* Scale up active icon */
+    .nav-tab.active .tab-icon svg { transform: scale(1.08); }
+
+    /* Right action area */
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 14px;
+      min-width: 220px;
+      justify-content: flex-end;
+      flex-shrink: 0;
+    }
+    .action-btn {
+      position: relative;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #cbd5e1;
+      transition: background 0.15s;
+    }
+    .action-btn:hover { background: rgba(255,255,255,0.1); }
+    .action-btn svg { width: 20px; height: 20px; }
+    .action-btn .badge {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 16px;
+      height: 16px;
+      background: #ef4444;
+      border-radius: 50%;
+      border: 2px solid #0A0E1A;
+      font-size: 9px;
+      font-weight: 700;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .user-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+      border: 2px solid rgba(255,255,255,0.15);
+      cursor: pointer;
+      flex-shrink: 0;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: white;
+    }
+
+    /* ==========================================
+       PAGE BODY — FEED LAYOUT DEMO
+    ========================================== */
+    .page-body {
+      display: grid;
+      grid-template-columns: 260px 1fr 340px;
+      gap: 0;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 16px;
+      min-height: calc(100vh - 60px);
+    }
+
+    /* Left sidebar */
+    .sidebar-left {
+      padding: 16px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      border-right: 1px solid rgba(255,255,255,0.04);
+    }
+    .sidebar-heading {
+      font-size: 11px;
+      font-weight: 700;
+      color: #4b5563;
+      padding: 8px 12px 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+      color: #9ca3af;
+    }
+    .sidebar-link:hover { background: rgba(255,255,255,0.04); color: #e2e8f0; }
+    .sidebar-link.active { background: rgba(99,102,241,0.12); color: #818cf8; }
+    .sidebar-link svg { width: 20px; height: 20px; flex-shrink: 0; }
+    .sidebar-link span { font-size: 14px; font-weight: 500; }
+    .sidebar-icon-bg {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* Main feed */
+    .feed-center {
+      padding: 20px 24px;
+      max-width: 680px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .post-composer {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .composer-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      flex-shrink: 0;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: white;
+    }
+    .composer-input {
+      flex: 1;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 24px;
+      padding: 10px 16px;
+      font-size: 14px;
+      color: #6b7280;
+      cursor: text;
+    }
+
+    .post-card {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.055);
+      border-radius: 16px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .post-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px 10px;
+    }
+    .post-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: white;
+      font-size: 16px;
+    }
+    .post-meta { flex: 1; }
+    .post-name { font-size: 14px; font-weight: 600; color: #e2e8f0; }
+    .post-time { font-size: 12px; color: #4b5563; margin-top: 1px; }
+    .post-body { padding: 0 16px 12px; font-size: 14px; color: #9ca3af; line-height: 1.6; }
+    .post-image {
+      width: 100%;
+      height: 260px;
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #1e1b4b 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      margin-bottom: 2px;
+    }
+    .post-actions {
+      display: flex;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      padding: 4px 8px;
+    }
+    .post-action-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: #6b7280;
+      border: none;
+      background: transparent;
+      transition: background 0.15s, color 0.15s;
+    }
+    .post-action-btn:hover { background: rgba(255,255,255,0.05); color: #e2e8f0; }
+    .post-action-btn svg { width: 18px; height: 18px; }
+
+    /* Right sidebar */
+    .sidebar-right {
+      padding: 16px 8px;
+      border-left: 1px solid rgba(255,255,255,0.04);
+    }
+    .widget-card {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .widget-title { font-size: 13px; font-weight: 700; color: #e2e8f0; margin-bottom: 10px; }
+    .friend-suggest {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+    }
+    .suggest-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; color: white; font-size: 14px;
+    }
+    .suggest-info { flex: 1; }
+    .suggest-name { font-size: 13px; font-weight: 600; color: #e2e8f0; }
+    .suggest-mutual { font-size: 11px; color: #4b5563; }
+    .suggest-btn {
+      border: 1px solid rgba(99,102,241,0.4);
+      background: rgba(99,102,241,0.1);
+      color: #818cf8;
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .suggest-btn:hover { background: rgba(99,102,241,0.2); }
+
+    /* The option selector section at the bottom */
+    .options-showcase {
+      padding: 32px 16px 80px;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+    .showcase-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 6px;
+      background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .showcase-sub { font-size: 14px; color: #4b5563; margin-bottom: 28px; }
+
+    .option-cards-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 900px) { .option-cards-grid { grid-template-columns: 1fr; } }
+
+    .option-card {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 20px;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .option-card:hover, .option-card.selected {
+      border-color: rgba(129, 140, 248, 0.5);
+      background: rgba(129, 140, 248, 0.04);
+    }
+    .option-card.selected .option-select-ring {
+      background: #818cf8;
+      border-color: #818cf8;
+    }
+    .option-card.selected .option-select-ring::after {
+      content: '';
+      position: absolute;
+      inset: 3px;
+      border-radius: 50%;
+      background: #0A0E1A;
+    }
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+    .card-label { font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .card-name { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #f1f5f9; }
+    .card-desc { font-size: 13px; color: #4b5563; margin-top: 4px; line-height: 1.5; max-width: 340px; }
+    .option-select-ring {
+      width: 22px; height: 22px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.15);
+      background: transparent;
+      position: relative;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .rec-pill {
+      font-size: 10px;
+      font-weight: 800;
+      background: linear-gradient(90deg, #06b6d4, #818cf8);
+      color: #fff;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      margin-top: 4px;
+      display: inline-block;
+      letter-spacing: 0.4px;
+    }
+
+    /* Mini nav preview inside each card */
+    .mini-nav-preview {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 10px 8px;
+      margin-top: 14px;
+    }
+    .mini-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 38px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: #4b5563;
+      transition: all 0.15s;
+      position: relative;
+    }
+    .mini-btn svg { width: 22px; height: 22px; }
+    .mini-btn::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 6px;
+      right: 6px;
+      height: 2.5px;
+      border-radius: 2px;
+      opacity: 0;
+    }
+
+    /* STYLE A: Per-tab signature color glow */
+    .style-a .mini-btn.a1.active { color: #818cf8; }
+    .style-a .mini-btn.a1.active svg { filter: drop-shadow(0 0 7px rgba(129,140,248,0.7)); }
+    .style-a .mini-btn.a1.active::after { background: #818cf8; opacity: 1; }
+
+    .style-a .mini-btn.a2.active { color: #a855f7; }
+    .style-a .mini-btn.a2.active svg { filter: drop-shadow(0 0 7px rgba(168,85,247,0.7)); }
+    .style-a .mini-btn.a2.active::after { background: #a855f7; opacity: 1; }
+
+    .style-a .mini-btn.a3.active { color: #ec4899; }
+    .style-a .mini-btn.a3.active svg { filter: drop-shadow(0 0 7px rgba(236,72,153,0.7)); }
+    .style-a .mini-btn.a3.active::after { background: #ec4899; opacity: 1; }
+
+    .style-a .mini-btn.a4.active { color: #06b6d4; }
+    .style-a .mini-btn.a4.active svg { filter: drop-shadow(0 0 7px rgba(6,182,212,0.7)); }
+    .style-a .mini-btn.a4.active::after { background: #06b6d4; opacity: 1; }
+
+    .style-a .mini-btn.a5.active { color: #f97316; }
+    .style-a .mini-btn.a5.active svg { filter: drop-shadow(0 0 7px rgba(249,115,22,0.7)); }
+    .style-a .mini-btn.a5.active::after { background: #f97316; opacity: 1; }
+
+    .style-a .mini-btn.a6.active { color: #f59e0b; }
+    .style-a .mini-btn.a6.active svg { filter: drop-shadow(0 0 7px rgba(245,158,11,0.7)); }
+    .style-a .mini-btn.a6.active::after { background: #f59e0b; opacity: 1; }
+
+    .style-a .mini-btn.a7.active { color: #22c55e; }
+    .style-a .mini-btn.a7.active svg { filter: drop-shadow(0 0 7px rgba(34,197,94,0.7)); }
+    .style-a .mini-btn.a7.active::after { background: #22c55e; opacity: 1; }
+
+    /* STYLE B: Unified single aurora brand violet for all */
+    .style-b .mini-btn.active { color: #a78bfa; }
+    .style-b .mini-btn.active svg { filter: drop-shadow(0 0 8px rgba(167,139,250,0.65)); }
+    .style-b .mini-btn.active::after { background: linear-gradient(90deg, #06b6d4, #a78bfa); opacity: 1; }
+
+    /* STYLE C: Filled circle tinted bg */
+    .style-c .mini-btn.active {
+      background: rgba(139, 92, 246, 0.15);
+      border-radius: 10px;
+      color: #a78bfa;
+    }
+    .style-c .mini-btn.active svg { filter: drop-shadow(0 0 6px rgba(139,92,246,0.5)); }
+
+    /* STYLE D: Flat Facebook — white active, underline only */
+    .style-d .mini-btn { color: #374151; }
+    .style-d .mini-btn.active { color: #e2e8f0; }
+    .style-d .mini-btn.active::after {
+      background: #818cf8;
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ======================= TOP NAVIGATION BAR ======================= -->
+  <header class="app-header">
+    <!-- LEFT: Logo -->
+    <div class="header-logo">
+      <div class="logo-icon">🐱</div>
+      <span class="logo-text">HiMewo</span>
+      <div class="header-search" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:20px;padding:7px 12px;margin-left:8px;cursor:text;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4b5563" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span style="font-size:13px;color:#374151;">Search...</span>
+      </div>
+    </div>
+
+    <!-- CENTER: Main Navigation Tabs -->
+    <nav class="header-nav" id="main-nav">
+
+      <!-- Feed -->
+      <button class="nav-tab active" data-color="violet" onclick="activateTab(this)" title="Home Feed">
+        <div class="tab-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+          </svg>
+        </div>
+        <span class="tab-label">Feed</span>
+      </button>
+
+      <!-- Friends -->
+      <button class="nav-tab" data-color="purple" onclick="activateTab(this)" title="Friends">
+        <div class="tab-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+          </svg>
+        </div>
+        <span class="tab-label">Friends</span>
+      </button>
+
+      <!-- Reels -->
+      <button class="nav-tab" data-color="pink" onclick="activateTab(this)" title="Reels">
+        <div class="tab-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M4 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H4zm10 4-1.5 2.5h-3L11 4h2.5L12 6.5h2zM8 4l-1.5 2.5H4V4h4zM4 9h16v11H4V9zm6 3v6l5-3-5-3z"/>
+          </svg>
+        </div>
+        <span class="tab-label">Reels</span>
+      </button>
+
+      <!-- Circles -->
+      <button class="nav-tab" data-color="cyan" onclick="activateTab(this)" title="Circles">
+        <div class="tab-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8zm-7 9a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zm14 0a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zm-7 2c-2.67 0-5.33 1.33-5.33 3V18h10.67v-2c0-1.67-2.67-3-5.33-3z"/>
+          </svg>
+        </div>
+        <span class="tab-label">Circles</span>
+      </button>
+
+      <!-- Hubs -->
+      <button class="nav-tab" data-color="amber" onclick="activateTab(this)" title="Hubs">
+        <div class="tab-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17 3H7a2 2 0 0 0-2 2v16l7-3 7 3V5a2 2 0 0 0-2-2zm-1 11.27-4-2.4-4 2.4V5h8v9.27z"/>
+          </svg>
+        </div>
+        <span class="tab-label">Hubs</span>
+      </button>
+
+      <!-- Shop -->
+      <button class="nav-tab" data-color="emerald" onclick="activateTab(this)" title="Shop">
+        <div class="tab-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/>
+          </svg>
+        </div>
+        <span class="tab-label">Shop</span>
+      </button>
+
+      <!-- Wallet -->
+      <button class="nav-tab" data-color="green" onclick="activateTab(this)" title="Wallet">
+        <div class="tab-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M21 7.28V5c0-1.1-.9-2-2-2H5C3.34 3 2 4.34 2 6v12c0 1.66 1.34 3 3 3h14c1.1 0 2-.9 2-2v-2.28c.59-.35 1-.99 1-1.72V9c0-.73-.41-1.37-1-1.72zM20 9v6h-4V9h4zM5 18c-.55 0-1-.45-1-1V7.54C4.31 7.83 4.64 8 5 8h9v10H5z"/>
+          </svg>
+        </div>
+        <span class="tab-label">Wallet</span>
+      </button>
+
+    </nav>
+
+    <!-- RIGHT: Actions -->
+    <div class="header-actions">
+      <button class="action-btn" title="Search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+      <button class="action-btn" title="Messages">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+      </button>
+      <button class="action-btn" title="Notifications">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+        <div class="badge">3</div>
+      </button>
+      <div class="user-avatar">F</div>
+    </div>
+  </header>
+
+  <!-- ===================== PAGE BODY ===================== -->
+  <div class="page-body">
+
+    <!-- Left Sidebar -->
+    <aside class="sidebar-left">
+      <div class="sidebar-link active">
+        <div class="sidebar-icon-bg" style="background:rgba(129,140,248,0.12);">
+          <svg style="width:20px;height:20px;color:#818cf8;" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        </div>
+        <span>Home Feed</span>
+      </div>
+      <div class="sidebar-link">
+        <div class="sidebar-icon-bg" style="background:rgba(168,85,247,0.1);">
+          <svg style="width:20px;height:20px;color:#a855f7;" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        </div>
+        <span>Friends</span>
+      </div>
+      <div class="sidebar-link">
+        <div class="sidebar-icon-bg" style="background:rgba(236,72,153,0.1);">
+          <svg style="width:20px;height:20px;color:#ec4899;" viewBox="0 0 24 24" fill="currentColor"><path d="M4 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H4zm10 4-1.5 2.5h-3L11 4h2.5L12 6.5h2zM8 4l-1.5 2.5H4V4h4zM4 9h16v11H4V9zm6 3v6l5-3-5-3z"/></svg>
+        </div>
+        <span>Reels</span>
+      </div>
+      <div class="sidebar-link">
+        <div class="sidebar-icon-bg" style="background:rgba(6,182,212,0.1);">
+          <svg style="width:20px;height:20px;color:#06b6d4;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8zm-7 9a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zm14 0a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zm-7 2c-2.67 0-5.33 1.33-5.33 3V18h10.67v-2c0-1.67-2.67-3-5.33-3z"/></svg>
+        </div>
+        <span>Circles</span>
+      </div>
+      <div class="sidebar-link">
+        <div class="sidebar-icon-bg" style="background:rgba(245,158,11,0.1);">
+          <svg style="width:20px;height:20px;color:#f59e0b;" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7a2 2 0 0 0-2 2v16l7-3 7 3V5a2 2 0 0 0-2-2zm-1 11.27-4-2.4-4 2.4V5h8v9.27z"/></svg>
+        </div>
+        <span>Hubs</span>
+      </div>
+      <div class="sidebar-link">
+        <div class="sidebar-icon-bg" style="background:rgba(16,185,129,0.1);">
+          <svg style="width:20px;height:20px;color:#10b981;" viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/></svg>
+        </div>
+        <span>Shop</span>
+      </div>
+      <div class="sidebar-link">
+        <div class="sidebar-icon-bg" style="background:rgba(34,197,94,0.1);">
+          <svg style="width:20px;height:20px;color:#22c55e;" viewBox="0 0 24 24" fill="currentColor"><path d="M21 7.28V5c0-1.1-.9-2-2-2H5C3.34 3 2 4.34 2 6v12c0 1.66 1.34 3 3 3h14c1.1 0 2-.9 2-2v-2.28c.59-.35 1-.99 1-1.72V9c0-.73-.41-1.37-1-1.72zM20 9v6h-4V9h4zM5 18c-.55 0-1-.45-1-1V7.54C4.31 7.83 4.64 8 5 8h9v10H5z"/></svg>
+        </div>
+        <span>Wallet</span>
+      </div>
+    </aside>
+
+    <!-- Main Feed -->
+    <main class="feed-center">
+      <!-- Composer -->
+      <div class="post-composer">
+        <div class="composer-avatar">F</div>
+        <div class="composer-input">What's on your mind, Farhan?</div>
+      </div>
+
+      <!-- Post 1 -->
+      <div class="post-card">
+        <div class="post-header">
+          <div class="post-avatar" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">S</div>
+          <div class="post-meta">
+            <div class="post-name">Sakura Yamamoto</div>
+            <div class="post-time">2 hours ago · 🌐</div>
+          </div>
+          <svg style="width:20px;height:20px;color:#4b5563;cursor:pointer" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+        </div>
+        <div class="post-body">
+          Tokyoর রাতের আকাশ আজ খুব সুন্দর ছিল। জীবনের ছোট ছোট মুহূর্তগুলোই সবচেয়ে মূল্যবান! ✨🌸
+        </div>
+        <div class="post-image">🌸🌃</div>
+        <div class="post-actions">
+          <button class="post-action-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            Like
+          </button>
+          <button class="post-action-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Comment
+          </button>
+          <button class="post-action-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            Share
+          </button>
+        </div>
+      </div>
+
+      <!-- Post 2 -->
+      <div class="post-card">
+        <div class="post-header">
+          <div class="post-avatar" style="background:linear-gradient(135deg,#ec4899,#f97316);">A</div>
+          <div class="post-meta">
+            <div class="post-name">Ahmed Hassan · <span style="color:#4b5563;font-weight:400">Shared a Reel</span></div>
+            <div class="post-time">5 hours ago</div>
+          </div>
+        </div>
+        <div class="post-body">Best programming setup of 2026 🔥 #DevLife #HiMewo</div>
+        <div class="post-actions">
+          <button class="post-action-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            Like
+          </button>
+          <button class="post-action-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Comment
+          </button>
+          <button class="post-action-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            Share
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- Right sidebar -->
+    <aside class="sidebar-right">
+      <div class="widget-card">
+        <div class="widget-title">People You May Know</div>
+        <div class="friend-suggest">
+          <div class="suggest-avatar" style="background:linear-gradient(135deg,#06b6d4,#818cf8);">M</div>
+          <div class="suggest-info">
+            <div class="suggest-name">Mia Chen</div>
+            <div class="suggest-mutual">12 mutual friends</div>
+          </div>
+          <button class="suggest-btn">+ Add</button>
+        </div>
+        <div class="friend-suggest">
+          <div class="suggest-avatar" style="background:linear-gradient(135deg,#ec4899,#a855f7);">R</div>
+          <div class="suggest-info">
+            <div class="suggest-name">Riku Tanaka</div>
+            <div class="suggest-mutual">5 mutual friends</div>
+          </div>
+          <button class="suggest-btn">+ Add</button>
+        </div>
+        <div class="friend-suggest">
+          <div class="suggest-avatar" style="background:linear-gradient(135deg,#f59e0b,#f97316);">L</div>
+          <div class="suggest-info">
+            <div class="suggest-name">Laila Hassan</div>
+            <div class="suggest-mutual">8 mutual friends</div>
+          </div>
+          <button class="suggest-btn">+ Add</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ===================== DESIGN OPTION SELECTOR ===================== -->
+  <div class="options-showcase">
+    <div class="showcase-title">Choose Your Preferred Icon Style 👆</div>
+    <p class="showcase-sub">Click on any tab above to see active states live. Then pick your preferred color style below:</p>
+
+    <div class="option-cards-grid">
+
+      <!-- Option A: Signature Per-Tab Colors -->
+      <div class="option-card selected" onclick="selectOption(this, 'A')">
+        <div class="card-top">
+          <div>
+            <div class="card-label">Option A — Recommended</div>
+            <div class="card-name">Per-Tab Signature Colors</div>
+            <span class="rec-pill">★ Current Style</span>
+            <div class="card-desc">প্রতিটি ট্যাবের নিজস্ব সিগনেচার কালার থাকবে। Inactive অবস্থায় সব গ্রে, active হলে নিজের রং জ্বলে ওঠে।</div>
+          </div>
+          <div class="option-select-ring" style="background:#818cf8;border-color:#818cf8;"></div>
+        </div>
+        <div class="mini-nav-preview style-a">
+          <button class="mini-btn a1 active" onclick="miniActivate(event, 'style-a', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></button>
+          <button class="mini-btn a2" onclick="miniActivate(event, 'style-a', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></button>
+          <button class="mini-btn a3" onclick="miniActivate(event, 'style-a', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H4zm10 4-1.5 2.5h-3L11 4h2.5L12 6.5h2zM8 4l-1.5 2.5H4V4h4zM4 9h16v11H4V9zm6 3v6l5-3-5-3z"/></svg></button>
+          <button class="mini-btn a4" onclick="miniActivate(event, 'style-a', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8zm-7 9a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zm14 0a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zm-7 2c-2.67 0-5.33 1.33-5.33 3V18h10.67v-2c0-1.67-2.67-3-5.33-3z"/></svg></button>
+          <button class="mini-btn a5" onclick="miniActivate(event, 'style-a', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7a2 2 0 0 0-2 2v16l7-3 7 3V5a2 2 0 0 0-2-2zm-1 11.27-4-2.4-4 2.4V5h8v9.27z"/></svg></button>
+          <button class="mini-btn a6" onclick="miniActivate(event, 'style-a', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/></svg></button>
+          <button class="mini-btn a7" onclick="miniActivate(event, 'style-a', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 7.28V5c0-1.1-.9-2-2-2H5C3.34 3 2 4.34 2 6v12c0 1.66 1.34 3 3 3h14c1.1 0 2-.9 2-2v-2.28c.59-.35 1-.99 1-1.72V9c0-.73-.41-1.37-1-1.72zM20 9v6h-4V9h4zM5 18c-.55 0-1-.45-1-1V7.54C4.31 7.83 4.64 8 5 8h9v10H5z"/></svg></button>
+        </div>
+      </div>
+
+      <!-- Option B: Unified Aurora Single Brand Color -->
+      <div class="option-card" onclick="selectOption(this, 'B')">
+        <div class="card-top">
+          <div>
+            <div class="card-label">Option B</div>
+            <div class="card-name">Unified Aurora Brand</div>
+            <div class="card-desc">সব active ট্যাব একই HiMewo Aurora Violet-Cyan কালারে জ্বলবে। শান্ত, cohesive, ultra-premium Facebook Dark Mode ফিল।</div>
+          </div>
+          <div class="option-select-ring"></div>
+        </div>
+        <div class="mini-nav-preview style-b">
+          <button class="mini-btn active" onclick="miniActivate(event, 'style-b', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></button>
+          <button class="mini-btn" onclick="miniActivate(event, 'style-b', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></button>
+          <button class="mini-btn" onclick="miniActivate(event, 'style-b', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H4zm10 4-1.5 2.5h-3L11 4h2.5L12 6.5h2zM8 4l-1.5 2.5H4V4h4zM4 9h16v11H4V9zm6 3v6l5-3-5-3z"/></svg></button>
+          <button class="mini-btn" onclick="miniActivate(event, 'style-b', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8zm-7 9a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zm14 0a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zm-7 2c-2.67 0-5.33 1.33-5.33 3V18h10.67v-2c0-1.67-2.67-3-5.33-3z"/></svg></button>
+          <button class="mini-btn" onclick="miniActivate(event, 'style-b', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7a2 2 0 0 0-2 2v16l7-3 7 3V5a2 2 0 0 0-2-2zm-1 11.27-4-2.4-4 2.4V5h8v9.27z"/></svg></button>
+          <button class="mini-btn" onclick="miniActivate(event, 'style-b', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/></svg></button>
+          <button class="mini-btn" onclick="miniActivate(event, 'style-b', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 7.28V5c0-1.1-.9-2-2-2H5C3.34 3 2 4.34 2 6v12c0 1.66 1.34 3 3 3h14c1.1 0 2-.9 2-2v-2.28c.59-.35 1-.99 1-1.72V9c0-.73-.41-1.37-1-1.72zM20 9v6h-4V9h4zM5 18c-.55 0-1-.45-1-1V7.54C4.31 7.83 4.64 8 5 8h9v10H5z"/></svg></button>
+        </div>
+      </div>
+
+      <!-- Option C: Tinted Background Pill -->
+      <div class="option-card" onclick="selectOption(this, 'C')">
+        <div class="card-top">
+          <div>
+            <div class="card-label">Option C</div>
+            <div class="card-name">Tinted Pill Background</div>
+            <div class="card-desc">Active icon-এর পেছনে একটা soft tinted pill background দেখা যাবে। Apple macOS Dock-এর মতো টেকচারড ফিল।</div>
+          </div>
+          <div class="option-select-ring"></div>
+        </div>
+        <div class="mini-nav-preview style-c">
+          <button class="mini-btn active" onclick="miniActivate(event, 'style-c', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></button>
+          <button class="mini-btn" onclick="miniActivate(event, 'style-c', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></button>
+          <button class="mini-btn" onclick="miniActivate(event, 'style-c', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H4zm10 4-1.5 2.5h-3L11 4h2.5L12 6.5h2zM8 4l-1.5 2.5H4V4h4zM4 9h16v11H4V9zm6 3v6l5-3-5-3z"/></svg></button>
+          <button class="mini-btn" onclick="miniActivate(event, 'style-c', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8zm-7 9a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zm14 0a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zm-7 2c-2.67 0-5.33 1.33-5.33 3V18h10.67v-2c0-1.67-2.67-3-5.33-3z"/></svg></button>
+          <button class="mini-btn" onclick="miniActivate(event, 'style-c', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7a2 2 0 0 0-2 2v16l7-3 7 3V5a2 2 0 0 0-2-2zm-1 11.27-4-2.4-4 2.4V5h8v9.27z"/></svg></button>
+          <button class="mini-btn" onclick="miniActivate(event, 'style-c', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/></svg></button>
+          <button class="mini-btn" onclick="miniActivate(event, 'style-c', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 7.28V5c0-1.1-.9-2-2-2H5C3.34 3 2 4.34 2 6v12c0 1.66 1.34 3 3 3h14c1.1 0 2-.9 2-2v-2.28c.59-.35 1-.99 1-1.72V9c0-.73-.41-1.37-1-1.72zM20 9v6h-4V9h4zM5 18c-.55 0-1-.45-1-1V7.54C4.31 7.83 4.64 8 5 8h9v10H5z"/></svg></button>
+        </div>
+      </div>
+
+      <!-- Option D: Facebook Flat -->
+      <div class="option-card" onclick="selectOption(this, 'D')">
+        <div class="card-top">
+          <div>
+            <div class="card-label">Option D — Ultra Minimal</div>
+            <div class="card-name">Facebook Exact Replica</div>
+            <div class="card-desc">হুবহু Facebook-এর Dark Mode nav। Active হলে icon সাদা হয় + নিচে violet underline বার। বাকি সব dark grey। No glow, no effects।</div>
+          </div>
+          <div class="option-select-ring"></div>
+        </div>
+        <div class="mini-nav-preview style-d" style="background:rgba(36,37,38,0.9);">
+          <button class="mini-btn active" onclick="miniActivate(event, 'style-d', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></button>
+          <button class="mini-btn" onclick="miniActivate(event, 'style-d', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></button>
+          <button class="mini-btn" onclick="miniActivate(event, 'style-d', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H4zm10 4-1.5 2.5h-3L11 4h2.5L12 6.5h2zM8 4l-1.5 2.5H4V4h4zM4 9h16v11H4V9zm6 3v6l5-3-5-3z"/></svg></button>
+          <button class="mini-btn" onclick="miniActivate(event, 'style-d', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8zm-7 9a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zm14 0a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zm-7 2c-2.67 0-5.33 1.33-5.33 3V18h10.67v-2c0-1.67-2.67-3-5.33-3z"/></svg></button>
+          <button class="mini-btn" onclick="miniActivate(event, 'style-d', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7a2 2 0 0 0-2 2v16l7-3 7 3V5a2 2 0 0 0-2-2zm-1 11.27-4-2.4-4 2.4V5h8v9.27z"/></svg></button>
+          <button class="mini-btn" onclick="miniActivate(event, 'style-d', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/></svg></button>
+          <button class="mini-btn" onclick="miniActivate(event, 'style-d', this)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 7.28V5c0-1.1-.9-2-2-2H5C3.34 3 2 4.34 2 6v12c0 1.66 1.34 3 3 3h14c1.1 0 2-.9 2-2v-2.28c.59-.35 1-.99 1-1.72V9c0-.73-.41-1.37-1-1.72zM20 9v6h-4V9h4zM5 18c-.55 0-1-.45-1-1V7.54C4.31 7.83 4.64 8 5 8h9v10H5z"/></svg></button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Instruction -->
+    <div style="margin-top:32px;text-align:center;padding:24px;background:rgba(129,140,248,0.06);border:1px solid rgba(129,140,248,0.2);border-radius:20px;">
+      <p style="font-size:15px;font-weight:600;color:#e2e8f0;margin-bottom:6px;">👆 উপরে ট্যাবগুলোতে ক্লিক করে live test করুন।</p>
+      <p style="font-size:13px;color:#4b5563;">Option A, B, C, অথবা D — যেটি পছন্দ হবে জানালেই আমি সরাসরি কোডে implement করে দেব।</p>
+    </div>
+  </div>
+
+  <script>
+    // Main nav tab activation
+    function activateTab(btn) {
+      document.querySelectorAll('#main-nav .nav-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    // Mini nav inside cards
+    function miniActivate(e, styleClass, btn) {
+      e.stopPropagation();
+      const parent = btn.closest('.' + styleClass);
+      parent.querySelectorAll('.mini-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    // Card selection
+    function selectOption(card, letter) {
+      document.querySelectorAll('.option-card').forEach(c => {
+        c.classList.remove('selected');
+        c.querySelector('.option-select-ring').style.background = 'transparent';
+        c.querySelector('.option-select-ring').style.borderColor = 'rgba(255,255,255,0.15)';
+      });
+      card.classList.add('selected');
+      card.querySelector('.option-select-ring').style.background = '#818cf8';
+      card.querySelector('.option-select-ring').style.borderColor = '#818cf8';
+    }
+  </script>
+</body>
+</html>

@@ -1,16 +1,20 @@
 import { useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   useGetFriendSuggestions,
   getGetFriendSuggestionsQueryKey,
   useUpdateMyProfile,
   useSendFriendRequest,
+  useFollowUser,
   useCompleteOnboarding,
   getGetCurrentUserQueryKey,
+  type Profile,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { avatarSrc } from "@/lib/avatar";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
@@ -20,23 +24,31 @@ import {
   UserPlus,
   Check,
   PartyPopper,
+  UserCheck,
+  ShieldCheck,
+  AtSign,
 } from "lucide-react";
 import { uploadMedia, UploadUnavailableError } from "@/lib/upload";
 
-type Step = "photo" | "cover" | "bio" | "friends" | "done";
+type Step = "name" | "photo" | "cover" | "bio" | "friends" | "done";
 
-const STEPS: Step[] = ["photo", "cover", "bio", "friends"];
+const STEPS: Step[] = ["name", "photo", "cover", "bio", "friends"];
 
 /**
- * One-time post-signup onboarding: profile photo → cover → bio → 5 friend
- * requests → celebration. Shown as a full-screen takeover on small screens
- * and a centered card on desktop. Every step can be skipped; finishing (or
- * skipping through) marks onboarding complete server-side.
+ * One-time post-signup onboarding: name/username confirmation → profile photo →
+ * cover → bio → mandatory follow & friend requests → celebration.
  */
 export function OnboardingFlow() {
   const { user, refreshUser } = useAuth();
   const queryClient = useQueryClient();
-  const [step, setStep] = useState<Step>("photo");
+  const [step, setStep] = useState<Step>("name");
+
+  // Step 1: Name & Username
+  const [firstName, setFirstName] = useState(user?.firstName ?? "");
+  const [lastName, setLastName] = useState(user?.lastName ?? "");
+  const [displayName, setDisplayName] = useState(user?.displayName ?? "");
+  const [username, setUsername] = useState(user?.username ?? "");
+  const [nameError, setNameError] = useState("");
 
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl ?? "");
   const [coverUrl, setCoverUrl] = useState(user?.coverUrl ?? "");
@@ -47,7 +59,21 @@ export function OnboardingFlow() {
 
   const updateProfile = useUpdateMyProfile();
   const sendRequest = useSendFriendRequest();
+  const followUser = useFollowUser();
   const completeOnboarding = useCompleteOnboarding();
+
+  // Mandatory accounts query
+  const { data: mandatoryAccounts = [], isLoading: isLoadingMandatory } = useQuery<Profile[]>({
+    queryKey: ["onboarding", "mandatory-accounts"],
+    queryFn: async () => {
+      const res = await fetch("/api/onboarding/mandatory-accounts");
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: step === "friends",
+  });
+  const [followedMandatory, setFollowedMandatory] = useState<Set<string>>(new Set());
+  const [followingMandatory, setFollowingMandatory] = useState<string | null>(null);
 
   const suggestionsParams = { mode: "onboarding" as const, limit: 12 };
   const suggestions = useGetFriendSuggestions(suggestionsParams, {
@@ -86,6 +112,57 @@ export function OnboardingFlow() {
       }
     } finally {
       setUploading(false);
+    }
+  };
+
+  const saveNameStep = async () => {
+    const trimmedFirst = firstName.trim();
+    const trimmedLast = lastName.trim();
+    const trimmedDisplay = displayName.trim() || `${trimmedFirst} ${trimmedLast}`.trim();
+    const trimmedUsername = username.trim().toLowerCase().replace(/^@/, "");
+
+    if (!trimmedDisplay) {
+      setNameError("Display name cannot be empty");
+      return;
+    }
+    if (!trimmedUsername || !/^[a-zA-Z0-9._]{3,30}$/.test(trimmedUsername)) {
+      setNameError("Username must be 3-30 characters (letters, numbers, dot, underscore)");
+      return;
+    }
+
+    setNameError("");
+    setSaving(true);
+    try {
+      await updateProfile.mutateAsync({
+        data: {
+          firstName: trimmedFirst || undefined,
+          lastName: trimmedLast || undefined,
+          displayName: trimmedDisplay,
+          username: trimmedUsername,
+        },
+      });
+      queryClient.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
+      setStep("photo");
+    } catch (err: any) {
+      const msg = err?.message || err?.error || "Failed to save profile name";
+      setNameError(msg);
+      toast.error(msg);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleFollowMandatory = async (accId: string) => {
+    if (followedMandatory.has(accId) || followingMandatory) return;
+    setFollowingMandatory(accId);
+    try {
+      await followUser.mutateAsync({ id: accId });
+      setFollowedMandatory((prev) => new Set(prev).add(accId));
+      toast.success("Followed official account");
+    } catch {
+      toast.error("Failed to follow account");
+    } finally {
+      setFollowingMandatory(null);
     }
   };
 
@@ -183,6 +260,74 @@ export function OnboardingFlow() {
         )}
 
         <div className="flex-1 overflow-y-auto p-6">
+          {step === "name" && (
+            <div className="flex flex-col gap-4 animate-in fade-in duration-200">
+              <div className="text-center">
+                <h2 className="text-lg font-semibold">Confirm Your Name & Handle</h2>
+                <p className="text-sm text-muted-foreground">
+                  Review your information before continuing. You can personalize your name and your unique username handle.
+                </p>
+              </div>
+
+              {nameError && (
+                <div className="p-3 text-xs bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl">
+                  {nameError}
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="first-name" className="text-xs">First Name</Label>
+                  <Input
+                    id="first-name"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="First name"
+                    className="h-11 text-sm"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="last-name" className="text-xs">Last Name</Label>
+                  <Input
+                    id="last-name"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Last name"
+                    className="h-11 text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="display-name" className="text-xs">Display Name (Visible to everyone)</Label>
+                <Input
+                  id="display-name"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="e.g. Farhan Ayan"
+                  className="h-11 text-sm"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="username" className="text-xs">Username Handle</Label>
+                <div className="relative">
+                  <AtSign className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Input
+                    id="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ""))}
+                    placeholder="username"
+                    className="pl-9 h-11 text-sm font-mono"
+                  />
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Used for your profile URL and mentions.
+                </p>
+              </div>
+            </div>
+          )}
+
           {step === "photo" && (
             <div className="flex flex-col items-center text-center gap-4">
               <h2 className="text-lg font-semibold">Add a profile picture</h2>
@@ -295,69 +440,130 @@ export function OnboardingFlow() {
           )}
 
           {step === "friends" && (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-5">
               <div className="text-center">
-                <h2 className="text-lg font-semibold">Find your friends</h2>
+                <h2 className="text-lg font-semibold">Connect & Follow</h2>
                 <p className="text-sm text-muted-foreground">
-                  Send {goal} friend requests to get your feed going.
+                  Follow official accounts and connect with people to start your feed.
                 </p>
-                <div className="mt-3 inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm font-semibold">
-                  <UserPlus className="w-4 h-4" />
-                  {Math.min(sentCount, goal)} of {goal} sent
-                </div>
               </div>
-              {suggestions.isLoading ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : people.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">
-                  No suggestions right now — you can find friends later from
-                  the Friends page.
-                </p>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  {people.map((p) => {
-                    const sent = requested.has(p.id);
-                    return (
-                      <div
-                        key={p.id}
-                        className="border border-border rounded-xl p-3 flex flex-col items-center gap-2 text-center"
-                        data-testid={`card-suggestion-${p.username}`}
-                      >
-                        <img
-                          src={avatarSrc(p.avatarUrl)}
-                          alt={p.displayName}
-                          className="w-16 h-16 rounded-full object-cover bg-muted"
-                        />
-                        <span className="text-sm font-medium leading-tight line-clamp-1">
-                          {p.displayName}
-                        </span>
-                        <Button
-                          size="sm"
-                          variant={sent ? "secondary" : "default"}
-                          className="w-full"
-                          disabled={sent || requesting === p.id}
-                          onClick={() => void addFriend(p.id)}
-                          data-testid={`button-add-${p.username}`}
-                        >
-                          {requesting === p.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : sent ? (
-                            <>
-                              <Check className="w-4 h-4 mr-1" /> Sent
-                            </>
-                          ) : (
-                            <>
-                              <UserPlus className="w-4 h-4 mr-1" /> Add
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    );
-                  })}
+
+              {/* Mandatory Accounts Section */}
+              {mandatoryAccounts.length > 0 && (
+                <div className="space-y-2.5 p-3.5 rounded-2xl bg-purple-500/10 border border-purple-500/30">
+                  <div className="flex items-center gap-1.5 text-purple-600 dark:text-purple-400 font-semibold text-xs uppercase tracking-wide">
+                    <ShieldCheck className="w-4 h-4" /> Required: Official Accounts
+                  </div>
+                  <div className="space-y-2">
+                    {mandatoryAccounts.map((acc) => {
+                      const isFollowed = followedMandatory.has(acc.id) || acc.viewerIsFollowing;
+                      const isPending = followingMandatory === acc.id;
+                      return (
+                        <div key={acc.id} className="flex items-center justify-between gap-3 bg-card p-2.5 rounded-xl border border-border/60">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <img
+                              src={avatarSrc(acc.avatarUrl)}
+                              alt={acc.displayName}
+                              className="w-10 h-10 rounded-full object-cover shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold text-foreground truncate">{acc.displayName}</p>
+                              <p className="text-[11px] text-muted-foreground truncate">@{acc.username}</p>
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            disabled={isFollowed || isPending}
+                            onClick={() => void handleFollowMandatory(acc.id)}
+                            className={
+                              isFollowed
+                                ? "bg-muted text-muted-foreground border border-border h-8 text-xs font-semibold px-3"
+                                : "bg-purple-600 hover:bg-purple-700 text-white shadow-sm h-8 text-xs font-semibold px-3.5"
+                            }
+                          >
+                            {isPending ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : isFollowed ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 mr-1" /> Following
+                              </>
+                            ) : (
+                              <>
+                                <UserPlus className="w-3.5 h-3.5 mr-1" /> Follow
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
+
+              {/* People You May Know */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    People You May Know
+                  </span>
+                  <div className="inline-flex items-center gap-1.5 bg-primary/10 text-primary px-2.5 py-1 rounded-full text-xs font-semibold">
+                    <UserPlus className="w-3.5 h-3.5" />
+                    {Math.min(sentCount, goal)} of {goal} sent
+                  </div>
+                </div>
+
+                {suggestions.isLoading ? (
+                  <div className="flex justify-center py-6">
+                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : people.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">
+                    No suggestions right now — you can find friends later from the Friends page.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {people.map((p) => {
+                      const sent = requested.has(p.id);
+                      return (
+                        <div
+                          key={p.id}
+                          className="border border-border rounded-xl p-3 flex flex-col items-center gap-2 text-center bg-card/60"
+                          data-testid={`card-suggestion-${p.username}`}
+                        >
+                          <img
+                            src={avatarSrc(p.avatarUrl)}
+                            alt={p.displayName}
+                            className="w-14 h-14 rounded-full object-cover bg-muted"
+                          />
+                          <span className="text-xs font-semibold leading-tight line-clamp-1">
+                            {p.displayName}
+                          </span>
+                          <Button
+                            size="sm"
+                            variant={sent ? "secondary" : "default"}
+                            className="w-full h-8 text-xs"
+                            disabled={sent || requesting === p.id}
+                            onClick={() => void addFriend(p.id)}
+                            data-testid={`button-add-${p.username}`}
+                          >
+                            {requesting === p.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : sent ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 mr-1" /> Sent
+                              </>
+                            ) : (
+                              <>
+                                <UserPlus className="w-3.5 h-3.5 mr-1" /> Add
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -368,8 +574,7 @@ export function OnboardingFlow() {
               </div>
               <h2 className="text-2xl font-bold">You're all set!</h2>
               <p className="text-sm text-muted-foreground max-w-xs">
-                Your profile is ready. Time to explore HiMewo and connect with
-                your friends.
+                Your profile is ready. Time to explore HiMewo and connect with your friends.
               </p>
               <Button
                 size="lg"
@@ -388,16 +593,38 @@ export function OnboardingFlow() {
           <div className="p-6 pt-0 flex items-center justify-between gap-3">
             <Button
               variant="ghost"
-              onClick={() =>
-                step === "friends"
-                  ? void finish()
-                  : setStep(STEPS[stepIndex + 1] as Step)
-              }
+              onClick={() => {
+                if (step === "name") {
+                  void saveNameStep();
+                } else if (step === "friends") {
+                  const hasUnfollowed =
+                    mandatoryAccounts.length > 0 &&
+                    !mandatoryAccounts.every(
+                      (acc) => followedMandatory.has(acc.id) || acc.viewerIsFollowing
+                    );
+                  if (hasUnfollowed) {
+                    toast.error("Please follow the mandatory official accounts first");
+                    return;
+                  }
+                  void finish();
+                } else {
+                  setStep(STEPS[stepIndex + 1] as Step);
+                }
+              }}
               disabled={saving}
               data-testid="button-onboarding-skip"
             >
               Skip
             </Button>
+            {step === "name" && (
+              <Button
+                onClick={() => void saveNameStep()}
+                disabled={saving}
+                data-testid="button-onboarding-next"
+              >
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Next"}
+              </Button>
+            )}
             {step === "photo" && (
               <Button
                 onClick={() => void savePhotoStep("avatar", "cover")}
@@ -428,8 +655,15 @@ export function OnboardingFlow() {
             {step === "friends" && (
               <Button
                 onClick={() => void finish()}
-                disabled={saving || (people.length > 0 && sentCount < goal)}
+                disabled={
+                  saving ||
+                  (mandatoryAccounts.length > 0 &&
+                    !mandatoryAccounts.every(
+                      (acc) => followedMandatory.has(acc.id) || acc.viewerIsFollowing
+                    ))
+                }
                 data-testid="button-onboarding-next"
+                className="bg-purple-600 hover:bg-purple-700 text-white"
               >
                 {saving ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

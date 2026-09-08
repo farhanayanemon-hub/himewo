@@ -11,6 +11,11 @@ import {
   useCreateReelComment,
   useFollowUser,
   useUnfollowUser,
+  useCreateStory,
+  useListConversations,
+  useCreateConversation,
+  useSendMessage,
+  useListFriends,
   getListReelsQueryKey,
   getListSavedItemsQueryKey,
   getListReelCommentsQueryKey,
@@ -46,8 +51,14 @@ import {
   Flag,
   EyeOff,
   Globe,
+  Camera,
+  Scissors,
+  Sliders,
+  FolderOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MediaCaptureModal } from "@/components/media-capture-modal";
+import { StoryReelEditor } from "@/components/story-reel-editor";
 import {
   Dialog,
   DialogContent,
@@ -95,6 +106,7 @@ export interface ReelOverlay {
   y: number; // percentage (0 - 100)
   color?: string;
   bgStyle?: "none" | "pill" | "glass" | "neon";
+  fontStyle?: "modern" | "serif" | "neon" | "script" | "impact";
   fontSize?: number;
 }
 
@@ -117,6 +129,22 @@ export function parseReelOverlays(rawCaption: string | null | undefined): {
     return { cleanCaption, overlays: Array.isArray(overlays) ? overlays : [] };
   } catch {
     return { cleanCaption: rawCaption, overlays: [] };
+  }
+}
+
+function getOverlayFontClass(fontStyle?: "modern" | "serif" | "neon" | "script" | "impact"): string {
+  switch (fontStyle) {
+    case "serif":
+      return "font-serif italic font-semibold";
+    case "neon":
+      return "font-mono font-bold tracking-widest [text-shadow:0_0_12px_#a855f7]";
+    case "script":
+      return "italic font-serif font-medium";
+    case "impact":
+      return "font-black uppercase tracking-wider";
+    case "modern":
+    default:
+      return "font-sans font-bold";
   }
 }
 
@@ -176,6 +204,10 @@ function CreateReelDialog() {
   const [caption, setCaption] = useState("");
   const [music, setMusic] = useState<SelectedMusic | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [cameraModalOpen, setCameraModalOpen] = useState(false);
+  const [selectedRawFile, setSelectedRawFile] = useState<File | null>(null);
+  const [proEditorOpen, setProEditorOpen] = useState(false);
+  const [fontStyle, setFontStyle] = useState<"modern" | "serif" | "neon" | "script" | "impact">("modern");
 
   // Overlay Editor States
   const [overlays, setOverlays] = useState<ReelOverlay[]>([]);
@@ -194,18 +226,23 @@ function CreateReelDialog() {
 
   const reset = () => {
     setVideo(null);
+    setSelectedRawFile(null);
+    setProEditorOpen(false);
+    setCameraModalOpen(false);
     setCaption("");
     setMusic(null);
     setOverlays([]);
     setSelectedOverlayId(null);
     setActiveTab("none");
     setTextInput("");
+    setFontStyle("modern");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleFile = async (files: FileList | null) => {
     const file = files?.[0];
     if (!file) return;
+    setSelectedRawFile(file);
     setUploading(true);
     try {
       const uploaded = await uploadMedia(file);
@@ -224,6 +261,20 @@ function CreateReelDialog() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  const handleCameraMedia = async (file: File) => {
+    setSelectedRawFile(file);
+    setCameraModalOpen(false);
+    setUploading(true);
+    try {
+      const uploaded = await uploadMedia(file);
+      setVideo({ url: uploaded.url, type: "video" });
+    } catch {
+      toast({ title: "Upload failed", description: "Please try again." });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleAddText = () => {
     if (!textInput.trim()) return;
     const newOverlay: ReelOverlay = {
@@ -234,6 +285,7 @@ function CreateReelDialog() {
       y: 40,
       color: textColor,
       bgStyle: textBgStyle,
+      fontStyle,
       fontSize: textSize,
     };
     setOverlays((prev) => [...prev, newOverlay]);
@@ -331,7 +383,8 @@ function CreateReelDialog() {
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
+    <>
+      <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
       <Button onClick={() => setOpen(true)} className="rounded-full gap-2 shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
         <Plus className="w-4 h-4" /> Create Reel
       </Button>
@@ -406,7 +459,7 @@ function CreateReelDialog() {
                               color: ov.color || "#ffffff",
                               fontSize: `${ov.fontSize ?? 18}px`,
                             }}
-                            className={getOverlayStyleClass(ov.bgStyle)}
+                            className={`${getOverlayStyleClass(ov.bgStyle)} ${getOverlayFontClass(ov.fontStyle)}`}
                           >
                             {ov.content}
                           </span>
@@ -556,6 +609,27 @@ function CreateReelDialog() {
                       </div>
                     </div>
 
+                    {/* Font Style Selection */}
+                    <div>
+                      <span className="text-[11px] text-muted-foreground block mb-1">Font:</span>
+                      <div className="flex gap-1.5 overflow-x-auto pb-1">
+                        {(["modern", "serif", "neon", "script", "impact"] as const).map((fn) => (
+                          <button
+                            key={fn}
+                            type="button"
+                            onClick={() => setFontStyle(fn)}
+                            className={`px-2.5 py-1 rounded-lg text-xs capitalize transition-colors ${
+                              fontStyle === fn
+                                ? "bg-purple-600 text-white font-semibold shadow-sm"
+                                : "bg-background/80 hover:bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {fn}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     {/* Badge Style Mode */}
                     <div className="flex items-center justify-between gap-1 text-xs">
                       <span className="text-[11px] text-muted-foreground">Badge:</span>
@@ -672,35 +746,76 @@ function CreateReelDialog() {
               </div>
             </div>
           ) : (
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              className="w-full py-16 rounded-2xl border-2 border-dashed border-border text-muted-foreground hover:bg-muted/40 transition-colors flex flex-col items-center gap-3 group"
-            >
-              {uploading ? (
-                <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
-              ) : (
-                <>
-                  <div className="w-14 h-14 rounded-full bg-purple-500/10 text-purple-500 flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
-                    <Plus className="w-7 h-7" />
+            <div className="space-y-4 py-4">
+              <div className="text-center space-y-1">
+                <p className="font-bold text-base text-foreground">Create a New Reel</p>
+                <p className="text-xs text-muted-foreground">
+                  Record with live Snapchat & TikTok camera filters or pick a video from gallery
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Option 1: Live Camera with Snapchat & TikTok style filters */}
+                <button
+                  type="button"
+                  onClick={() => setCameraModalOpen(true)}
+                  className="p-6 rounded-2xl border-2 border-purple-500/40 hover:border-purple-500 bg-purple-500/5 hover:bg-purple-500/10 transition-all flex flex-col items-center text-center gap-3 group shadow-sm hover:shadow-md"
+                >
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-purple-600 via-pink-600 to-amber-500 text-white flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                    <Sparkles className="w-7 h-7" />
                   </div>
-                  <div className="text-center">
-                    <p className="font-semibold text-foreground">Upload Video Reel</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      MP4, WebM or QuickTime vertical video
+                  <div>
+                    <p className="font-bold text-sm text-foreground flex items-center justify-center gap-1.5">
+                      <Camera className="w-4 h-4 text-purple-500" /> Camera & Live Filters
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Golden Sunset, Cyberpunk, Noir, Beauty Glow & VHS Glitch
                     </p>
                   </div>
-                </>
-              )}
-            </button>
+                </button>
+
+                {/* Option 2: Gallery Video Picker */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="p-6 rounded-2xl border-2 border-border hover:border-foreground/30 bg-muted/30 hover:bg-muted/60 transition-all flex flex-col items-center text-center gap-3 group shadow-sm hover:shadow-md"
+                >
+                  <div className="w-14 h-14 rounded-2xl bg-muted border border-border text-foreground flex items-center justify-center group-hover:scale-105 transition-transform">
+                    {uploading ? (
+                      <Loader2 className="w-7 h-7 animate-spin text-purple-500" />
+                    ) : (
+                      <FolderOpen className="w-7 h-7 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm text-foreground">Choose from Gallery</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Pick any vertical MP4, MOV or WebM video
+                    </p>
+                  </div>
+                </button>
+              </div>
+            </div>
           )}
         </div>
 
-        <DialogFooter className="p-4 border-t border-border/60 bg-muted/20">
+        <DialogFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-between gap-2">
+          {video && selectedRawFile && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setProEditorOpen(true)}
+              className="rounded-xl gap-1.5 border-purple-500/30 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 font-semibold"
+            >
+              <Scissors className="w-4 h-4" /> Pro Video Editor
+            </Button>
+          )}
           <Button
             onClick={submit}
             disabled={!video || createReel.isPending}
-            className="rounded-xl w-full sm:w-auto font-semibold bg-purple-600 hover:bg-purple-700 text-white shadow-lg"
+            className="rounded-xl w-full sm:w-auto font-semibold bg-purple-600 hover:bg-purple-700 text-white shadow-lg ml-auto"
           >
             {createReel.isPending ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -711,6 +826,46 @@ function CreateReelDialog() {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Live Camera Modal */}
+    <MediaCaptureModal
+      open={cameraModalOpen}
+      onOpenChange={setCameraModalOpen}
+      mediaType="video"
+      title="Record Reel with Live Filters"
+      onMediaSelected={handleCameraMedia}
+    />
+
+    {/* Pro Fullscreen Editor (CapCut Style: Speed, Cut, Music, Font Styles) */}
+    {proEditorOpen && selectedRawFile && (
+      <StoryReelEditor
+        file={selectedRawFile}
+        type="reel"
+        onClose={() => setProEditorOpen(false)}
+        onSubmit={async (data) => {
+          await createReel.mutateAsync({
+            data: {
+              videoUrl: data.mediaUrl,
+              caption: data.caption || undefined,
+              ...(data.musicUrl
+                ? {
+                    musicUrl: data.musicUrl,
+                    musicTitle: data.musicTitle,
+                    musicArtist: data.musicArtist,
+                  }
+                : {}),
+            },
+          });
+          queryClient.invalidateQueries({ queryKey: getListReelsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: ["user-reels"] });
+          setProEditorOpen(false);
+          setOpen(false);
+          reset();
+          toast({ title: "Reel published successfully!" });
+        }}
+      />
+    )}
+  </>
   );
 }
 
@@ -776,10 +931,14 @@ function ReelCommentsSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col z-50">
-        <SheetHeader className="p-4 border-b border-border">
-          <SheetTitle className="text-base font-bold flex items-center justify-between">
-            <span>Comments ({comments?.length ?? "..."})</span>
+      <SheetContent
+        side="bottom"
+        className="h-[52vh] max-h-[55vh] w-full max-w-xl mx-auto rounded-t-3xl border-t border-border z-50 p-0 flex flex-col bg-card/95 backdrop-blur-xl shadow-2xl"
+      >
+        <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full mx-auto mt-2.5 shrink-0" />
+        <SheetHeader className="px-4 py-2.5 border-b border-border/70 shrink-0">
+          <SheetTitle className="text-sm font-bold flex items-center justify-between text-foreground">
+            <span>Comments ({comments?.length ?? 0})</span>
           </SheetTitle>
         </SheetHeader>
 
@@ -789,7 +948,7 @@ function ReelCommentsSheet({
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
             </div>
           ) : !comments || comments.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground text-sm">
+            <div className="text-center py-10 text-muted-foreground text-sm">
               <MessageCircle className="w-8 h-8 mx-auto mb-2 opacity-40" />
               <p>No comments yet. Be the first to comment!</p>
             </div>
@@ -826,7 +985,7 @@ function ReelCommentsSheet({
 
         <form
           onSubmit={handleSubmit}
-          className="p-3 border-t border-border bg-background flex items-center gap-2"
+          className="p-3 border-t border-border bg-card/90 backdrop-blur-sm flex items-center gap-2 shrink-0 sticky bottom-0"
         >
           {user && (
             <img
@@ -847,7 +1006,7 @@ function ReelCommentsSheet({
             type="submit"
             size="sm"
             disabled={!content.trim() || createComment.isPending}
-            className="rounded-full w-9 h-9 p-0 shrink-0"
+            className="rounded-full w-9 h-9 p-0 shrink-0 bg-purple-600 hover:bg-purple-700 text-white"
           >
             {createComment.isPending ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -874,8 +1033,119 @@ function ReelShareDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { user } = useAuth();
   const [copied, setCopied] = useState(false);
-  const shareUrl = typeof window !== "undefined" ? `${window.location.origin}/reels?id=${reel.id}` : "";
+  const [sharingToStory, setSharingToStory] = useState(false);
+  const [sentUsers, setSentUsers] = useState<Set<string>>(new Set());
+  const [sendingUser, setSendingUser] = useState<string | null>(null);
+
+  const createStory = useCreateStory();
+  const createConversation = useCreateConversation();
+  const sendMessage = useSendMessage();
+
+  const { data: convsData = [] } = useListConversations({
+    query: { enabled: open },
+  } as any);
+
+  const { data: friendsData = [] } = useListFriends({
+    query: { enabled: open },
+  } as any);
+
+  const shareUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/reels?id=${reel.id}`
+      : "";
+  const shareText = `Check out this reel by ${reel.author.displayName} on HiMewo!`;
+
+  // Build ordered list of chat friends (recent chat friends first, then other friends)
+  const chatFriends: { user: any; conversationId?: number }[] = [];
+  const seenIds = new Set<string>();
+
+  // 1. Direct conversations
+  for (const c of convsData as any[]) {
+    if (c.type === "direct" && Array.isArray(c.members)) {
+      const other = c.members.find((m: any) => m.user?.id !== user?.id)?.user;
+      if (other && !seenIds.has(other.id)) {
+        seenIds.add(other.id);
+        chatFriends.push({ user: other, conversationId: c.id });
+      }
+    }
+  }
+
+  // 2. Supplement from friends list up to 18 contacts
+  for (const f of friendsData as any[]) {
+    const friendUser = f.friend || f;
+    if (friendUser?.id && friendUser.id !== user?.id && !seenIds.has(friendUser.id)) {
+      seenIds.add(friendUser.id);
+      chatFriends.push({ user: friendUser });
+      if (chatFriends.length >= 18) break;
+    }
+  }
+
+  // Handle Share to Story (24-hour expiration)
+  const handleShareToStory = async () => {
+    setSharingToStory(true);
+    try {
+      await createStory.mutateAsync({
+        data: {
+          storyType: "media",
+          mediaUrl: reel.videoUrl,
+          mediaType: "video",
+          caption: reel.caption || `Reel by ${reel.author.displayName}`,
+          expiresInHours: 24,
+        },
+      });
+      toast({
+        title: "Shared to Your Story!",
+        description: "Your reel is now active on your story for 24 hours.",
+      });
+      onOpenChange(false);
+    } catch {
+      toast({
+        title: "Failed to share story",
+        description: "Could not add reel to your story. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSharingToStory(false);
+    }
+  };
+
+  // Handle Direct Send to a Friend
+  const handleSendToFriend = async (friendItem: { user: any; conversationId?: number }) => {
+    const friendId = friendItem.user.id;
+    if (sentUsers.has(friendId) || sendingUser) return;
+    setSendingUser(friendId);
+
+    try {
+      let convId = friendItem.conversationId;
+      if (!convId) {
+        const res = await createConversation.mutateAsync({
+          data: { memberIds: [friendId], type: "direct" },
+        });
+        convId = (res as any)?.id;
+      }
+      if (convId) {
+        await sendMessage.mutateAsync({
+          id: convId,
+          data: {
+            content: `Check out this reel by @${reel.author.username || reel.author.displayName} on HiMewo:\n${shareUrl}`,
+          },
+        });
+        setSentUsers((prev) => new Set(prev).add(friendId));
+        toast({
+          title: `Sent to ${friendItem.user.displayName}!`,
+        });
+      }
+    } catch {
+      toast({
+        title: "Failed to send message",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingUser(null);
+    }
+  };
 
   const handleCopy = () => {
     navigator.clipboard.writeText(shareUrl);
@@ -889,7 +1159,7 @@ function ReelShareDialog({
       try {
         await navigator.share({
           title: `Reel by ${reel.author.displayName}`,
-          text: reel.caption || "Check out this reel on HiMewo!",
+          text: reel.caption || shareText,
           url: shareUrl,
         });
         onOpenChange(false);
@@ -901,29 +1171,227 @@ function ReelShareDialog({
     }
   };
 
+  // Social external share links
+  const handleWhatsApp = () => {
+    window.open(
+      `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + "\n" + shareUrl)}`,
+      "_blank"
+    );
+  };
+
+  const handleMessenger = () => {
+    window.open(
+      `https://www.facebook.com/dialog/send?link=${encodeURIComponent(shareUrl)}&app_id=291494419107518&redirect_uri=${encodeURIComponent(shareUrl)}`,
+      "_blank"
+    );
+  };
+
+  const handleTelegram = () => {
+    window.open(
+      `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`,
+      "_blank"
+    );
+  };
+
+  const handleTwitter = () => {
+    window.open(
+      `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`,
+      "_blank"
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Share Reel</DialogTitle>
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border-border/80 rounded-3xl">
+        <DialogHeader className="p-4 pb-2 border-b border-border/50">
+          <DialogTitle className="text-base font-bold text-center">Share Reel</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 border border-border/50">
+        <div className="p-4 space-y-4 max-h-[75vh] overflow-y-auto">
+          {/* Reel preview card */}
+          <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-muted/40 border border-border/60">
             <img
               src={avatarSrc(reel.author.avatarUrl)}
               alt=""
-              className="w-10 h-10 rounded-full object-cover"
+              className="w-10 h-10 rounded-full object-cover shrink-0"
             />
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-sm truncate">{reel.author.displayName}</p>
-              <p className="text-xs text-muted-foreground truncate">
+              <p className="font-bold text-xs truncate">{reel.author.displayName}</p>
+              <p className="text-[11px] text-muted-foreground truncate">
                 {reel.caption || "No caption"}
               </p>
             </div>
+            <div className="w-9 h-12 rounded-lg bg-black overflow-hidden shrink-0 border border-border/50">
+              <video src={reel.videoUrl} className="w-full h-full object-cover" muted />
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-muted/60 rounded-xl p-2 border border-border/50">
+          {/* Quick Action: Share to Story */}
+          <button
+            type="button"
+            onClick={handleShareToStory}
+            disabled={sharingToStory}
+            className="w-full flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-purple-500/15 via-pink-500/10 to-indigo-500/15 border border-purple-500/30 hover:border-purple-500/60 transition-all text-left group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-500 via-pink-500 to-purple-600 p-[2px] flex items-center justify-center shrink-0">
+                <div className="w-full h-full bg-card rounded-full flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-purple-500" />
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-foreground">Add to Your Story</p>
+                <p className="text-[11px] text-muted-foreground">Share this reel for 24 hours</p>
+              </div>
+            </div>
+            {sharingToStory ? (
+              <Loader2 className="w-4 h-4 animate-spin text-purple-500" />
+            ) : (
+              <span className="text-xs font-semibold text-purple-600 dark:text-purple-400 bg-purple-500/10 px-2.5 py-1 rounded-full group-hover:bg-purple-500/20">
+                Share
+              </span>
+            )}
+          </button>
+
+          {/* Direct Send to Friends (Chat) */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Send in Chat
+              </span>
+              <span className="text-[11px] text-muted-foreground">
+                {chatFriends.length} contacts
+              </span>
+            </div>
+
+            <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+              {chatFriends.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-4">
+                  No chat contacts yet. Friends you talk to will appear here.
+                </p>
+              ) : (
+                chatFriends.map((item) => {
+                  const isSent = sentUsers.has(item.user.id);
+                  const isSending = sendingUser === item.user.id;
+                  return (
+                    <div
+                      key={item.user.id}
+                      className="flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <img
+                          src={avatarSrc(item.user.avatarUrl)}
+                          alt={item.user.displayName}
+                          className="w-8 h-8 rounded-full object-cover shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold truncate text-foreground">
+                            {item.user.displayName}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground truncate">
+                            @{item.user.username || "user"}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        disabled={isSent || isSending}
+                        onClick={() => void handleSendToFriend(item)}
+                        className={
+                          isSent
+                            ? "h-7 text-xs bg-muted text-muted-foreground px-2.5 rounded-lg"
+                            : "h-7 text-xs bg-purple-600 hover:bg-purple-700 text-white font-semibold px-3 rounded-lg shadow-sm"
+                        }
+                      >
+                        {isSending ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : isSent ? (
+                          <>
+                            <Check className="w-3 h-3 mr-1 text-green-500" /> Sent
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-3 h-3 mr-1" /> Send
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Social Platform Share Icons */}
+          <div className="space-y-2 pt-2 border-t border-border/60">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Share to Apps
+            </span>
+            <div className="grid grid-cols-5 gap-2 text-center">
+              {/* WhatsApp */}
+              <button
+                type="button"
+                onClick={handleWhatsApp}
+                className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-muted/60 transition-colors group"
+              >
+                <div className="w-10 h-10 rounded-full bg-[#25D366]/15 text-[#25D366] flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <span className="font-bold text-base">WA</span>
+                </div>
+                <span className="text-[10px] text-muted-foreground">WhatsApp</span>
+              </button>
+
+              {/* Messenger */}
+              <button
+                type="button"
+                onClick={handleMessenger}
+                className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-muted/60 transition-colors group"
+              >
+                <div className="w-10 h-10 rounded-full bg-[#0084FF]/15 text-[#0084FF] flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <span className="font-bold text-base">MS</span>
+                </div>
+                <span className="text-[10px] text-muted-foreground">Messenger</span>
+              </button>
+
+              {/* Telegram */}
+              <button
+                type="button"
+                onClick={handleTelegram}
+                className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-muted/60 transition-colors group"
+              >
+                <div className="w-10 h-10 rounded-full bg-[#229ED9]/15 text-[#229ED9] flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <span className="font-bold text-base">TG</span>
+                </div>
+                <span className="text-[10px] text-muted-foreground">Telegram</span>
+              </button>
+
+              {/* X / Twitter */}
+              <button
+                type="button"
+                onClick={handleTwitter}
+                className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-muted/60 transition-colors group"
+              >
+                <div className="w-10 h-10 rounded-full bg-foreground/10 text-foreground flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <span className="font-bold text-base">𝕏</span>
+                </div>
+                <span className="text-[10px] text-muted-foreground">X</span>
+              </button>
+
+              {/* More / Native */}
+              <button
+                type="button"
+                onClick={handleNativeShare}
+                className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-muted/60 transition-colors group"
+              >
+                <div className="w-10 h-10 rounded-full bg-purple-500/15 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Share2 className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] text-muted-foreground">More</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Copy Link Row */}
+          <div className="flex items-center gap-2 bg-muted/60 rounded-2xl p-2 border border-border/50">
             <input
               type="text"
               readOnly
@@ -934,18 +1402,12 @@ function ReelShareDialog({
               size="sm"
               variant="secondary"
               onClick={handleCopy}
-              className="rounded-lg gap-1.5 h-8 text-xs font-semibold shrink-0"
+              className="rounded-xl gap-1.5 h-8 text-xs font-semibold shrink-0"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
               {copied ? "Copied" : "Copy"}
             </Button>
           </div>
-
-          {typeof navigator !== "undefined" && typeof navigator.share === "function" && (
-            <Button onClick={handleNativeShare} className="w-full rounded-xl gap-2 font-semibold">
-              <Share2 className="w-4 h-4" /> Share via App
-            </Button>
-          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -1381,7 +1843,7 @@ function ReelCard({
                   color: ov.color || "#ffffff",
                   fontSize: `${ov.fontSize ?? 18}px`,
                 }}
-                className={getOverlayStyleClass(ov.bgStyle)}
+                className={`${getOverlayStyleClass(ov.bgStyle)} ${getOverlayFontClass(ov.fontStyle)}`}
               >
                 {ov.content}
               </span>
