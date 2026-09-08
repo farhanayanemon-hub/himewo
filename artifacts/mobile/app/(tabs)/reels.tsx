@@ -34,6 +34,9 @@ import {
   useCreateConversation,
   useSendMessage,
   useListFriends,
+  useListGroups,
+  useCreatePost,
+  PostInputPrivacy,
   getListReelCommentsQueryKey,
   getListSavedItemsQueryKey,
   useFollowUser,
@@ -578,10 +581,13 @@ function ReelShareSheet({
   const [sharingToStory, setSharingToStory] = useState(false);
   const [sentUsers, setSentUsers] = useState<Set<string>>(new Set());
   const [sendingUser, setSendingUser] = useState<string | null>(null);
+  const [sharedCircles, setSharedCircles] = useState<Set<number>>(new Set());
+  const [sharingCircleId, setSharingCircleId] = useState<number | null>(null);
 
   const createStory = useCreateStory();
   const createConversation = useCreateConversation();
   const sendMessage = useSendMessage();
+  const createPost = useCreatePost();
 
   const { data: convsData = [] } = useListConversations({
     query: { enabled: visible && reel != null },
@@ -591,10 +597,16 @@ function ReelShareSheet({
     query: { enabled: visible && reel != null },
   } as any);
 
+  const { data: groupsData = [] } = useListGroups({
+    query: { enabled: visible && reel != null },
+  } as any);
+
+  const joinedCircles = (groupsData as any[]).filter((g) => Boolean(g.viewerIsMember));
+
   const shareUrl = `https://himewo.com/reels?id=${reel?.id ?? ""}`;
   const shareText = `Check out this reel by ${reel?.author.displayName ?? "someone"} on HiMewo!`;
 
-  // Build list of chat friends
+  // Build list of chat friends (recent chat friends first)
   const chatFriends: { user: any; conversationId?: number }[] = [];
   const seenIds = new Set<string>();
 
@@ -613,7 +625,7 @@ function ReelShareSheet({
     if (friendUser?.id && friendUser.id !== user?.id && !seenIds.has(friendUser.id)) {
       seenIds.add(friendUser.id);
       chatFriends.push({ user: friendUser });
-      if (chatFriends.length >= 15) break;
+      if (chatFriends.length >= 18) break;
     }
   }
 
@@ -636,6 +648,27 @@ function ReelShareSheet({
       Alert.alert("Failed", "Could not add reel to story.");
     } finally {
       setSharingToStory(false);
+    }
+  };
+
+  const handleShareToCircle = async (circle: any) => {
+    if (!reel || sharedCircles.has(circle.id) || sharingCircleId) return;
+    setSharingCircleId(circle.id);
+    try {
+      await createPost.mutateAsync({
+        data: {
+          content: `${shareText}\n${shareUrl}`,
+          privacy: PostInputPrivacy.public,
+          groupId: circle.id,
+        },
+      });
+      setSharedCircles((prev) => new Set(prev).add(circle.id));
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert("Shared to Circle", `Reel posted to ${circle.name}!`);
+    } catch {
+      Alert.alert("Error", `Could not share to ${circle.name}.`);
+    } finally {
+      setSharingCircleId(null);
     }
   };
 
@@ -700,11 +733,124 @@ function ReelShareSheet({
           <View style={[styles.sheetHandle, { backgroundColor: c.border }]} />
           <Text style={[styles.sheetTitle, { color: c.foreground }]}>Share Reel</Text>
 
-          {/* Share to Story Button */}
+          {/* 1. Send in HiMewo Chat: Recent chats first */}
+          <View style={styles.sectionHeaderRow}>
+            <Ionicons name="chatbubbles-outline" size={14} color="#a855f7" />
+            <Text style={[styles.shareSectionLabel, { color: c.mutedForeground, marginHorizontal: 0, marginVertical: 0 }]}>
+              SEND IN HIMEWO CHAT
+            </Text>
+          </View>
+          {chatFriends.length > 0 ? (
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              data={chatFriends}
+              keyExtractor={(item) => item.user.id}
+              contentContainerStyle={{ paddingHorizontal: 16, gap: 14, paddingTop: 4, paddingBottom: 6 }}
+              renderItem={({ item }) => {
+                const isSent = sentUsers.has(item.user.id);
+                const isSending = sendingUser === item.user.id;
+                return (
+                  <View style={styles.chatFriendItem}>
+                    <Avatar uri={item.user.avatarUrl} name={item.user.displayName} size={50} />
+                    <Text style={[styles.chatFriendName, { color: c.foreground }]} numberOfLines={1}>
+                      {item.user.displayName}
+                    </Text>
+                    <Pressable
+                      onPress={() => handleSendToFriend(item)}
+                      disabled={isSent || isSending}
+                      style={[
+                        styles.sendBtn,
+                        isSent ? { backgroundColor: c.secondary } : { backgroundColor: "#a855f7" },
+                      ]}
+                    >
+                      {isSending ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <Text style={[styles.sendBtnText, isSent ? { color: c.mutedForeground } : { color: "#fff" }]}>
+                          {isSent ? "Sent" : "Send"}
+                        </Text>
+                      )}
+                    </Pressable>
+                  </View>
+                );
+              }}
+            />
+          ) : (
+            <Text style={[styles.emptyHintText, { color: c.mutedForeground }]}>
+              No recent chats yet. Start chatting on HiMewo!
+            </Text>
+          )}
+
+          {/* 2. Share to Circle (Groups) */}
+          <View style={[styles.sectionHeaderRow, { marginTop: 10 }]}>
+            <Ionicons name="people-outline" size={14} color="#06b6d4" />
+            <Text style={[styles.shareSectionLabel, { color: c.mutedForeground, marginHorizontal: 0, marginVertical: 0 }]}>
+              SHARE TO CIRCLE (GROUPS)
+            </Text>
+          </View>
+          {joinedCircles.length > 0 ? (
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              data={joinedCircles}
+              keyExtractor={(item) => String(item.id)}
+              contentContainerStyle={{ paddingHorizontal: 16, gap: 14, paddingTop: 4, paddingBottom: 6 }}
+              renderItem={({ item }) => {
+                const isShared = sharedCircles.has(item.id);
+                const isSharing = sharingCircleId === item.id;
+                return (
+                  <View style={styles.chatFriendItem}>
+                    <View style={[styles.circleIconCircle, { backgroundColor: "#06b6d420", borderColor: "#06b6d4", borderWidth: 1 }]}>
+                      {item.avatarUrl ? (
+                        <Avatar uri={item.avatarUrl} name={item.name} size={48} />
+                      ) : (
+                        <Ionicons name="people" size={24} color="#06b6d4" />
+                      )}
+                    </View>
+                    <Text style={[styles.chatFriendName, { color: c.foreground }]} numberOfLines={1}>
+                      {item.name}
+                    </Text>
+                    <Pressable
+                      onPress={() => handleShareToCircle(item)}
+                      disabled={isShared || isSharing}
+                      style={[
+                        styles.sendBtn,
+                        isShared ? { backgroundColor: c.secondary } : { backgroundColor: "#06b6d4" },
+                      ]}
+                    >
+                      {isSharing ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <Text style={[styles.sendBtnText, isShared ? { color: c.mutedForeground } : { color: "#fff" }]}>
+                          {isShared ? "Shared ✓" : "Share"}
+                        </Text>
+                      )}
+                    </Pressable>
+                  </View>
+                );
+              }}
+            />
+          ) : (
+            <Pressable
+              onPress={() => {
+                onClose();
+                router.push("/groups");
+              }}
+              style={[styles.noCirclesBanner, { backgroundColor: c.secondary }]}
+            >
+              <Ionicons name="compass-outline" size={18} color="#06b6d4" />
+              <Text style={[styles.noCirclesText, { color: c.mutedForeground }]}>
+                Join Circles to share directly to community feeds. Tap to explore.
+              </Text>
+            </Pressable>
+          )}
+
+          {/* 3. Share to Story Button (24 hours) */}
           <Pressable
             onPress={handleShareStory}
             disabled={sharingToStory}
-            style={[styles.storyShareBtn, { backgroundColor: c.secondary }]}
+            style={[styles.storyShareBtn, { backgroundColor: c.secondary, marginTop: 10 }]}
           >
             <View style={styles.storyGradientRing}>
               <Ionicons name="sparkles" size={18} color="#a855f7" />
@@ -724,46 +870,8 @@ function ReelShareSheet({
             )}
           </Pressable>
 
-          {/* Send in Chat: Friends List */}
-          <Text style={[styles.shareSectionLabel, { color: c.mutedForeground }]}>SEND IN CHAT</Text>
-          <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            data={chatFriends}
-            keyExtractor={(item) => item.user.id}
-            contentContainerStyle={{ paddingHorizontal: 16, gap: 14 }}
-            renderItem={({ item }) => {
-              const isSent = sentUsers.has(item.user.id);
-              const isSending = sendingUser === item.user.id;
-              return (
-                <View style={styles.chatFriendItem}>
-                  <Avatar uri={item.user.avatarUrl} name={item.user.displayName} size={50} />
-                  <Text style={[styles.chatFriendName, { color: c.foreground }]} numberOfLines={1}>
-                    {item.user.displayName}
-                  </Text>
-                  <Pressable
-                    onPress={() => handleSendToFriend(item)}
-                    disabled={isSent || isSending}
-                    style={[
-                      styles.sendBtn,
-                      isSent ? { backgroundColor: c.secondary } : { backgroundColor: "#a855f7" },
-                    ]}
-                  >
-                    {isSending ? (
-                      <ActivityIndicator size="small" color="#fff" />
-                    ) : (
-                      <Text style={[styles.sendBtnText, isSent ? { color: c.mutedForeground } : { color: "#fff" }]}>
-                        {isSent ? "Sent" : "Send"}
-                      </Text>
-                    )}
-                  </Pressable>
-                </View>
-              );
-            }}
-          />
-
-          {/* Social Apps Row */}
-          <Text style={[styles.shareSectionLabel, { color: c.mutedForeground, marginTop: 12 }]}>
+          {/* 4. Social Apps Row */}
+          <Text style={[styles.shareSectionLabel, { color: c.mutedForeground, marginTop: 10 }]}>
             SHARE TO APPS
           </Text>
           <View style={styles.socialRow}>
@@ -1023,6 +1131,44 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 12,
     marginBottom: 8,
+  },
+  sectionHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 16,
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  circleIconCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  noCirclesBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginHorizontal: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 14,
+    marginTop: 4,
+  },
+  noCirclesText: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 11,
+    flex: 1,
+  },
+  emptyHintText: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 11,
+    textAlign: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
   },
   chatFriendItem: {
     alignItems: "center",

@@ -16,6 +16,9 @@ import {
   useCreateConversation,
   useSendMessage,
   useListFriends,
+  useListGroups,
+  useCreatePost,
+  PostInputPrivacy,
   getListReelsQueryKey,
   getListSavedItemsQueryKey,
   getListReelCommentsQueryKey,
@@ -55,6 +58,7 @@ import {
   Scissors,
   Sliders,
   FolderOpen,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MediaCaptureModal } from "@/components/media-capture-modal";
@@ -1042,6 +1046,7 @@ function ReelShareDialog({
   const createStory = useCreateStory();
   const createConversation = useCreateConversation();
   const sendMessage = useSendMessage();
+  const createPost = useCreatePost();
 
   const { data: convsData = [] } = useListConversations({
     query: { enabled: open },
@@ -1050,6 +1055,15 @@ function ReelShareDialog({
   const { data: friendsData = [] } = useListFriends({
     query: { enabled: open },
   } as any);
+
+  const { data: groupsData = [] } = useListGroups({
+    query: { enabled: open },
+  } as any);
+
+  const [sharedCircles, setSharedCircles] = useState<Set<number>>(new Set());
+  const [sharingCircleId, setSharingCircleId] = useState<number | null>(null);
+
+  const joinedCircles = (groupsData as any[]).filter((g) => Boolean(g.viewerIsMember));
 
   const shareUrl =
     typeof window !== "undefined"
@@ -1081,6 +1095,34 @@ function ReelShareDialog({
       if (chatFriends.length >= 18) break;
     }
   }
+
+  // Handle Share to Circle (Joined Groups)
+  const handleShareToCircle = async (circle: any) => {
+    if (sharedCircles.has(circle.id) || sharingCircleId) return;
+    setSharingCircleId(circle.id);
+    try {
+      await createPost.mutateAsync({
+        data: {
+          content: `${shareText}\n\n${shareUrl}`,
+          groupId: circle.id,
+          privacy: PostInputPrivacy.public,
+        },
+      });
+      setSharedCircles((prev) => new Set(prev).add(circle.id));
+      toast({
+        title: `Shared to ${circle.name}!`,
+        description: "Reel published to circle community feed.",
+      });
+    } catch {
+      toast({
+        title: "Failed to share to circle",
+        description: "Could not post to this circle. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSharingCircleId(null);
+    }
+  };
 
   // Handle Share to Story (24-hour expiration)
   const handleShareToStory = async () => {
@@ -1226,45 +1268,18 @@ function ReelShareDialog({
             </div>
           </div>
 
-          {/* Quick Action: Share to Story */}
-          <button
-            type="button"
-            onClick={handleShareToStory}
-            disabled={sharingToStory}
-            className="w-full flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-purple-500/15 via-pink-500/10 to-indigo-500/15 border border-purple-500/30 hover:border-purple-500/60 transition-all text-left group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-500 via-pink-500 to-purple-600 p-[2px] flex items-center justify-center shrink-0">
-                <div className="w-full h-full bg-card rounded-full flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-purple-500" />
-                </div>
-              </div>
-              <div>
-                <p className="text-xs font-bold text-foreground">Add to Your Story</p>
-                <p className="text-[11px] text-muted-foreground">Share this reel for 24 hours</p>
-              </div>
-            </div>
-            {sharingToStory ? (
-              <Loader2 className="w-4 h-4 animate-spin text-purple-500" />
-            ) : (
-              <span className="text-xs font-semibold text-purple-600 dark:text-purple-400 bg-purple-500/10 px-2.5 py-1 rounded-full group-hover:bg-purple-500/20">
-                Share
-              </span>
-            )}
-          </button>
-
-          {/* Direct Send to Friends (Chat) */}
+          {/* 1. Direct Send to HiMewo Chat Friends (Recent chats first) */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Send in Chat
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Send className="w-3.5 h-3.5 text-purple-500" /> Send in HiMewo Chat
               </span>
               <span className="text-[11px] text-muted-foreground">
                 {chatFriends.length} contacts
               </span>
             </div>
 
-            <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+            <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
               {chatFriends.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-4">
                   No chat contacts yet. Friends you talk to will appear here.
@@ -1320,6 +1335,120 @@ function ReelShareDialog({
                 })
               )}
             </div>
+          </div>
+
+          {/* 2. Share to Circle (Joined Groups) */}
+          <div className="space-y-2 pt-2 border-t border-border/60">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-purple-500" /> Share to Circle (Groups)
+              </span>
+              <span className="text-[11px] text-muted-foreground">
+                {joinedCircles.length} joined
+              </span>
+            </div>
+
+            {joinedCircles.length === 0 ? (
+              <div className="p-3 rounded-2xl bg-muted/30 border border-border/50 text-center space-y-1">
+                <p className="text-xs font-medium text-foreground">You haven't joined any circles yet</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Join circles to share reels and posts with communities.
+                </p>
+                <Link
+                  href="/groups"
+                  onClick={() => onOpenChange(false)}
+                  className="inline-block text-xs font-semibold text-purple-600 hover:underline pt-0.5"
+                >
+                  Explore Circles →
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                {joinedCircles.map((circle: any) => {
+                  const isShared = sharedCircles.has(circle.id);
+                  const isSharing = sharingCircleId === circle.id;
+                  return (
+                    <div
+                      key={circle.id}
+                      className="flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {circle.avatarUrl ? (
+                          <img
+                            src={avatarSrc(circle.avatarUrl)}
+                            alt={circle.name}
+                            className="w-8 h-8 rounded-xl object-cover shrink-0"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center shrink-0">
+                            <Users className="w-4 h-4" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold truncate text-foreground">
+                            {circle.name}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground truncate capitalize">
+                            {circle.privacy} circle · {circle.memberCount} members
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        disabled={isShared || isSharing}
+                        onClick={() => void handleShareToCircle(circle)}
+                        className={
+                          isShared
+                            ? "h-7 text-xs bg-muted text-muted-foreground px-2.5 rounded-lg"
+                            : "h-7 text-xs bg-purple-600 hover:bg-purple-700 text-white font-semibold px-3 rounded-lg shadow-sm"
+                        }
+                      >
+                        {isSharing ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : isShared ? (
+                          <>
+                            <Check className="w-3 h-3 mr-1 text-green-500" /> Shared
+                          </>
+                        ) : (
+                          <>
+                            <Share2 className="w-3 h-3 mr-1" /> Share
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* 3. Quick Action: Share to Story */}
+          <div className="pt-2 border-t border-border/60">
+            <button
+              type="button"
+              onClick={handleShareToStory}
+              disabled={sharingToStory}
+              className="w-full flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-purple-500/15 via-pink-500/10 to-indigo-500/15 border border-purple-500/30 hover:border-purple-500/60 transition-all text-left group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-500 via-pink-500 to-purple-600 p-[2px] flex items-center justify-center shrink-0">
+                  <div className="w-full h-full bg-card rounded-full flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-purple-500" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-foreground">Add to Your Story</p>
+                  <p className="text-[11px] text-muted-foreground">Share this reel for 24 hours</p>
+                </div>
+              </div>
+              {sharingToStory ? (
+                <Loader2 className="w-4 h-4 animate-spin text-purple-500" />
+              ) : (
+                <span className="text-xs font-semibold text-purple-600 dark:text-purple-400 bg-purple-500/10 px-2.5 py-1 rounded-full group-hover:bg-purple-500/20">
+                  Share
+                </span>
+              )}
+            </button>
           </div>
 
           {/* Social Platform Share Icons */}
