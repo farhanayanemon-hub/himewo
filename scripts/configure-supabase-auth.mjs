@@ -126,7 +126,7 @@ async function main() {
     if (smtpHost && smtpPort && smtpUser && smtpPass) {
       console.log("✨ Found SMTP credentials in .env!");
       patch.smtp_host = smtpHost.trim();
-      patch.smtp_port = parseInt(smtpPort, 10);
+      patch.smtp_port = String(smtpPort).trim();
       patch.smtp_user = smtpUser.trim();
       patch.smtp_pass = smtpPass.trim();
       patch.smtp_admin_email = smtpSenderEmail.trim();
@@ -185,7 +185,7 @@ async function main() {
   if (command === "setup-smtp") {
     // Usage: node scripts/configure-supabase-auth.mjs setup-smtp <host> <port> <user> <pass> <adminEmail> <senderName>
     const host = args[1];
-    const port = parseInt(args[2], 10);
+    const port = String(args[2] || "").trim();
     const user = args[3];
     const pass = args[4];
     const adminEmail = args[5] || user;
