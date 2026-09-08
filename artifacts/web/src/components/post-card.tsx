@@ -19,6 +19,8 @@ import {
   Lock,
   MapPin,
   Rocket,
+  Plus,
+  Check,
 } from "lucide-react";
 import { BoostDialog } from "@/components/boost-dialog";
 import {
@@ -32,6 +34,10 @@ import {
   useDeletePost,
   useVotePoll,
   useRemovePollVote,
+  useFollowUser,
+  useUnfollowUser,
+  useFollowPage,
+  useUnfollowPage,
   ReactionType,
   PostUpdatePrivacy,
 } from "@workspace/api-client-react";
@@ -97,7 +103,64 @@ export function PostCard({ post }: { post: Post }) {
     setSummary(post.reactions);
   }, [post.reactions]);
 
-  const isOwner = !!user && user.id === post.author.id;
+  const isPage = Boolean(post.authorPage);
+  const isOwner = isPage
+    ? (!!actingPageId && actingPageId === post.authorPage?.id) || (!!user && user.id === post.author.id)
+    : (!!user && user.id === post.author.id);
+  const initialFollowing = isPage
+    ? Boolean((post.authorPage as any)?.viewerFollows)
+    : Boolean(post.author.viewerFollows);
+  const [following, setFollowing] = useState(initialFollowing);
+
+  useEffect(() => {
+    setFollowing(
+      isPage
+        ? Boolean((post.authorPage as any)?.viewerFollows)
+        : Boolean(post.author.viewerFollows)
+    );
+  }, [post.authorPage, post.author.viewerFollows, isPage]);
+
+  const followUser = useFollowUser();
+  const unfollowUser = useUnfollowUser();
+  const followPage = useFollowPage();
+  const unfollowPage = useUnfollowPage();
+
+  const handleToggleFollow = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user || isOwner) return;
+
+    if (isPage && post.authorPage) {
+      if (following) {
+        setFollowing(false);
+        unfollowPage.mutate(
+          { id: post.authorPage.id },
+          { onError: () => setFollowing(true) }
+        );
+      } else {
+        setFollowing(true);
+        followPage.mutate(
+          { id: post.authorPage.id },
+          { onError: () => setFollowing(false) }
+        );
+      }
+    } else {
+      if (following) {
+        setFollowing(false);
+        unfollowUser.mutate(
+          { userId: post.author.id },
+          { onError: () => setFollowing(true) }
+        );
+      } else {
+        setFollowing(true);
+        followUser.mutate(
+          { userId: post.author.id },
+          { onError: () => setFollowing(false) }
+        );
+      }
+    }
+  };
+
   const canBoost = isOwner && post.privacy === "public" && post.pageId != null;
 
   const invalidate = () => {
@@ -229,14 +292,41 @@ export function PostCard({ post }: { post: Post }) {
   return (
     <div className="aurora-glass-card rounded-2xl p-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div className="flex items-center justify-between mb-3">
-        <Link href={post.authorPage ? `/pages/${post.authorPage.id}` : `/profile/${post.author.id}`} className="flex items-center gap-3 group">
-          <img src={avatarSrc(post.authorPage ? post.authorPage.avatarUrl : post.author.avatarUrl)} className="w-10 h-10 rounded-full object-cover group-hover:ring-2 ring-primary transition-all" alt="" />
+        <div className="flex items-center gap-3">
+          <Link href={post.authorPage ? `/pages/${post.authorPage.id}` : `/profile/${post.author.id}`} className="shrink-0 group">
+            <img src={avatarSrc(post.authorPage ? post.authorPage.avatarUrl : post.author.avatarUrl)} className="w-10 h-10 rounded-full object-cover group-hover:ring-2 ring-primary transition-all" alt="" />
+          </Link>
           <div>
-            <div className="font-semibold">
-              <span className="group-hover:underline">{post.authorPage ? post.authorPage.name : post.author.displayName}</span>
-              {!post.authorPage && post.author.isVerified && <VerifiedBadge className="w-4 h-4 ml-1 align-text-bottom" />}
+            <div className="flex items-center gap-2 flex-wrap">
+              <Link href={post.authorPage ? `/pages/${post.authorPage.id}` : `/profile/${post.author.id}`} className="font-semibold hover:underline">
+                {post.authorPage ? post.authorPage.name : post.author.displayName}
+              </Link>
+              {!post.authorPage && post.author.isVerified && <VerifiedBadge className="w-4 h-4 ml-0.5 align-text-bottom" />}
+              {!isOwner && user && (
+                <button
+                  type="button"
+                  onClick={handleToggleFollow}
+                  className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-md transition-all shadow-sm active:scale-95 ${
+                    following
+                      ? "bg-muted hover:bg-muted/80 text-foreground border border-border"
+                      : "bg-purple-600 hover:bg-purple-700 text-white"
+                  }`}
+                >
+                  {following ? (
+                    <>
+                      <Check className="w-3 h-3 text-purple-500" />
+                      <span>Following</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3 h-3" />
+                      <span>Follow</span>
+                    </>
+                  )}
+                </button>
+              )}
               {(post.feelingVerb || post.feeling || post.location) && (
-                <span className="font-normal text-muted-foreground">
+                <span className="font-normal text-muted-foreground text-sm">
                   {(post.feelingVerb || post.feeling) && (
                     <>
                       {" is "}
@@ -268,7 +358,7 @@ export function PostCard({ post }: { post: Post }) {
               </span>
             </div>
           </div>
-        </Link>
+        </div>
         <div className="flex items-center gap-0.5">
           <Button
             variant="ghost"

@@ -45,6 +45,7 @@ router.get("/reels", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: query.error.message });
     return;
   }
+  const { cursor, limit } = query.data;
   let authorId = typeof req.query.authorId === "string" ? req.query.authorId.trim() : undefined;
   if (authorId && !UUID_RE.test(authorId)) {
     const [u] = await db
@@ -169,7 +170,7 @@ router.get("/reels/:id", requireAuth, async (req, res): Promise<void> => {
 
 // Edit reel caption (own reel only)
 router.patch("/reels/:id", requireAuth, async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) {
     res.status(400).json({ error: "Invalid reel id" });
     return;
@@ -201,7 +202,7 @@ router.patch("/reels/:id", requireAuth, async (req, res): Promise<void> => {
 
 // Delete reel to trash (own reel only - auto-purged after 30 days)
 router.delete("/reels/:id", requireAuth, async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) {
     res.status(400).json({ error: "Invalid reel id" });
     return;

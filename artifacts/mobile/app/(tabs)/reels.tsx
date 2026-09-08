@@ -29,10 +29,13 @@ import {
   useCreateReelComment,
   getListReelCommentsQueryKey,
   getListSavedItemsQueryKey,
+  useFollowUser,
+  useUnfollowUser,
   ReactionType,
   type Reel,
   type ReelComment,
 } from "@workspace/api-client-react";
+import { useAuth } from "@/lib/auth";
 import * as Haptics from "expo-haptics";
 import { Avatar } from "@/components/Avatar";
 import { EmojiPickerSheet } from "@/components/EmojiPickerSheet";
@@ -54,6 +57,27 @@ interface ReelItemProps {
 function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
   const c = useColors();
   const qc = useQueryClient();
+  const { user } = useAuth();
+  const isOwn = user?.id === reel.author.id;
+  const followUser = useFollowUser();
+  const unfollowUser = useUnfollowUser();
+  const [following, setFollowing] = useState(Boolean(reel.author.viewerFollows));
+
+  useEffect(() => {
+    setFollowing(Boolean(reel.author.viewerFollows));
+  }, [reel.author.viewerFollows]);
+
+  const handleToggleFollow = () => {
+    if (!user || isOwn) return;
+    if (following) {
+      setFollowing(false);
+      unfollowUser.mutate({ userId: reel.author.id }, { onError: () => setFollowing(true) });
+    } else {
+      setFollowing(true);
+      followUser.mutate({ userId: reel.author.id }, { onError: () => setFollowing(false) });
+    }
+  };
+
   const [reaction, setReactionState] = useState<ReactionType | null>(
     reel.viewerReaction ?? (reel.viewerHasLiked ? ReactionType.like : null),
   );
@@ -210,18 +234,50 @@ function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
 
       <View style={styles.overlay} pointerEvents="box-none">
         <View style={styles.bottomInfo} pointerEvents="box-none">
-          <Pressable
-            style={styles.authorRow}
-            onPress={() => router.push(`/profile/${reel.author.id}`)}
-          >
-            <Avatar
-              uri={reel.author.avatarUrl}
-              name={reel.author.displayName}
-              size={40}
-              ring
-            />
-            <Text style={styles.authorName}>{reel.author.displayName}</Text>
-          </Pressable>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Pressable
+              style={styles.authorRow}
+              onPress={() => router.push(`/profile/${reel.author.id}`)}
+            >
+              <Avatar
+                uri={reel.author.avatarUrl}
+                name={reel.author.displayName}
+                size={40}
+                ring
+              />
+              <Text style={styles.authorName}>{reel.author.displayName}</Text>
+            </Pressable>
+            {!isOwn && user && (
+              <Pressable
+                onPress={handleToggleFollow}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 3,
+                  paddingHorizontal: 10,
+                  paddingVertical: 4,
+                  borderRadius: 14,
+                  backgroundColor: following ? "rgba(255,255,255,0.25)" : "#9333ea",
+                  marginLeft: 8,
+                }}
+              >
+                <Ionicons
+                  name={following ? "checkmark" : "add"}
+                  size={12}
+                  color={following ? "#e9d5ff" : "#fff"}
+                />
+                <Text
+                  style={{
+                    color: "#fff",
+                    fontSize: 12,
+                    fontWeight: "700",
+                  }}
+                >
+                  {following ? "Following" : "Follow"}
+                </Text>
+              </Pressable>
+            )}
+          </View>
           {!!cleanCaption && (
             <MentionText
               content={cleanCaption}

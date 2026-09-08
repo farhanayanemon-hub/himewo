@@ -23,6 +23,10 @@ import {
   getGetPostQueryKey,
   getGetUserPostsQueryKey,
   getListSavedItemsQueryKey,
+  useFollowUser,
+  useUnfollowUser,
+  useFollowPage,
+  useUnfollowPage,
   type Post,
   type ReactionSummary,
   type PostUpdatePrivacy,
@@ -66,6 +70,54 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
   const { user } = useAuth();
   const { actingPage } = useActingPage();
   const [summary, setSummary] = useState<ReactionSummary>(post.reactions);
+  const isPage = Boolean(post.authorPage);
+  const isOwner = isPage
+    ? (!!actingPage && actingPage.id === post.authorPage?.id) || (!!user && user.id === post.author.id)
+    : (!!user && user.id === post.author.id);
+
+  const initialFollowing = isPage
+    ? Boolean((post.authorPage as any)?.viewerFollows)
+    : Boolean(post.author.viewerFollows);
+  const [following, setFollowing] = useState(initialFollowing);
+
+  const followUser = useFollowUser();
+  const unfollowUser = useUnfollowUser();
+  const followPage = useFollowPage();
+  const unfollowPage = useUnfollowPage();
+
+  const handleToggleFollow = () => {
+    if (!user || isOwner) return;
+    if (isPage && post.authorPage) {
+      if (following) {
+        setFollowing(false);
+        unfollowPage.mutate(
+          { id: post.authorPage.id },
+          { onError: () => setFollowing(true) }
+        );
+      } else {
+        setFollowing(true);
+        followPage.mutate(
+          { id: post.authorPage.id },
+          { onError: () => setFollowing(false) }
+        );
+      }
+    } else {
+      if (following) {
+        setFollowing(false);
+        unfollowUser.mutate(
+          { userId: post.author.id },
+          { onError: () => setFollowing(true) }
+        );
+      } else {
+        setFollowing(true);
+        followUser.mutate(
+          { userId: post.author.id },
+          { onError: () => setFollowing(false) }
+        );
+      }
+    }
+  };
+
   const [saved, setSaved] = useState<boolean>(post.viewerHasSaved ?? false);
   const [commentsEnabled, setCommentsEnabled] = useState<boolean>(post.commentsEnabled);
   const [reactionsEnabled, setReactionsEnabled] = useState<boolean>(post.reactionsEnabled);
@@ -82,7 +134,6 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
   const updatePost = useUpdatePost();
   const deletePost = useDeletePost();
 
-  const isOwner = !!user && user.id === post.author.id;
   const canBoost = isOwner && privacy === "public" && post.pageId != null;
   const viewerReaction = summary.viewerReaction ?? null;
 
@@ -211,7 +262,7 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
           size={42}
         />
         <View style={{ flex: 1 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
             <Text
               style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}
             >
@@ -219,6 +270,36 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
             </Text>
             {!post.authorPage && post.author.isVerified && (
               <Ionicons name="checkmark-circle" size={14} color={c.primary} />
+            )}
+            {!isOwner && user && (
+              <Pressable
+                onPress={handleToggleFollow}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 3,
+                  paddingHorizontal: 8,
+                  paddingVertical: 2.5,
+                  borderRadius: 6,
+                  backgroundColor: following ? c.border : "#9333ea",
+                  marginLeft: 4,
+                }}
+              >
+                <Ionicons
+                  name={following ? "checkmark" : "add"}
+                  size={12}
+                  color={following ? "#9333ea" : "#fff"}
+                />
+                <Text
+                  style={{
+                    color: following ? c.foreground : "#fff",
+                    fontSize: 11,
+                    fontWeight: "700",
+                  }}
+                >
+                  {following ? "Following" : "Follow"}
+                </Text>
+              </Pressable>
             )}
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>

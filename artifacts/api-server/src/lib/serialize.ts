@@ -295,6 +295,8 @@ export async function buildProfileDetail(userId: string, viewerId?: string) {
 export async function buildPosts(rows: PostRow[], viewerId?: string) {
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);
+  const authorIds = [...new Set(rows.map((r) => r.authorId))];
+  const pageIds = [...new Set(rows.map((r) => r.pageId).filter((id): id is number => id != null))];
   const authorMap = await loadProfileMap(rows.map((r) => r.authorId));
   const pageMap = await loadPageRefMap(rows.map((r) => r.pageId));
 
@@ -306,6 +308,8 @@ export async function buildPosts(rows: PostRow[], viewerId?: string) {
     shareCounts,
     viewerSaves,
     pollRows,
+    followedAuthorRows,
+    followedPageRows,
   ] = await Promise.all([
       db
         .select()
@@ -358,6 +362,28 @@ export async function buildPosts(rows: PostRow[], viewerId?: string) {
         .select()
         .from(pollsTable)
         .where(inArray(pollsTable.postId, ids)),
+      viewerId && authorIds.length > 0
+        ? db
+            .select({ followingId: followsTable.followingId })
+            .from(followsTable)
+            .where(
+              and(
+                eq(followsTable.followerId, viewerId),
+                inArray(followsTable.followingId, authorIds),
+              ),
+            )
+        : Promise.resolve([]),
+      viewerId && pageIds.length > 0
+        ? db
+            .select({ pageId: pageFollowersTable.pageId })
+            .from(pageFollowersTable)
+            .where(
+              and(
+                eq(pageFollowersTable.userId, viewerId),
+                inArray(pageFollowersTable.pageId, pageIds),
+              ),
+            )
+        : Promise.resolve([]),
     ]);
 
   // Load poll options + vote tallies + the viewer's own vote for any polls
@@ -440,13 +466,27 @@ export async function buildPosts(rows: PostRow[], viewerId?: string) {
   const commentCountByPost = new Map(commentCounts.map((c) => [c.postId, c.value]));
   const shareCountByPost = new Map(shareCounts.map((s) => [s.postId, s.value]));
   const savedPostSet = new Set(viewerSaves.map((s) => s.entityId));
+  const followedAuthorSet = new Set(
+    (followedAuthorRows as { followingId: string }[]).map((r) => r.followingId),
+  );
+  const followedPageSet = new Set(
+    (followedPageRows as { pageId: number }[]).map((r) => r.pageId),
+  );
 
   return rows.map((row) => {
     const summary = reactByPost.get(row.id) ?? { total: 0, byType: {} };
+    const baseAuthor = authorMap.get(row.authorId)!;
+    const author = baseAuthor
+      ? { ...baseAuthor, viewerFollows: followedAuthorSet.has(row.authorId) }
+      : baseAuthor;
+    const basePage = row.pageId != null ? (pageMap.get(row.pageId) ?? null) : null;
+    const authorPage = basePage
+      ? { ...basePage, viewerFollows: followedPageSet.has(row.pageId!) }
+      : basePage;
     return {
       id: row.id,
-      author: authorMap.get(row.authorId)!,
-      authorPage: row.pageId != null ? (pageMap.get(row.pageId) ?? null) : null,
+      author,
+      authorPage,
       content: row.content,
       feelingVerb: row.feelingVerb,
       feeling: row.feeling,
@@ -1205,8 +1245,9 @@ export async function buildStoryById(id: number, viewerId: string) {
 export async function buildReels(rows: ReelRow[], viewerId?: string) {
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);
+  const authorIds = [...new Set(rows.map((r) => r.authorId))];
   const authorMap = await loadProfileMap(rows.map((r) => r.authorId));
-  const [likeCounts, viewerLikes, commentCounts, viewerSaves] = await Promise.all([
+  const [likeCounts, viewerLikes, commentCounts, viewerSaves, followedAuthorRows] = await Promise.all([
     db
       .select({ reelId: reelLikesTable.reelId, value: count() })
       .from(reelLikesTable)
@@ -1240,28 +1281,48 @@ export async function buildReels(rows: ReelRow[], viewerId?: string) {
             ),
           )
       : Promise.resolve([]),
+    viewerId && authorIds.length > 0
+      ? db
+          .select({ followingId: followsTable.followingId })
+          .from(followsTable)
+          .where(
+            and(
+              eq(followsTable.followerId, viewerId),
+              inArray(followsTable.followingId, authorIds),
+            ),
+          )
+      : Promise.resolve([]),
   ]);
   const likeCountByReel = new Map(likeCounts.map((l) => [l.reelId, l.value]));
   const likedSet = new Set(viewerLikes.map((l) => l.reelId));
   const viewerReactionByReel = new Map(viewerLikes.map((l) => [l.reelId, l.type]));
   const commentCountByReel = new Map(commentCounts.map((c) => [c.reelId, c.value]));
   const savedReelSet = new Set(viewerSaves.map((s) => s.entityId));
-  return rows.map((row) => ({
-    id: row.id,
-    author: authorMap.get(row.authorId)!,
-    videoUrl: row.videoUrl,
-    thumbnailUrl: row.thumbnailUrl,
-    caption: row.caption,
-    musicUrl: row.musicUrl,
-    musicTitle: row.musicTitle,
-    musicArtist: row.musicArtist,
-    createdAt: row.createdAt,
-    likeCount: likeCountByReel.get(row.id) ?? 0,
-    commentCount: commentCountByReel.get(row.id) ?? 0,
-    viewerHasLiked: likedSet.has(row.id),
-    viewerHasSaved: savedReelSet.has(row.id),
-    viewerReaction: viewerReactionByReel.get(row.id) ?? null,
-  }));
+  const followedAuthorSet = new Set(
+    (followedAuthorRows as { followingId: string }[]).map((r) => r.followingId),
+  );
+  return rows.map((row) => {
+    const baseAuthor = authorMap.get(row.authorId)!;
+    const author = baseAuthor
+      ? { ...baseAuthor, viewerFollows: followedAuthorSet.has(row.authorId) }
+      : baseAuthor;
+    return {
+      id: row.id,
+      author,
+      videoUrl: row.videoUrl,
+      thumbnailUrl: row.thumbnailUrl,
+      caption: row.caption,
+      musicUrl: row.musicUrl,
+      musicTitle: row.musicTitle,
+      musicArtist: row.musicArtist,
+      createdAt: row.createdAt,
+      likeCount: likeCountByReel.get(row.id) ?? 0,
+      commentCount: commentCountByReel.get(row.id) ?? 0,
+      viewerHasLiked: likedSet.has(row.id),
+      viewerHasSaved: savedReelSet.has(row.id),
+      viewerReaction: viewerReactionByReel.get(row.id) ?? null,
+    };
+  });
 }
 
 export async function buildReelById(id: number, viewerId?: string) {

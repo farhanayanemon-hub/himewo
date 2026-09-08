@@ -74,20 +74,6 @@ function MobileReelTimelineCard({ reel, c }: { reel: Reel; c: any }) {
             </View>
           </View>
         </View>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 4,
-            paddingHorizontal: 8,
-            paddingVertical: 3,
-            borderRadius: 12,
-            backgroundColor: "rgba(168,85,247,0.12)",
-          }}
-        >
-          <Ionicons name="film" size={12} color="#a855f7" />
-          <Text style={{ fontSize: 11, fontWeight: "700", color: "#a855f7" }}>Reel</Text>
-        </View>
       </View>
 
       {/* Caption */}
@@ -252,11 +238,49 @@ export function ProfileBody({
     return [...pList, ...rList].sort((a, b) => b.date - a.date);
   }, [posts, userReels]);
 
-  const photoUrls = posts
-    .flatMap((p) => p.media ?? [])
-    .filter((m) => m.type === "image")
-    .map((m) => m.url)
-    .slice(0, 9);
+  const { data: userPhotosData } = useQuery<{ photos: { url: string; createdAt: string }[] }>({
+    queryKey: ["user-uploaded-photos", targetId],
+    queryFn: async () => {
+      return customFetch<{ photos: { url: string; createdAt: string }[] }>(
+        `/api/users/${encodeURIComponent(targetId)}/photos`,
+      ).catch(() => ({ photos: [] }));
+    },
+    enabled: !!targetId && !showLocked,
+  });
+
+  const photoUrls = useMemo(() => {
+    const urls: string[] = [];
+    const seen = new Set<string>();
+
+    if (userPhotosData?.photos) {
+      for (const p of userPhotosData.photos) {
+        if (p.url && !seen.has(p.url)) {
+          seen.add(p.url);
+          urls.push(p.url);
+        }
+      }
+    }
+
+    for (const p of posts) {
+      for (const m of p.media ?? []) {
+        if (m.type === "image" && m.url && !seen.has(m.url)) {
+          seen.add(m.url);
+          urls.push(m.url);
+        }
+      }
+    }
+
+    if (profile?.avatarUrl && !seen.has(profile.avatarUrl)) {
+      seen.add(profile.avatarUrl);
+      urls.push(profile.avatarUrl);
+    }
+    if (profile?.coverUrl && !seen.has(profile.coverUrl)) {
+      seen.add(profile.coverUrl);
+      urls.push(profile.coverUrl);
+    }
+
+    return urls;
+  }, [userPhotosData, posts, profile?.avatarUrl, profile?.coverUrl]);
 
   const sendFriendRequest = useSendFriendRequest();
   const removeFriend = useRemoveFriend();

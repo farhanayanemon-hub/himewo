@@ -9,6 +9,8 @@ import {
   useCreateReel,
   useListReelComments,
   useCreateReelComment,
+  useFollowUser,
+  useUnfollowUser,
   getListReelsQueryKey,
   getListSavedItemsQueryKey,
   getListReelCommentsQueryKey,
@@ -982,6 +984,27 @@ function ReelCard({
       (user.id === reel.author.id || user.username === reel.author.username),
   );
 
+  const followUser = useFollowUser();
+  const unfollowUser = useUnfollowUser();
+  const [following, setFollowing] = useState(Boolean(reel.author.viewerFollows));
+
+  useEffect(() => {
+    setFollowing(Boolean(reel.author.viewerFollows));
+  }, [reel.author.viewerFollows]);
+
+  const handleToggleFollow = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user || isAuthor) return;
+    if (following) {
+      setFollowing(false);
+      unfollowUser.mutate({ userId: reel.author.id }, { onError: () => setFollowing(true) });
+    } else {
+      setFollowing(true);
+      followUser.mutate({ userId: reel.author.id }, { onError: () => setFollowing(false) });
+    }
+  };
+
   // Optimistic UI states
   const [liked, setLiked] = useState(reel.viewerHasLiked ?? false);
   const [likeCount, setLikeCount] = useState(reel.likeCount ?? 0);
@@ -1413,12 +1436,37 @@ function ReelCard({
               />
             </Link>
             <div className="min-w-0">
-              <Link
-                href={`/profile/${reel.author.id}`}
-                className="font-bold text-sm drop-shadow-md hover:underline truncate block"
-              >
-                {reel.author.displayName}
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/profile/${reel.author.id}`}
+                  className="font-bold text-sm drop-shadow-md hover:underline truncate block"
+                >
+                  {reel.author.displayName}
+                </Link>
+                {!isAuthor && user && (
+                  <button
+                    type="button"
+                    onClick={handleToggleFollow}
+                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold transition-all shadow-md active:scale-95 ${
+                      following
+                        ? "bg-white/20 hover:bg-white/30 text-white backdrop-blur-md"
+                        : "bg-purple-600 hover:bg-purple-700 text-white"
+                    }`}
+                  >
+                    {following ? (
+                      <>
+                        <Check className="w-3 h-3 text-purple-300" />
+                        <span>Following</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-3 h-3" />
+                        <span>Follow</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
               <span className="text-[11px] text-white/80 drop-shadow">@{reel.author.username}</span>
             </div>
           </div>

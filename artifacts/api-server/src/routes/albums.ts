@@ -8,7 +8,7 @@ import {
   postsTable,
   postMediaTable,
 } from "@workspace/db";
-import { and, eq, desc, asc, inArray } from "drizzle-orm";
+import { and, eq, desc, asc, inArray, sql } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import { canViewProfileDetails, areFriends } from "../lib/authz";
 import { createNotification } from "../lib/notify";
@@ -128,16 +128,30 @@ router.get(
       res.status(400).json({ error: params.error.message });
       return;
     }
+    let targetId = params.data.id;
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_RE.test(targetId)) {
+      const uname = targetId.trim().toLowerCase();
+      const [byUsername] = await db
+        .select({ id: profilesTable.id })
+        .from(profilesTable)
+        .where(sql`lower(${profilesTable.username}) = ${uname}`);
+      if (!byUsername) {
+        res.json(GetUserAlbumsResponse.parse([]));
+        return;
+      }
+      targetId = byUsername.id;
+    }
     // Locked / restricted profiles hide albums from non-friends,
     // consistent with posts and friends lists.
-    if (!(await canViewProfileDetails(params.data.id, req.userId!))) {
+    if (!(await canViewProfileDetails(targetId, req.userId!))) {
       res.json(GetUserAlbumsResponse.parse([]));
       return;
     }
     const rows = await db
       .select()
       .from(albumsTable)
-      .where(eq(albumsTable.ownerId, params.data.id))
+      .where(eq(albumsTable.ownerId, targetId))
       .orderBy(desc(albumsTable.createdAt));
     res.json(GetUserAlbumsResponse.parse(await buildAlbums(rows)));
   },
@@ -417,13 +431,27 @@ router.get(
   "/users/:id/photos",
   requireAuth,
   async (req, res): Promise<void> => {
-    const userId = req.params.id;
+    const rawId = req.params.id;
+    let userId: string = Array.isArray(rawId) ? rawId[0] : (rawId ?? "");
     if (!userId) {
       res.status(400).json({ error: "Missing user id" });
       return;
     }
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_RE.test(userId)) {
+      const uname = userId.trim().toLowerCase();
+      const [byUsername] = await db
+        .select({ id: profilesTable.id })
+        .from(profilesTable)
+        .where(sql`lower(${profilesTable.username}) = ${uname}`);
+      if (!byUsername) {
+        res.json({ photos: [] });
+        return;
+      }
+      userId = byUsername.id;
+    }
     if (userId !== req.userId && !(await canViewProfileDetails(userId, req.userId!))) {
-      res.status(404).json({ error: "User not found" });
+      res.json({ photos: [] });
       return;
     }
 

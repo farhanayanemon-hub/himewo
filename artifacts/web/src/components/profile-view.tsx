@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { avatarSrc } from "@/lib/avatar";
 import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
@@ -14,6 +14,8 @@ import {
   useUnlikeReel,
   useSaveItem,
   useUnsaveItem,
+  useFollowUser,
+  useUnfollowUser,
   getListSavedItemsQueryKey,
   customFetch,
   type Profile,
@@ -53,6 +55,7 @@ import {
   ExternalLink,
   Music,
   Film,
+  Check,
 } from "lucide-react";
 
 function IntroRow({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
@@ -65,18 +68,66 @@ function IntroRow({ icon, children }: { icon: React.ReactNode; children: React.R
 }
 
 function ProfileReelTimelineCard({ reel }: { reel: Reel }) {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const likeReel = useLikeReel();
   const unlikeReel = useUnlikeReel();
   const saveItem = useSaveItem();
   const unsaveItem = useUnsaveItem();
+  const followUser = useFollowUser();
+  const unfollowUser = useUnfollowUser();
 
+  const isAuthor = user?.id === reel.author.id;
+  const [following, setFollowing] = useState(Boolean(reel.author.viewerFollows));
   const [liked, setLiked] = useState(Boolean(reel.viewerLiked));
   const [likeCount, setLikeCount] = useState(reel.likeCount ?? 0);
   const [saved, setSaved] = useState(Boolean(reel.viewerSaved));
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    setFollowing(Boolean(reel.author.viewerFollows));
+  }, [reel.author.viewerFollows]);
+
+  const handleToggleFollow = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user || isAuthor) return;
+    if (following) {
+      setFollowing(false);
+      unfollowUser.mutate({ userId: reel.author.id }, { onError: () => setFollowing(true) });
+    } else {
+      setFollowing(true);
+      followUser.mutate({ userId: reel.author.id }, { onError: () => setFollowing(false) });
+    }
+  };
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting) {
+          video.muted = true;
+          setIsMuted(true);
+          video.play().catch(() => {});
+          setIsPlaying(true);
+        } else {
+          video.pause();
+          setIsPlaying(false);
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(video);
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   const cleanCaption = parseReelOverlays(reel.caption).cleanCaption;
 
@@ -177,13 +228,36 @@ function ProfileReelTimelineCard({ reel }: { reel: Reel }) {
             />
           </Link>
           <div>
-            <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
               <Link href={`/profile/${reel.author.id}`}>
                 <span className="font-bold text-sm hover:underline text-foreground cursor-pointer">
                   {reel.author.displayName}
                 </span>
               </Link>
               {reel.author.isVerified && <VerifiedBadge className="w-4 h-4" />}
+              {!isAuthor && user && (
+                <button
+                  type="button"
+                  onClick={handleToggleFollow}
+                  className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-md transition-all shadow-sm active:scale-95 ${
+                    following
+                      ? "bg-muted hover:bg-muted/80 text-foreground border border-border"
+                      : "bg-purple-600 hover:bg-purple-700 text-white"
+                  }`}
+                >
+                  {following ? (
+                    <>
+                      <Check className="w-3 h-3 text-purple-500" />
+                      <span>Following</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3 h-3" />
+                      <span>Follow</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
             <div className="text-xs text-muted-foreground flex items-center gap-1.5">
               <span>@{reel.author.username}</span>
@@ -194,14 +268,6 @@ function ProfileReelTimelineCard({ reel }: { reel: Reel }) {
             </div>
           </div>
         </div>
-
-        {/* 🎬 Reel Badge */}
-        <Link href={`/reels?id=${reel.id}`}>
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/20 text-xs font-bold transition-colors cursor-pointer">
-            <Film className="w-3.5 h-3.5" />
-            <span>Reel</span>
-          </div>
-        </Link>
       </div>
 
       {/* Caption */}
@@ -431,10 +497,39 @@ export function ProfileView({
     return [...pList, ...rList].sort((a, b) => b.date - a.date);
   }, [posts, userReels]);
 
-  const photoUrls = userPhotosData?.photos?.map((p) => p.url) ?? (posts ?? [])
-    .flatMap((p) => p.media ?? [])
-    .filter((m) => m.type === "image")
-    .map((m) => m.url);
+  const photoUrls = useMemo(() => {
+    const urls: string[] = [];
+    const seen = new Set<string>();
+
+    if (userPhotosData?.photos) {
+      for (const p of userPhotosData.photos) {
+        if (p.url && !seen.has(p.url)) {
+          seen.add(p.url);
+          urls.push(p.url);
+        }
+      }
+    }
+
+    for (const p of posts ?? []) {
+      for (const m of p.media ?? []) {
+        if (m.type === "image" && m.url && !seen.has(m.url)) {
+          seen.add(m.url);
+          urls.push(m.url);
+        }
+      }
+    }
+
+    if (profile.avatarUrl && !seen.has(profile.avatarUrl)) {
+      seen.add(profile.avatarUrl);
+      urls.push(profile.avatarUrl);
+    }
+    if (profile.coverUrl && !seen.has(profile.coverUrl)) {
+      seen.add(profile.coverUrl);
+      urls.push(profile.coverUrl);
+    }
+
+    return urls;
+  }, [userPhotosData, posts, profile.avatarUrl, profile.coverUrl]);
 
   const hasIntro =
     profile.bio ||
