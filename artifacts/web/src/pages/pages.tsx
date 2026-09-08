@@ -68,6 +68,9 @@ import {
   X,
   MoreHorizontal,
   Users,
+  Lock,
+  Sliders,
+  ShieldCheck,
 } from "lucide-react";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -555,10 +558,12 @@ function EditPageDialog({
   page,
   open,
   onOpenChange,
+  onOpenSettings,
 }: {
   page: Page;
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  onOpenSettings?: () => void;
 }) {
   const queryClient = useQueryClient();
   const updatePage = useUpdatePage();
@@ -611,6 +616,35 @@ function EditPageDialog({
           <DialogTitle>Edit Hub</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          {/* Read-only Hub Name */}
+          <div className="space-y-1.5 p-3 rounded-xl bg-muted/40 border border-border">
+            <div className="flex items-center justify-between">
+              <Label className="font-semibold text-xs text-muted-foreground flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5" /> Hub Name
+              </Label>
+              {onOpenSettings && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onOpenChange(false);
+                    onOpenSettings();
+                  }}
+                  className="text-xs text-primary font-semibold hover:underline"
+                >
+                  Change in Settings →
+                </button>
+              )}
+            </div>
+            <Input
+              value={page.name}
+              disabled
+              className="bg-muted/60 text-foreground font-semibold cursor-not-allowed opacity-90"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Hub name cannot be edited from this quick menu. Open Hub Settings to change name.
+            </p>
+          </div>
+
           <div className="space-y-2">
             <Label>Category</Label>
             <Select value={category || undefined} onValueChange={(v) => setCategory(v)}>
@@ -693,19 +727,39 @@ function EditPageDialog({
   );
 }
 
-function PageAccessDialog({
+function HubSettingsDialog({
   page,
   open,
   onOpenChange,
+  initialTab = "general",
 }: {
   page: Page;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialTab?: "general" | "access" | "cta" | "reviews" | "visibility";
 }) {
   const queryClient = useQueryClient();
-  const [query, setQuery] = useState("");
+  const updatePage = useUpdatePage();
+  const [activeTab, setActiveTab] = useState<"general" | "access" | "cta" | "reviews" | "visibility">(initialTab);
 
-  const { data: members, isLoading } = useListPageMembers(page.id, {
+  // General Form States
+  const [name, setName] = useState(page.name);
+  const [category, setCategory] = useState(page.category ?? "");
+  const [description, setDescription] = useState(page.description ?? "");
+  const [contactPhone, setContactPhone] = useState(page.contactPhone ?? "");
+  const [contactEmail, setContactEmail] = useState(page.contactEmail ?? "");
+  const [website, setWebsite] = useState(page.website ?? "");
+  const [address, setAddress] = useState(page.address ?? "");
+  const [hours, setHours] = useState(page.hours ?? "");
+
+  // CTA & Reviews States
+  const [ctaType, setCtaType] = useState<Page["ctaType"]>(page.ctaType);
+  const [ctaUrl, setCtaUrl] = useState(page.ctaUrl ?? "");
+  const [reviewsEnabled, setReviewsEnabled] = useState(page.reviewsEnabled);
+
+  // User Access States
+  const [query, setQuery] = useState("");
+  const { data: members, isLoading: membersLoading } = useListPageMembers(page.id, {
     query: {
       enabled: open,
       queryKey: getListPageMembersQueryKey(page.id),
@@ -725,10 +779,11 @@ function PageAccessDialog({
     },
   );
 
-  const invalidate = () =>
-    queryClient.invalidateQueries({
-      queryKey: getListPageMembersQueryKey(page.id),
-    });
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: getGetPageQueryKey(page.id) });
+    queryClient.invalidateQueries({ queryKey: getListPagesQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getListPageMembersQueryKey(page.id) });
+  };
 
   const memberIds = new Set((members ?? []).map((m) => m.user.id));
   const candidates = (results ?? []).filter(
@@ -751,93 +806,411 @@ function PageAccessDialog({
     removeMember.mutate({ id: page.id, userId }, { onSuccess: invalidate });
   };
 
+  const handleSave = () => {
+    updatePage.mutate(
+      {
+        id: page.id,
+        data: {
+          name: name.trim() || page.name,
+          category: category || null,
+          description: description.trim() || null,
+          contactPhone: contactPhone.trim() || null,
+          contactEmail: contactEmail.trim() || null,
+          website: website.trim() || null,
+          address: address.trim() || null,
+          hours: hours.trim() || null,
+          ctaType,
+          ctaUrl: ctaUrl.trim() || null,
+          reviewsEnabled,
+        },
+      },
+      {
+        onSuccess: () => {
+          invalidate();
+          onOpenChange(false);
+        },
+      },
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Hub access</DialogTitle>
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card border border-border rounded-2xl shadow-2xl">
+        <DialogHeader className="p-4 border-b border-border/60 bg-muted/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                <Settings className="w-4 h-4" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-bold">Hub Settings</DialogTitle>
+                <p className="text-xs text-muted-foreground">Manage {page.name}'s name, permissions, and features</p>
+              </div>
+            </div>
+          </div>
         </DialogHeader>
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            People with access can post and edit this Hub. Only you (the
-            owner) can manage access.
-          </p>
-          <div className="space-y-2">
-            <Label>Add people</Label>
-            <Input
-              placeholder="Search by name or username..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              data-testid="page-access-search"
-            />
-            {q.length >= 2 && candidates.length > 0 && (
-              <div className="border border-border rounded-lg divide-y divide-border">
-                {candidates.map((p: Profile) => (
-                  <div key={p.id} className="flex items-center gap-2 p-2">
-                    <img
-                      src={avatarSrc(p.avatarUrl)}
-                      className="w-8 h-8 rounded-full object-cover bg-muted"
-                      alt=""
-                    />
-                    <div className="flex-1 min-w-0 text-sm">
-                      <div className="font-medium truncate">{p.displayName}</div>
-                      <div className="text-xs text-muted-foreground">@{p.username}</div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      disabled={addMember.isPending}
-                      onClick={() => handleAdd(p.id)}
-                    >
-                      <UserPlus className="w-4 h-4 mr-1" /> Add
-                    </Button>
+
+        <div className="flex flex-1 min-h-[460px] overflow-hidden">
+          {/* Settings Left Navigation Sidebar */}
+          <div className="w-52 border-r border-border/60 bg-muted/10 p-2 space-y-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => setActiveTab("general")}
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors text-left ${
+                activeTab === "general"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "hover:bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <FileText className="w-4 h-4" />
+              <span>General Info</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("access")}
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors text-left ${
+                activeTab === "access"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "hover:bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              <span>Page Access & Roles</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("cta")}
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors text-left ${
+                activeTab === "cta"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "hover:bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Sliders className="w-4 h-4" />
+              <span>Action Button (CTA)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("reviews")}
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors text-left ${
+                activeTab === "reviews"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "hover:bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Star className="w-4 h-4" />
+              <span>Reviews & Ratings</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("visibility")}
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors text-left ${
+                activeTab === "visibility"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "hover:bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Visibility & Status</span>
+            </button>
+          </div>
+
+          {/* Settings Tab Content Area */}
+          <div className="flex-1 p-5 overflow-y-auto max-h-[580px]">
+            {activeTab === "general" && (
+              <div className="space-y-4 animate-in fade-in duration-200">
+                <div>
+                  <h3 className="text-base font-bold text-foreground">General Information</h3>
+                  <p className="text-xs text-muted-foreground">Manage your hub's official name, category, and basic information.</p>
+                </div>
+
+                <div className="space-y-1.5 p-3.5 rounded-xl bg-primary/5 border border-primary/20">
+                  <Label className="font-bold text-xs text-foreground flex items-center gap-1.5">
+                    <Pencil className="w-3.5 h-3.5 text-primary" /> Hub Name
+                  </Label>
+                  <Input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Hub name"
+                    className="font-semibold bg-background"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    This is your official Hub display name across HiMewo.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Category</Label>
+                  <Select value={category || undefined} onValueChange={(v) => setCategory(v)}>
+                    <SelectTrigger className="bg-background">
+                      <SelectValue placeholder="Choose a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {!PAGE_CATEGORIES.includes(category) && category ? (
+                        <SelectItem value={category}>{category}</SelectItem>
+                      ) : null}
+                      {PAGE_CATEGORIES.map((cat) => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Bio / Description</Label>
+                  <Textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Write a bio for this hub..."
+                    rows={3}
+                    className="bg-background resize-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Phone</Label>
+                    <Input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="+880..." className="bg-background" />
                   </div>
-                ))}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Email</Label>
+                    <Input value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="contact@..." className="bg-background" />
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label className="text-xs font-semibold">Website</Label>
+                    <Input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://..." className="bg-background" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Address / Location</Label>
+                    <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Dhaka, Bangladesh" className="bg-background" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Operating Hours</Label>
+                    <Input value={hours} onChange={(e) => setHours(e.target.value)} placeholder="Mon-Fri 9am-6pm" className="bg-background" />
+                  </div>
+                </div>
               </div>
             )}
-          </div>
-          <div className="space-y-2">
-            <Label>People with access</Label>
-            {isLoading ? (
-              <div className="py-4 flex justify-center">
-                <Loader2 className="w-5 h-5 animate-spin text-primary" />
-              </div>
-            ) : !members || members.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-2">
-                Only you have access to this Hub.
-              </p>
-            ) : (
-              <div className="border border-border rounded-lg divide-y divide-border">
-                {members.map((m) => (
-                  <div key={m.id} className="flex items-center gap-2 p-2">
-                    <img
-                      src={avatarSrc(m.user.avatarUrl)}
-                      className="w-8 h-8 rounded-full object-cover bg-muted"
-                      alt=""
-                    />
-                    <div className="flex-1 min-w-0 text-sm">
-                      <div className="font-medium truncate">{m.user.displayName}</div>
-                      <div className="text-xs text-muted-foreground">
-                        @{m.user.username} · Editor
-                      </div>
+
+            {activeTab === "access" && (
+              <div className="space-y-4 animate-in fade-in duration-200">
+                <div>
+                  <h3 className="text-base font-bold text-foreground">Hub Access & Roles</h3>
+                  <p className="text-xs text-muted-foreground">
+                    People with access can create posts, stories, and manage this Hub. Only you (the owner) can manage permissions.
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-xl bg-muted/40 border border-border space-y-2.5">
+                  <Label className="font-semibold text-xs text-foreground">Add People (Search Users)</Label>
+                  <Input
+                    placeholder="Search people by name or username..."
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    className="bg-background"
+                  />
+                  {q.length >= 2 && candidates.length > 0 && (
+                    <div className="border border-border rounded-xl divide-y divide-border bg-background overflow-hidden shadow-sm">
+                      {candidates.map((p: Profile) => (
+                        <div key={p.id} className="flex items-center gap-2.5 p-2.5 hover:bg-muted/40 transition-colors">
+                          <img
+                            src={avatarSrc(p.avatarUrl)}
+                            className="w-8 h-8 rounded-full object-cover bg-muted"
+                            alt=""
+                          />
+                          <div className="flex-1 min-w-0 text-sm">
+                            <div className="font-semibold truncate">{p.displayName}</div>
+                            <div className="text-xs text-muted-foreground">@{p.username}</div>
+                          </div>
+                          <Button
+                            size="sm"
+                            disabled={addMember.isPending}
+                            onClick={() => handleAdd(p.id)}
+                            className="rounded-lg gap-1"
+                          >
+                            <UserPlus className="w-3.5 h-3.5" /> Add Editor
+                          </Button>
+                        </div>
+                      ))}
                     </div>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      aria-label="Remove access"
-                      disabled={removeMember.isPending}
-                      onClick={() => handleRemove(m.user.id)}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    People with access
+                  </Label>
+                  {membersLoading ? (
+                    <div className="py-6 flex justify-center">
+                      <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                    </div>
+                  ) : !members || members.length === 0 ? (
+                    <div className="p-4 rounded-xl border border-dashed border-border text-center text-xs text-muted-foreground">
+                      Only you have access to this Hub right now. Use the search above to invite editors.
+                    </div>
+                  ) : (
+                    <div className="border border-border rounded-xl divide-y divide-border bg-background overflow-hidden">
+                      {members.map((m) => (
+                        <div key={m.id} className="flex items-center gap-2.5 p-3">
+                          <img
+                            src={avatarSrc(m.user.avatarUrl)}
+                            className="w-9 h-9 rounded-full object-cover bg-muted"
+                            alt=""
+                          />
+                          <div className="flex-1 min-w-0 text-sm">
+                            <div className="font-semibold truncate">{m.user.displayName}</div>
+                            <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+                              <span>@{m.user.username}</span>
+                              <span>•</span>
+                              <span className="font-medium text-primary">Editor</span>
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-red-500 hover:text-red-600 hover:bg-red-500/10 rounded-lg text-xs"
+                            disabled={removeMember.isPending}
+                            onClick={() => handleRemove(m.user.id)}
+                          >
+                            Remove access
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === "cta" && (
+              <div className="space-y-4 animate-in fade-in duration-200">
+                <div>
+                  <h3 className="text-base font-bold text-foreground">Action Button (CTA)</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Customize the primary action button displayed on your Hub header.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Button Type</Label>
+                  <Select value={ctaType} onValueChange={(v) => setCtaType(v as Page["ctaType"])}>
+                    <SelectTrigger className="bg-background">
+                      <SelectValue placeholder="Choose action button" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None (No Button)</SelectItem>
+                      <SelectItem value="message">Send Message</SelectItem>
+                      <SelectItem value="call">Call Now</SelectItem>
+                      <SelectItem value="shop">Shop Now</SelectItem>
+                      <SelectItem value="signup">Sign Up</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {(ctaType === "shop" || ctaType === "signup") && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Target URL</Label>
+                    <Input
+                      value={ctaUrl}
+                      onChange={(e) => setCtaUrl(e.target.value)}
+                      placeholder="https://..."
+                      className="bg-background"
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      Users who click this button will be redirected to this link.
+                    </p>
                   </div>
-                ))}
+                )}
+              </div>
+            )}
+
+            {activeTab === "reviews" && (
+              <div className="space-y-4 animate-in fade-in duration-200">
+                <div>
+                  <h3 className="text-base font-bold text-foreground">Reviews & Recommendations</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Manage whether visitors can rate and write reviews on your Hub.
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-muted/20">
+                  <div className="space-y-0.5 pr-4">
+                    <Label className="font-semibold text-sm">Allow Hub Reviews</Label>
+                    <p className="text-xs text-muted-foreground">
+                      When turned on, users can leave star ratings and public reviews on your Hub profile.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={reviewsEnabled}
+                    onCheckedChange={setReviewsEnabled}
+                  />
+                </div>
+              </div>
+            )}
+
+            {activeTab === "visibility" && (
+              <div className="space-y-4 animate-in fade-in duration-200">
+                <div>
+                  <h3 className="text-base font-bold text-foreground">Visibility & Ownership</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Hub publication status and profile linking details.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl border border-border bg-muted/20 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="font-semibold text-sm text-foreground">Hub Status</span>
+                      <p className="text-xs text-muted-foreground">This Hub is active and publicly visible.</p>
+                    </div>
+                    <span className="px-2.5 py-1 bg-green-500/10 text-green-600 font-bold text-xs rounded-full border border-green-500/20">
+                      Published
+                    </span>
+                  </div>
+                  <div className="pt-2 border-t border-border/60 text-xs text-muted-foreground">
+                    <b>Ownership:</b> Connected to your personal profile.
+                  </div>
+                </div>
               </div>
             )}
           </div>
         </div>
+
+        <DialogFooter className="p-3 border-t border-border/60 bg-muted/20 flex items-center justify-end gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={updatePage.isPending}>
+            {updatePage.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            Save Changes
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// Keep PageAccessDialog as a helper that opens HubSettingsDialog directly on the "access" tab
+function PageAccessDialog({
+  page,
+  open,
+  onOpenChange,
+}: {
+  page: Page;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  return (
+    <HubSettingsDialog
+      page={page}
+      open={open}
+      onOpenChange={onOpenChange}
+      initialTab="access"
+    />
   );
 }
 
@@ -1259,7 +1632,12 @@ function PageDetail({ id }: { id: number }) {
 
       {page.viewerCanPost && (
         <>
-          <EditPageDialog page={page} open={editOpen} onOpenChange={setEditOpen} />
+          <EditPageDialog
+            page={page}
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            onOpenSettings={user?.id === page.ownerId ? () => setAccessOpen(true) : undefined}
+          />
         </>
       )}
       {user?.id === page.ownerId && (

@@ -122,31 +122,74 @@ export default function MenuScreen() {
               />
             </Pressable>
             {switcherOpen && (
-              <View style={{ marginTop: 8, gap: 4 }}>
+              <View style={{ marginTop: 8, gap: 6 }}>
+                <Text style={{ fontSize: 11, fontWeight: "700", color: c.mutedForeground, textTransform: "uppercase", paddingHorizontal: 8, marginTop: 4 }}>
+                  Personal Profile
+                </Text>
                 <Pressable
-                  style={styles.switcherRow}
+                  style={[styles.switcherRow, !actingPage ? { backgroundColor: c.primary + "15", borderRadius: 10 } : null]}
                   onPress={() => {
                     setSwitcherOpen(false);
                     if (actingPage) switchTo(null);
                   }}
                 >
-                  <Avatar uri={user?.avatarUrl} name={user?.displayName} size={32} />
-                  <Text
-                    style={[styles.switcherRowName, { color: c.foreground }]}
-                    numberOfLines={1}
-                  >
-                    {user?.displayName}
-                  </Text>
+                  <Avatar uri={user?.avatarUrl} name={user?.displayName} size={36} />
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={[styles.switcherRowName, { color: c.foreground, fontWeight: "600" }]}
+                      numberOfLines={1}
+                    >
+                      {user?.displayName}
+                    </Text>
+                    <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
+                      @{user?.username}
+                    </Text>
+                  </View>
                   {!actingPage && (
-                    <Ionicons name="checkmark" size={18} color="#6366f1" />
+                    <Ionicons name="checkmark-circle" size={20} color={c.primary} />
                   )}
                 </Pressable>
+
+                <View style={{ height: 1, backgroundColor: c.border, marginVertical: 4 }} />
+
+                <Pressable
+                  style={styles.switcherRow}
+                  onPress={async () => {
+                    setSwitcherOpen(false);
+                    await signOut();
+                    router.replace("/(auth)/login");
+                  }}
+                >
+                  <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: c.secondary, alignItems: "center", justifyContent: "center" }}>
+                    <Ionicons name="swap-horizontal" size={18} color={c.foreground} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.switcherRowName, { color: c.foreground }]}>
+                      Switch to another account
+                    </Text>
+                    <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
+                      Log out & sign in with another account
+                    </Text>
+                  </View>
+                </Pressable>
+
+                <View style={{ height: 1, backgroundColor: c.border, marginVertical: 4 }} />
+
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 8, marginTop: 4 }}>
+                  <Text style={{ fontSize: 11, fontWeight: "700", color: c.mutedForeground, textTransform: "uppercase" }}>
+                    Your Hubs ({pages?.length ?? 0})
+                  </Text>
+                  <Text style={{ fontSize: 10, color: c.mutedForeground }}>
+                    Managed by you
+                  </Text>
+                </View>
+
                 {pages!.map((p) => {
                   const isActive = actingPage?.id === p.id;
                   return (
                     <Pressable
                       key={p.id}
-                      style={styles.switcherRow}
+                      style={[styles.switcherRow, isActive ? { backgroundColor: c.primary + "15", borderRadius: 10 } : null]}
                       onPress={() => {
                         setSwitcherOpen(false);
                         if (!isActive)
@@ -157,19 +200,39 @@ export default function MenuScreen() {
                           });
                       }}
                     >
-                      <Avatar uri={p.avatarUrl} name={p.name} size={32} />
-                      <Text
-                        style={[styles.switcherRowName, { color: c.foreground }]}
-                        numberOfLines={1}
-                      >
-                        {p.name}
-                      </Text>
+                      <Avatar uri={p.avatarUrl} name={p.name} size={36} />
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={[styles.switcherRowName, { color: c.foreground, fontWeight: "600" }]}
+                          numberOfLines={1}
+                        >
+                          {p.name}
+                        </Text>
+                        <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
+                          {p.category || "Hub"}
+                        </Text>
+                      </View>
                       {isActive && (
-                        <Ionicons name="checkmark" size={18} color="#6366f1" />
+                        <Ionicons name="checkmark-circle" size={20} color={c.primary} />
                       )}
                     </Pressable>
                   );
                 })}
+
+                <Pressable
+                  style={[styles.switcherRow, { marginTop: 2 }]}
+                  onPress={() => {
+                    setSwitcherOpen(false);
+                    router.push("/pages");
+                  }}
+                >
+                  <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: c.primary + "20", alignItems: "center", justifyContent: "center" }}>
+                    <Ionicons name="add" size={20} color={c.primary} />
+                  </View>
+                  <Text style={[styles.switcherRowName, { color: c.primary, fontWeight: "600" }]}>
+                    Create new Hub
+                  </Text>
+                </Pressable>
               </View>
             )}
           </View>

@@ -78,6 +78,7 @@ import { MusicPickerButton, type SelectedMusic } from "@/components/music-picker
 import { RenderWithMentions } from "@/components/mention";
 import { Link } from "wouter";
 import { useAuth } from "@/lib/auth";
+import { useActingPage } from "@/lib/acting-page";
 import { formatDistanceToNow } from "date-fns";
 
 /* -------------------------------------------------------------------------- */
@@ -972,7 +973,13 @@ function ReelCard({
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { user } = useAuth();
-  const isAuthor = Boolean(user && (user.id === reel.author.id || user.username === reel.author.username));
+  const { actingPage } = useActingPage();
+  // When acting as a Hub, personal profile reels should NOT show edit/delete options.
+  const isAuthor = Boolean(
+    !actingPage &&
+      user &&
+      (user.id === reel.author.id || user.username === reel.author.username),
+  );
 
   // Optimistic UI states
   const [liked, setLiked] = useState(reel.viewerHasLiked ?? false);

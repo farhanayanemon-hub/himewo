@@ -16,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, ArrowRightLeft, PlusCircle } from "lucide-react";
 import { 
   Home, 
   Users, 
@@ -102,7 +102,7 @@ function NavIcon({
 // Lets the user post/react/comment as a page they manage, Facebook-style.
 // Only shown when the user actually owns or edits at least one page.
 function PageSwitcher() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { actingPage, switchTo } = useActingPage();
   const { data: pages } = useListPages({ mine: true });
   const [, navigate] = useLocation();
@@ -112,69 +112,145 @@ function PageSwitcher() {
   const activeName = actingPage ? actingPage.name : user?.displayName;
   const activeAvatar = actingPage ? actingPage.avatarUrl : user?.avatarUrl;
 
+  const handleSwitchAccount = async () => {
+    await signOut();
+    navigate("/login");
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="rounded-full aurora-glass hover:bg-muted/60 gap-2 pl-1 pr-2 h-10"
+          className="rounded-full aurora-glass hover:bg-muted/60 gap-2 pl-1 pr-2.5 h-10 border border-border/40 shadow-sm"
           aria-label="Switch acting identity"
         >
           <img
             src={avatarSrc(activeAvatar)}
             alt=""
-            className="w-8 h-8 rounded-full object-cover border border-border"
+            className="w-8 h-8 rounded-full object-cover border border-border ring-1 ring-primary/20"
           />
-          <span className="hidden md:inline max-w-[120px] truncate text-sm font-medium">
+          <span className="hidden md:inline max-w-[120px] truncate text-sm font-semibold">
             {activeName}
           </span>
           <ChevronDown className="w-4 h-4 text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuLabel>Acting as</DropdownMenuLabel>
-        <DropdownMenuSeparator />
+      <DropdownMenuContent align="end" className="w-72 p-2 shadow-xl rounded-2xl border border-border/60">
+        {/* SECTION 1: PERSONAL PROFILE */}
+        <div className="px-2 py-1.5">
+          <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+            Personal Profile
+          </span>
+        </div>
         <DropdownMenuItem
           onClick={() => actingPage && switchTo(null, () => navigate("/me"))}
-          className="gap-3 py-2"
+          className={`gap-3 p-2 rounded-xl cursor-pointer ${
+            !actingPage ? "bg-primary/10 border border-primary/20" : "hover:bg-muted/60"
+          }`}
         >
           <img
             src={avatarSrc(user?.avatarUrl)}
             alt=""
-            className="w-8 h-8 rounded-full object-cover border border-border"
+            className="w-10 h-10 rounded-full object-cover border border-border"
           />
-          <span className="flex-1 truncate">{user?.displayName}</span>
-          {!actingPage && <Check className="w-4 h-4 text-primary" />}
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-sm truncate flex items-center gap-1.5">
+              <span>{user?.displayName}</span>
+              {!actingPage && (
+                <span className="text-[10px] bg-primary text-primary-foreground font-bold px-1.5 py-0.5 rounded-full">
+                  Active
+                </span>
+              )}
+            </div>
+            <div className="text-xs text-muted-foreground truncate">
+              @{user?.username}
+            </div>
+          </div>
+          {!actingPage && <Check className="w-4 h-4 text-primary shrink-0" />}
         </DropdownMenuItem>
-        {pages.map((p) => {
-          const isActive = actingPage?.id === p.id;
-          return (
-            <DropdownMenuItem
-              key={p.id}
-              onClick={() =>
-                !isActive &&
-                switchTo(
-                  {
-                    id: p.id,
-                    name: p.name,
-                    avatarUrl: p.avatarUrl ?? null,
-                  },
-                  // Land on the Hub's own page so the switch is clearly visible.
-                  () => navigate(`/pages/${p.id}`),
-                )
-              }
-              className="gap-3 py-2"
-            >
-              <img
-                src={avatarSrc(p.avatarUrl)}
-                alt=""
-                className="w-8 h-8 rounded-full object-cover border border-border"
-              />
-              <span className="flex-1 truncate">{p.name}</span>
-              {isActive && <Check className="w-4 h-4 text-primary" />}
-            </DropdownMenuItem>
-          );
-        })}
+
+        <DropdownMenuSeparator className="my-2" />
+
+        {/* SECTION 2: SWITCH TO ANOTHER ACCOUNT */}
+        <DropdownMenuItem
+          onClick={handleSwitchAccount}
+          className="gap-3 p-2 rounded-xl text-foreground hover:bg-muted/60 cursor-pointer font-medium text-sm"
+        >
+          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+            <ArrowRightLeft className="w-4 h-4" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-medium text-sm">Switch to another account</div>
+            <div className="text-[11px] text-muted-foreground">Log out & sign in with another account</div>
+          </div>
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator className="my-2" />
+
+        {/* SECTION 3: YOUR HUBS / PAGES */}
+        <div className="px-2 py-1 flex items-center justify-between">
+          <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+            Your Hubs ({pages.length})
+          </span>
+          <span className="text-[10px] text-muted-foreground font-medium">
+            Managed by you
+          </span>
+        </div>
+        <div className="max-h-56 overflow-y-auto space-y-1 pr-1">
+          {pages.map((p) => {
+            const isActive = actingPage?.id === p.id;
+            return (
+              <DropdownMenuItem
+                key={p.id}
+                onClick={() =>
+                  !isActive &&
+                  switchTo(
+                    {
+                      id: p.id,
+                      name: p.name,
+                      avatarUrl: p.avatarUrl ?? null,
+                    },
+                    () => navigate(`/pages/${p.id}`),
+                  )
+                }
+                className={`gap-3 p-2 rounded-xl cursor-pointer ${
+                  isActive ? "bg-primary/10 border border-primary/20" : "hover:bg-muted/60"
+                }`}
+              >
+                <img
+                  src={avatarSrc(p.avatarUrl)}
+                  alt=""
+                  className="w-9 h-9 rounded-full object-cover border border-border"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-sm truncate flex items-center gap-1.5">
+                    <span>{p.name}</span>
+                    {isActive && (
+                      <span className="text-[10px] bg-primary text-primary-foreground font-bold px-1.5 py-0.5 rounded-full">
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground truncate">
+                    {p.category || "Hub"}
+                  </div>
+                </div>
+                {isActive && <Check className="w-4 h-4 text-primary shrink-0" />}
+              </DropdownMenuItem>
+            );
+          })}
+        </div>
+
+        <DropdownMenuSeparator className="my-2" />
+
+        <DropdownMenuItem
+          onClick={() => navigate("/pages?create=1")}
+          className="gap-2.5 p-2 rounded-xl text-primary hover:bg-primary/10 cursor-pointer font-semibold text-sm"
+        >
+          <PlusCircle className="w-4 h-4" />
+          <span>Create new Hub</span>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

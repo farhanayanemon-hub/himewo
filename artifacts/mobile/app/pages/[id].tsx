@@ -354,6 +354,20 @@ function EditPageModal({
         <View style={[styles.modalCard, { backgroundColor: c.surface }]}>
           <Text style={[styles.modalTitle, { color: c.foreground }]}>Edit Hub</Text>
           <ScrollView style={{ maxHeight: 460 }} contentContainerStyle={{ gap: 12, paddingBottom: 8 }}>
+            <View style={{ padding: 12, borderRadius: 10, borderWidth: 1, borderColor: c.border, backgroundColor: c.secondary, gap: 4 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                <Text style={{ fontSize: 12, fontWeight: "600", color: c.mutedForeground }}>Hub Name</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                  <Ionicons name="lock-closed" size={12} color={c.mutedForeground} />
+                  <Text style={{ fontSize: 11, color: c.mutedForeground }}>Settings only</Text>
+                </View>
+              </View>
+              <Text style={{ fontSize: 15, fontWeight: "700", color: c.foreground }}>{page.name}</Text>
+              <Text style={{ fontSize: 11, color: c.mutedForeground }}>
+                Hub name cannot be edited here. Change name in Hub Settings.
+              </Text>
+            </View>
+
             <Text style={[styles.fieldLabel, { color: c.mutedForeground }]}>Category</Text>
             <View style={styles.chipWrap}>
               {PAGE_CATEGORIES.map((cat: string) => {

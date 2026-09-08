@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Camera, ArrowLeft } from "lucide-react";
+import { Loader2, Camera, ArrowLeft, Lock } from "lucide-react";
 import { uploadMedia, UploadUnavailableError } from "@/lib/upload";
 import { Link, useLocation } from "wouter";
 
@@ -22,7 +22,6 @@ export default function EditProfilePage() {
   const coverInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
-    displayName: user?.displayName || "",
     bio: user?.bio || "",
     birthday: (user?.birthday || "").slice(0, 10),
     location: user?.location || "",
@@ -165,6 +164,26 @@ export default function EditProfilePage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6 p-6 pt-4">
+          {/* Read-only Full Name with Settings link */}
+          <div className="space-y-1.5 p-3 rounded-xl bg-muted/40 border border-border">
+            <div className="flex items-center justify-between">
+              <Label className="font-semibold text-xs text-muted-foreground flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5" /> Full Name
+              </Label>
+              <Link href="/settings/account" className="text-xs text-primary font-semibold hover:underline">
+                Change in Settings →
+              </Link>
+            </div>
+            <Input
+              value={user?.displayName || ""}
+              disabled
+              className="bg-muted/60 text-foreground font-semibold cursor-not-allowed opacity-90"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Your name cannot be changed directly here. To change your name, please visit Account Settings.
+            </p>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="bio">Bio</Label>
             <Textarea id="bio" value={formData.bio} onChange={(e) => set("bio", e.target.value)} className="bg-muted/50 resize-none" rows={3} placeholder="Write something about yourself" />
