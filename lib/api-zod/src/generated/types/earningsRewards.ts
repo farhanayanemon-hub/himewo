@@ -11,4 +11,5 @@ export interface EarningsRewards {
   like: number;
   comment: number;
   share: number;
+  reel?: number;
 }

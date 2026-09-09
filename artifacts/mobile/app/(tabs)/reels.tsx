@@ -17,7 +17,7 @@ import {
   type ViewToken,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useQueryClient } from "@tanstack/react-query";
@@ -37,6 +37,7 @@ import {
   useListGroups,
   useCreatePost,
   PostInputPrivacy,
+  getListReelsQueryKey,
   getListReelCommentsQueryKey,
   getListSavedItemsQueryKey,
   useFollowUser,
@@ -44,6 +45,7 @@ import {
   ReactionType,
   type Reel,
   type ReelComment,
+  customFetch,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import * as Haptics from "expo-haptics";
@@ -54,6 +56,9 @@ import { reactionConfig, reactionOrder } from "@/constants/reactions";
 import { useColors } from "@/hooks/useColors";
 import { formatCount, timeAgo } from "@/lib/format";
 import { parseReelOverlays } from "../create-reel";
+import { CreateMediaLauncherSheet } from "@/components/CreateMediaLauncherSheet";
+import { syncUserFollowState } from "@/lib/follow-sync";
+import { syncReelLikeState } from "@/lib/reel-sync";
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -79,12 +84,31 @@ function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
 
   const handleToggleFollow = () => {
     if (!user || isOwn) return;
+    const authorId = reel.author.id;
     if (following) {
       setFollowing(false);
-      unfollowUser.mutate({ userId: reel.author.id }, { onError: () => setFollowing(true) });
+      syncUserFollowState(qc, authorId, false);
+      unfollowUser.mutate(
+        { userId: authorId },
+        {
+          onError: () => {
+            setFollowing(true);
+            syncUserFollowState(qc, authorId, true);
+          },
+        },
+      );
     } else {
       setFollowing(true);
-      followUser.mutate({ userId: reel.author.id }, { onError: () => setFollowing(false) });
+      syncUserFollowState(qc, authorId, true);
+      followUser.mutate(
+        { userId: authorId },
+        {
+          onError: () => {
+            setFollowing(false);
+            syncUserFollowState(qc, authorId, false);
+          },
+        },
+      );
     }
   };
 
@@ -123,20 +147,37 @@ function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
     const rollback = () => {
       setReactionState(prev.reaction);
       setLikeCount(prev.likeCount);
+      syncReelLikeState(qc, reel.id, Boolean(prev.reaction), prev.likeCount, prev.reaction);
     };
     if (reaction) {
+      const newCount = Math.max(0, likeCount - 1);
       setReactionState(null);
-      setLikeCount((n) => Math.max(0, n - 1));
+      setLikeCount(newCount);
+      syncReelLikeState(qc, reel.id, false, newCount, null);
       removeReelReaction.mutate(
         { id: reel.id },
-        { onSuccess: (d) => syncFromServer(d as Reel), onError: rollback },
+        {
+          onSuccess: (d) => {
+            syncFromServer(d as Reel);
+            syncReelLikeState(qc, reel.id, false, (d as Reel).likeCount, null);
+          },
+          onError: rollback,
+        },
       );
     } else {
+      const newCount = likeCount + 1;
       setReactionState(ReactionType.like);
-      setLikeCount((n) => n + 1);
+      setLikeCount(newCount);
+      syncReelLikeState(qc, reel.id, true, newCount, ReactionType.like);
       setReelReaction.mutate(
         { id: reel.id, data: { type: ReactionType.like } },
-        { onSuccess: (d) => syncFromServer(d as Reel), onError: rollback },
+        {
+          onSuccess: (d) => {
+            syncFromServer(d as Reel);
+            syncReelLikeState(qc, reel.id, true, (d as Reel).likeCount, ReactionType.like);
+          },
+          onError: rollback,
+        },
       );
     }
   };
@@ -153,12 +194,21 @@ function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
     const rollback = () => {
       setReactionState(prev.reaction);
       setLikeCount(prev.likeCount);
+      syncReelLikeState(qc, reel.id, Boolean(prev.reaction), prev.likeCount, prev.reaction);
     };
-    if (!reaction) setLikeCount((n) => n + 1);
+    const newCount = !reaction ? likeCount + 1 : likeCount;
+    setLikeCount(newCount);
     setReactionState(t);
+    syncReelLikeState(qc, reel.id, true, newCount, t);
     setReelReaction.mutate(
       { id: reel.id, data: { type: t } },
-      { onSuccess: (d) => syncFromServer(d as Reel), onError: rollback },
+      {
+        onSuccess: (d) => {
+          syncFromServer(d as Reel);
+          syncReelLikeState(qc, reel.id, true, (d as Reel).likeCount, t);
+        },
+        onError: rollback,
+      },
     );
   };
 
@@ -360,12 +410,44 @@ function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
 
 export default function ReelsScreen() {
   const c = useColors();
+  const qc = useQueryClient();
+  const params = useLocalSearchParams<{ id?: string; reelId?: string }>();
+  const flatListRef = useRef<FlatList<Reel>>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [listHeight, setListHeight] = useState(SCREEN_HEIGHT);
   const [commentReel, setCommentReel] = useState<Reel | null>(null);
+  const [launcherOpen, setLauncherOpen] = useState(false);
 
   const { data, isLoading } = useListReels();
   const reels = (data ?? []) as Reel[];
+
+  useEffect(() => {
+    const targetId = params.id || params.reelId;
+    if (!targetId) return;
+
+    if (reels && reels.length > 0) {
+      const idx = reels.findIndex((r) => String(r.id) === String(targetId));
+      if (idx !== -1) {
+        flatListRef.current?.scrollToIndex({ index: idx, animated: true });
+        setActiveIndex(idx);
+        return;
+      }
+    }
+
+    // If target reel is not in top feed, fetch it directly and prepend to cache
+    customFetch<Reel>(`/api/reels/${encodeURIComponent(targetId)}`)
+      .then((singleReel) => {
+        if (!singleReel || !singleReel.id) return;
+        qc.setQueryData<Reel[]>(getListReelsQueryKey(), (old) => {
+          if (!old) return [singleReel];
+          if (old.some((r) => r.id === singleReel.id)) return old;
+          return [singleReel, ...old];
+        });
+        flatListRef.current?.scrollToIndex({ index: 0, animated: false });
+        setActiveIndex(0);
+      })
+      .catch(() => {});
+  }, [params.id, params.reelId, reels, qc]);
 
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 80 });
   const onViewableItemsChanged = useRef(
@@ -390,9 +472,14 @@ export default function ReelsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }} edges={["top"]}>
+      <CreateMediaLauncherSheet
+        visible={launcherOpen}
+        mode="reel"
+        onClose={() => setLauncherOpen(false)}
+      />
       <View style={styles.header} pointerEvents="box-none">
         <Text style={styles.headerTitle}>Reels</Text>
-        <Pressable hitSlop={10} onPress={() => router.push("/create-reel")}>
+        <Pressable hitSlop={10} onPress={() => setLauncherOpen(true)}>
           <Ionicons name="add-circle-outline" size={28} color="#fff" />
         </Pressable>
       </View>
@@ -410,6 +497,7 @@ export default function ReelsScreen() {
           onLayout={(e) => setListHeight(e.nativeEvent.layout.height)}
         >
           <FlatList
+            ref={flatListRef}
             data={reels}
             keyExtractor={(item) => String(item.id)}
             renderItem={renderItem}
@@ -420,6 +508,11 @@ export default function ReelsScreen() {
             decelerationRate="fast"
             viewabilityConfig={viewabilityConfig.current}
             onViewableItemsChanged={onViewableItemsChanged.current}
+            onScrollToIndexFailed={(info) => {
+              setTimeout(() => {
+                flatListRef.current?.scrollToIndex({ index: info.index, animated: false });
+              }, 100);
+            }}
             getItemLayout={(_, index) => ({
               length: listHeight,
               offset: listHeight * index,
@@ -629,6 +722,15 @@ function ReelShareSheet({
     }
   }
 
+  const trackReelShare = async () => {
+    if (!reel) return;
+    try {
+      await customFetch(`/api/reels/${reel.id}/share`, { method: "POST" });
+    } catch {
+      // silent
+    }
+  };
+
   const handleShareStory = async () => {
     if (!reel) return;
     setSharingToStory(true);
@@ -642,6 +744,7 @@ function ReelShareSheet({
           expiresInHours: 24,
         },
       });
+      trackReelShare();
       Alert.alert("Added to Story", "Your reel has been shared to your story for 24 hours!");
       onClose();
     } catch {
@@ -663,6 +766,7 @@ function ReelShareSheet({
         },
       });
       setSharedCircles((prev) => new Set(prev).add(circle.id));
+      trackReelShare();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert("Shared to Circle", `Reel posted to ${circle.name}!`);
     } catch {
@@ -693,6 +797,7 @@ function ReelShareSheet({
           },
         });
         setSentUsers((prev) => new Set(prev).add(friendId));
+        trackReelShare();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
     } catch {
@@ -703,6 +808,7 @@ function ReelShareSheet({
   };
 
   const openUrl = async (url: string, fallbackUrl?: string) => {
+    trackReelShare();
     try {
       const supported = await Linking.canOpenURL(url);
       if (supported) {

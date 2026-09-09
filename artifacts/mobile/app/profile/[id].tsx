@@ -1,10 +1,12 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Pressable,
   RefreshControl,
   ScrollView,
+  Share,
   Text,
   View,
   StyleSheet,
@@ -27,10 +29,15 @@ import {
   getGetUserPostsQueryKey,
   getGetUserFriendsQueryKey,
   ConversationType,
+  ReactionType,
+  useSetReelReaction,
+  useRemoveReelReaction,
   customFetch,
   type Post,
   type Reel,
 } from "@workspace/api-client-react";
+import { syncUserFollowState } from "@/lib/follow-sync";
+import { syncReelLikeState } from "@/lib/reel-sync";
 import { Avatar } from "@/components/Avatar";
 import { PostCard } from "@/components/PostCard";
 import { CommentsSheet } from "@/components/CommentsSheet";
@@ -38,11 +45,121 @@ import { useAuth } from "@/lib/auth";
 import { useColors } from "@/hooks/useColors";
 import { formatCount, timeAgo } from "@/lib/format";
 
-function MobileReelTimelineCard({ reel, c }: { reel: Reel; c: any }) {
+function MobileReelTimelineCard({
+  reel,
+  c,
+  currentUserId,
+  onReelDeleted,
+}: {
+  reel: Reel;
+  c: any;
+  currentUserId?: string;
+  onReelDeleted?: () => void;
+}) {
+  const qc = useQueryClient();
   const cleanCaption = (reel.caption ?? "").replace(/#\w+/g, "").trim();
+  const isAuthor = currentUserId === reel.author.id;
+
+  const [liked, setLiked] = useState(Boolean(reel.viewerHasLiked ?? (reel as any).viewerLiked));
+  const [likeCount, setLikeCount] = useState(reel.likeCount ?? 0);
+
+  useEffect(() => {
+    setLiked(Boolean(reel.viewerHasLiked ?? (reel as any).viewerLiked));
+    setLikeCount(reel.likeCount ?? 0);
+  }, [reel.viewerHasLiked, (reel as any).viewerLiked, reel.likeCount]);
+
+  const setReaction = useSetReelReaction();
+  const removeReaction = useRemoveReelReaction();
+
+  const handleToggleLike = () => {
+    if (!currentUserId) return;
+    if (liked) {
+      setLiked(false);
+      const next = Math.max(0, likeCount - 1);
+      setLikeCount(next);
+      syncReelLikeState(qc, reel.id, false, next, null);
+      removeReaction.mutate(
+        { id: reel.id },
+        {
+          onError: () => {
+            setLiked(true);
+            setLikeCount(likeCount);
+            syncReelLikeState(qc, reel.id, true, likeCount, "like");
+          },
+        },
+      );
+    } else {
+      setLiked(true);
+      const next = likeCount + 1;
+      setLikeCount(next);
+      syncReelLikeState(qc, reel.id, true, next, "like");
+      setReaction.mutate(
+        { id: reel.id, data: { type: ReactionType.like } },
+        {
+          onError: () => {
+            setLiked(false);
+            setLikeCount(likeCount);
+            syncReelLikeState(qc, reel.id, false, likeCount, null);
+          },
+        },
+      );
+    }
+  };
+
+  const handleMenu = () => {
+    const options = [
+      {
+        text: "Open in Reels",
+        onPress: () => router.push({ pathname: "/reels", params: { id: String(reel.id) } } as any),
+      },
+      {
+        text: "Share Reel",
+        onPress: async () => {
+          try {
+            await Share.share({
+              message: `Check out this reel by @${reel.author.username}: ${reel.caption || ""}`,
+            });
+          } catch {}
+        },
+      },
+      ...(isAuthor
+        ? [
+            {
+              text: "Move to Trash",
+              style: "destructive" as const,
+              onPress: () => {
+                Alert.alert(
+                  "Move to Trash?",
+                  "This reel will be moved to trash and permanently deleted after 30 days.",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Delete",
+                      style: "destructive",
+                      onPress: async () => {
+                        try {
+                          await customFetch(`/api/reels/${reel.id}`, { method: "DELETE" });
+                          onReelDeleted?.();
+                        } catch {
+                          Alert.alert("Error", "Failed to delete reel");
+                        }
+                      },
+                    },
+                  ],
+                );
+              },
+            },
+          ]
+        : []),
+      { text: "Cancel", style: "cancel" as const },
+    ];
+
+    Alert.alert("Reel Options", undefined, options);
+  };
+
   return (
     <Pressable
-      onPress={() => router.push("/reels")}
+      onPress={() => router.push({ pathname: "/reels", params: { id: String(reel.id) } } as any)}
       style={{
         backgroundColor: c.card,
         borderWidth: 1,
@@ -74,6 +191,17 @@ function MobileReelTimelineCard({ reel, c }: { reel: Reel; c: any }) {
             </View>
           </View>
         </View>
+
+        <Pressable
+          onPress={(e) => {
+            e.stopPropagation();
+            handleMenu();
+          }}
+          hitSlop={12}
+          style={{ padding: 6, borderRadius: 20 }}
+        >
+          <Ionicons name="ellipsis-horizontal" size={18} color={c.mutedForeground} />
+        </Pressable>
       </View>
 
       {/* Caption */}
@@ -141,12 +269,29 @@ function MobileReelTimelineCard({ reel, c }: { reel: Reel; c: any }) {
         }}
       >
         <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-            <Ionicons name="heart" size={18} color="#ef4444" />
-            <Text style={{ fontSize: 12, fontWeight: "600", color: c.mutedForeground }}>
-              {formatCount(reel.likeCount)}
+          <Pressable
+            onPress={(e) => {
+              e.stopPropagation();
+              handleToggleLike();
+            }}
+            hitSlop={8}
+            style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+          >
+            <Ionicons
+              name={liked ? "heart" : "heart-outline"}
+              size={18}
+              color={liked ? "#ef4444" : c.mutedForeground}
+            />
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: "600",
+                color: liked ? "#ef4444" : c.mutedForeground,
+              }}
+            >
+              {formatCount(likeCount)}
             </Text>
-          </View>
+          </Pressable>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
             <Ionicons name="chatbubble-outline" size={16} color={c.mutedForeground} />
             <Text style={{ fontSize: 12, fontWeight: "600", color: c.mutedForeground }}>
@@ -187,29 +332,29 @@ export function ProfileBody({
   } = useGetUser(userId, {
     query: { enabled: !!userId, queryKey: getGetUserQueryKey(userId) },
   });
+  const targetId = profile?.id || userId;
   const { data: postsData, refetch: refetchPosts } = useGetUserPosts(
-    userId,
+    targetId,
     undefined,
-    { query: { enabled: !!userId, queryKey: getGetUserPostsQueryKey(userId) } },
+    { query: { enabled: !!targetId, queryKey: getGetUserPostsQueryKey(targetId) } },
   );
   const showLocked =
     !!profile?.isLocked && !isOwn && !profile?.viewerIsFriend;
   const { data: friendsData, refetch: refetchFriends } = useGetUserFriends(
-    userId,
+    targetId,
     undefined,
     {
       query: {
-        enabled: !!userId && !showLocked,
-        queryKey: getGetUserFriendsQueryKey(userId),
+        enabled: !!targetId && !showLocked,
+        queryKey: getGetUserFriendsQueryKey(targetId),
       },
     },
   );
-  const targetId = profile?.id || userId;
   const { data: userReels, refetch: refetchReels } = useQuery<Reel[]>({
     queryKey: ["user-reels", targetId],
     queryFn: async () => {
       return customFetch<Reel[]>(
-        `/api/reels?authorId=${encodeURIComponent(targetId)}&limit=50`,
+        `/api/users/${encodeURIComponent(targetId)}/reels?limit=50`,
       ).catch(() => []);
     },
     enabled: !!targetId && !showLocked,
@@ -218,25 +363,48 @@ export function ProfileBody({
   const posts = (postsData ?? []) as Post[];
   const friends = friendsData ?? [];
 
+  // Strictly filter posts to profile owner and exclude page/group posts
+  const strictlyUserPosts = useMemo(() => {
+    if (!profile?.id && !userId) return [];
+    return posts.filter((p) => {
+      const matchAuthor =
+        p.author?.id === profile?.id ||
+        (userId && p.author?.id === userId) ||
+        (profile?.username && p.author?.username?.toLowerCase() === profile.username.toLowerCase());
+      return matchAuthor && !p.pageId && !p.groupId;
+    });
+  }, [posts, profile?.id, profile?.username, userId]);
+
+  // Strictly filter reels to profile owner
+  const filteredReels = useMemo(() => {
+    if (!profile?.id && !userId) return [];
+    return (userReels ?? []).filter(
+      (r) =>
+        r.author?.id === profile?.id ||
+        (userId && r.author?.id === userId) ||
+        (profile?.username && r.author?.username?.toLowerCase() === profile.username.toLowerCase()),
+    );
+  }, [userReels, profile?.id, profile?.username, userId]);
+
   type MobileTimelineItem =
     | { type: "post"; id: string; date: number; post: Post }
     | { type: "reel"; id: string; date: number; reel: Reel };
 
   const timelineItems: MobileTimelineItem[] = useMemo(() => {
-    const pList: MobileTimelineItem[] = (posts ?? []).map((p) => ({
+    const pList: MobileTimelineItem[] = strictlyUserPosts.map((p) => ({
       type: "post",
       id: `post-${p.id}`,
       date: new Date(p.createdAt).getTime(),
       post: p,
     }));
-    const rList: MobileTimelineItem[] = (userReels ?? []).map((r) => ({
+    const rList: MobileTimelineItem[] = filteredReels.map((r) => ({
       type: "reel",
       id: `reel-${r.id}`,
       date: new Date(r.createdAt).getTime(),
       reel: r,
     }));
     return [...pList, ...rList].sort((a, b) => b.date - a.date);
-  }, [posts, userReels]);
+  }, [strictlyUserPosts, filteredReels]);
 
   const { data: userPhotosData } = useQuery<{ photos: { url: string; createdAt: string }[] }>({
     queryKey: ["user-uploaded-photos", targetId],
@@ -317,10 +485,25 @@ export function ProfileBody({
 
   const onToggleFollow = () => {
     if (!profile) return;
+    const followTarget = profile.id || userId;
     if (profile.viewerFollows) {
-      unfollowUser.mutate({ userId }, { onSuccess: invalidateProfile });
+      syncUserFollowState(qc, followTarget, false);
+      unfollowUser.mutate(
+        { userId: followTarget },
+        {
+          onError: () => syncUserFollowState(qc, followTarget, true),
+          onSettled: invalidateProfile,
+        },
+      );
     } else {
-      followUser.mutate({ userId }, { onSuccess: invalidateProfile });
+      syncUserFollowState(qc, followTarget, true);
+      followUser.mutate(
+        { userId: followTarget },
+        {
+          onError: () => syncUserFollowState(qc, followTarget, false),
+          onSettled: invalidateProfile,
+        },
+      );
     }
   };
 
@@ -618,7 +801,7 @@ export function ProfileBody({
               </View>
 
               {/* Reels Section */}
-              {userReels && userReels.length > 0 && (
+              {filteredReels && filteredReels.length > 0 && (
                 <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
                   <View
                     style={{
@@ -635,7 +818,7 @@ export function ProfileBody({
                       </Text>
                     </View>
                     <Text style={{ color: c.mutedForeground, fontSize: 13, fontWeight: "600" }}>
-                      {userReels.length}
+                      {filteredReels.length}
                     </Text>
                   </View>
                   <ScrollView
@@ -643,10 +826,10 @@ export function ProfileBody({
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={{ gap: 10 }}
                   >
-                    {userReels.map((reel) => (
+                    {filteredReels.map((reel) => (
                       <Pressable
                         key={reel.id}
-                        onPress={() => router.push("/reels")}
+                        onPress={() => router.push({ pathname: "/reels", params: { id: String(reel.id) } } as any)}
                         style={{
                           width: 110,
                           height: 180,
@@ -729,9 +912,21 @@ export function ProfileBody({
           }
           renderItem={({ item }) =>
             item.type === "post" ? (
-              <PostCard post={item.post} onComment={() => setActivePost(item.post.id)} />
+              <PostCard
+                post={item.post}
+                onComment={() => setActivePost(item.post.id)}
+                hideFollowButton={true}
+              />
             ) : (
-              <MobileReelTimelineCard reel={item.reel} c={c} />
+              <MobileReelTimelineCard
+                reel={item.reel}
+                c={c}
+                currentUserId={user?.id}
+                onReelDeleted={() => {
+                  qc.invalidateQueries({ queryKey: ["user-reels", targetId] });
+                  refetchReels();
+                }}
+              />
             )
           }
           ListEmptyComponent={

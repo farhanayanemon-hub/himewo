@@ -4,6 +4,7 @@ import {
   Alert,
   Pressable,
   ScrollView,
+  Switch,
   Text,
   TextInput,
   View,
@@ -18,6 +19,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   useUpdateMyProfile,
   getGetCurrentUserQueryKey,
+  customFetch,
   type ProfileUpdate,
 } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
@@ -47,6 +49,7 @@ export default function EditProfileScreen() {
   const [pendingAvatar, setPendingAvatar] = useState<PickedAsset | null>(null);
   const [coverUrl, setCoverUrl] = useState<string | null>(user?.coverUrl ?? null);
   const [pendingCover, setPendingCover] = useState<PickedAsset | null>(null);
+  const [sharePhotosToFeed, setSharePhotosToFeed] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const pickImage = async (kind: "avatar" | "cover") => {
@@ -54,7 +57,7 @@ export default function EditProfileScreen() {
       mediaTypes: ["images"],
       allowsEditing: true,
       aspect: kind === "avatar" ? [1, 1] : [16, 9],
-      quality: 0.8,
+      quality: 0.85,
     });
     if (!res.canceled && res.assets[0]) {
       const asset = res.assets[0];
@@ -90,6 +93,7 @@ export default function EditProfileScreen() {
       };
 
       let uploadFailed = false;
+      const uploadedUrls: { kind: "avatar" | "cover"; url: string }[] = [];
       for (const [kind, asset] of [
         ["avatar", pendingAvatar],
         ["cover", pendingCover],
@@ -99,6 +103,7 @@ export default function EditProfileScreen() {
           const uploaded = await uploadMedia(asset);
           if (kind === "avatar") data.avatarUrl = uploaded.url;
           else data.coverUrl = uploaded.url;
+          uploadedUrls.push({ kind, url: uploaded.url });
         } catch (err) {
           if (err instanceof UploadUnavailableError) {
             uploadFailed = true;
@@ -115,6 +120,27 @@ export default function EditProfileScreen() {
       }
 
       await updateProfile.mutateAsync({ data });
+
+      if (sharePhotosToFeed && uploadedUrls.length > 0) {
+        for (const item of uploadedUrls) {
+          try {
+            await customFetch("/api/posts", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                content: item.kind === "avatar" ? "Updated profile picture" : "Updated cover photo",
+                privacy: "public",
+                media: [{ url: item.url, type: "image", position: 0 }],
+              }),
+            });
+          } catch (e) {
+            console.warn("Failed to share photo to feed:", e);
+          }
+        }
+        qc.invalidateQueries({ queryKey: ["/api/feed"] });
+        qc.invalidateQueries({ queryKey: ["/api/posts"] });
+      }
+
       qc.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
       await refreshUser();
       router.back();
@@ -172,6 +198,42 @@ export default function EditProfileScreen() {
             @{user?.username}
           </Text>
         </View>
+
+        {(pendingAvatar || pendingCover) && (
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: c.card,
+                borderColor: c.border,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                marginHorizontal: 16,
+                marginTop: 8,
+                marginBottom: 12,
+                borderRadius: 14,
+                borderWidth: StyleSheet.hairlineWidth,
+              },
+            ]}
+          >
+            <View style={{ flex: 1, marginRight: 12 }}>
+              <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 14 }}>
+                Share update to Feed
+              </Text>
+              <Text style={{ color: c.mutedForeground, fontSize: 12, marginTop: 2 }}>
+                Post your new photo to your timeline and friends' feeds
+              </Text>
+            </View>
+            <Switch
+              value={sharePhotosToFeed}
+              onValueChange={setSharePhotosToFeed}
+              trackColor={{ false: c.border, true: c.primary }}
+            />
+          </View>
+        )}
 
         <Text style={[styles.sectionTitle, { color: c.mutedForeground }]}>BASIC</Text>
         <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>

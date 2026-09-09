@@ -12,6 +12,7 @@ export interface PointConfig {
   pointsPerLike: number;
   pointsPerComment: number;
   pointsPerShare: number;
+  pointsPerReel: number;
   pointsPerDollar: number;
   minWithdrawDollars: number;
   dailyPointCap: number;

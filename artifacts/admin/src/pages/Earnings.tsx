@@ -182,7 +182,7 @@ const NUM_FIELDS: { key: NumKey; label: string; hint?: string }[] = [
   { key: "pointsPerLike", label: "Points per like" },
   { key: "pointsPerComment", label: "Points per comment" },
   { key: "pointsPerShare", label: "Points per share" },
-  { key: "pointsPerReel", label: "Points per reel", hint: "Points granted for watching a reel (default 20)." },
+  { key: "pointsPerReel", label: "Points per reel created", hint: "Points granted for creating and publishing a reel (default 20)." },
   { key: "pointsPerDollar", label: "Points per $1", hint: "How many points equal one US dollar." },
   { key: "minWithdrawDollars", label: "Minimum withdrawal (USD)" },
   { key: "dailyPointCap", label: "Daily points cap", hint: "Max points a user can earn per day. 0 = no cap." },
@@ -220,7 +220,7 @@ function ConfigSection({ canManage }: { canManage: boolean }) {
         pointsPerLike: String(query.data.pointsPerLike),
         pointsPerComment: String(query.data.pointsPerComment),
         pointsPerShare: String(query.data.pointsPerShare),
-        pointsPerReel: String((query.data as any).pointsPerReel ?? 20),
+        pointsPerReel: String(query.data.pointsPerReel ?? 20),
         pointsPerDollar: String(query.data.pointsPerDollar),
         minWithdrawDollars: String(query.data.minWithdrawDollars),
         dailyPointCap: String(query.data.dailyPointCap),
@@ -244,7 +244,7 @@ function ConfigSection({ canManage }: { canManage: boolean }) {
 
   const save = () => {
     if (validationError) return;
-    const body = {
+    const body: PointConfigUpdate = {
       pointsPerPost: Number(form.pointsPerPost),
       pointsPerLike: Number(form.pointsPerLike),
       pointsPerComment: Number(form.pointsPerComment),
@@ -254,7 +254,7 @@ function ConfigSection({ canManage }: { canManage: boolean }) {
       minWithdrawDollars: Number(form.minWithdrawDollars),
       dailyPointCap: Number(form.dailyPointCap),
     };
-    update.mutate(body as any, {
+    update.mutate(body, {
       onSuccess: () => {
         setSaved(true);
         window.setTimeout(() => setSaved(false), 2500);
@@ -522,7 +522,7 @@ function DailyTasksAdminSection({ canManage }: { canManage: boolean }) {
                 Task Title *
               </label>
               <Input
-                placeholder="e.g. Watch Reels"
+                placeholder="e.g. Create a Reel"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
@@ -550,11 +550,11 @@ function DailyTasksAdminSection({ canManage }: { canManage: boolean }) {
                   value={action}
                   onChange={(e) => setAction(e.target.value)}
                 >
-                  <option value="reel">Watch Reels (reel)</option>
-                  <option value="like">React/Like Posts (like)</option>
+                  <option value="reel">Create Reel (reel)</option>
+                  <option value="like">React/Like Posts & Reels (like)</option>
                   <option value="post">Create a Post (post)</option>
-                  <option value="comment">Comment on Post (comment)</option>
-                  <option value="share">Share a Post (share)</option>
+                  <option value="comment">Comment on Post or Reel (comment)</option>
+                  <option value="share">Share a Post or Reel (share)</option>
                   <option value="custom">Custom Activity (custom)</option>
                 </Select>
               </div>

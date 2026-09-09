@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Pressable, ScrollView, Text, View, StyleSheet } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -8,6 +9,7 @@ import colorTokens from "@/constants/colors";
 import { useAuth } from "@/lib/auth";
 import { useActingPage } from "@/lib/acting-page";
 import { useColors } from "@/hooks/useColors";
+import { CreateMediaLauncherSheet } from "@/components/CreateMediaLauncherSheet";
 
 export function StoryBar() {
   const c = useColors();
@@ -16,103 +18,115 @@ export function StoryBar() {
   const { data } = useListStories();
   const groups = (data ?? []) as StoryGroup[];
 
+  const [launcherMode, setLauncherMode] = useState<"story" | "reel" | null>(null);
+
   return (
-    <View style={[styles.wrap, { backgroundColor: c.card }]}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.row}
-      >
-        <Pressable
-          style={[styles.tile, { backgroundColor: c.secondary }]}
-          onPress={() => router.push("/create-story")}
-        >
-          <View style={styles.createTop}>
-            <Avatar uri={actingPage ? actingPage.avatarUrl : user?.avatarUrl} />
-          </View>
-          <View style={[styles.createBottom, { backgroundColor: c.card }]}>
-            <View style={[styles.plus, { backgroundColor: c.primary, borderColor: c.card }]}>
-              <Ionicons name="add" size={16} color="#fff" />
-            </View>
-            <Text
-              numberOfLines={1}
-              style={{ color: c.foreground, fontSize: 11, fontFamily: "Inter_600SemiBold" }}
-            >
-              Create story
-            </Text>
-          </View>
-        </Pressable>
+    <>
+      <CreateMediaLauncherSheet
+        visible={!!launcherMode}
+        mode={launcherMode ?? "story"}
+        onClose={() => setLauncherMode(null)}
+      />
 
-        <Pressable
-          style={[styles.tile, styles.createReelTile]}
-          onPress={() => router.push("/create-reel")}
+      <View style={[styles.wrap, { backgroundColor: c.card }]}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.row}
         >
-          <LinearGradient
-            colors={colorTokens.auroraGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFill}
-          />
-          <View style={styles.reelIconWrap}>
-            <View style={styles.reelIconCircle}>
-              <Ionicons name="videocam" size={22} color="#fff" />
+          {/* Create Story */}
+          <Pressable
+            style={[styles.tile, { backgroundColor: c.secondary }]}
+            onPress={() => setLauncherMode("story")}
+          >
+            <View style={styles.createTop}>
+              <Avatar uri={actingPage ? actingPage.avatarUrl : user?.avatarUrl} />
             </View>
-          </View>
-          <Text numberOfLines={1} style={styles.reelLabel}>
-            Create reel
-          </Text>
-        </Pressable>
-
-        {groups.map((group) => {
-          const cover = group.stories[0];
-          if (!cover) return null;
-          return (
-            <Pressable
-              key={group.authorPage ? `p${group.authorPage.id}` : group.author.id}
-              style={styles.tile}
-              onPress={() => router.push(`/story/${cover.id}`)}
-            >
-              {cover.mediaUrl ? (
-                <Image
-                  source={{ uri: cover.mediaUrl }}
-                  style={StyleSheet.absoluteFill}
-                  contentFit="cover"
-                />
-              ) : (
-                <View style={[StyleSheet.absoluteFill, { backgroundColor: c.secondary }]} />
-              )}
-              <View style={styles.storyTop}>
-                {group.hasUnseen ? (
-                  <LinearGradient
-                    colors={colorTokens.auroraGradient}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={[styles.storyRing, { borderWidth: 0 }]}
-                  >
-                    <Image
-                      source={{ uri: group.authorPage?.avatarUrl ?? group.author?.avatarUrl ?? undefined }}
-                      style={[styles.storyAvatar, { borderColor: c.background, borderWidth: 2 }]}
-                      contentFit="cover"
-                    />
-                  </LinearGradient>
-                ) : (
-                  <View style={[styles.storyRing, { borderColor: c.border }]}>
-                    <Image
-                      source={{ uri: group.authorPage?.avatarUrl ?? group.author?.avatarUrl ?? undefined }}
-                      style={styles.storyAvatar}
-                      contentFit="cover"
-                    />
-                  </View>
-                )}
+            <View style={[styles.createBottom, { backgroundColor: c.card }]}>
+              <View style={[styles.plus, { backgroundColor: c.primary, borderColor: c.card }]}>
+                <Ionicons name="add" size={16} color="#fff" />
               </View>
-              <Text numberOfLines={1} style={styles.storyName}>
-                {group.authorPage?.name ?? group.author?.displayName ?? "Story"}
+              <Text
+                numberOfLines={1}
+                style={{ color: c.foreground, fontSize: 11, fontFamily: "Inter_600SemiBold" }}
+              >
+                Create story
               </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-    </View>
+            </View>
+          </Pressable>
+
+          {/* Create Reel */}
+          <Pressable
+            style={[styles.tile, styles.createReelTile]}
+            onPress={() => setLauncherMode("reel")}
+          >
+            <LinearGradient
+              colors={colorTokens.auroraGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+            <View style={styles.reelIconWrap}>
+              <View style={styles.reelIconCircle}>
+                <Ionicons name="videocam" size={22} color="#fff" />
+              </View>
+            </View>
+            <Text numberOfLines={1} style={styles.reelLabel}>
+              Create reel
+            </Text>
+          </Pressable>
+
+          {groups.map((group) => {
+            const cover = group.stories[0];
+            if (!cover) return null;
+            return (
+              <Pressable
+                key={group.authorPage ? `p${group.authorPage.id}` : group.author.id}
+                style={styles.tile}
+                onPress={() => router.push(`/story/${cover.id}`)}
+              >
+                {cover.mediaUrl ? (
+                  <Image
+                    source={{ uri: cover.mediaUrl }}
+                    style={StyleSheet.absoluteFill}
+                    contentFit="cover"
+                  />
+                ) : (
+                  <View style={[StyleSheet.absoluteFill, { backgroundColor: c.secondary }]} />
+                )}
+                <View style={styles.storyTop}>
+                  {group.hasUnseen ? (
+                    <LinearGradient
+                      colors={colorTokens.auroraGradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={[styles.storyRing, { borderWidth: 0 }]}
+                    >
+                      <Image
+                        source={{ uri: group.authorPage?.avatarUrl ?? group.author?.avatarUrl ?? undefined }}
+                        style={[styles.storyAvatar, { borderColor: c.background, borderWidth: 2 }]}
+                        contentFit="cover"
+                      />
+                    </LinearGradient>
+                  ) : (
+                    <View style={[styles.storyRing, { borderColor: c.border }]}>
+                      <Image
+                        source={{ uri: group.authorPage?.avatarUrl ?? group.author?.avatarUrl ?? undefined }}
+                        style={styles.storyAvatar}
+                        contentFit="cover"
+                      />
+                    </View>
+                  )}
+                </View>
+                <Text numberOfLines={1} style={styles.storyName}>
+                  {group.authorPage?.name ?? group.author?.displayName ?? "Story"}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
+    </>
   );
 }
 
@@ -188,3 +202,4 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
   },
 });
+

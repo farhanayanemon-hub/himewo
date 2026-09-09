@@ -95,6 +95,7 @@ router.get("/earnings/summary", requireAuth, async (req, res): Promise<void> => 
     like: config.pointsPerLike,
     comment: config.pointsPerComment,
     share: config.pointsPerShare,
+    reel: (config as any).pointsPerReel ?? 20,
   };
   if (!config.enabled) {
     res.json(
@@ -359,8 +360,8 @@ async function ensureDefaultDailyTasks() {
   if (existing.length === 0) {
     await db.insert(dailyTasksTable).values([
       {
-        title: "Watch Reels",
-        description: "Watch a short video reel on HiMewo",
+        title: "Create a Reel",
+        description: "Create and publish a video reel on HiMewo",
         action: "reel",
         rewardPoints: 20,
         targetCount: 1,
@@ -399,6 +400,20 @@ async function ensureDefaultDailyTasks() {
         active: true,
       },
     ]);
+  } else {
+    // Migration: Update any legacy 'Watch Reels' task to 'Create a Reel'
+    await db
+      .update(dailyTasksTable)
+      .set({
+        title: "Create a Reel",
+        description: "Create and publish a video reel on HiMewo",
+      })
+      .where(
+        and(
+          eq(dailyTasksTable.action, "reel"),
+          eq(dailyTasksTable.title, "Watch Reels"),
+        ),
+      );
   }
 }
 
@@ -540,12 +555,11 @@ router.post("/earnings/daily-tasks/:id/claim", requireAuth, async (req, res): Pr
   }
 });
 
-/** Track a reel view for the daily task progress */
+/** Track reel view - watching reels no longer awards points or advances daily task */
 router.post("/earnings/reels/track", requireAuth, async (req, res): Promise<void> => {
   try {
-    const userId = req.userId!;
-    await recordUserActivity(userId, "reel", 1);
-    res.json({ success: true });
+    // Watching reels does not award points or count towards reel creation daily tasks
+    res.json({ success: true, tracked: false });
   } catch (err: any) {
     res.status(500).json({ error: err?.message ?? "Failed to track reel watch" });
   }

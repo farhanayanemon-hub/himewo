@@ -105,10 +105,10 @@ const METHODS: MethodConfig[] = [
 
 const ACTION_LABELS: Record<string, string> = {
   post: "Created a post",
-  like: "Reacted to a post",
-  comment: "Commented on a post",
-  share: "Shared a post",
-  reel: "Watched a Reel",
+  like: "Reacted to a post or reel",
+  comment: "Commented on a post or reel",
+  share: "Shared a post or reel",
+  reel: "Created a Reel",
   task_claim: "Daily Task Claim",
   withdraw: "Withdrawal",
   withdraw_refund: "Withdrawal refund",
@@ -429,16 +429,16 @@ function RulesSection({
   const rules = [
     { label: "Create a Reel", points: (summary.rewards as any)?.reel ?? 20 },
     { label: "Create a post", points: summary.rewards.post },
-    { label: "React to a post", points: summary.rewards.like },
-    { label: "Comment on a post", points: summary.rewards.comment },
-    { label: "Share a post", points: summary.rewards.share },
+    { label: "React to a post or reel", points: summary.rewards.like },
+    { label: "Comment on a post or reel", points: summary.rewards.comment },
+    { label: "Share a post or reel", points: summary.rewards.share },
   ];
 
   return (
     <Card className="p-5">
       <SectionTitle>How it works</SectionTitle>
       <p className="text-sm text-muted-foreground mb-4">
-        You earn points for engaging with other people's posts. Every{" "}
+        You earn points for creating content and engaging with posts and reels. Every{" "}
         <span className="font-semibold text-foreground">
           {rate.toLocaleString()} points = $1
         </span>

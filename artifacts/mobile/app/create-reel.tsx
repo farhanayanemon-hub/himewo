@@ -10,31 +10,23 @@ import {
   TextInput,
   View,
   StyleSheet,
-  PanResponder,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useVideoPlayer, VideoView } from "expo-video";
 import * as ImagePicker from "expo-image-picker";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCreateReel, getListReelsQueryKey } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { uploadMedia, UploadUnavailableError, captureWithCamera, type PickedAsset } from "@/lib/upload";
 import { MusicPickerModal, type SelectedMusic } from "@/components/MusicPicker";
-import { EmojiPickerSheet } from "@/components/EmojiPickerSheet";
+import { SmartStickerSheet } from "@/components/SmartStickerSheet";
+import { MobileDraggableOverlay } from "@/components/MobileDraggableOverlay";
+import { MOBILE_FILTERS, type MobileFilter } from "@/lib/filters";
+import type { MobileOverlayItem } from "@/lib/smartStickers";
 
-export interface MobileReelOverlay {
-  id: string;
-  type: "text" | "emoji";
-  content: string;
-  x: number; // percentage 0-100
-  y: number; // percentage 0-100
-  color?: string;
-  bgStyle?: "none" | "pill" | "glass" | "neon";
-  fontStyle?: "modern" | "serif" | "neon" | "script" | "impact";
-  fontSize?: number;
-}
+export type MobileReelOverlay = MobileOverlayItem;
 
 export function serializeReelCaption(caption: string, overlays: MobileReelOverlay[]): string {
   const trimmed = caption.trim();
@@ -70,28 +62,52 @@ const COLOR_PALETTE = [
   "#f97316",
 ];
 
+const SPEED_OPTIONS = [0.5, 1.0, 1.5, 2.0];
+const TRIM_PRESETS = [
+  { label: "Full", seconds: 0 },
+  { label: "15s", seconds: 15 },
+  { label: "30s", seconds: 30 },
+  { label: "60s", seconds: 60 },
+];
+
 export default function CreateReelScreen() {
   const c = useColors();
   const qc = useQueryClient();
   const createReel = useCreateReel();
+  const params = useLocalSearchParams<{ uri?: string; source?: string }>();
 
   const [asset, setAsset] = useState<PickedAsset | null>(null);
   const [caption, setCaption] = useState("");
   const [music, setMusic] = useState<SelectedMusic | null>(null);
   const [musicOpen, setMusicOpen] = useState(false);
-  const [emojiOpen, setEmojiOpen] = useState(false);
+  const [stickerOpen, setStickerOpen] = useState(false);
   const [posting, setPosting] = useState(false);
 
-  // Overlay state
+  // Speed, Trim & Filters
+  const [speed, setSpeed] = useState<number>(1.0);
+  const [selectedFilter, setSelectedFilter] = useState<string>("normal");
+  const [activeTrim, setActiveTrim] = useState<number>(0);
+  const [activeToolPanel, setActiveToolPanel] = useState<"filters" | "speed" | "trim" | null>(null);
+
+  // Overlays
   const [overlays, setOverlays] = useState<MobileReelOverlay[]>([]);
   const [selectedOverlayId, setSelectedOverlayId] = useState<string | null>(null);
 
-  // Text modal state
+  // Text Modal
   const [textModalOpen, setTextModalOpen] = useState(false);
   const [textInput, setTextInput] = useState("");
   const [textColor, setTextColor] = useState("#ffffff");
   const [textBgStyle, setTextBgStyle] = useState<"none" | "pill" | "glass" | "neon">("pill");
   const [fontStyle, setFontStyle] = useState<"modern" | "serif" | "neon" | "script" | "impact">("modern");
+
+  // Load uri from params if opened through launcher sheet
+  useEffect(() => {
+    if (params.uri) {
+      setAsset({ uri: params.uri, type: "video" } as PickedAsset);
+    }
+  }, [params.uri]);
+
+  const activeFilterObj = MOBILE_FILTERS.find((f) => f.id === selectedFilter) ?? MOBILE_FILTERS[0];
 
   const pick = async () => {
     const res = await ImagePicker.launchImageLibraryAsync({
@@ -129,18 +145,9 @@ export default function CreateReelScreen() {
     setTextModalOpen(false);
   };
 
-  const handleAddEmoji = (emoji: string) => {
-    const newOverlay: MobileReelOverlay = {
-      id: "emj_" + Date.now(),
-      type: "emoji",
-      content: emoji,
-      x: 50,
-      y: 50,
-      fontSize: 44,
-    };
-    setOverlays((prev) => [...prev, newOverlay]);
-    setSelectedOverlayId(newOverlay.id);
-    setEmojiOpen(false);
+  const handleSelectSticker = (item: MobileOverlayItem) => {
+    setOverlays((prev) => [...prev, item]);
+    setSelectedOverlayId(item.id);
   };
 
   const deleteSelectedOverlay = () => {
@@ -154,7 +161,7 @@ export default function CreateReelScreen() {
     setOverlays((prev) =>
       prev.map((o) =>
         o.id === selectedOverlayId
-          ? { ...o, fontSize: Math.max(12, Math.min(64, (o.fontSize ?? (o.type === "emoji" ? 44 : 18)) + delta)) }
+          ? { ...o, fontSize: Math.max(12, Math.min(64, (o.fontSize ?? 20) + delta)) }
           : o,
       ),
     );
@@ -222,9 +229,15 @@ export default function CreateReelScreen() {
         <Pressable onPress={() => router.back()} hitSlop={8}>
           <Ionicons name="close" size={28} color="#fff" />
         </Pressable>
-        <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: 18 }}>
-          Reel Studio
-        </Text>
+        <View style={{ alignItems: "center" }}>
+          <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: 17 }}>
+            Reel Studio
+          </Text>
+          <Text style={{ color: "#a855f7", fontFamily: "Inter_500Medium", fontSize: 11 }}>
+            {activeFilterObj.name !== "Normal" ? `Filter: ${activeFilterObj.name}` : "Pro Editor"}
+            {speed !== 1.0 ? ` • ${speed}x` : ""}
+          </Text>
+        </View>
         <Pressable
           style={[styles.shareBtn, { backgroundColor: asset ? "#9333ea" : "#333" }]}
           onPress={submit}
@@ -240,57 +253,87 @@ export default function CreateReelScreen() {
 
       {asset ? (
         <View style={styles.preview}>
-          <ReelPreview uri={asset.uri} />
+          <ReelPreview
+            uri={asset.uri}
+            filterColor={activeFilterObj.overlayColor}
+            playbackRate={speed}
+          />
 
-          {/* Render Overlays on Screen */}
-          {overlays.map((ov) => {
-            const isSelected = selectedOverlayId === ov.id;
-            return (
-              <DraggableOverlayItem
-                key={ov.id}
-                overlay={ov}
-                isSelected={isSelected}
-                onSelect={() => setSelectedOverlayId(ov.id)}
-                onMove={(dx, dy) => moveOverlay(ov.id, dx, dy)}
-              />
-            );
-          })}
+          {/* Render Overlays */}
+          {overlays.map((ov) => (
+            <MobileDraggableOverlay
+              key={ov.id}
+              overlay={ov}
+              isSelected={selectedOverlayId === ov.id}
+              onSelect={() => setSelectedOverlayId(ov.id)}
+              onMove={(dx, dy) => moveOverlay(ov.id, dx, dy)}
+            />
+          ))}
 
-          {/* Floating Top Reel Tools (Text, Stickers, Music) */}
+          {/* Side Toolbar */}
           <View style={styles.sideToolbar}>
             <Pressable
               style={styles.toolBtn}
               onPress={() => setTextModalOpen(true)}
             >
-              <Ionicons name="text" size={20} color="#fff" />
+              <Ionicons name="text" size={18} color="#fff" />
               <Text style={styles.toolBtnText}>Text</Text>
             </Pressable>
+
             <Pressable
               style={styles.toolBtn}
-              onPress={() => setEmojiOpen(true)}
+              onPress={() => setStickerOpen(true)}
             >
-              <Ionicons name="happy" size={20} color="#facc15" />
+              <Ionicons name="sparkles" size={18} color="#facc15" />
               <Text style={styles.toolBtnText}>Stickers</Text>
             </Pressable>
+
+            <Pressable
+              style={[
+                styles.toolBtn,
+                activeToolPanel === "filters" && { borderColor: "#a855f7", backgroundColor: "#a855f744" },
+              ]}
+              onPress={() =>
+                setActiveToolPanel((p) => (p === "filters" ? null : "filters"))
+              }
+            >
+              <Ionicons name="color-filter" size={18} color="#06b6d4" />
+              <Text style={styles.toolBtnText}>Filters</Text>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.toolBtn,
+                activeToolPanel === "speed" && { borderColor: "#a855f7", backgroundColor: "#a855f744" },
+              ]}
+              onPress={() =>
+                setActiveToolPanel((p) => (p === "speed" ? null : "speed"))
+              }
+            >
+              <Ionicons name="speedometer-outline" size={18} color="#10b981" />
+              <Text style={styles.toolBtnText}>{speed}x</Text>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.toolBtn,
+                activeToolPanel === "trim" && { borderColor: "#a855f7", backgroundColor: "#a855f744" },
+              ]}
+              onPress={() =>
+                setActiveToolPanel((p) => (p === "trim" ? null : "trim"))
+              }
+            >
+              <Ionicons name="cut-outline" size={18} color="#f97316" />
+              <Text style={styles.toolBtnText}>Trim</Text>
+            </Pressable>
+
             <Pressable
               style={styles.toolBtn}
               onPress={() => setMusicOpen(true)}
             >
-              <Ionicons name="musical-notes" size={20} color="#a855f7" />
+              <Ionicons name="musical-notes" size={18} color="#a855f7" />
               <Text style={styles.toolBtnText}>Music</Text>
             </Pressable>
-            {overlays.length > 0 && (
-              <Pressable
-                style={[styles.toolBtn, { backgroundColor: "#ef444433" }]}
-                onPress={() => {
-                  setOverlays([]);
-                  setSelectedOverlayId(null);
-                }}
-              >
-                <Ionicons name="trash-outline" size={18} color="#ef4444" />
-                <Text style={[styles.toolBtnText, { color: "#ef4444" }]}>Clear</Text>
-              </Pressable>
-            )}
           </View>
 
           {/* Selected Overlay Controls (Size + Delete) */}
@@ -321,6 +364,7 @@ export default function CreateReelScreen() {
             </View>
           )}
 
+          {/* Music chip */}
           {music && (
             <View style={styles.musicChip}>
               <Ionicons name="musical-notes" size={14} color="#a855f7" />
@@ -334,6 +378,91 @@ export default function CreateReelScreen() {
             </View>
           )}
 
+          {/* Tool Panels (Filters, Speed, Trim) */}
+          {activeToolPanel === "filters" && (
+            <View style={styles.toolSubPanel}>
+              <View style={styles.toolSubPanelHeader}>
+                <Text style={styles.toolSubPanelTitle}>Snapchat & IG Filters</Text>
+                <Pressable onPress={() => setActiveToolPanel(null)}>
+                  <Ionicons name="close-circle" size={18} color="#fff" />
+                </Pressable>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 4 }}>
+                {MOBILE_FILTERS.map((f) => {
+                  const isActive = selectedFilter === f.id;
+                  return (
+                    <Pressable
+                      key={f.id}
+                      style={[styles.filterThumbCard, isActive && styles.filterThumbCardActive]}
+                      onPress={() => setSelectedFilter(f.id)}
+                    >
+                      <View
+                        style={[
+                          styles.filterThumbCircle,
+                          { backgroundColor: f.overlayColor === "transparent" ? "#3f3f46" : f.overlayColor },
+                        ]}
+                      >
+                        {isActive && <Ionicons name="checkmark" size={14} color="#fff" />}
+                      </View>
+                      <Text style={[styles.filterThumbText, isActive && { color: "#a855f7", fontFamily: "Inter_700Bold" }]}>
+                        {f.name}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+
+          {activeToolPanel === "speed" && (
+            <View style={styles.toolSubPanel}>
+              <View style={styles.toolSubPanelHeader}>
+                <Text style={styles.toolSubPanelTitle}>Playback Speed</Text>
+                <Pressable onPress={() => setActiveToolPanel(null)}>
+                  <Ionicons name="close-circle" size={18} color="#fff" />
+                </Pressable>
+              </View>
+              <View style={{ flexDirection: "row", gap: 10, justifyContent: "center" }}>
+                {SPEED_OPTIONS.map((s) => (
+                  <Pressable
+                    key={s}
+                    style={[styles.speedPill, speed === s && styles.speedPillActive]}
+                    onPress={() => setSpeed(s)}
+                  >
+                    <Text style={[styles.speedPillText, speed === s && styles.speedPillTextActive]}>
+                      {s}x
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {activeToolPanel === "trim" && (
+            <View style={styles.toolSubPanel}>
+              <View style={styles.toolSubPanelHeader}>
+                <Text style={styles.toolSubPanelTitle}>Video Trim Length</Text>
+                <Pressable onPress={() => setActiveToolPanel(null)}>
+                  <Ionicons name="close-circle" size={18} color="#fff" />
+                </Pressable>
+              </View>
+              <View style={{ flexDirection: "row", gap: 10, justifyContent: "center" }}>
+                {TRIM_PRESETS.map((t) => (
+                  <Pressable
+                    key={t.seconds}
+                    style={[styles.speedPill, activeTrim === t.seconds && styles.speedPillActive]}
+                    onPress={() => setActiveTrim(t.seconds)}
+                  >
+                    <Text style={[styles.speedPillText, activeTrim === t.seconds && styles.speedPillTextActive]}>
+                      {t.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Bottom Bar */}
           <View style={styles.bottomBar}>
             <TextInput
               value={caption}
@@ -346,20 +475,20 @@ export default function CreateReelScreen() {
             />
             <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
               <Pressable style={styles.changeBtn} onPress={pick}>
-                <Ionicons name="film" size={18} color="#fff" />
-                <Text style={{ color: "#fff", fontFamily: "Inter_500Medium", fontSize: 13 }}>
+                <Ionicons name="film" size={16} color="#fff" />
+                <Text style={{ color: "#fff", fontFamily: "Inter_500Medium", fontSize: 12 }}>
                   Gallery
                 </Text>
               </Pressable>
               <Pressable style={styles.changeBtn} onPress={capture}>
-                <Ionicons name="videocam" size={18} color="#fff" />
-                <Text style={{ color: "#fff", fontFamily: "Inter_500Medium", fontSize: 13 }}>
+                <Ionicons name="videocam" size={16} color="#fff" />
+                <Text style={{ color: "#fff", fontFamily: "Inter_500Medium", fontSize: 12 }}>
                   Record
                 </Text>
               </Pressable>
               <Pressable style={styles.changeBtn} onPress={() => setMusicOpen(true)}>
-                <Ionicons name="musical-notes" size={18} color="#a855f7" />
-                <Text style={{ color: "#fff", fontFamily: "Inter_500Medium", fontSize: 13 }}>
+                <Ionicons name="musical-notes" size={16} color="#a855f7" />
+                <Text style={{ color: "#fff", fontFamily: "Inter_500Medium", fontSize: 12 }}>
                   Music
                 </Text>
               </Pressable>
@@ -395,8 +524,8 @@ export default function CreateReelScreen() {
               {music ? `Music: ${music.title}` : "Add music"}
             </Text>
           </Pressable>
-          <Text style={{ color: "#ffffff99", fontFamily: "Inter_400Regular", fontSize: 13 }}>
-            Share a video with on-screen texts, emoji stickers & Bangla/Hindi songs
+          <Text style={{ color: "#ffffff99", fontFamily: "Inter_400Regular", fontSize: 13, textAlign: "center" }}>
+            Create reels with 20+ Snapchat filters, speed controls, on-screen text & smart stickers
           </Text>
         </View>
       )}
@@ -406,7 +535,7 @@ export default function CreateReelScreen() {
         <View style={styles.textModalBackdrop}>
           <View style={styles.textModalCard}>
             <View style={styles.textModalHeader}>
-              <Text style={styles.textModalTitle}>Add Text on Screen</Text>
+              <Text style={styles.textModalTitle}>Add Text on Reel</Text>
               <Pressable onPress={() => setTextModalOpen(false)}>
                 <Ionicons name="close" size={22} color="#fff" />
               </Pressable>
@@ -502,127 +631,54 @@ export default function CreateReelScreen() {
         onSelect={setMusic}
       />
 
-      <EmojiPickerSheet
-        visible={emojiOpen}
-        onClose={() => setEmojiOpen(false)}
-        onSelect={handleAddEmoji}
+      <SmartStickerSheet
+        visible={stickerOpen}
+        onClose={() => setStickerOpen(false)}
+        onSelectSticker={handleSelectSticker}
+        currentMusicTitle={music?.title}
       />
     </SafeAreaView>
   );
 }
 
-function DraggableOverlayItem({
-  overlay,
-  isSelected,
-  onSelect,
-  onMove,
+function ReelPreview({
+  uri,
+  filterColor,
+  playbackRate,
 }: {
-  overlay: MobileReelOverlay;
-  isSelected: boolean;
-  onSelect: () => void;
-  onMove: (dx: number, dy: number) => void;
+  uri: string;
+  filterColor?: string;
+  playbackRate?: number;
 }) {
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        onSelect();
-      },
-      onPanResponderMove: (_, gestureState) => {
-        const dxPercent = gestureState.dx / 4;
-        const dyPercent = gestureState.dy / 6;
-        onMove(dxPercent, dyPercent);
-      },
-    }),
-  ).current;
-
-  const bgStyle = overlay.bgStyle ?? "pill";
-  const fnStyle = overlay.fontStyle ?? "modern";
-
-  const getFontAttributes = () => {
-    switch (fnStyle) {
-      case "serif":
-        return {
-          fontFamily: Platform.select({ ios: "Georgia", default: "serif" }),
-          fontStyle: "italic" as const,
-        };
-      case "neon":
-        return {
-          fontFamily: "Inter_700Bold",
-          textShadowColor: overlay.color || "#a855f7",
-          textShadowOffset: { width: 0, height: 0 },
-          textShadowRadius: 8,
-        };
-      case "script":
-        return {
-          fontFamily: Platform.select({ ios: "Snell Roundhand", default: "serif" }),
-          fontStyle: "italic" as const,
-          fontWeight: "600" as const,
-        };
-      case "impact":
-        return {
-          fontFamily: "Inter_700Bold",
-          letterSpacing: 1.5,
-          textTransform: "uppercase" as const,
-        };
-      case "modern":
-      default:
-        return {
-          fontFamily: "Inter_700Bold",
-        };
-    }
-  };
-
-  return (
-    <View
-      {...panResponder.panHandlers}
-      style={[
-        styles.overlayItemContainer,
-        { left: `${overlay.x}%`, top: `${overlay.y}%` },
-        isSelected && styles.overlaySelectedRing,
-      ]}
-    >
-      {overlay.type === "emoji" ? (
-        <Text style={{ fontSize: overlay.fontSize ?? 44 }}>{overlay.content}</Text>
-      ) : (
-        <View
-          style={[
-            styles.textBadgeCommon,
-            bgStyle === "pill" && styles.textBadgePill,
-            bgStyle === "glass" && styles.textBadgeGlass,
-            bgStyle === "neon" && styles.textBadgeNeon,
-          ]}
-        >
-          <Text
-            style={[
-              styles.textBadgeContent,
-              getFontAttributes(),
-              {
-                color: overlay.color || "#ffffff",
-                fontSize: overlay.fontSize ?? 18,
-              },
-            ]}
-          >
-            {overlay.content}
-          </Text>
-        </View>
-      )}
-    </View>
-  );
-}
-
-function ReelPreview({ uri }: { uri: string }) {
   const player = useVideoPlayer(uri, (p) => {
     p.loop = true;
+    p.playbackRate = playbackRate ?? 1.0;
     p.play();
   });
+
+  useEffect(() => {
+    if (player && playbackRate) {
+      player.playbackRate = playbackRate;
+    }
+  }, [player, playbackRate]);
+
   return (
-    <VideoView
-      player={player}
-      style={StyleSheet.absoluteFill}
-      contentFit="contain"
-      nativeControls={false}
-    />
+    <View style={StyleSheet.absoluteFill}>
+      <VideoView
+        player={player}
+        style={StyleSheet.absoluteFill}
+        contentFit="contain"
+        nativeControls={false}
+      />
+      {filterColor && filterColor !== "transparent" && (
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            { backgroundColor: filterColor, pointerEvents: "none", zIndex: 5 },
+          ]}
+        />
+      )}
+    </View>
   );
 }
 
@@ -667,24 +723,24 @@ const styles = StyleSheet.create({
     top: 12,
     right: 12,
     flexDirection: "column",
-    gap: 10,
+    gap: 8,
     zIndex: 40,
   },
   toolBtn: {
     backgroundColor: "#00000088",
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderRadius: 18,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 5,
     borderWidth: 1,
     borderColor: "#ffffff22",
   },
   toolBtnText: {
     color: "#fff",
     fontFamily: "Inter_600SemiBold",
-    fontSize: 12,
+    fontSize: 11,
   },
   selectedControlsBar: {
     position: "absolute",
@@ -720,69 +776,94 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     fontSize: 13,
   },
-  overlayItemContainer: {
+  toolSubPanel: {
     position: "absolute",
-    transform: [{ translateX: -50 }, { translateY: -50 }],
-    zIndex: 30,
-    padding: 4,
-  },
-  overlaySelectedRing: {
-    borderWidth: 1.5,
-    borderColor: "#a855f7",
-    borderRadius: 8,
-    borderStyle: "dashed",
-  },
-  textBadgeCommon: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  textBadgePill: {
-    backgroundColor: "#000000cc",
-    borderRadius: 24,
+    bottom: 120,
+    left: 12,
+    right: 12,
+    backgroundColor: "rgba(24, 24, 27, 0.95)",
+    borderRadius: 18,
+    padding: 12,
+    zIndex: 45,
     borderWidth: 1,
-    borderColor: "#ffffff33",
+    borderColor: "#3f3f46",
   },
-  textBadgeGlass: {
-    backgroundColor: "#ffffff33",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#ffffff66",
+  toolSubPanelHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
   },
-  textBadgeNeon: {
-    backgroundColor: "#000000ee",
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#a855f7",
-  },
-  textBadgeContent: {
+  toolSubPanelTitle: {
+    color: "#fff",
     fontFamily: "Inter_700Bold",
+    fontSize: 13,
+  },
+  filterThumbCard: {
+    alignItems: "center",
+    gap: 4,
+    padding: 4,
+    borderRadius: 12,
+  },
+  filterThumbCardActive: {
+    backgroundColor: "#ffffff15",
+  },
+  filterThumbCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: "#ffffff44",
+  },
+  filterThumbText: {
+    color: "#a1a1aa",
+    fontFamily: "Inter_500Medium",
+    fontSize: 10,
+  },
+  speedPill: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: "#27272a",
+  },
+  speedPillActive: {
+    backgroundColor: "#9333ea",
+  },
+  speedPillText: {
+    color: "#a1a1aa",
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 13,
+  },
+  speedPillTextActive: {
+    color: "#fff",
   },
   bottomBar: {
     position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
-    padding: 16,
-    gap: 12,
+    padding: 14,
+    gap: 10,
     backgroundColor: "#00000088",
     zIndex: 40,
   },
   captionInput: {
     color: "#fff",
     fontFamily: "Inter_500Medium",
-    fontSize: 15,
-    maxHeight: 90,
+    fontSize: 14,
+    maxHeight: 80,
   },
   changeBtn: {
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
-    gap: 6,
+    gap: 5,
     backgroundColor: "#ffffff22",
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    borderRadius: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   empty: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, padding: 32 },
   pickBtn: {

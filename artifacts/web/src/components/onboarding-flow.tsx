@@ -139,7 +139,7 @@ export function OnboardingFlow() {
           lastName: trimmedLast || undefined,
           displayName: trimmedDisplay,
           username: trimmedUsername,
-        },
+        } as any,
       });
       queryClient.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
       setStep("photo");
@@ -156,7 +156,7 @@ export function OnboardingFlow() {
     if (followedMandatory.has(accId) || followingMandatory) return;
     setFollowingMandatory(accId);
     try {
-      await followUser.mutateAsync({ id: accId });
+      await followUser.mutateAsync({ userId: accId });
       setFollowedMandatory((prev) => new Set(prev).add(accId));
       toast.success("Followed official account");
     } catch {
@@ -456,7 +456,7 @@ export function OnboardingFlow() {
                   </div>
                   <div className="space-y-2">
                     {mandatoryAccounts.map((acc) => {
-                      const isFollowed = followedMandatory.has(acc.id) || acc.viewerIsFollowing;
+                      const isFollowed = followedMandatory.has(acc.id) || (acc as any).viewerIsFollowing || acc.viewerFollows;
                       const isPending = followingMandatory === acc.id;
                       return (
                         <div key={acc.id} className="flex items-center justify-between gap-3 bg-card p-2.5 rounded-xl border border-border/60">
@@ -600,7 +600,7 @@ export function OnboardingFlow() {
                   const hasUnfollowed =
                     mandatoryAccounts.length > 0 &&
                     !mandatoryAccounts.every(
-                      (acc) => followedMandatory.has(acc.id) || acc.viewerIsFollowing
+                      (acc) => followedMandatory.has(acc.id) || (acc as any).viewerIsFollowing || acc.viewerFollows
                     );
                   if (hasUnfollowed) {
                     toast.error("Please follow the mandatory official accounts first");
@@ -659,7 +659,7 @@ export function OnboardingFlow() {
                   saving ||
                   (mandatoryAccounts.length > 0 &&
                     !mandatoryAccounts.every(
-                      (acc) => followedMandatory.has(acc.id) || acc.viewerIsFollowing
+                      (acc) => followedMandatory.has(acc.id) || (acc as any).viewerIsFollowing || acc.viewerFollows
                     ))
                 }
                 data-testid="button-onboarding-next"

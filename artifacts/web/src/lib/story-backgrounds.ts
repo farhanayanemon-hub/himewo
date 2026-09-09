@@ -1,5 +1,7 @@
-// 50+ premium text-story backgrounds, shared by key with the web app so
-// every client renders the same story with the same colors.
+/**
+ * 50+ premium text-story backgrounds (same keys as mobile storyBackgrounds.ts
+ * so both platforms render identical colours).
+ */
 export const STORY_BACKGROUNDS: Record<string, [string, string]> = {
   // ── Vibrant Gradients ──────────────────────────────────────────────────────
   sunset: ["#f97316", "#db2777"],
@@ -58,10 +60,18 @@ export const STORY_BACKGROUNDS: Record<string, [string, string]> = {
 };
 
 export const DEFAULT_STORY_BG = "sunset";
-
-/** Ordered list of background keys for the UI palette */
 export const STORY_BG_KEYS = Object.keys(STORY_BACKGROUNDS);
 
 export function storyBackground(key: string | null | undefined): [string, string] {
   return STORY_BACKGROUNDS[key ?? ""] ?? STORY_BACKGROUNDS[DEFAULT_STORY_BG];
+}
+
+/**
+ * Human-readable display name for a background key.
+ */
+export function bgDisplayName(key: string): string {
+  return key
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
 }

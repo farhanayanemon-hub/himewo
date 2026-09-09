@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Alert,
   Modal,
@@ -38,6 +38,7 @@ import { BoostSheet } from "@/components/BoostSheet";
 import { ReactionBar } from "@/components/ReactionBar";
 import { reactionConfig } from "@/constants/reactions";
 import { useColors } from "@/hooks/useColors";
+import { syncUserFollowState, syncPageFollowState } from "@/lib/follow-sync";
 import { useAuth } from "@/lib/auth";
 import { useActingPage } from "@/lib/acting-page";
 import { timeAgo, formatCount } from "@/lib/format";
@@ -46,6 +47,7 @@ interface PostCardProps {
   post: Post;
   onComment?: () => void;
   onShare?: () => void;
+  hideFollowButton?: boolean;
 }
 
 function privacyIcon(privacy: string): keyof typeof Ionicons.glyphMap {
@@ -64,7 +66,7 @@ const privacyOptions: {
   { value: "private", label: "Only me", icon: "lock-closed" },
 ];
 
-export function PostCard({ post, onComment, onShare }: PostCardProps) {
+export function PostCard({ post, onComment, onShare, hideFollowButton = false }: PostCardProps) {
   const c = useColors();
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -80,6 +82,14 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
     : Boolean(post.author.viewerFollows);
   const [following, setFollowing] = useState(initialFollowing);
 
+  useEffect(() => {
+    setFollowing(
+      isPage
+        ? Boolean((post.authorPage as any)?.viewerFollows)
+        : Boolean(post.author.viewerFollows),
+    );
+  }, [post.authorPage, post.author.viewerFollows, isPage]);
+
   const followUser = useFollowUser();
   const unfollowUser = useUnfollowUser();
   const followPage = useFollowPage();
@@ -88,31 +98,57 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
   const handleToggleFollow = () => {
     if (!user || isOwner) return;
     if (isPage && post.authorPage) {
+      const pageId = post.authorPage.id;
       if (following) {
         setFollowing(false);
+        syncPageFollowState(qc, pageId, false);
         unfollowPage.mutate(
-          { id: post.authorPage.id },
-          { onError: () => setFollowing(true) }
+          { id: pageId },
+          {
+            onError: () => {
+              setFollowing(true);
+              syncPageFollowState(qc, pageId, true);
+            },
+          },
         );
       } else {
         setFollowing(true);
+        syncPageFollowState(qc, pageId, true);
         followPage.mutate(
-          { id: post.authorPage.id },
-          { onError: () => setFollowing(false) }
+          { id: pageId },
+          {
+            onError: () => {
+              setFollowing(false);
+              syncPageFollowState(qc, pageId, false);
+            },
+          },
         );
       }
     } else {
+      const authorId = post.author.id;
       if (following) {
         setFollowing(false);
+        syncUserFollowState(qc, authorId, false);
         unfollowUser.mutate(
-          { userId: post.author.id },
-          { onError: () => setFollowing(true) }
+          { userId: authorId },
+          {
+            onError: () => {
+              setFollowing(true);
+              syncUserFollowState(qc, authorId, true);
+            },
+          },
         );
       } else {
         setFollowing(true);
+        syncUserFollowState(qc, authorId, true);
         followUser.mutate(
-          { userId: post.author.id },
-          { onError: () => setFollowing(false) }
+          { userId: authorId },
+          {
+            onError: () => {
+              setFollowing(false);
+              syncUserFollowState(qc, authorId, false);
+            },
+          },
         );
       }
     }
@@ -271,7 +307,7 @@ export function PostCard({ post, onComment, onShare }: PostCardProps) {
             {!post.authorPage && post.author.isVerified && (
               <Ionicons name="checkmark-circle" size={14} color={c.primary} />
             )}
-            {!isOwner && user && (
+            {!isOwner && user && !hideFollowButton && (
               <Pressable
                 onPress={handleToggleFollow}
                 style={{

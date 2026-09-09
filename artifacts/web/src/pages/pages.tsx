@@ -72,7 +72,7 @@ import {
   Sliders,
   ShieldCheck,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Select,
@@ -134,7 +134,8 @@ export default function PagesView() {
 function PageList() {
   const { data: pages, isLoading } = useListPages();
   const queryClient = useQueryClient();
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
+  const { switchTo } = useActingPage();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
@@ -142,6 +143,15 @@ function PageList() {
   const [description, setDescription] = useState("");
 
   const createPage = useCreatePage();
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("create") === "1" || params.get("create") === "true") {
+        setOpen(true);
+      }
+    }
+  }, [location]);
 
   const resetWizard = () => {
     setStep(1);
@@ -170,6 +180,12 @@ function PageList() {
           queryClient.invalidateQueries({ queryKey: getListPagesQueryKey() });
           setOpen(false);
           resetWizard();
+          // Auto switch identity to the newly created Hub
+          switchTo({
+            id: page.id,
+            name: page.name,
+            avatarUrl: page.avatarUrl ?? null,
+          });
           navigate(`/pages/${page.id}`);
         },
       }
@@ -835,7 +851,7 @@ function HubSettingsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card border border-border rounded-2xl shadow-2xl">
+      <DialogContent className="w-[95vw] sm:max-w-3xl max-h-[92vh] flex flex-col p-0 overflow-hidden bg-card border border-border rounded-2xl shadow-2xl">
         <DialogHeader className="p-4 border-b border-border/60 bg-muted/20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -850,77 +866,77 @@ function HubSettingsDialog({
           </div>
         </DialogHeader>
 
-        <div className="flex flex-1 min-h-[460px] overflow-hidden">
+        <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden">
           {/* Settings Left Navigation Sidebar */}
-          <div className="w-52 border-r border-border/60 bg-muted/10 p-2 space-y-1 shrink-0">
+          <div className="flex md:flex-col overflow-x-auto md:overflow-x-visible md:w-52 border-b md:border-b-0 md:border-r border-border/60 bg-muted/10 p-2 gap-1.5 md:space-y-1 shrink-0">
             <button
               type="button"
               onClick={() => setActiveTab("general")}
-              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors text-left ${
+              className={`flex items-center gap-2 px-3 py-2 md:py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-colors text-left ${
                 activeTab === "general"
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "hover:bg-muted text-muted-foreground hover:text-foreground"
               }`}
             >
-              <FileText className="w-4 h-4" />
+              <FileText className="w-4 h-4 shrink-0" />
               <span>General Info</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab("access")}
-              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors text-left ${
+              className={`flex items-center gap-2 px-3 py-2 md:py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-colors text-left ${
                 activeTab === "access"
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "hover:bg-muted text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Users className="w-4 h-4" />
+              <Users className="w-4 h-4 shrink-0" />
               <span>Page Access & Roles</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab("cta")}
-              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors text-left ${
+              className={`flex items-center gap-2 px-3 py-2 md:py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-colors text-left ${
                 activeTab === "cta"
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "hover:bg-muted text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Sliders className="w-4 h-4" />
+              <Sliders className="w-4 h-4 shrink-0" />
               <span>Action Button (CTA)</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab("reviews")}
-              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors text-left ${
+              className={`flex items-center gap-2 px-3 py-2 md:py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-colors text-left ${
                 activeTab === "reviews"
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "hover:bg-muted text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Star className="w-4 h-4" />
+              <Star className="w-4 h-4 shrink-0" />
               <span>Reviews & Ratings</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab("visibility")}
-              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors text-left ${
+              className={`flex items-center gap-2 px-3 py-2 md:py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-colors text-left ${
                 activeTab === "visibility"
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "hover:bg-muted text-muted-foreground hover:text-foreground"
               }`}
             >
-              <ShieldCheck className="w-4 h-4" />
+              <ShieldCheck className="w-4 h-4 shrink-0" />
               <span>Visibility & Status</span>
             </button>
           </div>
 
           {/* Settings Tab Content Area */}
-          <div className="flex-1 p-5 overflow-y-auto max-h-[580px]">
+          <div className="flex-1 p-4 md:p-5 overflow-y-auto max-h-[65vh] md:max-h-[580px] w-full">
             {activeTab === "general" && (
               <div className="space-y-4 animate-in fade-in duration-200">
                 <div>

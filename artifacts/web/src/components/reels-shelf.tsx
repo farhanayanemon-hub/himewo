@@ -129,7 +129,7 @@ export function ReelsShelf() {
               Reels and short videos
             </h2>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              Watch reels to earn 20 points
+              Create reels to earn 20 points
             </p>
           </div>
         </div>

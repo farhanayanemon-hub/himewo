@@ -23,7 +23,10 @@ import {
   getListSavedItemsQueryKey,
   getListReelCommentsQueryKey,
   type Reel,
+  customFetch,
 } from "@workspace/api-client-react";
+import { syncUserFollowState } from "@/lib/follow-sync";
+import { syncReelLikeState } from "@/lib/reel-sync";
 import {
   Heart,
   MessageCircle,
@@ -1096,6 +1099,16 @@ function ReelShareDialog({
     }
   }
 
+  const trackReelShare = async () => {
+    try {
+      await customFetch(`/api/reels/${reel.id}/share`, {
+        method: "POST",
+      });
+    } catch {
+      // silent
+    }
+  };
+
   // Handle Share to Circle (Joined Groups)
   const handleShareToCircle = async (circle: any) => {
     if (sharedCircles.has(circle.id) || sharingCircleId) return;
@@ -1109,6 +1122,7 @@ function ReelShareDialog({
         },
       });
       setSharedCircles((prev) => new Set(prev).add(circle.id));
+      trackReelShare();
       toast({
         title: `Shared to ${circle.name}!`,
         description: "Reel published to circle community feed.",
@@ -1137,6 +1151,7 @@ function ReelShareDialog({
           expiresInHours: 24,
         },
       });
+      trackReelShare();
       toast({
         title: "Shared to Your Story!",
         description: "Your reel is now active on your story for 24 hours.",
@@ -1175,6 +1190,7 @@ function ReelShareDialog({
           },
         });
         setSentUsers((prev) => new Set(prev).add(friendId));
+        trackReelShare();
         toast({
           title: `Sent to ${friendItem.user.displayName}!`,
         });
@@ -1192,6 +1208,7 @@ function ReelShareDialog({
   const handleCopy = () => {
     navigator.clipboard.writeText(shareUrl);
     setCopied(true);
+    trackReelShare();
     toast({ title: "Link copied to clipboard!" });
     setTimeout(() => setCopied(false), 2000);
   };
@@ -1204,6 +1221,7 @@ function ReelShareDialog({
           text: reel.caption || shareText,
           url: shareUrl,
         });
+        trackReelShare();
         onOpenChange(false);
       } catch {
         // User dismissed
@@ -1215,6 +1233,7 @@ function ReelShareDialog({
 
   // Social external share links
   const handleWhatsApp = () => {
+    trackReelShare();
     window.open(
       `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + "\n" + shareUrl)}`,
       "_blank"
@@ -1222,6 +1241,7 @@ function ReelShareDialog({
   };
 
   const handleMessenger = () => {
+    trackReelShare();
     window.open(
       `https://www.facebook.com/dialog/send?link=${encodeURIComponent(shareUrl)}&app_id=291494419107518&redirect_uri=${encodeURIComponent(shareUrl)}`,
       "_blank"
@@ -1229,6 +1249,7 @@ function ReelShareDialog({
   };
 
   const handleTelegram = () => {
+    trackReelShare();
     window.open(
       `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`,
       "_blank"
@@ -1236,6 +1257,7 @@ function ReelShareDialog({
   };
 
   const handleTwitter = () => {
+    trackReelShare();
     window.open(
       `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`,
       "_blank"
@@ -1587,12 +1609,31 @@ function ReelCard({
     e.preventDefault();
     e.stopPropagation();
     if (!user || isAuthor) return;
+    const authorId = reel.author.id;
     if (following) {
       setFollowing(false);
-      unfollowUser.mutate({ userId: reel.author.id }, { onError: () => setFollowing(true) });
+      syncUserFollowState(queryClient, authorId, false);
+      unfollowUser.mutate(
+        { userId: authorId },
+        {
+          onError: () => {
+            setFollowing(true);
+            syncUserFollowState(queryClient, authorId, true);
+          },
+        },
+      );
     } else {
       setFollowing(true);
-      followUser.mutate({ userId: reel.author.id }, { onError: () => setFollowing(false) });
+      syncUserFollowState(queryClient, authorId, true);
+      followUser.mutate(
+        { userId: authorId },
+        {
+          onError: () => {
+            setFollowing(false);
+            syncUserFollowState(queryClient, authorId, false);
+          },
+        },
+      );
     }
   };
 
@@ -1694,6 +1735,7 @@ function ReelCard({
     // Instant UI update
     setLiked(newLiked);
     setLikeCount(newCount);
+    syncReelLikeState(queryClient, reel.id, newLiked, newCount, "like");
 
     if (newLiked) {
       likeMutation.mutate(
@@ -1702,6 +1744,7 @@ function ReelCard({
           onError: () => {
             setLiked(false);
             setLikeCount(likeCount);
+            syncReelLikeState(queryClient, reel.id, false, likeCount, null);
             toast({ title: "Failed to like reel", variant: "destructive" });
           },
           onSuccess: () => {
@@ -1716,6 +1759,7 @@ function ReelCard({
           onError: () => {
             setLiked(true);
             setLikeCount(likeCount);
+            syncReelLikeState(queryClient, reel.id, true, likeCount, "like");
             toast({ title: "Failed to unlike reel", variant: "destructive" });
           },
           onSuccess: () => {
@@ -1839,15 +1883,15 @@ function ReelCard({
   const handleMoveToTrash = async () => {
     setIsDeleting(true);
     try {
-      const res = await fetch(`/api/reels/${reel.id}`, {
+      await customFetch(`/api/reels/${reel.id}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Failed to delete reel");
       queryClient.setQueryData<Reel[]>(getListReelsQueryKey(), (old) => {
         if (!old) return old;
         return old.filter((r) => r.id !== reel.id);
       });
       queryClient.invalidateQueries({ queryKey: ["user-reels"] });
+      queryClient.invalidateQueries({ queryKey: ["user-profile-reels"] });
       setDeleteOpen(false);
       setMoreMenuOpen(false);
       toast({
@@ -2503,6 +2547,7 @@ function ReelCard({
 /* -------------------------------------------------------------------------- */
 
 export default function ReelsPage() {
+  const queryClient = useQueryClient();
   const { data: reels, isLoading } = useListReels();
   const [activeIndex, setActiveIndex] = useState(0);
   const [globalMuted, setGlobalMuted] = useState(false);
@@ -2555,16 +2600,31 @@ export default function ReelsPage() {
 
   // Jump to specific reel if ?id=... query parameter is present in URL
   useEffect(() => {
-    if (!filteredReels || filteredReels.length === 0) return;
     const params = new URLSearchParams(window.location.search);
     const targetId = params.get("id") || params.get("reelId");
-    if (targetId) {
+    if (!targetId) return;
+
+    if (filteredReels && filteredReels.length > 0) {
       const idx = filteredReels.findIndex((r) => String(r.id) === targetId);
       if (idx !== -1) {
         scrollToIndex(idx);
+        return;
       }
     }
-  }, [reels, scrollToIndex]);
+
+    // If target reel is not in top feed, fetch it directly and prepend to cache
+    customFetch<Reel>(`/api/reels/${encodeURIComponent(targetId)}`)
+      .then((singleReel) => {
+        if (!singleReel || !singleReel.id) return;
+        queryClient.setQueryData<Reel[]>(getListReelsQueryKey(), (old) => {
+          if (!old) return [singleReel];
+          if (old.some((r) => r.id === singleReel.id)) return old;
+          return [singleReel, ...old];
+        });
+        scrollToIndex(0);
+      })
+      .catch(() => {});
+  }, [reels, filteredReels, scrollToIndex, queryClient]);
 
   // Keyboard navigation
   useEffect(() => {

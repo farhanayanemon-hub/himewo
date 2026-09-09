@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Loader2, Eye, Camera, ZoomIn, ZoomOut, Pencil, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Loader2, Eye, Camera, ZoomIn, ZoomOut, X } from "lucide-react";
 import { uploadMedia, UploadUnavailableError } from "@/lib/upload";
 import { toast } from "sonner";
 
@@ -144,12 +145,13 @@ export function PhotoCropDialog({
   file: File;
   kind: PhotoKind;
   saving: boolean;
-  onSave: (blob: Blob) => void;
+  onSave: (blob: Blob, shareToFeed: boolean) => void;
   onCancel: () => void;
 }) {
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const [img, setImg] = useState<HTMLImageElement | null>(null);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(true);
+  const [shareToFeed, setShareToFeed] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const dragRef = useRef<{ startX: number; startY: number; ox: number; oy: number } | null>(null);
@@ -163,7 +165,7 @@ export function PhotoCropDialog({
     image.src = url;
     setZoom(1);
     setOffset({ x: 0, y: 0 });
-    setEditing(false);
+    setEditing(true);
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
@@ -202,12 +204,11 @@ export function PhotoCropDialog({
   }, [zoom, clampOffset]);
 
   const onPointerDown = (e: React.PointerEvent) => {
-    if (!editing) return;
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
     dragRef.current = { startX: e.clientX, startY: e.clientY, ox: offset.x, oy: offset.y };
   };
   const onPointerMove = (e: React.PointerEvent) => {
-    if (!editing || !dragRef.current) return;
+    if (!dragRef.current) return;
     const d = dragRef.current;
     setOffset(clampOffset({ x: d.ox + (e.clientX - d.startX), y: d.oy + (e.clientY - d.startY) }));
   };
@@ -242,7 +243,7 @@ export function PhotoCropDialog({
     );
     canvas.toBlob(
       (blob) => {
-        if (blob) onSave(blob);
+        if (blob) onSave(blob, shareToFeed);
       },
       "image/jpeg",
       0.9,
@@ -257,13 +258,13 @@ export function PhotoCropDialog({
         <DialogHeader>
           <DialogTitle>Update {label}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div className="flex justify-center">
             <div
               ref={frameRef}
               className={`relative overflow-hidden bg-black/80 select-none ${
                 kind === "avatar" ? "w-64 h-64 rounded-full" : "w-full rounded-lg"
-              } ${editing ? "cursor-grab active:cursor-grabbing ring-2 ring-primary" : ""}`}
+              } cursor-grab active:cursor-grabbing ring-2 ring-primary`}
               style={kind === "cover" ? { aspectRatio: `${aspect}` } : undefined}
               onPointerDown={onPointerDown}
               onPointerMove={onPointerMove}
@@ -295,7 +296,10 @@ export function PhotoCropDialog({
               )}
             </div>
           </div>
-          {editing ? (
+          <div className="space-y-2">
+            <p className="text-center text-xs text-muted-foreground">
+              Drag photo to reposition • Use slider to zoom
+            </p>
             <div className="flex items-center gap-3 px-2">
               <ZoomOut className="w-4 h-4 text-muted-foreground shrink-0" />
               <Slider
@@ -307,18 +311,23 @@ export function PhotoCropDialog({
               />
               <ZoomIn className="w-4 h-4 text-muted-foreground shrink-0" />
             </div>
-          ) : (
-            <p className="text-center text-sm text-muted-foreground">
-              This is how your {label} will look.
-            </p>
-          )}
+          </div>
+
+          <div className="flex items-center space-x-2 pt-2 border-t border-border">
+            <Checkbox
+              id="share-to-feed-checkbox"
+              checked={shareToFeed}
+              onCheckedChange={(checked) => setShareToFeed(Boolean(checked))}
+            />
+            <label
+              htmlFor="share-to-feed-checkbox"
+              className="text-sm font-medium leading-none cursor-pointer select-none text-foreground/90"
+            >
+              Share this update to your feed
+            </label>
+          </div>
         </div>
         <DialogFooter className="gap-2">
-          {!editing && (
-            <Button variant="outline" onClick={() => setEditing(true)} disabled={saving}>
-              <Pencil className="w-4 h-4 mr-1.5" /> Edit
-            </Button>
-          )}
           <Button variant="secondary" onClick={onCancel} disabled={saving}>
             Cancel
           </Button>
@@ -341,19 +350,19 @@ export function usePhotoEditor({
 }: {
   kind: PhotoKind;
   photoUrl: string | null | undefined;
-  onSaved: (url: string) => Promise<void> | void;
+  onSaved: (url: string, shareToFeed: boolean) => Promise<void> | void;
 }) {
   const [viewing, setViewing] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const handleSave = async (blob: Blob) => {
+  const handleSave = async (blob: Blob, shareToFeed: boolean) => {
     setSaving(true);
     try {
       const fileName = kind === "avatar" ? "avatar.jpg" : "cover.jpg";
       const file = new File([blob], fileName, { type: "image/jpeg" });
       const media = await uploadMedia(file);
-      await onSaved(media.url);
+      await onSaved(media.url, shareToFeed);
       setPendingFile(null);
       toast.success(
         kind === "avatar" ? "Profile picture updated" : "Cover photo updated",
@@ -367,7 +376,7 @@ export function usePhotoEditor({
         const trimmed = pasted?.trim();
         if (trimmed && /^https?:\/\//i.test(trimmed)) {
           try {
-            await onSaved(trimmed);
+            await onSaved(trimmed, shareToFeed);
             setPendingFile(null);
             toast.success(
               kind === "avatar" ? "Profile picture updated" : "Cover photo updated",

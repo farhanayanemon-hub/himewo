@@ -107,8 +107,9 @@ function PageSwitcher() {
   const { data: pages } = useListPages({ mine: true });
   const [, navigate] = useLocation();
 
-  if (!pages || pages.length === 0) return null;
+  if (!user) return null;
 
+  const hubList = pages ?? [];
   const activeName = actingPage ? actingPage.name : user?.displayName;
   const activeAvatar = actingPage ? actingPage.avatarUrl : user?.avatarUrl;
 
@@ -191,56 +192,62 @@ function PageSwitcher() {
         {/* SECTION 3: YOUR HUBS / PAGES */}
         <div className="px-2 py-1 flex items-center justify-between">
           <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-            Your Hubs ({pages.length})
+            Your Hubs ({hubList.length})
           </span>
           <span className="text-[10px] text-muted-foreground font-medium">
             Managed by you
           </span>
         </div>
-        <div className="max-h-56 overflow-y-auto space-y-1 pr-1">
-          {pages.map((p) => {
-            const isActive = actingPage?.id === p.id;
-            return (
-              <DropdownMenuItem
-                key={p.id}
-                onClick={() =>
-                  !isActive &&
-                  switchTo(
-                    {
-                      id: p.id,
-                      name: p.name,
-                      avatarUrl: p.avatarUrl ?? null,
-                    },
-                    () => navigate(`/pages/${p.id}`),
-                  )
-                }
-                className={`gap-3 p-2 rounded-xl cursor-pointer ${
-                  isActive ? "bg-primary/10 border border-primary/20" : "hover:bg-muted/60"
-                }`}
-              >
-                <img
-                  src={avatarSrc(p.avatarUrl)}
-                  alt=""
-                  className="w-9 h-9 rounded-full object-cover border border-border"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-sm truncate flex items-center gap-1.5">
-                    <span>{p.name}</span>
-                    {isActive && (
-                      <span className="text-[10px] bg-primary text-primary-foreground font-bold px-1.5 py-0.5 rounded-full">
-                        Active
-                      </span>
-                    )}
+        {hubList.length === 0 ? (
+          <div className="px-3 py-3 text-xs text-muted-foreground bg-muted/20 rounded-xl text-center">
+            No Hubs yet. Create one to post and interact as a Hub!
+          </div>
+        ) : (
+          <div className="max-h-56 overflow-y-auto space-y-1 pr-1">
+            {hubList.map((p) => {
+              const isActive = actingPage?.id === p.id;
+              return (
+                <DropdownMenuItem
+                  key={p.id}
+                  onClick={() =>
+                    !isActive &&
+                    switchTo(
+                      {
+                        id: p.id,
+                        name: p.name,
+                        avatarUrl: p.avatarUrl ?? null,
+                      },
+                      () => navigate(`/pages/${p.id}`),
+                    )
+                  }
+                  className={`gap-3 p-2 rounded-xl cursor-pointer ${
+                    isActive ? "bg-primary/10 border border-primary/20" : "hover:bg-muted/60"
+                  }`}
+                >
+                  <img
+                    src={avatarSrc(p.avatarUrl)}
+                    alt=""
+                    className="w-9 h-9 rounded-full object-cover border border-border"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm truncate flex items-center gap-1.5">
+                      <span>{p.name}</span>
+                      {isActive && (
+                        <span className="text-[10px] bg-primary text-primary-foreground font-bold px-1.5 py-0.5 rounded-full">
+                          Active
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {p.category || "Hub"}
+                    </div>
                   </div>
-                  <div className="text-xs text-muted-foreground truncate">
-                    {p.category || "Hub"}
-                  </div>
-                </div>
-                {isActive && <Check className="w-4 h-4 text-primary shrink-0" />}
-              </DropdownMenuItem>
-            );
-          })}
-        </div>
+                  {isActive && <Check className="w-4 h-4 text-primary shrink-0" />}
+                </DropdownMenuItem>
+              );
+            })}
+          </div>
+        )}
 
         <DropdownMenuSeparator className="my-2" />
 

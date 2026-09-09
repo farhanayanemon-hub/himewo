@@ -8,6 +8,7 @@ import {
   albumsTable,
   albumPhotosTable,
   userBlocksTable,
+  reelsTable,
 } from "@workspace/db";
 import {
   and,
@@ -36,8 +37,9 @@ import {
   buildProfileDetail,
   buildPosts,
   buildListProfiles,
+  buildReels,
 } from "../lib/serialize";
-import { areFriends, canViewProfileDetails } from "../lib/authz";
+import { areFriends, canViewProfileDetails, filterVisibleReels } from "../lib/authz";
 import {
   SearchUsersQueryParams,
   SearchUsersResponse,
@@ -63,6 +65,7 @@ import {
   UnrestrictUserParams,
   ListBlockedUsersResponse,
   ListRestrictedUsersResponse,
+  ListReelsResponse,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -553,7 +556,8 @@ router.get("/users/:id/posts", requireAuth, async (req, res): Promise<void> => {
     .where(
       and(
         eq(postsTable.authorId, target),
-        isOwner ? undefined : isNull(postsTable.groupId),
+        isNull(postsTable.groupId),
+        isNull(postsTable.pageId),
         privacyClause,
         cursor ? lt(postsTable.id, cursor) : undefined,
       ),
@@ -562,6 +566,49 @@ router.get("/users/:id/posts", requireAuth, async (req, res): Promise<void> => {
     .limit(limit ?? 20);
   const posts = await buildPosts(rows, req.userId);
   res.json(GetUserPostsResponse.parse(posts));
+});
+
+router.get("/users/:id/reels", requireAuth, async (req, res): Promise<void> => {
+  const viewer = req.userId!;
+  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  let target = typeof rawId === "string" ? rawId.trim() : "";
+  if (!target) {
+    res.json(ListReelsResponse.parse([]));
+    return;
+  }
+  if (!UUID_RE.test(target)) {
+    const uname = target.trim().toLowerCase();
+    const [byUsername] = await db
+      .select({ id: profilesTable.id })
+      .from(profilesTable)
+      .where(sql`lower(${profilesTable.username}) = ${uname}`);
+    if (!byUsername) {
+      res.json(ListReelsResponse.parse([]));
+      return;
+    }
+    target = byUsername.id;
+  }
+  if (!(await canViewProfileDetails(target, viewer))) {
+    res.json(ListReelsResponse.parse([]));
+    return;
+  }
+
+  const limit = Math.min(Number(req.query.limit) || 50, 100);
+  const rows = await db
+    .select()
+    .from(reelsTable)
+    .where(
+      and(
+        eq(reelsTable.authorId, target),
+        isNull(reelsTable.deletedAt),
+      ),
+    )
+    .orderBy(desc(reelsTable.id))
+    .limit(limit);
+
+  const vis = await filterVisibleReels(rows, viewer);
+  const built = await buildReels(vis, viewer);
+  res.json(ListReelsResponse.parse(built));
 });
 
 router.get(

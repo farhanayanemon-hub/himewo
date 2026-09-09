@@ -17,6 +17,7 @@ import {
   useFollowUser,
   useUnfollowUser,
   getListSavedItemsQueryKey,
+  getListReelsQueryKey,
   customFetch,
   type Profile,
   type Post,
@@ -30,8 +31,10 @@ import { VerifiedBadge } from "@/components/verified-badge";
 import { PostComposer } from "@/components/post-composer";
 import { CreateAlbumDialog } from "@/components/create-album-dialog";
 import { MediaLightbox } from "@/components/media-grid";
-import { parseReelOverlays } from "@/pages/reels";
 import { Button } from "@/components/ui/button";
+import { syncUserFollowState } from "@/lib/follow-sync";
+import { syncReelLikeState } from "@/lib/reel-sync";
+import { parseReelOverlays } from "@/pages/reels";
 import {
   Loader2,
   Briefcase,
@@ -56,7 +59,26 @@ import {
   Music,
   Film,
   Check,
+  MoreHorizontal,
+  Copy,
+  Trash2,
 } from "lucide-react";
+import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 function IntroRow({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -67,7 +89,13 @@ function IntroRow({ icon, children }: { icon: React.ReactNode; children: React.R
   );
 }
 
-function ProfileReelTimelineCard({ reel }: { reel: Reel }) {
+function ProfileReelTimelineCard({
+  reel,
+  hideFollowButton = false,
+}: {
+  reel: Reel;
+  hideFollowButton?: boolean;
+}) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const likeReel = useLikeReel();
@@ -79,12 +107,46 @@ function ProfileReelTimelineCard({ reel }: { reel: Reel }) {
 
   const isAuthor = user?.id === reel.author.id;
   const [following, setFollowing] = useState(Boolean(reel.author.viewerFollows));
-  const [liked, setLiked] = useState(Boolean(reel.viewerLiked));
+  const [liked, setLiked] = useState(Boolean(reel.viewerHasLiked ?? (reel as any).viewerLiked));
   const [likeCount, setLikeCount] = useState(reel.likeCount ?? 0);
-  const [saved, setSaved] = useState(Boolean(reel.viewerSaved));
+  const [saved, setSaved] = useState(Boolean(reel.viewerHasSaved ?? (reel as any).viewerSaved));
+
+  useEffect(() => {
+    setLiked(Boolean(reel.viewerHasLiked ?? (reel as any).viewerLiked));
+    setLikeCount(reel.likeCount ?? 0);
+    setSaved(Boolean(reel.viewerHasSaved ?? (reel as any).viewerSaved));
+  }, [reel.viewerHasLiked, (reel as any).viewerLiked, reel.likeCount, reel.viewerHasSaved, (reel as any).viewerSaved]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  const handleDeleteReel = async () => {
+    setDeleting(true);
+    try {
+      await customFetch(`/api/reels/${reel.id}`, { method: "DELETE" });
+      queryClient.setQueryData<Reel[]>(["user-reels", reel.author.id], (old) => {
+        if (!old) return old;
+        return old.filter((r) => r.id !== reel.id);
+      });
+      queryClient.invalidateQueries({ queryKey: ["user-reels"] });
+      queryClient.invalidateQueries({ queryKey: ["user-profile-reels"] });
+      queryClient.invalidateQueries({ queryKey: getListReelsQueryKey() });
+      toast.success("Reel moved to trash");
+      setDeleteConfirmOpen(false);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete reel");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleCopyLink = () => {
+    const shareUrl = `${window.location.origin}/reels?id=${reel.id}`;
+    navigator.clipboard.writeText(shareUrl);
+    toast.success("Reel link copied to clipboard");
+  };
 
   useEffect(() => {
     setFollowing(Boolean(reel.author.viewerFollows));
@@ -94,12 +156,31 @@ function ProfileReelTimelineCard({ reel }: { reel: Reel }) {
     e.preventDefault();
     e.stopPropagation();
     if (!user || isAuthor) return;
+    const authorId = reel.author.id;
     if (following) {
       setFollowing(false);
-      unfollowUser.mutate({ userId: reel.author.id }, { onError: () => setFollowing(true) });
+      syncUserFollowState(queryClient, authorId, false);
+      unfollowUser.mutate(
+        { userId: authorId },
+        {
+          onError: () => {
+            setFollowing(true);
+            syncUserFollowState(queryClient, authorId, true);
+          },
+        },
+      );
     } else {
       setFollowing(true);
-      followUser.mutate({ userId: reel.author.id }, { onError: () => setFollowing(false) });
+      syncUserFollowState(queryClient, authorId, true);
+      followUser.mutate(
+        { userId: authorId },
+        {
+          onError: () => {
+            setFollowing(false);
+            syncUserFollowState(queryClient, authorId, false);
+          },
+        },
+      );
     }
   };
 
@@ -151,35 +232,42 @@ function ProfileReelTimelineCard({ reel }: { reel: Reel }) {
 
   const handleToggleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!user) return;
     if (liked) {
       setLiked(false);
-      setLikeCount((c) => Math.max(0, c - 1));
+      const nextCount = Math.max(0, likeCount - 1);
+      setLikeCount(nextCount);
+      syncReelLikeState(queryClient, reel.id, false, nextCount, null);
       unlikeReel.mutate(
         { id: reel.id },
         {
           onError: () => {
             setLiked(true);
-            setLikeCount((c) => c + 1);
+            setLikeCount(likeCount);
+            syncReelLikeState(queryClient, reel.id, true, likeCount, "like");
           },
         },
       );
     } else {
       setLiked(true);
-      setLikeCount((c) => c + 1);
+      const nextCount = likeCount + 1;
+      setLikeCount(nextCount);
+      syncReelLikeState(queryClient, reel.id, true, nextCount, "like");
       likeReel.mutate(
         { id: reel.id },
         {
           onError: () => {
             setLiked(false);
-            setLikeCount((c) => Math.max(0, c - 1));
+            setLikeCount(likeCount);
+            syncReelLikeState(queryClient, reel.id, false, likeCount, null);
           },
         },
       );
     }
   };
 
-  const handleToggleSave = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleToggleSave = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     const invalidate = () => {
       queryClient.invalidateQueries({ queryKey: getListSavedItemsQueryKey() });
     };
@@ -235,7 +323,7 @@ function ProfileReelTimelineCard({ reel }: { reel: Reel }) {
                 </span>
               </Link>
               {reel.author.isVerified && <VerifiedBadge className="w-4 h-4" />}
-              {!isAuthor && user && (
+              {!isAuthor && user && !hideFollowButton && (
                 <button
                   type="button"
                   onClick={handleToggleFollow}
@@ -268,7 +356,84 @@ function ProfileReelTimelineCard({ reel }: { reel: Reel }) {
             </div>
           </div>
         </div>
+
+        {/* 3-dots Menu Button */}
+        <div className="flex items-center">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="w-8 h-8 rounded-full hover:bg-muted/80 text-muted-foreground"
+                aria-label="Reel options"
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 shadow-lg rounded-xl">
+              <DropdownMenuItem onClick={handleCopyLink} className="gap-2 cursor-pointer text-xs">
+                <Copy className="w-3.5 h-3.5" />
+                <span>Copy link</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleToggleSave} className="gap-2 cursor-pointer text-xs">
+                <Bookmark className={`w-3.5 h-3.5 ${saved ? "fill-primary text-primary" : ""}`} />
+                <span>{saved ? "Remove from saved" : "Save reel"}</span>
+              </DropdownMenuItem>
+              <Link href={`/reels?id=${reel.id}`}>
+                <DropdownMenuItem className="gap-2 cursor-pointer text-xs">
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Open in Reels</span>
+                </DropdownMenuItem>
+              </Link>
+              {isAuthor && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setDeleteConfirmOpen(true)}
+                    className="gap-2 text-destructive focus:text-destructive cursor-pointer font-medium text-xs"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Move to trash</span>
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirmOpen && (
+        <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+          <DialogContent className="sm:max-w-md rounded-2xl">
+            <DialogHeader>
+              <DialogTitle>Move Reel to Trash?</DialogTitle>
+              <DialogDescription>
+                This reel will be moved to your trash. Items in trash are automatically purged after 30 days.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2 sm:gap-0 mt-3">
+              <Button
+                variant="outline"
+                onClick={() => setDeleteConfirmOpen(false)}
+                disabled={deleting}
+                className="rounded-xl"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteReel}
+                disabled={deleting}
+                className="rounded-xl"
+              >
+                {deleting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                Move to Trash
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Caption */}
       {cleanCaption && (
@@ -416,21 +581,40 @@ export function ProfileView({
   const [photoOpen, setPhotoOpen] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<"posts" | "reels" | "photos">("posts");
 
-  const afterPhotoSave = async (data: { avatarUrl?: string; coverUrl?: string }) => {
+  const afterPhotoSave = async (data: { avatarUrl?: string; coverUrl?: string }, shareToFeed?: boolean) => {
     await updateProfile.mutateAsync({ data });
     await refreshUser();
     queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(userId) });
+    if (shareToFeed) {
+      try {
+        const photoUrl = data.avatarUrl || data.coverUrl;
+        const label = data.avatarUrl ? "Updated profile picture" : "Updated cover photo";
+        await customFetch("/api/posts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content: label,
+            privacy: "public",
+            media: [{ url: photoUrl, type: "image", position: 0 }],
+          }),
+        });
+        queryClient.invalidateQueries({ queryKey: getGetUserPostsQueryKey(userId) });
+        queryClient.invalidateQueries({ queryKey: ["/api/feed"] });
+      } catch (err) {
+        console.warn("Failed to share photo update to feed:", err);
+      }
+    }
   };
 
   const avatarEditor = usePhotoEditor({
     kind: "avatar",
     photoUrl: profile.avatarUrl,
-    onSaved: (url) => afterPhotoSave({ avatarUrl: url }),
+    onSaved: (url, share) => afterPhotoSave({ avatarUrl: url }, share),
   });
   const coverEditor = usePhotoEditor({
     kind: "cover",
     photoUrl: profile.coverUrl,
-    onSaved: (url) => afterPhotoSave({ coverUrl: url }),
+    onSaved: (url, share) => afterPhotoSave({ coverUrl: url }, share),
   });
   const isLocked = Boolean(profile.isLocked);
   const showLocked = isLocked && !isOwnProfile && !profile.viewerIsFriend;
@@ -459,7 +643,7 @@ export function ProfileView({
     queryKey: ["user-reels", targetUserId],
     queryFn: async () => {
       return customFetch<Reel[]>(
-        `/api/reels?authorId=${encodeURIComponent(targetUserId)}&limit=50`,
+        `/api/users/${encodeURIComponent(targetUserId)}/reels?limit=50`,
       ).catch(() => []);
     },
     enabled: !!targetUserId && !showLocked,
@@ -476,26 +660,49 @@ export function ProfileView({
     enabled: !!targetUserId && !showLocked,
   });
 
+  // Ensure posts strictly belong to target user and exclude page/group posts
+  const strictlyUserPosts = useMemo(() => {
+    if (!profile?.id) return [];
+    return (posts ?? []).filter((p) => {
+      const matchAuthor =
+        p.author?.id === profile.id ||
+        (userId && p.author?.id === userId) ||
+        (profile.username && p.author?.username?.toLowerCase() === profile.username.toLowerCase());
+      return matchAuthor && !p.pageId && !p.groupId;
+    });
+  }, [posts, profile.id, profile.username, userId]);
+
+  // Ensure reels strictly belong to target user
+  const filteredReels = useMemo(() => {
+    if (!profile?.id && !userId) return [];
+    return (userReels ?? []).filter(
+      (r) =>
+        r.author?.id === profile.id ||
+        (userId && r.author?.id === userId) ||
+        (profile.username && r.author?.username?.toLowerCase() === profile.username.toLowerCase()),
+    );
+  }, [userReels, profile.id, profile.username, userId]);
+
   // Merge posts and reels into a unified timeline sorted by createdAt date descending
   type TimelineItem =
     | { type: "post"; id: string; date: number; post: Post }
     | { type: "reel"; id: string; date: number; reel: Reel };
 
   const timelineItems: TimelineItem[] = useMemo(() => {
-    const pList: TimelineItem[] = (posts ?? []).map((p) => ({
+    const pList: TimelineItem[] = strictlyUserPosts.map((p) => ({
       type: "post",
       id: `post-${p.id}`,
       date: new Date(p.createdAt).getTime(),
       post: p,
     }));
-    const rList: TimelineItem[] = (userReels ?? []).map((r) => ({
+    const rList: TimelineItem[] = filteredReels.map((r) => ({
       type: "reel",
       id: `reel-${r.id}`,
       date: new Date(r.createdAt).getTime(),
       reel: r,
     }));
     return [...pList, ...rList].sort((a, b) => b.date - a.date);
-  }, [posts, userReels]);
+  }, [strictlyUserPosts, filteredReels]);
 
   const photoUrls = useMemo(() => {
     const urls: string[] = [];
@@ -652,8 +859,207 @@ export function ProfileView({
           </p>
         </div>
       ) : (
-      /* Two-column: Intro + Friends + Photos + Reels | Main Tab Content */
+      /* Two-column: Main Timeline/Tabs Content (Left/Center) | Intro + Friends + Photos + Reels Sidebar (Right) */
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-start">
+        {/* Main Content Column (Left/Center) */}
+        <div className="lg:col-span-3 space-y-4">
+          {/* TAB 1: POSTS & REELS (Unified Profile Timeline) */}
+          {activeTab === "posts" && (
+            <>
+              {isOwnProfile && (
+                <PostComposer
+                  onPosted={() => {
+                    queryClient.invalidateQueries({ queryKey: getGetUserPostsQueryKey(userId) });
+                    queryClient.invalidateQueries({ queryKey: ["user-reels", targetUserId] });
+                  }}
+                />
+              )}
+              <div className="flex items-center justify-between px-2">
+                <h2 className="font-bold text-lg">Timeline</h2>
+                {timelineItems.length > 0 && (
+                  <span className="text-xs text-muted-foreground font-medium">
+                    {timelineItems.length} {timelineItems.length === 1 ? "item" : "items"}
+                  </span>
+                )}
+              </div>
+              {postsLoading || reelsLoading ? (
+                <div className="py-8 text-center">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
+                </div>
+              ) : timelineItems.length === 0 ? (
+                <div className="text-center py-10 aurora-glass-card rounded-2xl text-muted-foreground">
+                  {isOwnProfile ? "You haven't posted anything yet." : "No posts yet"}
+                </div>
+              ) : (
+                timelineItems.map((item) =>
+                  item.type === "post" ? (
+                    <PostCard key={item.id} post={item.post} hideFollowButton={true} />
+                  ) : (
+                    <ProfileReelTimelineCard key={item.id} reel={item.reel} hideFollowButton={true} />
+                  ),
+                )
+              )}
+            </>
+          )}
+
+          {/* TAB 2: REELS */}
+          {activeTab === "reels" && (
+            <div className="aurora-glass-card rounded-2xl p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="font-bold text-xl flex items-center gap-2">
+                  <Play className="w-5 h-5 text-primary fill-primary" />
+                  <span>Reels</span>
+                  {filteredReels && (
+                    <span className="text-sm font-normal text-muted-foreground">({filteredReels.length})</span>
+                  )}
+                </h2>
+                {isOwnProfile && (
+                  <Link href="/reels">
+                    <Button size="sm" className="rounded-xl gap-1.5">
+                      <Plus className="w-4 h-4" />
+                      <span>Create Reel</span>
+                    </Button>
+                  </Link>
+                )}
+              </div>
+
+              {reelsLoading ? (
+                <div className="py-12 text-center">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+                  <p className="text-sm text-muted-foreground mt-2">Loading reels...</p>
+                </div>
+              ) : !filteredReels || filteredReels.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Play className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
+                  <p className="font-medium text-foreground">No reels uploaded yet</p>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                    {isOwnProfile
+                      ? "Share short, fun videos with your friends and followers."
+                      : `${profile.displayName} hasn't uploaded any reels yet.`}
+                  </p>
+                  {isOwnProfile && (
+                    <Link href="/reels">
+                      <Button className="rounded-xl mt-4 gap-2">
+                        <Plus className="w-4 h-4" /> Create First Reel
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
+                  {filteredReels.map((reel) => {
+                    const cleanCaption = parseReelOverlays(reel.caption).cleanCaption;
+                    return (
+                      <Link key={reel.id} href={`/reels?id=${reel.id}`}>
+                        <div className="group relative aspect-[9/16] rounded-2xl overflow-hidden bg-black cursor-pointer shadow-md hover:shadow-xl transition-all duration-300">
+                          <video
+                            src={reel.videoUrl}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            muted
+                            preload="metadata"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/20" />
+
+                          {/* Bottom Caption & Stats */}
+                          <div className="absolute bottom-3 left-3 right-3 text-white space-y-1">
+                            {cleanCaption && (
+                              <p className="text-xs line-clamp-2 drop-shadow font-medium">
+                                {cleanCaption}
+                              </p>
+                            )}
+                            <div className="flex items-center justify-between text-[11px] text-white/90 pt-1 font-semibold">
+                              <span className="flex items-center gap-1">
+                                <Heart className="w-3.5 h-3.5 fill-white" />
+                                {reel.likeCount ?? 0}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <MessageCircle className="w-3.5 h-3.5" />
+                                {reel.commentCount ?? 0}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Center Play Icon on Hover */}
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
+                            <div className="w-12 h-12 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center text-white shadow-xl">
+                              <Play className="w-6 h-6 fill-white ml-0.5" />
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 3: PHOTOS */}
+          {activeTab === "photos" && (
+            <div className="aurora-glass-card rounded-2xl p-5 space-y-6">
+              <h2 className="font-bold text-xl flex items-center gap-2">
+                <Images className="w-5 h-5 text-primary" />
+                <span>Photos & Albums</span>
+              </h2>
+
+              {photoUrls.length > 0 ? (
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground mb-3">All Photos</h3>
+                  <div className="grid grid-cols-3 gap-2.5">
+                    {photoUrls.map((url, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setPhotoOpen(i)}
+                        className="aspect-square rounded-xl overflow-hidden bg-muted group cursor-pointer"
+                      >
+                        <img
+                          src={url}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          alt="Photo"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">No photos uploaded yet.</p>
+              )}
+
+              {albums && albums.length > 0 && (
+                <div className="pt-4 border-t border-border">
+                  <h3 className="font-semibold text-sm text-muted-foreground mb-3">Albums</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {albums.map((a) => (
+                      <Link key={a.id} href={`/albums/${a.id}`}>
+                        <div className="cursor-pointer group">
+                          {a.coverUrl ? (
+                            <img
+                              src={a.coverUrl}
+                              className="w-full aspect-square rounded-xl object-cover bg-muted group-hover:opacity-90 transition-opacity"
+                              alt={a.name}
+                            />
+                          ) : (
+                            <div className="w-full aspect-square rounded-xl bg-muted flex items-center justify-center">
+                              <Images className="w-8 h-8 text-muted-foreground" />
+                            </div>
+                          )}
+                          <p className="text-sm font-medium mt-1 truncate group-hover:underline">
+                            {a.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {a.photoCount} photo{a.photoCount === 1 ? "" : "s"}
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Secondary Sidebar Column (Right) */}
         <div className="lg:col-span-2 space-y-4">
           {/* Intro */}
           <div className="aurora-glass-card rounded-2xl p-4">
@@ -732,12 +1138,12 @@ export function ProfileView({
                 <Play className="w-4 h-4 text-primary fill-primary" />
                 <h2 className="font-bold text-lg">Reels</h2>
               </div>
-              {userReels && userReels.length > 0 && (
+              {filteredReels && filteredReels.length > 0 && (
                 <button
                   onClick={() => setActiveTab("reels")}
                   className="text-primary text-sm hover:underline font-medium"
                 >
-                  See all ({userReels.length})
+                  See all ({filteredReels.length})
                 </button>
               )}
             </div>
@@ -745,9 +1151,9 @@ export function ProfileView({
               <div className="py-4 text-center">
                 <Loader2 className="w-5 h-5 animate-spin mx-auto text-primary" />
               </div>
-            ) : userReels && userReels.length > 0 ? (
+            ) : filteredReels && filteredReels.length > 0 ? (
               <div className="grid grid-cols-3 gap-2">
-                {userReels.slice(0, 6).map((r) => (
+                {filteredReels.slice(0, 6).map((r) => (
                   <Link key={r.id} href={`/reels?id=${r.id}`}>
                     <div className="aspect-[9/16] rounded-xl overflow-hidden relative bg-black group cursor-pointer shadow-sm hover:shadow-md transition-all">
                       <video
@@ -863,204 +1269,6 @@ export function ProfileView({
               onOpenChange={setCreateAlbumOpen}
               userId={userId}
             />
-          )}
-        </div>
-
-        {/* Right Main Content Column */}
-        <div className="lg:col-span-3 space-y-4">
-          {/* TAB 1: POSTS & REELS (Unified Profile Timeline) */}
-          {activeTab === "posts" && (
-            <>
-              {isOwnProfile && (
-                <PostComposer
-                  onPosted={() => {
-                    queryClient.invalidateQueries({ queryKey: getGetUserPostsQueryKey(userId) });
-                    queryClient.invalidateQueries({ queryKey: ["user-reels", targetUserId] });
-                  }}
-                />
-              )}
-              <div className="flex items-center justify-between px-2">
-                <h2 className="font-bold text-lg">Timeline</h2>
-                {timelineItems.length > 0 && (
-                  <span className="text-xs text-muted-foreground font-medium">
-                    {timelineItems.length} {timelineItems.length === 1 ? "item" : "items"}
-                  </span>
-                )}
-              </div>
-              {postsLoading || reelsLoading ? (
-                <div className="py-8 text-center">
-                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
-                </div>
-              ) : timelineItems.length === 0 ? (
-                <div className="text-center py-10 aurora-glass-card rounded-2xl text-muted-foreground">
-                  {isOwnProfile ? "You haven't posted anything yet." : "No posts yet"}
-                </div>
-              ) : (
-                timelineItems.map((item) =>
-                  item.type === "post" ? (
-                    <PostCard key={item.id} post={item.post} />
-                  ) : (
-                    <ProfileReelTimelineCard key={item.id} reel={item.reel} />
-                  ),
-                )
-              )}
-            </>
-          )}
-
-          {/* TAB 2: REELS */}
-          {activeTab === "reels" && (
-            <div className="aurora-glass-card rounded-2xl p-5 space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="font-bold text-xl flex items-center gap-2">
-                  <Play className="w-5 h-5 text-primary fill-primary" />
-                  <span>Reels</span>
-                  {userReels && (
-                    <span className="text-sm font-normal text-muted-foreground">({userReels.length})</span>
-                  )}
-                </h2>
-                {isOwnProfile && (
-                  <Link href="/reels">
-                    <Button size="sm" className="rounded-xl gap-1.5">
-                      <Plus className="w-4 h-4" />
-                      <span>Create Reel</span>
-                    </Button>
-                  </Link>
-                )}
-              </div>
-
-              {reelsLoading ? (
-                <div className="py-12 text-center">
-                  <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
-                  <p className="text-sm text-muted-foreground mt-2">Loading reels...</p>
-                </div>
-              ) : !userReels || userReels.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Play className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
-                  <p className="font-medium text-foreground">No reels uploaded yet</p>
-                  <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-                    {isOwnProfile
-                      ? "Share short, fun videos with your friends and followers."
-                      : `${profile.displayName} hasn't uploaded any reels yet.`}
-                  </p>
-                  {isOwnProfile && (
-                    <Link href="/reels">
-                      <Button className="rounded-xl mt-4 gap-2">
-                        <Plus className="w-4 h-4" /> Create First Reel
-                      </Button>
-                    </Link>
-                  )}
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
-                  {userReels.map((reel) => {
-                    const cleanCaption = parseReelOverlays(reel.caption).cleanCaption;
-                    return (
-                      <Link key={reel.id} href={`/reels?id=${reel.id}`}>
-                        <div className="group relative aspect-[9/16] rounded-2xl overflow-hidden bg-black cursor-pointer shadow-md hover:shadow-xl transition-all duration-300">
-                          <video
-                            src={reel.videoUrl}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            muted
-                            preload="metadata"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/20" />
-
-                          {/* Bottom Caption & Stats */}
-                          <div className="absolute bottom-3 left-3 right-3 text-white space-y-1">
-                            {cleanCaption && (
-                              <p className="text-xs line-clamp-2 drop-shadow font-medium">
-                                {cleanCaption}
-                              </p>
-                            )}
-                            <div className="flex items-center justify-between text-[11px] text-white/90 pt-1 font-semibold">
-                              <span className="flex items-center gap-1">
-                                <Heart className="w-3.5 h-3.5 fill-white" />
-                                {reel.likeCount ?? 0}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <MessageCircle className="w-3.5 h-3.5" />
-                                {reel.commentCount ?? 0}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Center Play Icon on Hover */}
-                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
-                            <div className="w-12 h-12 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center text-white shadow-xl">
-                              <Play className="w-6 h-6 fill-white ml-0.5" />
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* TAB 3: PHOTOS */}
-          {activeTab === "photos" && (
-            <div className="aurora-glass-card rounded-2xl p-5 space-y-6">
-              <h2 className="font-bold text-xl flex items-center gap-2">
-                <Images className="w-5 h-5 text-primary" />
-                <span>Photos & Albums</span>
-              </h2>
-
-              {photoUrls.length > 0 ? (
-                <div>
-                  <h3 className="font-semibold text-sm text-muted-foreground mb-3">All Photos</h3>
-                  <div className="grid grid-cols-3 gap-2.5">
-                    {photoUrls.map((url, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setPhotoOpen(i)}
-                        className="aspect-square rounded-xl overflow-hidden bg-muted group cursor-pointer"
-                      >
-                        <img
-                          src={url}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                          alt="Photo"
-                        />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-muted-foreground text-sm">No photos uploaded yet.</p>
-              )}
-
-              {albums && albums.length > 0 && (
-                <div className="pt-4 border-t border-border">
-                  <h3 className="font-semibold text-sm text-muted-foreground mb-3">Albums</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {albums.map((a) => (
-                      <Link key={a.id} href={`/albums/${a.id}`}>
-                        <div className="cursor-pointer group">
-                          {a.coverUrl ? (
-                            <img
-                              src={a.coverUrl}
-                              className="w-full aspect-square rounded-xl object-cover bg-muted group-hover:opacity-90 transition-opacity"
-                              alt={a.name}
-                            />
-                          ) : (
-                            <div className="w-full aspect-square rounded-xl bg-muted flex items-center justify-center">
-                              <Images className="w-8 h-8 text-muted-foreground" />
-                            </div>
-                          )}
-                          <p className="text-sm font-medium mt-1 truncate group-hover:underline">
-                            {a.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {a.photoCount} photo{a.photoCount === 1 ? "" : "s"}
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
           )}
         </div>
       </div>

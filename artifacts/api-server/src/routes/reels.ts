@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import {
   db,
   profilesTable,
@@ -6,7 +6,7 @@ import {
   reelLikesTable,
   reelCommentsTable,
 } from "@workspace/db";
-import { and, eq, lt, asc, desc, inArray, isNull, isNotNull, sql } from "drizzle-orm";
+import { and, eq, ne, lt, asc, desc, inArray, isNull, isNotNull, sql } from "drizzle-orm";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 import { requireAuth } from "../lib/auth";
@@ -14,6 +14,7 @@ import { filterVisibleReels, canViewReel } from "../lib/authz";
 import { toProfile, buildReels, buildReelById } from "../lib/serialize";
 import { shareMusicToLibrary } from "./stories";
 import { createNotification } from "../lib/notify";
+import { awardPoints } from "../lib/earnings";
 import {
   ListReelsQueryParams,
   ListReelsResponse,
@@ -46,16 +47,9 @@ router.get("/reels", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   const { cursor, limit } = query.data;
+  const authorRequested = "authorId" in req.query;
   let authorId = typeof req.query.authorId === "string" ? req.query.authorId.trim() : undefined;
-  if (authorId && !UUID_RE.test(authorId)) {
-    const [u] = await db
-      .select({ id: profilesTable.id })
-      .from(profilesTable)
-      .where(sql`lower(${profilesTable.username}) = ${authorId.toLowerCase()}`);
-    if (u) {
-      authorId = u.id;
-    }
-  }
+
   const pageLimit = limit ?? 10;
 
   // Auto-purge reels in trash older than 30 days in the background
@@ -69,8 +63,24 @@ router.get("/reels", requireAuth, async (req, res): Promise<void> => {
     )
     .catch(() => {});
 
-  if (authorId) {
-    // Specific author's reels (e.g. Profile view)
+  if (authorRequested) {
+    // Specific author's reels (e.g. Profile view) — NEVER fall back to general feed
+    if (!authorId || authorId === "undefined" || authorId === "null") {
+      res.json(ListReelsResponse.parse([]));
+      return;
+    }
+    if (!UUID_RE.test(authorId)) {
+      const [u] = await db
+        .select({ id: profilesTable.id })
+        .from(profilesTable)
+        .where(sql`lower(${profilesTable.username}) = ${authorId.toLowerCase()}`);
+      if (!u) {
+        res.json(ListReelsResponse.parse([]));
+        return;
+      }
+      authorId = u.id;
+    }
+
     const rows = await db
       .select()
       .from(reelsTable)
@@ -142,6 +152,14 @@ router.post("/reels", requireAuth, async (req, res): Promise<void> => {
     parsed.data.musicTitle,
     parsed.data.musicArtist,
   );
+  // Award 20 points for creating a reel (configurable via pointsPerReel)
+  await awardPoints({
+    userId: req.userId!,
+    action: "reel",
+    entityType: "reel",
+    entityId: reel.id,
+    ip: req.ip,
+  });
   const built = await buildReelById(reel.id, req.userId);
   res.status(201).json(CreateReelResponse.parse(built));
 });
@@ -245,14 +263,25 @@ const likeReelHandler = async (
   }
   await db
     .insert(reelLikesTable)
-    .values({ reelId: params.data.id, userId: req.userId! })
-    .onConflictDoNothing();
+    .values({ reelId: params.data.id, userId: req.userId!, type: "like" })
+    .onConflictDoUpdate({
+      target: [reelLikesTable.reelId, reelLikesTable.userId],
+      set: { type: "like" },
+    });
   await createNotification({
     userId: reel.authorId,
     actorId: req.userId!,
     type: "reaction",
     entityType: "reel",
     entityId: reel.id,
+  });
+  await awardPoints({
+    userId: req.userId!,
+    action: "like",
+    entityType: "reel",
+    entityId: reel.id,
+    contentOwnerId: reel.authorId,
+    ip: req.ip,
   });
   const built = await buildReelById(params.data.id, req.userId);
   res.json(LikeReelResponse.parse(built));
@@ -322,6 +351,14 @@ router.put(
       type: "reaction",
       entityType: "reel",
       entityId: reel.id,
+    });
+    await awardPoints({
+      userId: req.userId!,
+      action: "like",
+      entityType: "reel",
+      entityId: reel.id,
+      contentOwnerId: reel.authorId,
+      ip: req.ip,
     });
     const built = await buildReelById(params.data.id, req.userId);
     res.json(SetReelReactionResponse.parse(built));
@@ -429,6 +466,30 @@ router.post(
       entityType: "reel",
       entityId: reel.id,
     });
+
+    // Duplicate text anti-farm guard, matching post comment logic
+    const [dupe] = await db
+      .select({ id: reelCommentsTable.id })
+      .from(reelCommentsTable)
+      .where(
+        and(
+          eq(reelCommentsTable.authorId, req.userId!),
+          eq(reelCommentsTable.content, parsed.data.content),
+          ne(reelCommentsTable.id, comment.id),
+        ),
+      )
+      .limit(1);
+    if (!dupe) {
+      await awardPoints({
+        userId: req.userId!,
+        action: "comment",
+        entityType: "reel_comment",
+        entityId: comment.id,
+        contentOwnerId: reel.authorId,
+        ip: req.ip,
+      });
+    }
+
     const [author] = await db
       .select()
       .from(profilesTable)
@@ -442,6 +503,43 @@ router.post(
         createdAt: comment.createdAt,
       }),
     );
+  },
+);
+
+router.post(
+  "/reels/:id/share",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const id = parseInt(String(req.params.id), 10);
+    if (isNaN(id)) {
+      res.status(400).json({ error: "Invalid reel id" });
+      return;
+    }
+    const [reel] = await db
+      .select()
+      .from(reelsTable)
+      .where(and(eq(reelsTable.id, id), isNull(reelsTable.deletedAt)));
+    if (!reel || !(await canViewReel(reel.authorId, req.userId!))) {
+      res.status(404).json({ error: "Reel not found" });
+      return;
+    }
+    await createNotification({
+      userId: reel.authorId,
+      actorId: req.userId!,
+      type: "share",
+      entityType: "reel",
+      entityId: reel.id,
+    });
+    await awardPoints({
+      userId: req.userId!,
+      action: "share",
+      entityType: "reel",
+      entityId: reel.id,
+      contentOwnerId: reel.authorId,
+      ip: req.ip,
+    });
+    const built = await buildReelById(reel.id, req.userId);
+    res.json(built);
   },
 );
 

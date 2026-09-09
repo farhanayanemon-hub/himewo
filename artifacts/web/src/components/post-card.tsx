@@ -42,6 +42,7 @@ import {
   PostUpdatePrivacy,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
+import { syncUserFollowState, syncPageFollowState } from "@/lib/follow-sync";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -78,7 +79,13 @@ const privacyMeta: Record<string, { icon: typeof Globe; label: string }> = {
   private: { icon: Lock, label: "Only me" },
 };
 
-export function PostCard({ post }: { post: Post }) {
+export function PostCard({
+  post,
+  hideFollowButton = false,
+}: {
+  post: Post;
+  hideFollowButton?: boolean;
+}) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { actingPage } = useActingPage();
@@ -131,31 +138,57 @@ export function PostCard({ post }: { post: Post }) {
     if (!user || isOwner) return;
 
     if (isPage && post.authorPage) {
+      const pageId = post.authorPage.id;
       if (following) {
         setFollowing(false);
+        syncPageFollowState(queryClient, pageId, false);
         unfollowPage.mutate(
-          { id: post.authorPage.id },
-          { onError: () => setFollowing(true) }
+          { id: pageId },
+          {
+            onError: () => {
+              setFollowing(true);
+              syncPageFollowState(queryClient, pageId, true);
+            },
+          },
         );
       } else {
         setFollowing(true);
+        syncPageFollowState(queryClient, pageId, true);
         followPage.mutate(
-          { id: post.authorPage.id },
-          { onError: () => setFollowing(false) }
+          { id: pageId },
+          {
+            onError: () => {
+              setFollowing(false);
+              syncPageFollowState(queryClient, pageId, false);
+            },
+          },
         );
       }
     } else {
+      const authorId = post.author.id;
       if (following) {
         setFollowing(false);
+        syncUserFollowState(queryClient, authorId, false);
         unfollowUser.mutate(
-          { userId: post.author.id },
-          { onError: () => setFollowing(true) }
+          { userId: authorId },
+          {
+            onError: () => {
+              setFollowing(true);
+              syncUserFollowState(queryClient, authorId, true);
+            },
+          },
         );
       } else {
         setFollowing(true);
+        syncUserFollowState(queryClient, authorId, true);
         followUser.mutate(
-          { userId: post.author.id },
-          { onError: () => setFollowing(false) }
+          { userId: authorId },
+          {
+            onError: () => {
+              setFollowing(false);
+              syncUserFollowState(queryClient, authorId, false);
+            },
+          },
         );
       }
     }
@@ -302,7 +335,7 @@ export function PostCard({ post }: { post: Post }) {
                 {post.authorPage ? post.authorPage.name : post.author.displayName}
               </Link>
               {!post.authorPage && post.author.isVerified && <VerifiedBadge className="w-4 h-4 ml-0.5 align-text-bottom" />}
-              {!isOwner && user && (
+              {!isOwner && user && !hideFollowButton && (
                 <button
                   type="button"
                   onClick={handleToggleFollow}

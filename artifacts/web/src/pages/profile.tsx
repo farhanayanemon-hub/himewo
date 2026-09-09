@@ -5,6 +5,7 @@ import { ProfileView } from "@/components/profile-view";
 import { Loader2, Check, UserPlus, UserCheck } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useQueryClient } from "@tanstack/react-query";
+import { syncUserFollowState } from "@/lib/follow-sync";
 
 export default function ProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -15,18 +16,25 @@ export default function ProfilePage() {
   const unfollowUser = useUnfollowUser();
 
   const { data: profile, isLoading: profileLoading } = useGetUser(id!, { query: { enabled: !!id, queryKey: getGetUserQueryKey(id!) } });
-  const { data: posts, isLoading: postsLoading } = useGetUserPosts(id!, {}, { query: { enabled: !!id, queryKey: getGetUserPostsQueryKey(id!) } });
+  const effectiveUserId = profile?.id || id!;
+  const { data: posts, isLoading: postsLoading } = useGetUserPosts(
+    effectiveUserId,
+    {},
+    { query: { enabled: !!effectiveUserId, queryKey: getGetUserPostsQueryKey(effectiveUserId) } },
+  );
 
-  const isOwnProfile = user?.id === id;
+  const isOwnProfile = Boolean(user && profile && (user.id === profile.id || user.id === id));
 
   const invalidateProfile = () => {
     if (id) queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(id) });
+    if (profile?.id) queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(profile.id) });
   };
 
   const handleAddFriend = () => {
-    if (!id) return;
+    if (!profile?.id && !id) return;
+    const addresseeId = profile?.id || id!;
     sendRequest.mutate(
-      { data: { addresseeId: id } },
+      { data: { addresseeId } },
       {
         onSuccess: invalidateProfile,
       },
@@ -34,11 +42,26 @@ export default function ProfilePage() {
   };
 
   const handleToggleFollow = () => {
-    if (!id) return;
+    if (!profile?.id && !id) return;
+    const targetId = profile?.id || id!;
     if (profile?.viewerFollows) {
-      unfollowUser.mutate({ userId: id }, { onSuccess: invalidateProfile });
+      syncUserFollowState(queryClient, targetId, false);
+      unfollowUser.mutate(
+        { userId: targetId },
+        {
+          onError: () => syncUserFollowState(queryClient, targetId, true),
+          onSettled: invalidateProfile,
+        },
+      );
     } else {
-      followUser.mutate({ userId: id }, { onSuccess: invalidateProfile });
+      syncUserFollowState(queryClient, targetId, true);
+      followUser.mutate(
+        { userId: targetId },
+        {
+          onError: () => syncUserFollowState(queryClient, targetId, false),
+          onSettled: invalidateProfile,
+        },
+      );
     }
   };
 

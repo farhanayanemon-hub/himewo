@@ -154,7 +154,7 @@ export async function awardPoints(params: {
             and(
               eq(pointTransactionsTable.userId, params.userId),
               gte(pointTransactionsTable.createdAt, startOfUtcDay()),
-              sql`${pointTransactionsTable.action} in ('post','like','comment','share')`,
+              sql`${pointTransactionsTable.action} in ('post','like','comment','share','reel')`,
             ),
           );
         const remaining = config.dailyPointCap - (row?.total ?? 0);

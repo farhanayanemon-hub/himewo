@@ -92,9 +92,11 @@ const METHODS: MethodConfig[] = [
 
 const ACTION_LABELS: Record<string, string> = {
   post: "Created a post",
-  like: "Reacted to a post",
-  comment: "Commented on a post",
-  share: "Shared a post",
+  like: "Reacted to a post or reel",
+  comment: "Commented on a post or reel",
+  share: "Shared a post or reel",
+  reel: "Created a Reel",
+  task_claim: "Daily Task Claim",
   withdraw: "Withdrawal",
   withdraw_refund: "Withdrawal refund",
   admin_adjust: "Admin adjustment",
@@ -263,16 +265,17 @@ function RulesSection({ summary }: { summary: EarningsSummary }) {
   const c = useColors();
   const rate = summary.pointsPerDollar;
   const rules = [
+    { label: "Create a Reel", points: (summary.rewards as any)?.reel ?? 20 },
     { label: "Create a post", points: summary.rewards.post },
-    { label: "React to a post", points: summary.rewards.like },
-    { label: "Comment on a post", points: summary.rewards.comment },
-    { label: "Share a post", points: summary.rewards.share },
+    { label: "React to a post or reel", points: summary.rewards.like },
+    { label: "Comment on a post or reel", points: summary.rewards.comment },
+    { label: "Share a post or reel", points: summary.rewards.share },
   ];
   return (
     <Card>
       <SectionTitle>How it works</SectionTitle>
       <Text style={{ color: c.mutedForeground, fontFamily: "Inter_400Regular", fontSize: 13, lineHeight: 19, marginBottom: 12 }}>
-        Earn points for engaging with posts. Every {rate.toLocaleString()} points = $1. You can
+        Earn points for creating content and engaging with posts and reels. Every {rate.toLocaleString()} points = $1. You can
         request a payout once you reach {usd(summary.minWithdrawDollars)}.
       </Text>
       <View style={{ gap: 8 }}>

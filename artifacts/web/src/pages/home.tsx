@@ -6,6 +6,9 @@ import { PostComposer } from "@/components/post-composer";
 import { SponsoredCard } from "@/components/sponsored-card";
 import { ReelsShelf } from "@/components/reels-shelf";
 import { ShopShowcaseShelf } from "@/components/shop-showcase-shelf";
+import { CreateMediaLauncherModal, type LauncherResult } from "@/components/create-media-launcher-modal";
+import { StoryReelEditor } from "@/components/story-reel-editor";
+import { TextStoryCreator } from "@/components/text-story-creator";
 import {
   useGetFeed,
   useServeAds,
@@ -20,6 +23,15 @@ import {
   getGetFeedQueryKey,
   getListFriendRequestsQueryKey,
   getGetFriendSuggestionsQueryKey,
+  getListStoriesQueryKey,
+  getListReelsQueryKey,
+  useCreateStory,
+  useCreateReel,
+  StoryInputMediaType,
+  StoryInputAudience,
+  StoryInputStoryType,
+  type StoryInput,
+  type ReelInput,
   type Post,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -34,12 +46,91 @@ function StoryRow() {
   const { data: stories } = useListStories();
   const { user } = useAuth();
   const { actingPage } = useActingPage();
+  const qc = useQueryClient();
+  const createStory = useCreateStory();
+  const createReel = useCreateReel();
+
+  // ── Launcher & editor state ───────────────────────────────────────────────
+  const [launcherMode, setLauncherMode] = useState<"story" | "reel" | null>(null);
+  const [editorFile, setEditorFile] = useState<{ file: File; filterCss: string; mode: "story" | "reel" } | null>(null);
+  const [showTextCreator, setShowTextCreator] = useState(false);
+
+  const handleFileReady = (result: LauncherResult, mode: "story" | "reel") => {
+    setEditorFile({ file: result.file, filterCss: result.filterCss, mode });
+    setLauncherMode(null);
+  };
+
+  const handleEditorSubmit = async (data: {
+    mediaUrl: string;
+    mediaType: "video" | "image";
+    caption: string;
+    musicUrl?: string;
+    musicTitle?: string;
+    musicArtist?: string;
+    filterCss?: string;
+    trimStart?: number;
+    trimEnd?: number;
+    speed?: number;
+  }) => {
+    if (!editorFile) return;
+    if (editorFile.mode === "story") {
+      await createStory.mutateAsync({ data: {
+        storyType: StoryInputStoryType.media,
+        mediaType: data.mediaType === "video" ? StoryInputMediaType.video : StoryInputMediaType.image,
+        mediaUrl: data.mediaUrl,
+        caption: data.caption,
+        musicUrl: data.musicUrl,
+        musicTitle: data.musicTitle,
+        musicArtist: data.musicArtist,
+        audience: StoryInputAudience.public,
+      } as StoryInput });
+      qc.invalidateQueries({ queryKey: getListStoriesQueryKey() });
+    } else {
+      await createReel.mutateAsync({ data: {
+        videoUrl: data.mediaUrl,
+        caption: data.caption,
+        musicUrl: data.musicUrl,
+        musicTitle: data.musicTitle,
+        musicArtist: data.musicArtist,
+      } as ReelInput });
+      qc.invalidateQueries({ queryKey: getListReelsQueryKey() });
+    }
+    setEditorFile(null);
+  };
 
   return (
+    <>
+    {/* Launcher modals */}
+    {launcherMode && (
+      <CreateMediaLauncherModal
+        open={!!launcherMode}
+        onOpenChange={(v) => { if (!v) setLauncherMode(null); }}
+        mode={launcherMode}
+        onFileReady={(r) => handleFileReady(r, launcherMode!)}
+        onTextStory={() => { setLauncherMode(null); setShowTextCreator(true); }}
+      />
+    )}
+    {editorFile && (
+      <StoryReelEditor
+        file={editorFile.file}
+        type={editorFile.mode}
+        initialFilter={editorFile.filterCss}
+        onClose={() => setEditorFile(null)}
+        onSubmit={handleEditorSubmit}
+      />
+    )}
+    {showTextCreator && (
+      <TextStoryCreator
+        onClose={() => setShowTextCreator(false)}
+        onPublished={() => qc.invalidateQueries({ queryKey: getListStoriesQueryKey() })}
+      />
+    )}
+
     <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-      {/* Create Story */}
-      <Link
-        href="/stories"
+      {/* Create Story — opens 3-option popup */}
+      <button
+        id="create-story-btn"
+        onClick={() => setLauncherMode("story")}
         className="w-28 h-48 shrink-0 rounded-2xl relative overflow-hidden group cursor-pointer border border-card-border card-depth lift-on-hover bg-card"
       >
         <div className="h-2/3 overflow-hidden">
@@ -55,11 +146,12 @@ function StoryRow() {
         <div className="absolute bottom-2 left-0 right-0 text-center text-foreground text-xs font-semibold leading-tight px-1">
           Create Story
         </div>
-      </Link>
+      </button>
 
-      {/* Create Reel */}
-      <Link
-        href="/reels"
+      {/* Create Reel — opens 3-option popup */}
+      <button
+        id="create-reel-btn"
+        onClick={() => setLauncherMode("reel")}
         className="w-28 h-48 shrink-0 rounded-2xl relative overflow-hidden group cursor-pointer border border-card-border card-depth lift-on-hover bg-card"
       >
         <div className="h-2/3 overflow-hidden bg-gradient-to-br from-purple-500 via-fuchsia-500 to-pink-500 flex items-center justify-center">
@@ -71,7 +163,7 @@ function StoryRow() {
         <div className="absolute bottom-2 left-0 right-0 text-center text-foreground text-xs font-semibold leading-tight px-1">
           Create Reel
         </div>
-      </Link>
+      </button>
 
       {/* Friends' stories */}
       {stories?.map((group) => (
@@ -97,6 +189,7 @@ function StoryRow() {
         </Link>
       ))}
     </div>
+    </>
   );
 }
 

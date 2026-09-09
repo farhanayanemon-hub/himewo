@@ -10010,7 +10010,8 @@ export const GetEarningsSummaryResponse = zod.object({
   "post": zod.number(),
   "like": zod.number(),
   "comment": zod.number(),
-  "share": zod.number()
+  "share": zod.number(),
+  "reel": zod.number().optional()
 })
 })
 
@@ -10144,6 +10145,7 @@ export const GetPointConfigResponse = zod.object({
   "pointsPerLike": zod.number(),
   "pointsPerComment": zod.number(),
   "pointsPerShare": zod.number(),
+  "pointsPerReel": zod.number().default(20),
   "pointsPerDollar": zod.number(),
   "minWithdrawDollars": zod.number(),
   "dailyPointCap": zod.number(),
@@ -10162,7 +10164,7 @@ export const updatePointConfigBodyPointsPerCommentMin = 0;
 
 export const updatePointConfigBodyPointsPerShareMin = 0;
 
-
+export const updatePointConfigBodyPointsPerReelMin = 0;
 
 export const updatePointConfigBodyDailyPointCapMin = 0;
 
@@ -10174,6 +10176,7 @@ export const UpdatePointConfigBody = zod.object({
   "pointsPerLike": zod.number().min(updatePointConfigBodyPointsPerLikeMin).optional(),
   "pointsPerComment": zod.number().min(updatePointConfigBodyPointsPerCommentMin).optional(),
   "pointsPerShare": zod.number().min(updatePointConfigBodyPointsPerShareMin).optional(),
+  "pointsPerReel": zod.number().min(updatePointConfigBodyPointsPerReelMin).optional(),
   "pointsPerDollar": zod.number().min(1).optional(),
   "minWithdrawDollars": zod.number().min(1).optional(),
   "dailyPointCap": zod.number().min(updatePointConfigBodyDailyPointCapMin).optional()
@@ -10185,6 +10188,7 @@ export const UpdatePointConfigResponse = zod.object({
   "pointsPerLike": zod.number(),
   "pointsPerComment": zod.number(),
   "pointsPerShare": zod.number(),
+  "pointsPerReel": zod.number().default(20),
   "pointsPerDollar": zod.number(),
   "minWithdrawDollars": zod.number(),
   "dailyPointCap": zod.number(),
