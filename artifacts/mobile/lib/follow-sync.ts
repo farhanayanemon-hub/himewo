@@ -1,9 +1,11 @@
+import { DeviceEventEmitter } from "react-native";
 import type { QueryClient } from "@tanstack/react-query";
 import type { Post, Reel, Profile } from "@workspace/api-client-react";
 
 /**
  * Optimistically updates all cached queries containing content by `userId` to
- * reflect the new follow state (`isFollowing`) on Mobile.
+ * reflect the new follow state (`isFollowing`) on Mobile, and emits an event
+ * so all PostCards, Reels and Profiles update instantaneously.
  */
 export function syncUserFollowState(
   queryClient: QueryClient,
@@ -12,36 +14,24 @@ export function syncUserFollowState(
 ) {
   if (!userId) return;
 
-  // 1. Update Feed queries
-  queryClient.setQueriesData<Post[]>(
-    { queryKey: ["/api/feed"] },
-    (old) => {
-      if (!old || !Array.isArray(old)) return old;
-      return old.map((post) => {
-        if (post.author?.id === userId) {
-          return {
-            ...post,
-            author: {
-              ...post.author,
-              viewerFollows: isFollowing,
-            },
-          };
-        }
-        return post;
-      });
-    },
-  );
+  // 0. Emit DeviceEventEmitter event for instant UI response across all mounted cards
+  DeviceEventEmitter.emit("himewo:follow-sync", {
+    targetId: userId,
+    isFollowing,
+    isPage: false,
+  });
 
-  // 2. Update user posts queries
+  // 1. Update ANY query in cache whose data is an array containing posts by this user
   queryClient.setQueriesData<Post[]>(
     {
       predicate: (query) => {
-        const key = query.queryKey;
+        const data = query.state.data;
         return (
-          Array.isArray(key) &&
-          key.some(
-            (part) =>
-              typeof part === "string" && part.includes(`/api/users/${userId}/posts`),
+          Array.isArray(data) &&
+          data.some(
+            (item) =>
+              item?.author?.id === userId ||
+              (item?.author?.username && item.author.username === userId),
           )
         );
       },
@@ -49,7 +39,10 @@ export function syncUserFollowState(
     (old) => {
       if (!old || !Array.isArray(old)) return old;
       return old.map((post) => {
-        if (post.author?.id === userId) {
+        if (
+          post?.author?.id === userId ||
+          (post?.author?.username && post.author.username === userId)
+        ) {
           return {
             ...post,
             author: {
@@ -63,19 +56,41 @@ export function syncUserFollowState(
     },
   );
 
-  // 3. Update profile detail queries
+  // 2. Also explicitly update feed queries
+  queryClient.setQueriesData<Post[]>(
+    { queryKey: ["/api/feed"] },
+    (old) => {
+      if (!old || !Array.isArray(old)) return old;
+      return old.map((post) => {
+        if (post?.author?.id === userId) {
+          return {
+            ...post,
+            author: {
+              ...post.author,
+              viewerFollows: isFollowing,
+            },
+          };
+        }
+        return post;
+      });
+    },
+  );
+
+  // 3. Update profile detail queries (e.g. ['/api/users', userId])
   queryClient.setQueriesData<Profile>(
     {
       predicate: (query) => {
         const key = query.queryKey;
+        const data = query.state.data as Profile | undefined;
         return (
-          Array.isArray(key) &&
-          key.some(
-            (part) =>
-              part === `/api/users/${userId}` ||
-              part === userId ||
-              part === `/api/users/by-username/${userId}`,
-          )
+          (data && typeof data === "object" && (data.id === userId || data.username === userId)) ||
+          (Array.isArray(key) &&
+            key.some(
+              (part) =>
+                part === `/api/users/${userId}` ||
+                part === userId ||
+                part === `/api/users/by-username/${userId}`,
+            ))
         );
       },
     },
@@ -83,8 +98,8 @@ export function syncUserFollowState(
       if (!old || typeof old !== "object") return old;
       const currentFollowers = (old as any).followerCount ?? 0;
       const newFollowers = isFollowing
-        ? currentFollowers + (old.viewerFollows ? 0 : 1)
-        : Math.max(0, currentFollowers - (old.viewerFollows ? 1 : 0));
+        ? currentFollowers + ((old as any).viewerFollows ? 0 : 1)
+        : Math.max(0, currentFollowers - ((old as any).viewerFollows ? 1 : 0));
       return {
         ...old,
         viewerFollows: isFollowing,
@@ -93,38 +108,28 @@ export function syncUserFollowState(
     },
   );
 
-  // 4. Update Reels feed queries
-  queryClient.setQueriesData<Reel[]>(
-    { queryKey: ["/api/reels"] },
-    (old) => {
-      if (!old || !Array.isArray(old)) return old;
-      return old.map((reel) => {
-        if (reel.author?.id === userId) {
-          return {
-            ...reel,
-            author: {
-              ...reel.author,
-              viewerFollows: isFollowing,
-            },
-          };
-        }
-        return reel;
-      });
-    },
-  );
-
-  // 5. Update Profile Reels queries
+  // 4. Update ANY query in cache whose data is an array of Reels containing reels by this user
   queryClient.setQueriesData<Reel[]>(
     {
       predicate: (query) => {
-        const key = query.queryKey;
-        return Array.isArray(key) && (key[0] === "user-reels" || key[0] === "user-profile-reels");
+        const data = query.state.data;
+        return (
+          Array.isArray(data) &&
+          data.some(
+            (item) =>
+              item?.author?.id === userId ||
+              (item?.author?.username && item.author.username === userId),
+          )
+        );
       },
     },
     (old) => {
       if (!old || !Array.isArray(old)) return old;
       return old.map((reel) => {
-        if (reel.author?.id === userId) {
+        if (
+          reel?.author?.id === userId ||
+          (reel?.author?.username && reel.author.username === userId)
+        ) {
           return {
             ...reel,
             author: {
@@ -138,16 +143,11 @@ export function syncUserFollowState(
     },
   );
 
-  // Invalidate in background to guarantee final consistency
+  // Background invalidation
   setTimeout(() => {
     queryClient.invalidateQueries({ queryKey: ["/api/feed"] });
     queryClient.invalidateQueries({ queryKey: ["/api/reels"] });
-    queryClient.invalidateQueries({
-      predicate: (q) => {
-        const key = q.queryKey;
-        return Array.isArray(key) && (key[0] === "user-reels" || key[0] === "user-profile-reels");
-      },
-    });
+    queryClient.invalidateQueries({ queryKey: ["user-reels"] });
     queryClient.invalidateQueries({
       predicate: (q) => {
         const key = q.queryKey;
@@ -155,17 +155,16 @@ export function syncUserFollowState(
           Array.isArray(key) &&
           key.some(
             (part) =>
-              typeof part === "string" && part.includes(`/api/users/${userId}`),
+              typeof part === "string" && (part.includes(`/api/users/${userId}`) || part === userId),
           )
         );
       },
     });
-  }, 100);
+  }, 200);
 }
 
 /**
- * Optimistically updates all cached queries containing content by `pageId` to
- * reflect the new follow state (`isFollowing`) on Mobile.
+ * Optimistically updates all cached queries containing content by `pageId` on Mobile.
  */
 export function syncPageFollowState(
   queryClient: QueryClient,
@@ -174,12 +173,23 @@ export function syncPageFollowState(
 ) {
   if (!pageId) return;
 
+  DeviceEventEmitter.emit("himewo:follow-sync", {
+    targetId: pageId,
+    isFollowing,
+    isPage: true,
+  });
+
   queryClient.setQueriesData<Post[]>(
-    { queryKey: ["/api/feed"] },
+    {
+      predicate: (query) => {
+        const data = query.state.data;
+        return Array.isArray(data) && data.some((item) => item?.authorPage?.id === pageId);
+      },
+    },
     (old) => {
       if (!old || !Array.isArray(old)) return old;
       return old.map((post) => {
-        if (post.authorPage?.id === pageId) {
+        if (post?.authorPage?.id === pageId) {
           return {
             ...post,
             authorPage: {
@@ -196,5 +206,5 @@ export function syncPageFollowState(
   setTimeout(() => {
     queryClient.invalidateQueries({ queryKey: ["/api/feed"] });
     queryClient.invalidateQueries({ queryKey: [`/api/pages/${pageId}`] });
-  }, 100);
+  }, 200);
 }

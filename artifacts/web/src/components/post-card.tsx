@@ -127,6 +127,21 @@ export function PostCard({
     );
   }, [post.authorPage, post.author.viewerFollows, isPage]);
 
+  // Instantly reflect follow/unfollow events triggered by any other post or header on the page
+  useEffect(() => {
+    const handleFollowSync = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (!detail) return;
+      if (!isPage && (detail.targetId === post.author.id || (post.author.username && detail.targetId === post.author.username))) {
+        setFollowing(detail.isFollowing);
+      } else if (isPage && post.authorPage && detail.targetId === post.authorPage.id) {
+        setFollowing(detail.isFollowing);
+      }
+    };
+    window.addEventListener("himewo:follow-sync", handleFollowSync);
+    return () => window.removeEventListener("himewo:follow-sync", handleFollowSync);
+  }, [post.author.id, post.author.username, post.authorPage, isPage]);
+
   const followUser = useFollowUser();
   const unfollowUser = useUnfollowUser();
   const followPage = useFollowPage();

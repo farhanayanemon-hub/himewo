@@ -1605,6 +1605,18 @@ function ReelCard({
     setFollowing(Boolean(reel.author.viewerFollows));
   }, [reel.author.viewerFollows]);
 
+  useEffect(() => {
+    const handleFollowSync = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (!detail) return;
+      if (detail.targetId === reel.author.id || (reel.author.username && detail.targetId === reel.author.username)) {
+        setFollowing(detail.isFollowing);
+      }
+    };
+    window.addEventListener("himewo:follow-sync", handleFollowSync);
+    return () => window.removeEventListener("himewo:follow-sync", handleFollowSync);
+  }, [reel.author.id, reel.author.username]);
+
   const handleToggleFollow = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();

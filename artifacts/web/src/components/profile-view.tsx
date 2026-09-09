@@ -112,6 +112,22 @@ function ProfileReelTimelineCard({
   const [saved, setSaved] = useState(Boolean(reel.viewerHasSaved ?? (reel as any).viewerSaved));
 
   useEffect(() => {
+    setFollowing(Boolean(reel.author.viewerFollows));
+  }, [reel.author.viewerFollows]);
+
+  useEffect(() => {
+    const handleFollowSync = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (!detail) return;
+      if (detail.targetId === reel.author.id || (reel.author.username && detail.targetId === reel.author.username)) {
+        setFollowing(detail.isFollowing);
+      }
+    };
+    window.addEventListener("himewo:follow-sync", handleFollowSync);
+    return () => window.removeEventListener("himewo:follow-sync", handleFollowSync);
+  }, [reel.author.id, reel.author.username]);
+
+  useEffect(() => {
     setLiked(Boolean(reel.viewerHasLiked ?? (reel as any).viewerLiked));
     setLikeCount(reel.likeCount ?? 0);
     setSaved(Boolean(reel.viewerHasSaved ?? (reel as any).viewerSaved));
@@ -893,9 +909,9 @@ export function ProfileView({
               ) : (
                 timelineItems.map((item) =>
                   item.type === "post" ? (
-                    <PostCard key={item.id} post={item.post} hideFollowButton={true} />
+                    <PostCard key={item.id} post={item.post} />
                   ) : (
-                    <ProfileReelTimelineCard key={item.id} reel={item.reel} hideFollowButton={true} />
+                    <ProfileReelTimelineCard key={item.id} reel={item.reel} />
                   ),
                 )
               )}

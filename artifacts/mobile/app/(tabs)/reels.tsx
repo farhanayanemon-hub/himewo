@@ -14,6 +14,7 @@ import {
   TextInput,
   View,
   StyleSheet,
+  DeviceEventEmitter,
   type ViewToken,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -81,6 +82,16 @@ function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
   useEffect(() => {
     setFollowing(Boolean(reel.author.viewerFollows));
   }, [reel.author.viewerFollows]);
+
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener("himewo:follow-sync", (detail) => {
+      if (!detail) return;
+      if (detail.targetId === reel.author.id || (reel.author.username && detail.targetId === reel.author.username)) {
+        setFollowing(detail.isFollowing);
+      }
+    });
+    return () => sub.remove();
+  }, [reel.author.id, reel.author.username]);
 
   const handleToggleFollow = () => {
     if (!user || isOwn) return;

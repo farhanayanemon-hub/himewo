@@ -10,6 +10,7 @@ import {
   Text,
   View,
   StyleSheet,
+  DeviceEventEmitter,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
@@ -459,6 +460,16 @@ export function ProfileBody({
   const invalidateProfile = useCallback(() => {
     qc.invalidateQueries({ queryKey: getGetUserQueryKey(userId) });
   }, [qc, userId]);
+
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener("himewo:follow-sync", (detail) => {
+      if (!detail) return;
+      if (detail.targetId === userId || detail.targetId === targetId || detail.targetId === profile?.id) {
+        invalidateProfile();
+      }
+    });
+    return () => sub.remove();
+  }, [userId, targetId, profile?.id, invalidateProfile]);
 
   const onRefresh = useCallback(() => {
     qc.invalidateQueries({ queryKey: getGetUserQueryKey(userId) });
@@ -915,7 +926,6 @@ export function ProfileBody({
               <PostCard
                 post={item.post}
                 onComment={() => setActivePost(item.post.id)}
-                hideFollowButton={true}
               />
             ) : (
               <MobileReelTimelineCard

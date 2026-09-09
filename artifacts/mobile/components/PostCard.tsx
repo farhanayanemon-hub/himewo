@@ -7,6 +7,7 @@ import {
   TextInput,
   View,
   StyleSheet,
+  DeviceEventEmitter,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -89,6 +90,18 @@ export function PostCard({ post, onComment, onShare, hideFollowButton = false }:
         : Boolean(post.author.viewerFollows),
     );
   }, [post.authorPage, post.author.viewerFollows, isPage]);
+
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener("himewo:follow-sync", (detail) => {
+      if (!detail) return;
+      if (!isPage && (detail.targetId === post.author.id || detail.targetId === post.author.username)) {
+        setFollowing(detail.isFollowing);
+      } else if (isPage && post.authorPage && detail.targetId === post.authorPage.id) {
+        setFollowing(detail.isFollowing);
+      }
+    });
+    return () => sub.remove();
+  }, [post.author.id, post.author.username, post.authorPage, isPage]);
 
   const followUser = useFollowUser();
   const unfollowUser = useUnfollowUser();
