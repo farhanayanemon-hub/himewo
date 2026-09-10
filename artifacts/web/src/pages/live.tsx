@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { avatarSrc } from "@/lib/avatar";
+import { getUserProfileUrl } from "@/lib/user-link";
 import { useParams, Link, useLocation } from "wouter";
 import { MainLayout } from "@/components/layout/main-layout";
 import {
@@ -538,7 +539,7 @@ export function LiveStreamPage() {
               )}
             </div>
             <div className="bg-card border border-border rounded-xl shadow-sm p-4 flex items-center gap-3">
-              <Link href={`/profile/${stream.host.id}`}>
+              <Link href={getUserProfileUrl(stream.host)}>
                 <img
                   src={avatarSrc(stream.host.avatarUrl)}
                   className="w-11 h-11 rounded-full object-cover bg-muted cursor-pointer"

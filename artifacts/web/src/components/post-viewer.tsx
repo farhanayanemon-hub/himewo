@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, X, Globe, Users, Lock } from "lucide-react";
 import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { avatarSrc } from "@/lib/avatar";
+import { getAuthorProfileUrl } from "@/lib/user-link";
 import { VerifiedBadge } from "@/components/verified-badge";
 import { RenderWithMentions } from "@/components/mention";
 import { PostComments } from "@/components/post-comments";
@@ -136,7 +137,7 @@ export function PostViewer({
   const item = items[index];
   if (!item) return null;
 
-  const authorHref = post.authorPage ? `/pages/${post.authorPage.id}` : `/${post.author.username || post.author.id}`;
+  const authorHref = getAuthorProfileUrl(post.author, post.authorPage);
   const authorName = post.authorPage ? post.authorPage.name : post.author.displayName;
   const authorAvatar = avatarSrc(post.authorPage ? post.authorPage.avatarUrl : post.author.avatarUrl);
   const PrivacyIcon = privacyIcons[post.privacy] ?? Globe;

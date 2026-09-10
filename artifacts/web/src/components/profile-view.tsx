@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { avatarSrc } from "@/lib/avatar";
 import { Link } from "wouter";
+import { getUserProfileUrl } from "@/lib/user-link";
 import { formatDistanceToNow } from "date-fns";
 import {
   useGetUserFriends,
@@ -324,7 +325,7 @@ function ProfileReelTimelineCard({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href={`/${reel.author.username || reel.author.id}`}>
+          <Link href={getUserProfileUrl(reel.author)}>
             <img
               src={avatarSrc(reel.author.avatarUrl)}
               className="w-10 h-10 rounded-full object-cover bg-muted border border-border cursor-pointer"
@@ -333,7 +334,7 @@ function ProfileReelTimelineCard({
           </Link>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <Link href={`/${reel.author.username || reel.author.id}`}>
+              <Link href={getUserProfileUrl(reel.author)}>
                 <span className="font-bold text-sm hover:underline text-foreground cursor-pointer">
                   {reel.author.displayName}
                 </span>

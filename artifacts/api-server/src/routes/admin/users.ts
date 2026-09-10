@@ -9,6 +9,7 @@ import {
   parsePaging,
 } from "../../lib/admin-serialize";
 import { getSupabaseAdmin } from "../../lib/supabase";
+import { resolveUserId } from "../../lib/resolve-user";
 
 const router: IRouter = Router();
 
@@ -66,7 +67,9 @@ router.get(
   "/users/:id",
   requirePermission("users.view"),
   async (req, res): Promise<void> => {
-    const id = String(req.params.id);
+    const rawParam = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const resolvedId = await resolveUserId(rawParam);
+    const id = resolvedId || String(rawParam);
     const [row] = await db
       .select()
       .from(profilesTable)
@@ -103,7 +106,9 @@ router.patch(
   "/users/:id",
   requirePermission("users.manage"),
   async (req, res): Promise<void> => {
-    const id = String(req.params.id);
+    const rawParam = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const resolvedId = await resolveUserId(rawParam);
+    const id = resolvedId || String(rawParam);
     const parsed = UpdateUserBody.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: parsed.error.message });

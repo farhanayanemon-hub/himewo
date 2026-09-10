@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { avatarSrc } from "@/lib/avatar";
+import { getUserProfileUrl } from "@/lib/user-link";
 import { useParams, Link, useLocation } from "wouter";
 import { MainLayout } from "@/components/layout/main-layout";
 import {
@@ -424,7 +425,7 @@ function AttendeeList({ title, people }: { title: string; people: Profile[] }) {
       ) : (
         <div className="space-y-2">
           {people.map((p) => (
-            <Link key={p.id} href={`/profile/${p.id}`}>
+            <Link key={p.id} href={getUserProfileUrl(p)}>
               <div className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-muted transition-colors cursor-pointer">
                 <img
                   src={avatarSrc(p.avatarUrl)}
@@ -521,7 +522,7 @@ export function EventDetailPage() {
               <h1 className="text-2xl font-bold">{event.title}</h1>
               <p className="text-sm text-muted-foreground mt-1">
                 Hosted by{" "}
-                <Link href={`/profile/${event.host.id}`}>
+                <Link href={getUserProfileUrl(event.host)}>
                   <span className="hover:underline cursor-pointer font-medium text-foreground">
                     {event.host.displayName}
                   </span>

@@ -10,6 +10,7 @@ import { and, eq, ne, lt, asc, desc, inArray, isNull, isNotNull, sql } from "dri
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 import { requireAuth } from "../lib/auth";
+import { resolveUserId } from "../lib/resolve-user";
 import { filterVisibleReels, canViewReel } from "../lib/authz";
 import { toProfile, buildReels, buildReelById } from "../lib/serialize";
 import { shareMusicToLibrary } from "./stories";
@@ -69,17 +70,12 @@ router.get("/reels", requireAuth, async (req, res): Promise<void> => {
       res.json(ListReelsResponse.parse([]));
       return;
     }
-    if (!UUID_RE.test(authorId)) {
-      const [u] = await db
-        .select({ id: profilesTable.id })
-        .from(profilesTable)
-        .where(sql`lower(${profilesTable.username}) = ${authorId.toLowerCase()}`);
-      if (!u) {
-        res.json(ListReelsResponse.parse([]));
-        return;
-      }
-      authorId = u.id;
+    const resolvedAuthor = await resolveUserId(authorId);
+    if (!resolvedAuthor) {
+      res.json(ListReelsResponse.parse([]));
+      return;
     }
+    authorId = resolvedAuthor;
 
     const rows = await db
       .select()

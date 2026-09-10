@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { avatarSrc } from "@/lib/avatar";
+import { getUserProfileUrl } from "@/lib/user-link";
 import { useParams, Link, useLocation } from "wouter";
 import { MainLayout } from "@/components/layout/main-layout";
 import {
@@ -268,7 +269,7 @@ export default function AlbumPage() {
             queryClient.invalidateQueries({
               queryKey: getGetUserAlbumsQueryKey(data.album.ownerId),
             });
-            navigate(`/profile/${data.album.ownerId}`);
+            navigate(getUserProfileUrl({ id: data.album.ownerId }));
           } else {
             navigate("/");
           }
@@ -344,7 +345,7 @@ export default function AlbumPage() {
       <div className="bg-card border border-border rounded-xl shadow-sm p-4 mb-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <Link href={`/profile/${album.ownerId}`}>
+            <Link href={getUserProfileUrl(owner ? { ...owner, id: album.ownerId } : { id: album.ownerId })}>
               <span className="text-muted-foreground hover:text-foreground cursor-pointer">
                 <ArrowLeft className="w-5 h-5" />
               </span>
@@ -353,7 +354,7 @@ export default function AlbumPage() {
               <h1 className="text-xl font-bold truncate">{album.name}</h1>
               <p className="text-sm text-muted-foreground">
                 By{" "}
-                <Link href={`/profile/${album.ownerId}`}>
+                <Link href={getUserProfileUrl(owner ? { ...owner, id: album.ownerId } : { id: album.ownerId })}>
                   <span className="hover:underline cursor-pointer font-medium text-foreground">
                     {owner.displayName}
                   </span>
@@ -479,7 +480,7 @@ export default function AlbumPage() {
                     key={t.userId}
                     className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-sm"
                   >
-                    <Link href={`/profile/${t.userId}`}>
+                    <Link href={getUserProfileUrl({ id: t.userId, displayName: t.displayName })}>
                       <span className="hover:underline cursor-pointer">
                         {t.displayName}
                       </span>

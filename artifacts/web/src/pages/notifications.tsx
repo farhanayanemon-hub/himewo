@@ -1,5 +1,6 @@
 import { MainLayout } from "@/components/layout/main-layout";
 import { avatarSrc } from "@/lib/avatar";
+import { getUserProfileUrl } from "@/lib/user-link";
 import {
   useListNotifications,
   useMarkAllNotificationsRead,
@@ -147,9 +148,9 @@ export default function NotificationsPage() {
       n.type === NotificationType.friend_request ||
       n.type === NotificationType.friend_accept
     ) {
-      navigate(n.actor?.id ? `/profile/${n.actor.id}` : "/friends");
-    } else if (n.actor?.id) {
-      navigate(`/profile/${n.actor.id}`);
+      navigate(n.actor ? getUserProfileUrl(n.actor) : "/friends");
+    } else if (n.actor) {
+      navigate(getUserProfileUrl(n.actor));
     }
   };
 

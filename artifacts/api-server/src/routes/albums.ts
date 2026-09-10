@@ -13,6 +13,7 @@ import { requireAuth } from "../lib/auth";
 import { canViewProfileDetails, areFriends } from "../lib/authz";
 import { createNotification } from "../lib/notify";
 import { buildProfileDetail } from "../lib/serialize";
+import { resolveUserId } from "../lib/resolve-user";
 import {
   GetUserAlbumsParams,
   GetUserAlbumsResponse,
@@ -128,19 +129,10 @@ router.get(
       res.status(400).json({ error: params.error.message });
       return;
     }
-    let targetId = params.data.id;
-    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!UUID_RE.test(targetId)) {
-      const uname = targetId.trim().toLowerCase();
-      const [byUsername] = await db
-        .select({ id: profilesTable.id })
-        .from(profilesTable)
-        .where(sql`lower(${profilesTable.username}) = ${uname}`);
-      if (!byUsername) {
-        res.json(GetUserAlbumsResponse.parse([]));
-        return;
-      }
-      targetId = byUsername.id;
+    const targetId = await resolveUserId(params.data.id);
+    if (!targetId) {
+      res.json(GetUserAlbumsResponse.parse([]));
+      return;
     }
     // Locked / restricted profiles hide albums from non-friends,
     // consistent with posts and friends lists.
@@ -432,23 +424,10 @@ router.get(
   requireAuth,
   async (req, res): Promise<void> => {
     const rawId = req.params.id;
-    let userId: string = Array.isArray(rawId) ? rawId[0] : (rawId ?? "");
+    const userId = await resolveUserId(Array.isArray(rawId) ? rawId[0] : (rawId ?? ""));
     if (!userId) {
-      res.status(400).json({ error: "Missing user id" });
+      res.json({ photos: [] });
       return;
-    }
-    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!UUID_RE.test(userId)) {
-      const uname = userId.trim().toLowerCase();
-      const [byUsername] = await db
-        .select({ id: profilesTable.id })
-        .from(profilesTable)
-        .where(sql`lower(${profilesTable.username}) = ${uname}`);
-      if (!byUsername) {
-        res.json({ photos: [] });
-        return;
-      }
-      userId = byUsername.id;
     }
     if (userId !== req.userId && !(await canViewProfileDetails(userId, req.userId!))) {
       res.json({ photos: [] });

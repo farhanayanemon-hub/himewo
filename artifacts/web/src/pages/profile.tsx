@@ -15,7 +15,8 @@ import {
 } from "@workspace/api-client-react";
 import { useParams, Link } from "wouter";
 import { ProfileView } from "@/components/profile-view";
-import { Loader2, Check, X, UserPlus, UserCheck, UserMinus, ChevronDown } from "lucide-react";
+import { Loader2, Check, X, UserPlus, UserCheck, UserMinus, ChevronDown, UserX } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { syncUserFollowState } from "@/lib/follow-sync";
@@ -29,7 +30,12 @@ import {
 
 export default function ProfilePage() {
   const { id: rawId, username: rawUsername } = useParams<{ id?: string; username?: string }>();
-  const lookupKey = (rawUsername || rawId || "").trim();
+  const rawKey = (rawUsername || rawId || "").trim();
+  let cleanedKey = rawKey;
+  try {
+    cleanedKey = decodeURIComponent(cleanedKey).trim();
+  } catch {}
+  const lookupKey = cleanedKey.replace(/^[/@]+/, "").replace(/[/@]+$/, "").trim();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const sendRequest = useSendFriendRequest();
@@ -61,11 +67,14 @@ export default function ProfilePage() {
   // Address bar normalization: ensure Facebook-style himewo.com/username
   useEffect(() => {
     if (profile?.username && typeof window !== "undefined") {
+      const cleanUname = profile.username.replace(/^[/@]+/, "").replace(/[/@]+$/, "").trim();
       const currentPath = window.location.pathname;
-      const cleanPath = `/${profile.username}`;
+      const cleanPath = `/${cleanUname}`;
       if (
         currentPath.startsWith("/profile/") ||
-        (currentPath.toLowerCase() === cleanPath.toLowerCase() && currentPath !== cleanPath)
+        (currentPath.toLowerCase() === cleanPath.toLowerCase() && currentPath !== cleanPath) ||
+        currentPath.startsWith("/@") ||
+        currentPath.includes("%40")
       ) {
         window.history.replaceState(null, "", cleanPath);
       }
@@ -208,7 +217,20 @@ export default function ProfilePage() {
   if (!profile) {
     return (
       <MainLayout>
-        <div className="py-10 text-center text-muted-foreground">Profile not found</div>
+        <div className="py-16 flex flex-col items-center justify-center text-center px-4">
+          <div className="w-16 h-16 rounded-full bg-muted/60 flex items-center justify-center mb-4 text-muted-foreground">
+            <UserX className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground mb-1">Profile not found</h2>
+          <p className="text-sm text-muted-foreground max-w-sm mb-6">
+            This profile doesn't exist or may have been removed. Check the username and try again.
+          </p>
+          <Link href="/">
+            <Button variant="default" className="gap-2 cursor-pointer">
+              Back to Feed
+            </Button>
+          </Link>
+        </div>
       </MainLayout>
     );
   }

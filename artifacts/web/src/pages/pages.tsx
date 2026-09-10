@@ -1,5 +1,6 @@
 import { MainLayout } from "@/components/layout/main-layout";
 import { avatarSrc } from "@/lib/avatar";
+import { getUserProfileUrl } from "@/lib/user-link";
 import {
   useListPages,
   useGetPage,
@@ -1288,7 +1289,7 @@ function PageFollowersDialog({
             {followers?.map((p) => (
               <Link
                 key={p.id}
-                href={`/profile/${p.id}`}
+                href={getUserProfileUrl(p)}
                 onClick={() => onOpenChange(false)}
                 className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
               >

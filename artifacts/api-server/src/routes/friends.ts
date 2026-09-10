@@ -28,20 +28,9 @@ import {
   UnfollowUserParams,
 } from "@workspace/api-zod";
 
+import { resolveUserId } from "../lib/resolve-user";
+
 const router: IRouter = Router();
-
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-async function resolveUserId(raw: string): Promise<string | null> {
-  const trimmed = raw.trim();
-  if (UUID_RE.test(trimmed)) return trimmed;
-  const [row] = await db
-    .select({ id: profilesTable.id })
-    .from(profilesTable)
-    .where(sql`lower(${profilesTable.username}) = ${trimmed.toLowerCase()}`);
-  return row?.id ?? null;
-}
 
 function canonicalPair(a: string, b: string): [string, string] {
   return a < b ? [a, b] : [b, a];

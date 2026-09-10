@@ -323,11 +323,16 @@ function MobileReelTimelineCard({
 
 export default function ProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  return <ProfileBody userId={id ?? ""} />;
+  let cleanId = (id ?? "").trim();
+  try {
+    cleanId = decodeURIComponent(cleanId).trim();
+  } catch {}
+  cleanId = cleanId.replace(/^[/@]+/, "").replace(/[/@]+$/, "").trim();
+  return <ProfileBody userId={cleanId} />;
 }
 
 export function ProfileBody({
-  userId,
+  userId: rawUserId,
   hideBackButton = false,
 }: {
   userId: string;
@@ -336,6 +341,11 @@ export function ProfileBody({
   const c = useColors();
   const qc = useQueryClient();
   const { user, refreshUser } = useAuth();
+  let userId = (rawUserId ?? "").trim();
+  try {
+    userId = decodeURIComponent(userId).trim();
+  } catch {}
+  userId = userId.replace(/^[/@]+/, "").replace(/[/@]+$/, "").trim();
   const isOwn = user?.id === userId;
 
   const [activePost, setActivePost] = useState<number | null>(null);

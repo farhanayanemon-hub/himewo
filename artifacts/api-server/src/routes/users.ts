@@ -31,6 +31,7 @@ import {
   isReservedUsername,
   isUniqueViolation,
 } from "../lib/username";
+import { resolveUserId } from "../lib/resolve-user";
 import { validateDisplayName } from "../lib/nameValidation";
 import {
   toProfile,
@@ -468,16 +469,12 @@ router.get(
       res.status(400).json({ error: params.error.message });
       return;
     }
-    const uname = params.data.username.trim().toLowerCase();
-    const [row] = await db
-      .select({ id: profilesTable.id })
-      .from(profilesTable)
-      .where(sql`lower(${profilesTable.username}) = ${uname}`);
-    if (!row) {
+    const resolvedId = await resolveUserId(params.data.username);
+    if (!resolvedId) {
       res.status(404).json({ error: "User not found" });
       return;
     }
-    const profile = await buildProfileDetail(row.id, req.userId);
+    const profile = await buildProfileDetail(resolvedId, req.userId);
     if (!profile) {
       res.status(404).json({ error: "User not found" });
       return;
@@ -486,29 +483,18 @@ router.get(
   },
 );
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 router.get("/users/:id", requireAuth, async (req, res): Promise<void> => {
   const params = GetUserParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
   }
-  let targetId = params.data.id;
-  if (!UUID_RE.test(targetId)) {
-    const uname = targetId.trim().toLowerCase();
-    const [byUsername] = await db
-      .select({ id: profilesTable.id })
-      .from(profilesTable)
-      .where(sql`lower(${profilesTable.username}) = ${uname}`);
-    if (!byUsername) {
-      res.status(404).json({ error: "User not found" });
-      return;
-    }
-    targetId = byUsername.id;
+  const resolvedId = await resolveUserId(params.data.id);
+  if (!resolvedId) {
+    res.status(404).json({ error: "User not found" });
+    return;
   }
-  const profile = await buildProfileDetail(targetId, req.userId);
+  const profile = await buildProfileDetail(resolvedId, req.userId);
   if (!profile) {
     res.status(404).json({ error: "User not found" });
     return;
@@ -524,18 +510,10 @@ router.get("/users/:id/posts", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   const viewer = req.userId!;
-  let target = params.data.id;
-  if (!UUID_RE.test(target)) {
-    const uname = target.trim().toLowerCase();
-    const [byUsername] = await db
-      .select({ id: profilesTable.id })
-      .from(profilesTable)
-      .where(sql`lower(${profilesTable.username}) = ${uname}`);
-    if (!byUsername) {
-      res.json(GetUserPostsResponse.parse([]));
-      return;
-    }
-    target = byUsername.id;
+  const target = await resolveUserId(params.data.id);
+  if (!target) {
+    res.json(GetUserPostsResponse.parse([]));
+    return;
   }
   const isOwner = viewer === target;
   const friend = isOwner ? false : await areFriends(viewer, target);
@@ -577,22 +555,10 @@ router.get("/users/:id/posts", requireAuth, async (req, res): Promise<void> => {
 router.get("/users/:id/reels", requireAuth, async (req, res): Promise<void> => {
   const viewer = req.userId!;
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  let target = typeof rawId === "string" ? rawId.trim() : "";
+  const target = await resolveUserId(typeof rawId === "string" ? rawId : "");
   if (!target) {
     res.json(ListReelsResponse.parse([]));
     return;
-  }
-  if (!UUID_RE.test(target)) {
-    const uname = target.trim().toLowerCase();
-    const [byUsername] = await db
-      .select({ id: profilesTable.id })
-      .from(profilesTable)
-      .where(sql`lower(${profilesTable.username}) = ${uname}`);
-    if (!byUsername) {
-      res.json(ListReelsResponse.parse([]));
-      return;
-    }
-    target = byUsername.id;
   }
   if (!(await canViewProfileDetails(target, viewer))) {
     res.json(ListReelsResponse.parse([]));
@@ -627,18 +593,10 @@ router.get(
       res.status(400).json({ error: "Invalid request" });
       return;
     }
-    let target = params.data.id;
-    if (!UUID_RE.test(target)) {
-      const uname = target.trim().toLowerCase();
-      const [byUsername] = await db
-        .select({ id: profilesTable.id })
-        .from(profilesTable)
-        .where(sql`lower(${profilesTable.username}) = ${uname}`);
-      if (!byUsername) {
-        res.json(GetUserFriendsResponse.parse([]));
-        return;
-      }
-      target = byUsername.id;
+    const target = await resolveUserId(params.data.id);
+    if (!target) {
+      res.json(GetUserFriendsResponse.parse([]));
+      return;
     }
     const viewer = req.userId!;
     // Restricted profile (lock / profileVisibility): unauthorized viewers
@@ -720,18 +678,10 @@ async function setBlockKind(
   kind: "block" | "restrict",
   enabled: boolean,
 ): Promise<{ status: number; error?: string }> {
-  if (viewer === targetId) {
+  const target = await resolveUserId(targetId);
+  if (!target) return { status: 404, error: "User not found" };
+  if (viewer === target) {
     return { status: 400, error: "You can't do this to yourself" };
-  }
-  let target = targetId;
-  if (!UUID_RE.test(target)) {
-    const uname = target.trim().toLowerCase();
-    const [byUsername] = await db
-      .select({ id: profilesTable.id })
-      .from(profilesTable)
-      .where(sql`lower(${profilesTable.username}) = ${uname}`);
-    if (!byUsername) return { status: 404, error: "User not found" };
-    target = byUsername.id;
   }
   const [targetRow] = await db
     .select({ id: profilesTable.id })
