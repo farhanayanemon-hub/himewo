@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import {
   useGetUser,
+  useGetUserByUsername,
   useGetUserPosts,
   useSendFriendRequest,
   useAcceptFriendRequest,
@@ -10,6 +11,7 @@ import {
   useFollowUser,
   useUnfollowUser,
   getGetUserQueryKey,
+  getGetUserByUsernameQueryKey,
   getGetUserPostsQueryKey,
   getListFriendRequestsQueryKey,
 } from "@workspace/api-client-react";
@@ -28,14 +30,10 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default function ProfilePage() {
   const { id: rawId, username: rawUsername } = useParams<{ id?: string; username?: string }>();
-  const rawKey = (rawUsername || rawId || "").trim();
-  let cleanedKey = rawKey;
-  try {
-    cleanedKey = decodeURIComponent(cleanedKey).trim();
-  } catch {}
-  const lookupKey = cleanedKey.replace(/^[/@]+/, "").replace(/[/@]+$/, "").trim();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const sendRequest = useSendFriendRequest();
@@ -45,14 +43,68 @@ export default function ProfilePage() {
   const followUser = useFollowUser();
   const unfollowUser = useUnfollowUser();
 
-  const { data: profile, isLoading: profileLoading } = useGetUser(lookupKey, {
-    query: { enabled: !!lookupKey, queryKey: getGetUserQueryKey(lookupKey) },
-  });
-  const effectiveUserId = profile?.id || lookupKey;
+  const rawKey = (rawUsername || rawId || "").trim();
+  let cleanedKey = rawKey;
+  try {
+    cleanedKey = decodeURIComponent(cleanedKey).trim();
+  } catch {}
+  let lookupKey = cleanedKey.replace(/^[/@]+/, "").replace(/[/@]+$/, "").trim();
+
+  // If navigating to /profile or /me without specific target, or key is literally "profile" or "me", use current user
+  if (!lookupKey || lookupKey.toLowerCase() === "profile" || lookupKey.toLowerCase() === "me") {
+    if (user?.username) {
+      lookupKey = user.username;
+    } else if (user?.id) {
+      lookupKey = user.id;
+    }
+  }
+
+  const isSelf = Boolean(
+    user && lookupKey && (
+      user.id === lookupKey ||
+      (user.username && user.username.toLowerCase() === lookupKey.toLowerCase())
+    )
+  );
+
+  const isUuid = UUID_RE.test(lookupKey);
+
+  // If it's a UUID, query by ID primary; if username, query by username primary
+  const { data: profileById, isLoading: idLoading } = useGetUser(
+    isUuid ? lookupKey : "",
+    { query: { enabled: Boolean(lookupKey && isUuid), queryKey: getGetUserQueryKey(lookupKey) } }
+  );
+
+  const { data: profileByUsername, isLoading: unameLoading } = useGetUserByUsername(
+    !isUuid ? lookupKey : "",
+    { query: { enabled: Boolean(lookupKey && !isUuid), queryKey: getGetUserByUsernameQueryKey(lookupKey) } }
+  );
+
+  // Fallback queries in case lookupKey format was ambiguous
+  const { data: fallbackById } = useGetUser(
+    !isUuid && lookupKey ? lookupKey : "",
+    { query: { enabled: Boolean(!isUuid && lookupKey && !profileByUsername && !unameLoading), queryKey: getGetUserQueryKey(lookupKey) } }
+  );
+
+  const { data: fallbackByUsername } = useGetUserByUsername(
+    isUuid && lookupKey ? lookupKey : "",
+    { query: { enabled: Boolean(isUuid && lookupKey && !profileById && !idLoading), queryKey: getGetUserByUsernameQueryKey(lookupKey) } }
+  );
+
+  const profile = profileByUsername || profileById || fallbackByUsername || fallbackById || (isSelf && user ? user : undefined);
+  const profileLoading = (isUuid ? idLoading : unameLoading) && !profile;
+
+  const effectiveUserId = profile?.id || (isUuid ? lookupKey : (isSelf ? user?.id : undefined));
+
+  const isValidUuid = Boolean(effectiveUserId && UUID_RE.test(effectiveUserId));
   const { data: posts, isLoading: postsLoading } = useGetUserPosts(
-    effectiveUserId,
+    effectiveUserId || "",
     {},
-    { query: { enabled: !!effectiveUserId, queryKey: getGetUserPostsQueryKey(effectiveUserId) } },
+    {
+      query: {
+        enabled: isValidUuid,
+        queryKey: effectiveUserId ? getGetUserPostsQueryKey(effectiveUserId) : ["disabled-posts"],
+      },
+    },
   );
 
   const isOwnProfile = Boolean(
@@ -82,9 +134,17 @@ export default function ProfilePage() {
   }, [profile?.username]);
 
   const invalidateProfile = () => {
-    if (lookupKey) queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(lookupKey) });
-    if (profile?.id) queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(profile.id) });
-    if (profile?.username) queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(profile.username) });
+    if (lookupKey) {
+      queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(lookupKey) });
+      queryClient.invalidateQueries({ queryKey: getGetUserByUsernameQueryKey(lookupKey) });
+    }
+    if (profile?.id) {
+      queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(profile.id) });
+    }
+    if (profile?.username) {
+      queryClient.invalidateQueries({ queryKey: getGetUserByUsernameQueryKey(profile.username) });
+      queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(profile.username) });
+    }
     queryClient.invalidateQueries({ queryKey: getListFriendRequestsQueryKey() });
   };
 
@@ -225,11 +285,13 @@ export default function ProfilePage() {
           <p className="text-sm text-muted-foreground max-w-sm mb-6">
             This profile doesn't exist or may have been removed. Check the username and try again.
           </p>
-          <Link href="/">
-            <Button variant="default" className="gap-2 cursor-pointer">
-              Back to Feed
-            </Button>
-          </Link>
+          <div className="flex gap-3">
+            <Link href="/">
+              <Button variant="default" className="gap-2 cursor-pointer">
+                Back to Feed
+              </Button>
+            </Link>
+          </div>
         </div>
       </MainLayout>
     );
@@ -344,7 +406,7 @@ export default function ProfilePage() {
     <MainLayout>
       <ProfileView
         profile={profile}
-        userId={effectiveUserId}
+        userId={effectiveUserId || profile.id}
         isOwnProfile={isOwnProfile}
         posts={posts}
         postsLoading={postsLoading}

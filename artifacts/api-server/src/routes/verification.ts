@@ -8,7 +8,44 @@ import {
   getVerificationRequirements,
   getVerificationProgress,
   unmetRequirements,
+  resolveVerificationPrice,
 } from "../lib/verification";
+
+/** Extract the client IP from an Express request (handles proxies). */
+function getClientIp(req: import("express").Request): string {
+  const fwd = req.headers["x-forwarded-for"];
+  const raw = Array.isArray(fwd) ? fwd[0] : fwd;
+  return (raw?.split(",")[0] ?? req.socket.remoteAddress ?? "").trim();
+}
+
+/** Best-effort IP → ISO alpha-2 country code. Returns null on failure. */
+async function detectCountryCode(ip: string): Promise<string | null> {
+  const isPrivate =
+    !ip || ip === "::1" ||
+    ip.startsWith("127.") || ip.startsWith("10.") ||
+    ip.startsWith("192.168.") ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(ip) ||
+    ip.startsWith("::ffff:127.") ||
+    ip.startsWith("fc") || ip.startsWith("fe80");
+  if (isPrivate) return null;
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4000);
+    const resp = await fetch(
+      `https://ipwho.is/${encodeURIComponent(ip)}?fields=success,country_code`,
+      { signal: controller.signal },
+    );
+    clearTimeout(timer);
+    if (!resp.ok) return null;
+    const body = (await resp.json()) as { success?: boolean; country_code?: string };
+    if (body.success && typeof body.country_code === "string") {
+      return body.country_code.toUpperCase();
+    }
+  } catch {
+    // best-effort
+  }
+  return null;
+}
 
 const router: IRouter = Router();
 
@@ -38,6 +75,10 @@ router.get(
       getVerificationRequirements(),
       getVerificationProgress(req.userId!),
     ]);
+    // Detect country for localised pricing
+    const ip = getClientIp(req);
+    const countryCode = await detectCountryCode(ip);
+    const localPrice = resolveVerificationPrice(requirements, countryCode);
     const missing = progress ? unmetRequirements(requirements, progress) : [];
     res.json({
       isVerified: profile?.isVerified ?? false,
@@ -45,6 +86,8 @@ router.get(
       progress,
       eligible: progress !== null && missing.length === 0,
       missing,
+      localPrice,
+      countryCode,
       request: latest
         ? {
             id: latest.id,

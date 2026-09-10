@@ -29,7 +29,9 @@ export const SITE_SETTING_DEFAULTS: Record<string, string> = {
   verification_min_posts: "15",
   verification_min_reels: "5",
   verification_regular_post_days: "7",
-  verification_monthly_fee: "299",
+  verification_monthly_fee: "299", // Global fallback (shown when no country-specific price matches)
+  // JSON: { "BD": { "amount": 299, "currency": "BDT", "symbol": "\u09f3" }, "US": { "amount": 4.99, "currency": "USD", "symbol": "$" } }
+  verification_country_pricing: "{}",
   // JSON object mapping nav item keys (home, friends, reels, circles, hubs,
   // shop, earnings, live, watch, events, stories, memories, saved, verified)
   // to custom icon image URLs uploaded by admins. Empty object = defaults.

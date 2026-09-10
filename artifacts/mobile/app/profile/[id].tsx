@@ -22,6 +22,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   useGetUser,
+  useGetUserByUsername,
   useGetUserPosts,
   useGetUserFriends,
   useSendFriendRequest,
@@ -33,6 +34,7 @@ import {
   useCreateConversation,
   useUpdateMyProfile,
   getGetUserQueryKey,
+  getGetUserByUsernameQueryKey,
   getGetUserPostsQueryKey,
   getGetUserFriendsQueryKey,
   ConversationType,
@@ -346,24 +348,64 @@ export function ProfileBody({
     userId = decodeURIComponent(userId).trim();
   } catch {}
   userId = userId.replace(/^[/@]+/, "").replace(/[/@]+$/, "").trim();
-  const isOwn = user?.id === userId;
+
+  if (!userId || userId.toLowerCase() === "me" || userId.toLowerCase() === "profile") {
+    if (user?.username) userId = user.username;
+    else if (user?.id) userId = user.id;
+  }
+
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const isOwn = Boolean(
+    user && userId && (
+      user.id === userId ||
+      (user.username && user.username.toLowerCase() === userId.toLowerCase())
+    )
+  );
+  const isUuid = UUID_RE.test(userId);
 
   const [activePost, setActivePost] = useState<number | null>(null);
   const [fullScreenPhoto, setFullScreenPhoto] = useState<{ url: string; title: string } | null>(null);
 
   const {
-    data: profile,
-    isLoading,
-    isRefetching,
-    refetch,
-  } = useGetUser(userId, {
-    query: { enabled: !!userId, queryKey: getGetUserQueryKey(userId) },
+    data: profileById,
+    isLoading: idLoading,
+    isRefetching: idRefetching,
+    refetch: refetchId,
+  } = useGetUser(isUuid ? userId : "", {
+    query: { enabled: Boolean(userId && isUuid), queryKey: getGetUserQueryKey(userId) },
   });
-  const targetId = profile?.id || userId;
+
+  const {
+    data: profileByUsername,
+    isLoading: unameLoading,
+    isRefetching: unameRefetching,
+    refetch: refetchUsername,
+  } = useGetUserByUsername(!isUuid ? userId : "", {
+    query: { enabled: Boolean(userId && !isUuid), queryKey: getGetUserByUsernameQueryKey(userId) },
+  });
+
+  const { data: fallbackById } = useGetUser(
+    !isUuid && userId ? userId : "",
+    { query: { enabled: Boolean(!isUuid && userId && !profileByUsername && !unameLoading), queryKey: getGetUserQueryKey(userId) } }
+  );
+
+  const { data: fallbackByUsername } = useGetUserByUsername(
+    isUuid && userId ? userId : "",
+    { query: { enabled: Boolean(isUuid && userId && !profileById && !idLoading), queryKey: getGetUserByUsernameQueryKey(userId) } }
+  );
+
+  const profile = profileByUsername || profileById || fallbackByUsername || fallbackById || (isOwn && user ? user : undefined);
+  const isLoading = (isUuid ? idLoading : unameLoading) && !profile;
+  const isRefetching = isUuid ? idRefetching : unameRefetching;
+  const refetch = isUuid ? refetchId : refetchUsername;
+
+  const targetId: string = String(profile?.id || (isUuid ? userId : (isOwn && user?.id ? user.id : "")) || "");
+  const isValidUuid = Boolean(targetId && UUID_RE.test(targetId));
+
   const { data: postsData, refetch: refetchPosts } = useGetUserPosts(
     targetId,
     undefined,
-    { query: { enabled: !!targetId, queryKey: getGetUserPostsQueryKey(targetId) } },
+    { query: { enabled: isValidUuid, queryKey: getGetUserPostsQueryKey(targetId) } },
   );
   const showLocked =
     !!profile?.isLocked && !isOwn && !profile?.viewerIsFriend;
@@ -372,7 +414,7 @@ export function ProfileBody({
     undefined,
     {
       query: {
-        enabled: !!targetId && !showLocked,
+        enabled: isValidUuid && !showLocked,
         queryKey: getGetUserFriendsQueryKey(targetId),
       },
     },
@@ -384,7 +426,7 @@ export function ProfileBody({
         `/api/users/${encodeURIComponent(targetId)}/reels?limit=50`,
       ).catch(() => []);
     },
-    enabled: !!targetId && !showLocked,
+    enabled: isValidUuid && !showLocked,
   });
 
   const posts = (postsData ?? []) as Post[];

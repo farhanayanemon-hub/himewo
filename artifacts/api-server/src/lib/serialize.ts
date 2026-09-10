@@ -82,8 +82,10 @@ export function toProfile(
 ) {
   return {
     id: row.id,
-    username: row.username,
-    displayName: row.displayName,
+    // Zod GetUserResponse schema expects a non-nullable string; guard against
+    // null usernames (users who registered before username was made mandatory).
+    username: row.username ?? "",
+    displayName: row.displayName ?? row.id,
     email: includeContact ? row.email : null,
     phone: includeContact ? row.phone : null,
     avatarUrl: row.avatarUrl,

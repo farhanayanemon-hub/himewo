@@ -40,12 +40,20 @@ interface VerificationProgress {
   lastPostDaysAgo: number | null;
 }
 
+interface CountryPrice {
+  amount: number;
+  currency: string;
+  symbol: string;
+}
+
 interface VerificationState {
   isVerified: boolean;
   requirements: VerificationRequirements;
   progress: VerificationProgress | null;
   eligible: boolean;
   missing: string[];
+  localPrice: CountryPrice;
+  countryCode: string | null;
   request: {
     id: number;
     status: "pending" | "approved" | "rejected";
@@ -207,7 +215,14 @@ export default function VerifiedPage() {
                   )}
                 </ul>
                 <p className="text-xs text-muted-foreground mt-3">
-                  Verified badge costs ${data.requirements.monthlyFee}/month after approval.
+                  Verified badge costs{" "}
+                  <span className="font-semibold">
+                    {data.localPrice.symbol}{data.localPrice.amount}/{data.localPrice.currency}
+                  </span>{" "}
+                  per month after approval.
+                  {data.countryCode && (
+                    <span className="ml-1 text-muted-foreground/70">(price for {data.countryCode})</span>
+                  )}
                 </p>
               </div>
             )}

@@ -76,6 +76,7 @@ function AppRoutes() {
     <Switch>
       <Route path="/" component={HomePage} />
       <Route path="/post/:id" component={PostPage} />
+      <Route path="/profile" component={MePage} />
       <Route path="/profile/:id" component={ProfilePage} />
       <Route path="/me" component={MePage} />
       <Route path="/edit-profile" component={EditProfilePage} />

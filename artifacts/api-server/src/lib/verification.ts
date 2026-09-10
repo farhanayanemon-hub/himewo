@@ -17,7 +17,14 @@ export interface VerificationRequirements {
   minPosts: number;
   minReels: number;
   regularPostDays: number; // must have posted within the last N days (0 = off)
-  monthlyFee: number; // in Taka, display/informational
+  monthlyFee: number; // global fallback fee
+  countryPricing: Record<string, CountryPrice>; // per-country overrides
+}
+
+export interface CountryPrice {
+  amount: number;
+  currency: string; // ISO 4217, e.g. "BDT", "USD"
+  symbol: string;   // display prefix, e.g. "৳", "$"
 }
 
 export interface VerificationProgress {
@@ -41,7 +48,47 @@ export async function getVerificationRequirements(): Promise<VerificationRequire
     minReels: toInt(s.verification_min_reels, 5),
     regularPostDays: toInt(s.verification_regular_post_days, 7),
     monthlyFee: toInt(s.verification_monthly_fee, 299),
+    countryPricing: parseCountryPricing(s.verification_country_pricing),
   };
+}
+
+/** Parse and sanitise the admin-set JSON country pricing map. */
+function parseCountryPricing(raw: string | undefined): Record<string, CountryPrice> {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return {};
+    const out: Record<string, CountryPrice> = {};
+    for (const [cc, val] of Object.entries(parsed as Record<string, unknown>)) {
+      if (
+        typeof val === "object" && val !== null &&
+        typeof (val as Record<string, unknown>).amount === "number" &&
+        typeof (val as Record<string, unknown>).currency === "string" &&
+        typeof (val as Record<string, unknown>).symbol === "string"
+      ) {
+        out[cc.toUpperCase()] = val as CountryPrice;
+      }
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Resolve the displayed price for a given ISO alpha-2 country code.
+ * Falls back to the global monthlyFee with a ৳ symbol (Taka) when no override exists.
+ */
+export function resolveVerificationPrice(
+  req: VerificationRequirements,
+  countryCode: string | null,
+): CountryPrice {
+  if (countryCode) {
+    const match = req.countryPricing[countryCode.toUpperCase()];
+    if (match) return match;
+  }
+  // Global fallback — admin sets this in Taka by default
+  return { amount: req.monthlyFee, currency: "BDT", symbol: "৳" };
 }
 
 export async function getVerificationProgress(

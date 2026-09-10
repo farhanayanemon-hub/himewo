@@ -35,12 +35,28 @@ import {
   type Post,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { Loader2, Plus, Cake, Clapperboard } from "lucide-react";
+import { Loader2, Plus, Cake, Clapperboard, BookImage, Film } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRealtime } from "@/lib/realtime";
 import { useAuth } from "@/lib/auth";
 import { useActingPage } from "@/lib/acting-page";
 import { Link } from "wouter";
+
+// Tracks which story groups have been viewed locally
+const VIEWED_STORIES_KEY = "himewo_viewed_stories";
+function getViewedStories(): Set<string> {
+  try {
+    const raw = localStorage.getItem(VIEWED_STORIES_KEY);
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch {
+    return new Set();
+  }
+}
+function markStoryViewed(key: string) {
+  const viewed = getViewedStories();
+  viewed.add(key);
+  localStorage.setItem(VIEWED_STORIES_KEY, JSON.stringify([...viewed]));
+}
 
 function StoryRow() {
   const { data: stories } = useListStories();
@@ -50,10 +66,34 @@ function StoryRow() {
   const createStory = useCreateStory();
   const createReel = useCreateReel();
 
+  // ── Plus menu state ────────────────────────────────────────────────────────
+  const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
   // ── Launcher & editor state ───────────────────────────────────────────────
   const [launcherMode, setLauncherMode] = useState<"story" | "reel" | null>(null);
   const [editorFile, setEditorFile] = useState<{ file: File; filterCss: string; mode: "story" | "reel" } | null>(null);
   const [showTextCreator, setShowTextCreator] = useState(false);
+
+  // ── Viewed stories state ──────────────────────────────────────────────────
+  const [viewedStories, setViewedStories] = useState<Set<string>>(() => getViewedStories());
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!showCreateMenu) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowCreateMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showCreateMenu]);
+
+  const openLauncher = (mode: "story" | "reel") => {
+    setShowCreateMenu(false);
+    setLauncherMode(mode);
+  };
 
   const handleFileReady = (result: LauncherResult, mode: "story" | "reel") => {
     setEditorFile({ file: result.file, filterCss: result.filterCss, mode });
@@ -106,6 +146,15 @@ function StoryRow() {
     setEditorFile(null);
   };
 
+  // Sort stories: own story pinned first, then others
+  const myId = actingPage ? `p${actingPage.id}` : user?.id;
+  const sortedStories = stories
+    ? [
+        ...(stories.filter((g) => (g.authorPage ? `p${g.authorPage.id}` : g.author.id) === myId)),
+        ...(stories.filter((g) => (g.authorPage ? `p${g.authorPage.id}` : g.author.id) !== myId)),
+      ]
+    : [];
+
   return (
     <>
     {/* Launcher modals */}
@@ -135,67 +184,96 @@ function StoryRow() {
     )}
 
     <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-      {/* Create Story — opens 3-option popup */}
-      <button
-        id="create-story-btn"
-        onClick={() => setLauncherMode("story")}
-        className="w-28 h-48 shrink-0 rounded-2xl relative overflow-hidden group cursor-pointer border border-card-border card-depth lift-on-hover bg-card"
-      >
-        <div className="h-2/3 overflow-hidden">
-          <img
-            src={avatarSrc(actingPage ? actingPage.avatarUrl : user?.avatarUrl)}
-            className="w-full h-full object-cover"
-            alt=""
-          />
-        </div>
-        <div className="absolute top-[calc(66%-16px)] left-1/2 -translate-x-1/2 w-9 h-9 rounded-full aurora-button flex items-center justify-center text-white border-4 border-card">
-          <Plus className="w-5 h-5" />
-        </div>
-        <div className="absolute bottom-2 left-0 right-0 text-center text-foreground text-xs font-semibold leading-tight px-1">
-          Create Story
-        </div>
-      </button>
-
-      {/* Create Reel — opens 3-option popup */}
-      <button
-        id="create-reel-btn"
-        onClick={() => setLauncherMode("reel")}
-        className="w-28 h-48 shrink-0 rounded-2xl relative overflow-hidden group cursor-pointer border border-card-border card-depth lift-on-hover bg-card"
-      >
-        <div className="h-2/3 overflow-hidden bg-gradient-to-br from-purple-500 via-fuchsia-500 to-pink-500 flex items-center justify-center">
-          <Clapperboard className="w-9 h-9 text-white/90" />
-        </div>
-        <div className="absolute top-[calc(66%-16px)] left-1/2 -translate-x-1/2 w-9 h-9 rounded-full aurora-button flex items-center justify-center text-white border-4 border-card">
-          <Plus className="w-5 h-5" />
-        </div>
-        <div className="absolute bottom-2 left-0 right-0 text-center text-foreground text-xs font-semibold leading-tight px-1">
-          Create Reel
-        </div>
-      </button>
-
-      {/* Friends' stories */}
-      {stories?.map((group) => (
-        <Link
-          key={group.authorPage ? `p${group.authorPage.id}` : group.author.id}
-          href="/stories"
-          className="w-28 h-48 shrink-0 rounded-2xl relative overflow-hidden group cursor-pointer border border-card-border card-depth lift-on-hover"
+      {/* ── Single + create button with popup menu ── */}
+      <div ref={menuRef} className="relative shrink-0">
+        <button
+          id="create-content-btn"
+          onClick={() => setShowCreateMenu((v) => !v)}
+          className="w-28 h-48 shrink-0 rounded-2xl relative overflow-hidden group cursor-pointer border border-card-border card-depth lift-on-hover bg-card"
         >
-          <img
-            src={group.stories[0]?.mediaUrl || avatarSrc(group.authorPage?.avatarUrl ?? group.author.avatarUrl)}
-            className="w-full h-full object-cover"
-            alt=""
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-          <div
-            className={`absolute top-3 left-3 rounded-full ${group.hasUnseen ? "aurora-story-ring" : "p-[2px] bg-white/60"}`}
+          <div className="h-2/3 overflow-hidden">
+            <img
+              src={avatarSrc(actingPage ? actingPage.avatarUrl : user?.avatarUrl)}
+              className="w-full h-full object-cover"
+              alt=""
+            />
+          </div>
+          <div className="absolute top-[calc(66%-16px)] left-1/2 -translate-x-1/2 w-9 h-9 rounded-full aurora-button flex items-center justify-center text-white border-4 border-card transition-transform duration-200 group-hover:scale-110">
+            <Plus className="w-5 h-5" />
+          </div>
+          <div className="absolute bottom-2 left-0 right-0 text-center text-foreground text-xs font-semibold leading-tight px-1">
+            Create
+          </div>
+        </button>
+
+        {/* Popup menu */}
+        {showCreateMenu && (
+          <div className="absolute left-0 top-full mt-2 z-50 min-w-[160px] bg-card border border-card-border rounded-2xl shadow-xl overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150">
+            <button
+              id="create-story-menu-btn"
+              onClick={() => openLauncher("story")}
+              className="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+            >
+              <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                <BookImage className="w-4 h-4 text-primary" />
+              </div>
+              Create Story
+            </button>
+            <div className="h-px bg-border/60 mx-3" />
+            <button
+              id="create-reel-menu-btn"
+              onClick={() => openLauncher("reel")}
+              className="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+            >
+              <div className="w-8 h-8 rounded-full bg-fuchsia-500/15 flex items-center justify-center shrink-0">
+                <Film className="w-4 h-4 text-fuchsia-500" />
+              </div>
+              Create Reel
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Stories — own story pinned first, viewed ones get grey ring */}
+      {sortedStories.map((group) => {
+        const groupKey = group.authorPage ? `p${group.authorPage.id}` : group.author.id;
+        const isOwn = groupKey === myId;
+        const isViewed = viewedStories.has(groupKey);
+        // unseen = server says unseen AND not locally viewed
+        const hasUnseen = group.hasUnseen && !isViewed;
+        return (
+          <Link
+            key={groupKey}
+            href="/stories"
+            onClick={() => {
+              markStoryViewed(groupKey);
+              setViewedStories(new Set([...viewedStories, groupKey]));
+            }}
+            className="w-28 h-48 shrink-0 rounded-2xl relative overflow-hidden group cursor-pointer border border-card-border card-depth lift-on-hover"
           >
-            <img src={avatarSrc(group.authorPage?.avatarUrl ?? group.author.avatarUrl)} className="w-8 h-8 rounded-full object-cover border-2 border-black/40" alt="" />
-          </div>
-          <div className="absolute bottom-2 left-2 right-2 text-white text-xs font-medium leading-tight line-clamp-2">
-            {group.authorPage?.name ?? group.author.displayName}
-          </div>
-        </Link>
-      ))}
+            <img
+              src={group.stories[0]?.mediaUrl || avatarSrc(group.authorPage?.avatarUrl ?? group.author.avatarUrl)}
+              className="w-full h-full object-cover"
+              alt=""
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+            <div
+              className={`absolute top-3 left-3 rounded-full ${
+                isOwn
+                  ? "aurora-story-ring"
+                  : hasUnseen
+                  ? "aurora-story-ring"
+                  : "p-[2px] bg-white/30 grayscale"
+              }`}
+            >
+              <img src={avatarSrc(group.authorPage?.avatarUrl ?? group.author.avatarUrl)} className="w-8 h-8 rounded-full object-cover border-2 border-black/40" alt="" />
+            </div>
+            <div className="absolute bottom-2 left-2 right-2 text-white text-xs font-medium leading-tight line-clamp-2">
+              {isOwn ? "Your Story" : (group.authorPage?.name ?? group.author.displayName)}
+            </div>
+          </Link>
+        );
+      })}
     </div>
     </>
   );

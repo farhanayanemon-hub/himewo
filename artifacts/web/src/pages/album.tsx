@@ -480,7 +480,7 @@ export default function AlbumPage() {
                     key={t.userId}
                     className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-sm"
                   >
-                    <Link href={getUserProfileUrl({ id: t.userId, displayName: t.displayName })}>
+                    <Link href={getUserProfileUrl({ id: t.userId })}>
                       <span className="hover:underline cursor-pointer">
                         {t.displayName}
                       </span>

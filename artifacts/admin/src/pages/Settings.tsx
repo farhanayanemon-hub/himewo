@@ -55,6 +55,9 @@ export function Settings() {
   const [maintMsg, setMaintMsg] = useState("");
   const [mandatoryAccounts, setMandatoryAccounts] = useState("");
   const [verif, setVerif] = useState<Record<string, string>>({});
+  // country pricing: Record<CC, { amount, currency, symbol }>
+  const [countryPricing, setCountryPricing] = useState<Record<string, { amount: string; currency: string; symbol: string }>>({});
+  const [newCountry, setNewCountry] = useState({ cc: "", amount: "", currency: "", symbol: "" });
 
   useEffect(() => {
     if (query.data) {
@@ -70,15 +73,62 @@ export function Settings() {
         verification_regular_post_days: s.verification_regular_post_days ?? "7",
         verification_monthly_fee: s.verification_monthly_fee ?? "299",
       });
+      // Parse country pricing
+      try {
+        const raw = JSON.parse(s.verification_country_pricing || "{}");
+        if (typeof raw === "object" && raw !== null && !Array.isArray(raw)) {
+          const parsed: Record<string, { amount: string; currency: string; symbol: string }> = {};
+          for (const [cc, val] of Object.entries(raw as Record<string, unknown>)) {
+            if (typeof val === "object" && val !== null) {
+              const v = val as Record<string, unknown>;
+              parsed[cc] = {
+                amount: String(v.amount ?? ""),
+                currency: String(v.currency ?? ""),
+                symbol: String(v.symbol ?? ""),
+              };
+            }
+          }
+          setCountryPricing(parsed);
+        }
+      } catch { /* ignore */ }
     }
   }, [query.data]);
+
+  const saveCountryPricing = () => {
+    const out: Record<string, { amount: number; currency: string; symbol: string }> = {};
+    for (const [cc, val] of Object.entries(countryPricing)) {
+      const amt = parseFloat(val.amount);
+      if (!isNaN(amt) && val.currency && val.symbol) {
+        out[cc.toUpperCase()] = { amount: amt, currency: val.currency.toUpperCase(), symbol: val.symbol };
+      }
+    }
+    setSetting.mutate({ key: "verification_country_pricing", value: JSON.stringify(out) });
+  };
+
+  const addCountryEntry = () => {
+    const cc = newCountry.cc.trim().toUpperCase();
+    if (!cc || !newCountry.amount || !newCountry.currency || !newCountry.symbol) return;
+    setCountryPricing((prev) => ({
+      ...prev,
+      [cc]: { amount: newCountry.amount, currency: newCountry.currency.toUpperCase(), symbol: newCountry.symbol },
+    }));
+    setNewCountry({ cc: "", amount: "", currency: "", symbol: "" });
+  };
+
+  const removeCountryEntry = (cc: string) => {
+    setCountryPricing((prev) => {
+      const next = { ...prev };
+      delete next[cc];
+      return next;
+    });
+  };
 
   const VERIF_FIELDS: { key: string; label: string; hint: string }[] = [
     { key: "verification_min_account_age_days", label: "Minimum account age (days)", hint: "New accounts must wait this many days before applying." },
     { key: "verification_min_posts", label: "Minimum posts", hint: "Total posts required before applying." },
     { key: "verification_min_reels", label: "Minimum reels", hint: "Total reels required before applying." },
     { key: "verification_regular_post_days", label: "Regular posting window (days)", hint: "Must have posted within the last N days. 0 disables this check." },
-    { key: "verification_monthly_fee", label: "Monthly fee ($)", hint: "Shown to users on the apply page." },
+    { key: "verification_monthly_fee", label: "Global fallback fee (amount only, currency: BDT)", hint: "Shown when no per-country price matches. Default currency is BDT (Taka)." },
   ];
 
   const maintenanceOn = query.data?.settings.maintenance_mode === "on";
@@ -230,6 +280,102 @@ export function Settings() {
                   <p className="text-xs text-slate-400">{f.hint}</p>
                 </div>
               ))}
+            </div>
+          </Card>
+
+          {/* ── Per-country verification pricing ── */}
+          <Card>
+            <CardHeader
+              title="Verified badge — per-country pricing"
+              subtitle="Override the monthly fee for specific countries. Detected from the user's IP. Leave empty to use the global fallback above."
+            />
+            <div className="space-y-4 px-5 py-4">
+              {Object.keys(countryPricing).length === 0 && (
+                <p className="text-sm text-slate-400">No country overrides yet. Add one below.</p>
+              )}
+              {Object.entries(countryPricing).map(([cc, val]) => (
+                <div key={cc} className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2">
+                  <span className="w-10 text-sm font-bold text-slate-700">{cc}</span>
+                  <Input
+                    type="number" min={0} step="0.01"
+                    value={val.amount}
+                    onChange={(e) => setCountryPricing((p) => ({ ...p, [cc]: { ...p[cc], amount: e.target.value } }))}
+                    disabled={!canManage}
+                    className="w-24"
+                    placeholder="Amount"
+                  />
+                  <Input
+                    value={val.currency}
+                    onChange={(e) => setCountryPricing((p) => ({ ...p, [cc]: { ...p[cc], currency: e.target.value.toUpperCase() } }))}
+                    disabled={!canManage}
+                    className="w-20"
+                    placeholder="USD"
+                    maxLength={3}
+                  />
+                  <Input
+                    value={val.symbol}
+                    onChange={(e) => setCountryPricing((p) => ({ ...p, [cc]: { ...p[cc], symbol: e.target.value } }))}
+                    disabled={!canManage}
+                    className="w-16"
+                    placeholder="$"
+                    maxLength={4}
+                  />
+                  <button
+                    onClick={() => removeCountryEntry(cc)}
+                    disabled={!canManage}
+                    className="ml-auto text-xs text-red-500 hover:text-red-700 disabled:opacity-40"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+
+              {/* Add new row */}
+              {canManage && (
+                <div className="flex items-center gap-2 border-t pt-3">
+                  <Input
+                    value={newCountry.cc}
+                    onChange={(e) => setNewCountry((n) => ({ ...n, cc: e.target.value.toUpperCase() }))}
+                    className="w-16"
+                    placeholder="CC"
+                    maxLength={2}
+                  />
+                  <Input
+                    type="number" min={0} step="0.01"
+                    value={newCountry.amount}
+                    onChange={(e) => setNewCountry((n) => ({ ...n, amount: e.target.value }))}
+                    className="w-24"
+                    placeholder="Amount"
+                  />
+                  <Input
+                    value={newCountry.currency}
+                    onChange={(e) => setNewCountry((n) => ({ ...n, currency: e.target.value.toUpperCase() }))}
+                    className="w-20"
+                    placeholder="USD"
+                    maxLength={3}
+                  />
+                  <Input
+                    value={newCountry.symbol}
+                    onChange={(e) => setNewCountry((n) => ({ ...n, symbol: e.target.value }))}
+                    className="w-16"
+                    placeholder="$"
+                    maxLength={4}
+                  />
+                  <Button variant="secondary" onClick={addCountryEntry}>
+                    Add
+                  </Button>
+                </div>
+              )}
+              <p className="text-xs text-slate-400">
+                CC = ISO 3166-1 alpha-2 (e.g. BD, US, GB). Currency = ISO 4217 (e.g. BDT, USD). Symbol = display prefix (e.g. ৳, $).
+              </p>
+              <Button
+                disabled={!canManage}
+                loading={setSetting.isPending}
+                onClick={saveCountryPricing}
+              >
+                Save country pricing
+              </Button>
             </div>
           </Card>
 
