@@ -101,6 +101,10 @@ export interface Profile {
   /** @nullable */
   viewerHasPendingRequest?: boolean | null;
   /** @nullable */
+  viewerHasIncomingRequest?: boolean | null;
+  /** @nullable */
+  viewerIncomingRequestId?: number | null;
+  /** @nullable */
   viewerFollows?: boolean | null;
   /** @nullable */
   viewerCanSendRequest?: boolean | null;

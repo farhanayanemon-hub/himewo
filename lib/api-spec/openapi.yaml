@@ -4658,6 +4658,8 @@ components:
         postCount: { type: ["integer", "null"] }
         viewerIsFriend: { type: ["boolean", "null"] }
         viewerHasPendingRequest: { type: ["boolean", "null"] }
+        viewerHasIncomingRequest: { type: ["boolean", "null"] }
+        viewerIncomingRequestId: { type: ["integer", "null"] }
         viewerFollows: { type: ["boolean", "null"] }
         viewerCanSendRequest: { type: ["boolean", "null"] }
         isLocked: { type: ["boolean", "null"] }

@@ -8,6 +8,7 @@ import {
   useFollowUser,
   useCompleteOnboarding,
   getGetCurrentUserQueryKey,
+  customFetch,
   type Profile,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
@@ -62,13 +63,11 @@ export function OnboardingFlow() {
   const followUser = useFollowUser();
   const completeOnboarding = useCompleteOnboarding();
 
-  // Mandatory accounts query
+  // Mandatory accounts query using authenticated customFetch
   const { data: mandatoryAccounts = [], isLoading: isLoadingMandatory } = useQuery<Profile[]>({
     queryKey: ["onboarding", "mandatory-accounts"],
     queryFn: async () => {
-      const res = await fetch("/api/onboarding/mandatory-accounts");
-      if (!res.ok) return [];
-      return res.json();
+      return customFetch<Profile[]>("/api/onboarding/mandatory-accounts").catch(() => []);
     },
     enabled: step === "friends",
   });

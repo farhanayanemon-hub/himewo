@@ -76,6 +76,11 @@ export default function EditProfileScreen() {
       Alert.alert("Name required", "Please enter a display name.");
       return;
     }
+    const bioWords = bio.trim() ? bio.trim().split(/\s+/).length : 0;
+    if (bioWords > 150) {
+      Alert.alert("Bio too long", "Bio cannot exceed 150 words.");
+      return;
+    }
     setSaving(true);
     try {
       const data: ProfileUpdate = {
@@ -240,8 +245,8 @@ export default function EditProfileScreen() {
           <Field label="Name" c={c}>
             <TextInput value={displayName} onChangeText={setDisplayName} placeholder="Your name" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" style={[styles.input, { color: c.foreground }]} />
           </Field>
-          <Field label="Bio / Intro" c={c} last>
-            <TextInput value={bio} onChangeText={setBio} placeholder="Write something about yourself" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" multiline style={[styles.input, { color: c.foreground, minHeight: 60, textAlignVertical: "top" }]} />
+          <Field label={`Bio / Intro (${bio.trim() ? bio.trim().split(/\s+/).length : 0}/150 words)`} c={c} last>
+            <TextInput value={bio} onChangeText={setBio} placeholder="Write something about yourself (up to 150 words)" placeholderTextColor={c.mutedForeground} underlineColorAndroid="transparent" multiline style={[styles.input, { color: c.foreground, minHeight: 60, textAlignVertical: "top" }]} />
           </Field>
         </View>
 

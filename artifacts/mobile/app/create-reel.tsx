@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
   StyleSheet,
+  DeviceEventEmitter,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useVideoPlayer, VideoView } from "expo-video";
@@ -17,7 +18,7 @@ import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCreateReel, getListReelsQueryKey } from "@workspace/api-client-react";
+import { useCreateReel, getListReelsQueryKey, getGetFeedQueryKey } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { uploadMedia, UploadUnavailableError, captureWithCamera, type PickedAsset } from "@/lib/upload";
 import { MusicPickerModal, type SelectedMusic } from "@/components/MusicPicker";
@@ -215,6 +216,14 @@ export default function CreateReelScreen() {
         },
       });
       qc.invalidateQueries({ queryKey: getListReelsQueryKey() });
+      qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
+      qc.invalidateQueries({
+        predicate: (q) => {
+          const k = q.queryKey;
+          return Array.isArray(k) && (k[0] === "user-reels" || k[0] === "user-profile-reels");
+        },
+      });
+      DeviceEventEmitter.emit("himewo:reel-created");
       router.back();
     } catch {
       Alert.alert("Error", "Could not share your reel. Please try again.");

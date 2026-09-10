@@ -5,6 +5,7 @@ import { Link, useLocation } from "wouter";
 import {
   NavHomeIcon,
   NavFriendsIcon,
+  NavReelsIcon,
 } from "@/components/nav-icons";
 import {
   Bell,
@@ -152,7 +153,7 @@ export function MobileNav({
   user,
   unreadCount = 0,
 }: {
-  user: { displayName?: string | null; avatarUrl?: string | null } | null;
+  user: { displayName?: string | null; avatarUrl?: string | null; username?: string | null } | null;
   unreadCount?: number;
 }) {
   const [location] = useLocation();
@@ -165,7 +166,8 @@ export function MobileNav({
   const profileActive =
     location === profileHref ||
     location === "/me" ||
-    location.startsWith("/profile/");
+    location.startsWith("/profile/") ||
+    Boolean(user?.username && location === `/${user.username}`);
 
   const StdItem = ({
     href,
@@ -222,24 +224,21 @@ export function MobileNav({
         <StdItem href="/" icon={NavHomeIcon} label="Feed" active={isActive("/")} />
         <StdItem href="/friends" icon={NavFriendsIcon} label="Friends" active={isActive("/friends")} />
 
-        {/* Reels — raised center button */}
+        {/* Reels — raised center button with matching desktop clapperboard icon */}
         <Link
           href="/reels"
-          className="relative flex flex-1 flex-col items-center justify-end h-full pb-2 press"
+          className="relative flex flex-1 flex-col items-center justify-end h-full pb-1.5 press"
         >
           <span
-            className={`absolute bottom-[18px] flex items-center justify-center w-[58px] h-[58px] rounded-[20px] bg-violet-500 dark:bg-violet-500 text-white shadow-[0_12px_28px_-6px_rgba(139,92,246,0.55)] ring-4 ring-background transition-transform duration-200 ${
+            className={`absolute bottom-[20px] flex items-center justify-center w-[54px] h-[54px] rounded-[18px] bg-violet-500 dark:bg-violet-500 text-white shadow-[0_10px_24px_-4px_rgba(139,92,246,0.55)] ring-4 ring-background transition-transform duration-200 ${
               reelsActive ? "scale-105" : ""
             }`}
           >
-            {/* Ionicons "film" — same glyph as the mobile app's raised Reels button */}
-            <svg width="28" height="28" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true">
-              <path d="M436 80H76a44.05 44.05 0 00-44 44v264a44.05 44.05 0 0044 44h360a44.05 44.05 0 0044-44V124a44.05 44.05 0 00-44-44zM112 388a12 12 0 01-12 12H76a12 12 0 01-12-12v-24a12 12 0 0112-12h24a12 12 0 0112 12zm0-80a12 12 0 01-12 12H76a12 12 0 01-12-12v-24a12 12 0 0112-12h24a12 12 0 0112 12zm0-80a12 12 0 01-12 12H76a12 12 0 01-12-12v-24a12 12 0 0112-12h24a12 12 0 0112 12zm0-80a12 12 0 01-12 12H76a12 12 0 01-12-12v-24a12 12 0 0112-12h24a12 12 0 0112 12zm241.68 124H158.32a16 16 0 010-32h195.36a16 16 0 110 32zM448 388a12 12 0 01-12 12h-24a12 12 0 01-12-12v-24a12 12 0 0112-12h24a12 12 0 0112 12zm0-80a12 12 0 01-12 12h-24a12 12 0 01-12-12v-24a12 12 0 0112-12h24a12 12 0 0112 12zm0-80a12 12 0 01-12 12h-24a12 12 0 01-12-12v-24a12 12 0 0112-12h24a12 12 0 0112 12zm0-80a12 12 0 01-12 12h-24a12 12 0 01-12-12v-24a12 12 0 0112-12h24a12 12 0 0112 12z" />
-            </svg>
+            <NavReelsIcon className="w-6 h-6 text-white" />
           </span>
           <span
-            className={`text-[10px] leading-none ${
-              reelsActive ? "text-violet-500 dark:text-violet-400 font-bold" : "text-muted-foreground font-medium"
+            className={`relative z-10 text-[10px] leading-tight font-medium ${
+              reelsActive ? "text-violet-500 dark:text-violet-400 font-bold" : "text-muted-foreground"
             }`}
           >
             Reels

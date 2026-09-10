@@ -109,22 +109,18 @@ export function syncUserFollowState(
   queryClient.setQueriesData<Profile>(
     {
       predicate: (query) => {
-        const key = query.queryKey;
-        const data = query.state.data as Profile | undefined;
+        const data = query.state.data;
+        if (!data || typeof data !== "object" || Array.isArray(data)) return false;
+        const prof = data as any;
+        if (!prof.displayName && !prof.username) return false;
         return (
-          (data && typeof data === "object" && (data.id === userId || data.username === userId)) ||
-          (Array.isArray(key) &&
-            key.some(
-              (part) =>
-                part === `/api/users/${userId}` ||
-                part === userId ||
-                part === `/api/users/by-username/${userId}`,
-            ))
+          prof.id === userId ||
+          (prof.username && prof.username.toLowerCase() === userId.toLowerCase())
         );
       },
     },
     (old) => {
-      if (!old || typeof old !== "object") return old;
+      if (!old || typeof old !== "object" || Array.isArray(old)) return old;
       const currentFollowers = (old as any).followerCount ?? 0;
       const newFollowers = isFollowing
         ? currentFollowers + (old.viewerFollows ? 0 : 1)

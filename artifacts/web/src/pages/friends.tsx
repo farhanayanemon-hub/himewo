@@ -47,7 +47,7 @@ export default function FriendsPage() {
               {friends.map(friend => (
                 <Link
                   key={friend.id}
-                  href={`/profile/${friend.id}`}
+                  href={`/${friend.username || friend.id}`}
                   className="border border-border rounded-xl p-4 flex flex-col items-center text-center gap-2 hover:bg-muted/40 transition-colors"
                 >
                   <img src={avatarSrc(friend.avatarUrl)} className="w-16 h-16 rounded-full object-cover bg-muted" alt="" />
@@ -71,7 +71,7 @@ export default function FriendsPage() {
                 <div key={req.id} className="border border-border rounded-xl p-4 flex flex-col items-center text-center gap-3">
                   <img src={avatarSrc(req.requester.avatarUrl)} className="w-20 h-20 rounded-full object-cover" alt="" />
                   <div>
-                    <Link href={`/profile/${req.requester.id}`} className="font-semibold hover:underline">
+                    <Link href={`/${req.requester.username || req.requester.id}`} className="font-semibold hover:underline">
                       {req.requester.displayName}
                     </Link>
                   </div>
@@ -106,7 +106,7 @@ export default function FriendsPage() {
               <div key={user.id} className="border border-border rounded-xl p-4 flex flex-col items-center text-center gap-3">
                 <img src={avatarSrc(user.avatarUrl)} className="w-20 h-20 rounded-full object-cover" alt="" />
                 <div>
-                  <Link href={`/profile/${user.id}`} className="font-semibold hover:underline">
+                  <Link href={`/${user.username || user.id}`} className="font-semibold hover:underline">
                     {user.displayName}
                   </Link>
                   {user.mutualFriendsCount > 0 && (

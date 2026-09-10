@@ -8,7 +8,7 @@ import {
   presenceTable,
   type FriendRequest,
 } from "@workspace/db";
-import { and, or, eq, inArray } from "drizzle-orm";
+import { and, or, eq, inArray, sql } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import { toProfile } from "../lib/serialize";
 import { createNotification } from "../lib/notify";
@@ -28,6 +28,19 @@ import {
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+async function resolveUserId(raw: string): Promise<string | null> {
+  const trimmed = raw.trim();
+  if (UUID_RE.test(trimmed)) return trimmed;
+  const [row] = await db
+    .select({ id: profilesTable.id })
+    .from(profilesTable)
+    .where(sql`lower(${profilesTable.username}) = ${trimmed.toLowerCase()}`);
+  return row?.id ?? null;
+}
 
 function canonicalPair(a: string, b: string): [string, string] {
   return a < b ? [a, b] : [b, a];
@@ -113,12 +126,17 @@ router.post("/friends/requests", requireAuth, async (req, res): Promise<void> =>
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  if (parsed.data.addresseeId === req.userId) {
+  const targetId = await resolveUserId(parsed.data.addresseeId);
+  if (!targetId) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  if (targetId === req.userId) {
     res.status(400).json({ error: "Cannot friend yourself" });
     return;
   }
   // Honor the addressee's "who can send me friend requests" setting.
-  if (!(await canSendFriendRequest(req.userId!, parsed.data.addresseeId))) {
+  if (!(await canSendFriendRequest(req.userId!, targetId))) {
     res.status(403).json({
       error: "This person only accepts requests from friends of friends",
     });
@@ -128,7 +146,7 @@ router.post("/friends/requests", requireAuth, async (req, res): Promise<void> =>
     .insert(friendRequestsTable)
     .values({
       requesterId: req.userId!,
-      addresseeId: parsed.data.addresseeId,
+      addresseeId: targetId,
       status: "pending",
     })
     .onConflictDoUpdate({
@@ -137,7 +155,7 @@ router.post("/friends/requests", requireAuth, async (req, res): Promise<void> =>
     })
     .returning();
   await createNotification({
-    userId: parsed.data.addresseeId,
+    userId: targetId,
     actorId: req.userId!,
     type: "friend_request",
     entityType: "friend_request",
@@ -228,7 +246,12 @@ router.delete("/friends/:userId", requireAuth, async (req, res): Promise<void> =
     res.status(400).json({ error: params.error.message });
     return;
   }
-  const [a, b] = canonicalPair(req.userId!, params.data.userId);
+  const targetId = await resolveUserId(params.data.userId);
+  if (!targetId) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  const [a, b] = canonicalPair(req.userId!, targetId);
   await db
     .delete(friendshipsTable)
     .where(
@@ -243,16 +266,21 @@ router.post("/follow/:userId", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: params.error.message });
     return;
   }
-  if (params.data.userId === req.userId) {
+  const targetId = await resolveUserId(params.data.userId);
+  if (!targetId) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  if (targetId === req.userId) {
     res.status(400).json({ error: "Cannot follow yourself" });
     return;
   }
   await db
     .insert(followsTable)
-    .values({ followerId: req.userId!, followingId: params.data.userId })
+    .values({ followerId: req.userId!, followingId: targetId })
     .onConflictDoNothing();
   await createNotification({
-    userId: params.data.userId,
+    userId: targetId,
     actorId: req.userId!,
     type: "follow",
     entityType: "user",
@@ -266,12 +294,17 @@ router.delete("/follow/:userId", requireAuth, async (req, res): Promise<void> =>
     res.status(400).json({ error: params.error.message });
     return;
   }
+  const targetId = await resolveUserId(params.data.userId);
+  if (!targetId) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
   await db
     .delete(followsTable)
     .where(
       and(
         eq(followsTable.followerId, req.userId!),
-        eq(followsTable.followingId, params.data.userId),
+        eq(followsTable.followingId, targetId),
       ),
     );
   res.sendStatus(204);

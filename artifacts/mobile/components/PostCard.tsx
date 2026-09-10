@@ -37,6 +37,7 @@ import { MentionText } from "@/components/Mention";
 import { MediaGrid } from "@/components/MediaGrid";
 import { BoostSheet } from "@/components/BoostSheet";
 import { ReactionBar } from "@/components/ReactionBar";
+import { PostReactionsSheet } from "@/components/PostReactionsSheet";
 import { reactionConfig } from "@/constants/reactions";
 import { useColors } from "@/hooks/useColors";
 import { syncUserFollowState, syncPageFollowState } from "@/lib/follow-sync";
@@ -174,6 +175,7 @@ export function PostCard({ post, onComment, onShare, hideFollowButton = false }:
   const [menuOpen, setMenuOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [boostOpen, setBoostOpen] = useState(false);
+  const [reactionsSheetOpen, setReactionsSheetOpen] = useState(false);
   const [draft, setDraft] = useState(post.content);
 
   const setReaction = useSetPostReaction();
@@ -363,7 +365,7 @@ export function PostCard({ post, onComment, onShare, hideFollowButton = false }:
           <Ionicons
             name={saved ? "bookmark" : "bookmark-outline"}
             size={20}
-            color={saved ? "#f59e0b" : c.mutedForeground}
+            color={saved ? c.primary : c.mutedForeground}
           />
         </Pressable>
         {isOwner && (
@@ -392,7 +394,11 @@ export function PostCard({ post, onComment, onShare, hideFollowButton = false }:
         (commentsEnabled && post.commentCount > 0) ||
         post.shareCount > 0) && (
         <View style={styles.statsRow}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+          <Pressable
+            onPress={() => setReactionsSheetOpen(true)}
+            hitSlop={8}
+            style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+          >
             {reactionsEnabled && topReactions.length > 0 && (
               <Text style={{ fontSize: 13 }}>{topReactions.join("")}</Text>
             )}
@@ -401,7 +407,7 @@ export function PostCard({ post, onComment, onShare, hideFollowButton = false }:
                 {formatCount(summary.total)}
               </Text>
             )}
-          </View>
+          </Pressable>
           <View style={{ flexDirection: "row", gap: 12 }}>
             {commentsEnabled && post.commentCount > 0 && (
               <Text style={{ color: c.mutedForeground, fontSize: 13 }}>
@@ -564,6 +570,12 @@ export function PostCard({ post, onComment, onShare, hideFollowButton = false }:
           onClose={() => setBoostOpen(false)}
         />
       )}
+
+      <PostReactionsSheet
+        postId={post.id}
+        visible={reactionsSheetOpen}
+        onClose={() => setReactionsSheetOpen(false)}
+      />
     </View>
   );
 }

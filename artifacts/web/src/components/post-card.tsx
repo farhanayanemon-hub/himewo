@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { avatarSrc } from "@/lib/avatar";
 import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
+import { getAuthorProfileUrl } from "@/lib/user-link";
 import { VerifiedBadge } from "@/components/verified-badge";
 import { MediaGrid } from "@/components/media-grid";
 import { RenderWithMentions } from "@/components/mention";
@@ -70,6 +71,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { getGetFeedQueryKey, getGetPostQueryKey, getGetUserPostsQueryKey, getListSavedItemsQueryKey } from "@workspace/api-client-react";
 import { ReactionControl, reactionConfig } from "@/components/reaction-picker";
+import { PostReactionsDialog } from "@/components/post-reactions-dialog";
 import { useAuth } from "@/lib/auth";
 import { useActingPage } from "@/lib/acting-page";
 
@@ -104,6 +106,7 @@ export function PostCard({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(post.content);
   const [showBoost, setShowBoost] = useState(false);
+  const [showReactionsDialog, setShowReactionsDialog] = useState(false);
   // Optimistic reaction state — updates instantly on tap, server sync follows.
   const [summary, setSummary] = useState(post.reactions);
   useEffect(() => {
@@ -338,15 +341,15 @@ export function PostCard({
   const PrivacyIcon = meta.icon;
 
   return (
-    <div className="aurora-glass-card rounded-2xl p-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+    <div className="aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-border/70 p-3 sm:p-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
-          <Link href={post.authorPage ? `/pages/${post.authorPage.id}` : `/profile/${post.author.id}`} className="shrink-0 group">
+          <Link href={getAuthorProfileUrl(post.author, post.authorPage)} className="shrink-0 group">
             <img src={avatarSrc(post.authorPage ? post.authorPage.avatarUrl : post.author.avatarUrl)} className="w-10 h-10 rounded-full object-cover group-hover:ring-2 ring-primary transition-all" alt="" />
           </Link>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <Link href={post.authorPage ? `/pages/${post.authorPage.id}` : `/profile/${post.author.id}`} className="font-semibold hover:underline">
+              <Link href={getAuthorProfileUrl(post.author, post.authorPage)} className="font-semibold hover:underline">
                 {post.authorPage ? post.authorPage.name : post.author.displayName}
               </Link>
               {!post.authorPage && post.author.isVerified && <VerifiedBadge className="w-4 h-4 ml-0.5 align-text-bottom" />}
@@ -417,7 +420,7 @@ export function PostCard({
             title={post.viewerHasSaved ? "Saved — click to unsave" : "Save post"}
             className={`rounded-full transition-colors ${
               post.viewerHasSaved
-                ? "text-amber-500 hover:text-amber-600 bg-amber-500/10"
+                ? "text-primary hover:text-primary bg-primary/10"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -426,7 +429,7 @@ export function PostCard({
             ) : (
               <Bookmark
                 className={`w-5 h-5 transition-transform duration-200 ${
-                  post.viewerHasSaved ? "fill-amber-500 text-amber-500 scale-105" : ""
+                  post.viewerHasSaved ? "fill-primary text-primary scale-105" : ""
                 }`}
                 fill={post.viewerHasSaved ? "currentColor" : "none"}
               />
@@ -607,7 +610,12 @@ export function PostCard({
       <div className="flex justify-between items-center text-sm text-muted-foreground py-2 border-b border-border mb-1">
         <div className="flex items-center gap-1">
           {post.reactionsEnabled && summary.total > 0 && (
-            <>
+            <button
+              type="button"
+              onClick={() => setShowReactionsDialog(true)}
+              className="flex items-center gap-1 hover:opacity-80 transition-opacity cursor-pointer group"
+              title="See who reacted"
+            >
               <div className="flex -space-x-1">
                 {Object.keys(summary.byType).slice(0, 3).map((type) => {
                   const rType = type as ReactionType;
@@ -618,8 +626,8 @@ export function PostCard({
                   );
                 })}
               </div>
-              <span className="ml-1">{summary.total}</span>
-            </>
+              <span className="ml-1 group-hover:underline">{summary.total}</span>
+            </button>
           )}
         </div>
         <div className="flex gap-3">
@@ -674,6 +682,12 @@ export function PostCard({
           </div>
         </div>
       )}
+
+      <PostReactionsDialog
+        postId={post.id}
+        open={showReactionsDialog}
+        onOpenChange={setShowReactionsDialog}
+      />
     </div>
   );
 }

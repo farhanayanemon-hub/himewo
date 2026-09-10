@@ -14,14 +14,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   useGetFriendSuggestions,
   getGetFriendSuggestionsQueryKey,
   useUpdateMyProfile,
   useSendFriendRequest,
+  useFollowUser,
   useCompleteOnboarding,
   getGetCurrentUserQueryKey,
+  customFetch,
+  type Profile,
 } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
 import { useAuth } from "@/lib/auth";
@@ -57,7 +60,32 @@ export function OnboardingFlow() {
 
   const updateProfile = useUpdateMyProfile();
   const sendRequest = useSendFriendRequest();
+  const followUser = useFollowUser();
   const completeOnboarding = useCompleteOnboarding();
+
+  const [followedMandatory, setFollowedMandatory] = useState<Set<string>>(new Set());
+  const [followingMandatory, setFollowingMandatory] = useState<string | null>(null);
+
+  const { data: mandatoryAccounts = [] } = useQuery<Profile[]>({
+    queryKey: ["onboarding", "mandatory-accounts"],
+    queryFn: async () => {
+      return customFetch<Profile[]>("/api/onboarding/mandatory-accounts").catch(() => []);
+    },
+    enabled: step === "friends",
+  });
+
+  const handleFollowMandatory = async (accId: string) => {
+    if (followedMandatory.has(accId) || followingMandatory) return;
+    setFollowingMandatory(accId);
+    try {
+      await followUser.mutateAsync({ userId: accId });
+      setFollowedMandatory((prev) => new Set(prev).add(accId));
+    } catch {
+      Alert.alert("Error", "Failed to follow account");
+    } finally {
+      setFollowingMandatory(null);
+    }
+  };
 
   const suggestionsParams = { mode: "onboarding" as const, limit: 12 };
   const suggestions = useGetFriendSuggestions(suggestionsParams, {
@@ -340,13 +368,15 @@ export function OnboardingFlow() {
 
         {step === "friends" && (
           <View style={{ gap: 14 }}>
-            <View style={styles.center}>
-              <Text style={[styles.stepTitle, { color: c.foreground }]}>
-                Find your friends
-              </Text>
-              <Text style={[styles.stepSub, { color: c.mutedForeground }]}>
-                Send {goal} friend requests to get your feed going.
-              </Text>
+            <View style={styles.headerRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.stepTitle, { color: c.foreground }]}>
+                  Find people you know
+                </Text>
+                <Text style={[styles.stepSub, { color: c.mutedForeground }]}>
+                  Send at least {goal} friend requests to get your feed started.
+                </Text>
+              </View>
               <View
                 style={[styles.counterPill, { backgroundColor: `${c.primary}1A` }]}
               >
@@ -362,6 +392,84 @@ export function OnboardingFlow() {
                 </Text>
               </View>
             </View>
+
+            {/* Mandatory Accounts to Follow */}
+            {mandatoryAccounts.length > 0 && (
+              <View
+                style={{
+                  marginBottom: 20,
+                  padding: 14,
+                  borderRadius: 16,
+                  backgroundColor: "rgba(168, 85, 247, 0.1)",
+                  borderWidth: 1,
+                  borderColor: "rgba(168, 85, 247, 0.3)",
+                  gap: 10,
+                }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <Ionicons name="shield-checkmark" size={16} color="#a855f7" />
+                  <Text style={{ color: "#a855f7", fontSize: 12, fontWeight: "700", textTransform: "uppercase" }}>
+                    Required: Official Accounts
+                  </Text>
+                </View>
+                {mandatoryAccounts.map((acc) => {
+                  const isFollowed = followedMandatory.has(acc.id) || (acc as any).viewerIsFollowing || acc.viewerFollows;
+                  const isPending = followingMandatory === acc.id;
+                  return (
+                    <View
+                      key={acc.id}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        backgroundColor: c.card,
+                        padding: 10,
+                        borderRadius: 12,
+                        borderWidth: StyleSheet.hairlineWidth,
+                        borderColor: c.border,
+                      }}
+                    >
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+                        <Avatar uri={acc.avatarUrl} name={acc.displayName} size={40} />
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ color: c.foreground, fontWeight: "700", fontSize: 13 }} numberOfLines={1}>
+                            {acc.displayName}
+                          </Text>
+                          <Text style={{ color: c.mutedForeground, fontSize: 11 }} numberOfLines={1}>
+                            @{acc.username}
+                          </Text>
+                        </View>
+                      </View>
+                      <Pressable
+                        onPress={() => void handleFollowMandatory(acc.id)}
+                        disabled={isFollowed || isPending}
+                        style={{
+                          paddingHorizontal: 14,
+                          paddingVertical: 7,
+                          borderRadius: 8,
+                          backgroundColor: isFollowed ? c.secondary : "#9333ea",
+                        }}
+                      >
+                        {isPending ? (
+                          <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                          <Text
+                            style={{
+                              color: isFollowed ? c.mutedForeground : "#fff",
+                              fontWeight: "600",
+                              fontSize: 12,
+                            }}
+                          >
+                            {isFollowed ? "Following ✓" : "Follow"}
+                          </Text>
+                        )}
+                      </Pressable>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+
             {suggestions.isLoading ? (
               <ActivityIndicator
                 color={c.primary}

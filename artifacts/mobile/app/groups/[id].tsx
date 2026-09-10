@@ -224,15 +224,20 @@ export default function GroupDetailScreen() {
             <View style={{ padding: 16 }}>
               <Text style={[styles.name, { color: c.foreground }]}>{group.name}</Text>
               <View style={styles.metaRow}>
-                <Ionicons name="people" size={14} color={c.mutedForeground} />
+                <View style={[styles.memberPill, { backgroundColor: c.primary + "18" }]}>
+                  <Ionicons name="people" size={14} color={c.primary} />
+                  <Text style={[styles.memberPillText, { color: c.primary }]}>
+                    {group.memberCount} members
+                  </Text>
+                </View>
                 <Text style={[styles.meta, { color: c.mutedForeground }]}>
-                  {group.privacy} circle · {group.memberCount} members
+                  • {group.privacy} circle
                 </Text>
               </View>
               {group.description ? (
                 <Text style={[styles.desc, { color: c.foreground }]}>{group.description}</Text>
               ) : null}
-              <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
+              <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
                 <Pressable
                   style={[
                     styles.joinBtn,
@@ -313,7 +318,9 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   cover: { height: 150 },
   name: { fontFamily: "Inter_800ExtraBold", fontSize: 24 },
-  metaRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "wrap" },
+  memberPill: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
+  memberPillText: { fontFamily: "Inter_700Bold", fontSize: 13 },
   meta: { fontFamily: "Inter_500Medium", fontSize: 13 },
   desc: { fontFamily: "Inter_400Regular", fontSize: 15, marginTop: 10, lineHeight: 21 },
   joinBtn: { borderRadius: 10, paddingVertical: 12, alignItems: "center", justifyContent: "center" },

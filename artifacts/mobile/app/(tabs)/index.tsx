@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -8,6 +8,7 @@ import {
   Text,
   View,
   StyleSheet,
+  DeviceEventEmitter,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
@@ -29,6 +30,7 @@ import { Avatar } from "@/components/Avatar";
 import { PostCard } from "@/components/PostCard";
 import { SponsoredCard } from "@/components/SponsoredCard";
 import { StoryBar } from "@/components/StoryBar";
+import { ReelsShelf } from "@/components/ReelsShelf";
 import { CommentsSheet } from "@/components/CommentsSheet";
 import { ShareSheet } from "@/components/ShareSheet";
 import { useAuth } from "@/lib/auth";
@@ -39,7 +41,10 @@ import { shadow } from "@/constants/shadows";
 
 const FEED_LIMIT = 10;
 
-type FeedItem = { kind: "post"; post: Post } | { kind: "ad"; ad: ServedAd };
+type FeedItem =
+  | { kind: "post"; post: Post }
+  | { kind: "ad"; ad: ServedAd }
+  | { kind: "reels" };
 
 export default function HomeScreen() {
   const c = useColors();
@@ -81,13 +86,22 @@ export default function HomeScreen() {
 
   const { data: ads } = useServeAds({ placement: "feed", limit: 3 });
   const AD_EVERY = 5;
+  const REELS_AFTER = 4; // Show reels shelf after 4 posts
   const feedItems: FeedItem[] = [];
+  let reelsInserted = false;
   posts.forEach((post, i) => {
     if (i > 0 && i % AD_EVERY === 0 && ads && ads[i / AD_EVERY - 1]) {
       feedItems.push({ kind: "ad", ad: ads[i / AD_EVERY - 1] });
     }
     feedItems.push({ kind: "post", post });
+    if (i === REELS_AFTER - 1 && !reelsInserted) {
+      feedItems.push({ kind: "reels" });
+      reelsInserted = true;
+    }
   });
+  if (!reelsInserted && posts.length > 0 && posts.length < REELS_AFTER) {
+    feedItems.push({ kind: "reels" });
+  }
 
   const recordImpression = useRecordAdImpression();
   const impressionFnRef = useRef(recordImpression);
@@ -113,6 +127,13 @@ export default function HomeScreen() {
     qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
     refetch();
   }, [qc, refetch]);
+
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener("himewo:reel-created", () => {
+      onRefresh();
+    });
+    return () => sub.remove();
+  }, [onRefresh]);
 
   const onEndReached = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
@@ -158,7 +179,11 @@ export default function HomeScreen() {
         <FlatList
           data={feedItems}
           keyExtractor={(item) =>
-            item.kind === "ad" ? `ad-${item.ad.adId}` : `post-${item.post.id}`
+            item.kind === "ad"
+              ? `ad-${item.ad.adId}`
+              : item.kind === "reels"
+                ? "feed-reels-shelf"
+                : `post-${item.post.id}`
           }
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={onRefresh} tintColor={c.primary} />
@@ -173,9 +198,14 @@ export default function HomeScreen() {
             ) : null
           }
           ListHeaderComponent={
-            <>
+            <View style={{ borderBottomWidth: StyleSheet.hairlineWidth, borderColor: c.border, marginBottom: 8 }}>
+              {/* StoryBar without bottom gap */}
               <StoryBar />
-              <BirthdayBanner />
+
+              {/* Clean Facebook-style divider line */}
+              <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: c.border }} />
+
+              {/* Post Composer directly attached */}
               <Pressable
                 style={[styles.composer, { backgroundColor: c.card }]}
                 onPress={() => router.push("/create-post")}
@@ -197,26 +227,35 @@ export default function HomeScreen() {
                   <Ionicons name="images" size={24} color="#31a24c" />
                 </Pressable>
               </Pressable>
+
+              <BirthdayBanner />
               <FollowedShopsShowcase />
-            </>
+            </View>
           }
-          renderItem={({ item }) =>
-            item.kind === "ad" ? (
-              <SponsoredCard ad={item.ad} />
-            ) : (
+          renderItem={({ item }) => {
+            if (item.kind === "reels") {
+              return <ReelsShelf />;
+            }
+            if (item.kind === "ad") {
+              return <SponsoredCard ad={item.ad} />;
+            }
+            return (
               <PostCard
                 post={item.post}
                 onComment={() => setActivePost(item.post.id)}
                 onShare={() => onShare(item.post.id)}
               />
-            )
-          }
+            );
+          }}
           ListEmptyComponent={
-            <View style={{ alignItems: "center", marginTop: 60, paddingHorizontal: 20 }}>
-              <Ionicons name="newspaper-outline" size={48} color={c.mutedForeground} />
-              <Text style={{ color: c.mutedForeground, marginTop: 12, textAlign: "center" }}>
-                No posts yet. Be the first to share something!
-              </Text>
+            <View>
+              <View style={{ alignItems: "center", marginTop: 40, paddingHorizontal: 20, marginBottom: 20 }}>
+                <Ionicons name="newspaper-outline" size={48} color={c.mutedForeground} />
+                <Text style={{ color: c.mutedForeground, marginTop: 12, textAlign: "center" }}>
+                  No posts yet. Be the first to share something!
+                </Text>
+              </View>
+              <ReelsShelf />
             </View>
           }
         />
@@ -388,7 +427,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
     padding: 12,
-    marginBottom: 8,
+    marginBottom: 0,
   },
   composerInput: {
     flex: 1,

@@ -436,8 +436,8 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
       <div
         className={`flex-1 w-full max-w-[1720px] mx-auto flex gap-6 lg:gap-8 ${
           rightSidebar
-            ? "px-4 lg:px-6 pt-5 justify-center"
-            : "px-4 lg:px-6 pt-5"
+            ? "px-0 sm:px-4 lg:px-6 pt-0 sm:pt-5 justify-center"
+            : "px-0 sm:px-4 lg:px-6 pt-0 sm:pt-5"
         }`}
       >
         {/* Left Sidebar */}

@@ -116,7 +116,7 @@ function AppRoutes() {
       <Route path="/live" component={LivePage} />
       <Route path="/live/:id" component={LiveStreamPage} />
       {/* himewo.com/<username> → profile. Must stay last before NotFound. */}
-      <Route path="/:username" component={UsernameProfilePage} />
+      <Route path="/:username" component={ProfilePage} />
       <Route component={NotFound} />
     </Switch>
   );

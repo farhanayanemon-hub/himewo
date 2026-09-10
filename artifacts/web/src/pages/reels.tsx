@@ -20,6 +20,7 @@ import {
   useCreatePost,
   PostInputPrivacy,
   getListReelsQueryKey,
+  getGetFeedQueryKey,
   getListSavedItemsQueryKey,
   getListReelCommentsQueryKey,
   type Reel,
@@ -379,7 +380,14 @@ function CreateReelDialog() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListReelsQueryKey() });
-          queryClient.invalidateQueries({ queryKey: ["user-reels"] });
+          queryClient.invalidateQueries({ queryKey: getGetFeedQueryKey() });
+          queryClient.invalidateQueries({
+            predicate: (q) => {
+              const k = q.queryKey;
+              return Array.isArray(k) && (k[0] === "user-reels" || k[0] === "user-profile-reels");
+            },
+          });
+          window.dispatchEvent(new CustomEvent("himewo:reel-created"));
           reset();
           setOpen(false);
           toast({ title: "Reel shared with overlays!" });

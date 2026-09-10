@@ -97,7 +97,10 @@ router.get("/users", requireAuth, async (req, res): Promise<void> => {
 
 router.get("/onboarding/mandatory-accounts", requireAuth, async (_req, res): Promise<void> => {
   const settings = await getSettings();
-  const raw = (settings.mandatory_follow_accounts ?? "").trim();
+  let raw = (settings.mandatory_follow_accounts ?? "").trim();
+  if (!raw && process.env.MANDATORY_FOLLOW_ACCOUNTS) {
+    raw = process.env.MANDATORY_FOLLOW_ACCOUNTS.trim();
+  }
   if (!raw) {
     res.json([]);
     return;
@@ -107,19 +110,20 @@ router.get("/onboarding/mandatory-accounts", requireAuth, async (_req, res): Pro
     if (raw.startsWith("[")) {
       usernames = (JSON.parse(raw) as string[]).map((s) => s.trim().replace(/^@/, "")).filter(Boolean);
     } else {
-      usernames = raw.split(",").map((s) => s.trim().replace(/^@/, "")).filter(Boolean);
+      usernames = raw.split(/[,\s]+/).map((s) => s.trim().replace(/^@/, "")).filter(Boolean);
     }
   } catch {
-    usernames = raw.split(",").map((s) => s.trim().replace(/^@/, "")).filter(Boolean);
+    usernames = raw.split(/[,\s]+/).map((s) => s.trim().replace(/^@/, "")).filter(Boolean);
   }
   if (usernames.length === 0) {
     res.json([]);
     return;
   }
+  const lowerUsernames = usernames.map((u) => u.toLowerCase());
   const rows = await db
     .select()
     .from(profilesTable)
-    .where(inArray(profilesTable.username, usernames));
+    .where(inArray(sql`lower(${profilesTable.username})`, lowerUsernames));
   const built = await buildListProfiles(rows);
   res.json(built);
 });
@@ -367,8 +371,6 @@ router.patch("/users/me", requireAuth, async (req, res): Promise<void> => {
     }
   }
 
-  // FB-style auto-albums: every new profile picture / cover photo also lands
-  // in the user's "Profile pictures" / "Cover photos" album automatically.
   const autoAlbumAdds: { kind: "profile" | "cover"; url: string }[] = [];
   if (
     typeof updates.avatarUrl === "string" &&
@@ -376,6 +378,8 @@ router.patch("/users/me", requireAuth, async (req, res): Promise<void> => {
     updates.avatarUrl !== me.avatarUrl
   ) {
     autoAlbumAdds.push({ kind: "profile", url: updates.avatarUrl.trim() });
+  } else if (updates.avatarUrl === "") {
+    updates.avatarUrl = null as any;
   }
   if (
     typeof updates.coverUrl === "string" &&
@@ -383,6 +387,8 @@ router.patch("/users/me", requireAuth, async (req, res): Promise<void> => {
     updates.coverUrl !== me.coverUrl
   ) {
     autoAlbumAdds.push({ kind: "cover", url: updates.coverUrl.trim() });
+  } else if (updates.coverUrl === "") {
+    updates.coverUrl = null as any;
   }
 
   if (Object.keys(updates).length > 0) {
@@ -621,7 +627,19 @@ router.get(
       res.status(400).json({ error: "Invalid request" });
       return;
     }
-    const target = params.data.id;
+    let target = params.data.id;
+    if (!UUID_RE.test(target)) {
+      const uname = target.trim().toLowerCase();
+      const [byUsername] = await db
+        .select({ id: profilesTable.id })
+        .from(profilesTable)
+        .where(sql`lower(${profilesTable.username}) = ${uname}`);
+      if (!byUsername) {
+        res.json(GetUserFriendsResponse.parse([]));
+        return;
+      }
+      target = byUsername.id;
+    }
     const viewer = req.userId!;
     // Restricted profile (lock / profileVisibility): unauthorized viewers
     // cannot see the friends list.
@@ -705,15 +723,25 @@ async function setBlockKind(
   if (viewer === targetId) {
     return { status: 400, error: "You can't do this to yourself" };
   }
-  const [target] = await db
+  let target = targetId;
+  if (!UUID_RE.test(target)) {
+    const uname = target.trim().toLowerCase();
+    const [byUsername] = await db
+      .select({ id: profilesTable.id })
+      .from(profilesTable)
+      .where(sql`lower(${profilesTable.username}) = ${uname}`);
+    if (!byUsername) return { status: 404, error: "User not found" };
+    target = byUsername.id;
+  }
+  const [targetRow] = await db
     .select({ id: profilesTable.id })
     .from(profilesTable)
-    .where(eq(profilesTable.id, targetId));
-  if (!target) return { status: 404, error: "User not found" };
+    .where(eq(profilesTable.id, target));
+  if (!targetRow) return { status: 404, error: "User not found" };
   if (enabled) {
     await db
       .insert(userBlocksTable)
-      .values({ userId: viewer, targetId, kind })
+      .values({ userId: viewer, targetId: target, kind })
       .onConflictDoNothing();
   } else {
     await db
@@ -721,7 +749,7 @@ async function setBlockKind(
       .where(
         and(
           eq(userBlocksTable.userId, viewer),
-          eq(userBlocksTable.targetId, targetId),
+          eq(userBlocksTable.targetId, target),
           eq(userBlocksTable.kind, kind),
         ),
       );

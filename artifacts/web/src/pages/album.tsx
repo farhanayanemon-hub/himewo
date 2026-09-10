@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState, useMemo } from "react";
 import { avatarSrc } from "@/lib/avatar";
 import { useParams, Link, useLocation } from "wouter";
 import { MainLayout } from "@/components/layout/main-layout";
@@ -12,17 +12,18 @@ import {
   useUntagPhoto,
   useListFriends,
   getGetUserAlbumsQueryKey,
+  customFetch,
   type AlbumPhoto,
 } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
-import { uploadMedia, UploadUnavailableError } from "@/lib/upload";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -49,8 +50,173 @@ import {
   UserPlus,
   X,
   MoreHorizontal,
+  Check,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+
+function AddPhotosToAlbumDialog({
+  open,
+  onOpenChange,
+  albumId,
+  userId,
+  existingAlbumPhotoUrls,
+  onPhotosAdded,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  albumId: number;
+  userId: string;
+  existingAlbumPhotoUrls: Set<string>;
+  onPhotosAdded: () => void;
+}) {
+  const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
+  const [adding, setAdding] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const addPhotos = useAddAlbumPhotos();
+
+  const { data: userPhotosData, isLoading } = useQuery<{
+    photos: { url: string; createdAt: string }[];
+  }>({
+    queryKey: ["user-uploaded-photos", userId],
+    queryFn: async () => {
+      return customFetch<{ photos: { url: string; createdAt: string }[] }>(
+        `/api/users/${encodeURIComponent(userId)}/photos`,
+      ).catch(() => ({ photos: [] }));
+    },
+    enabled: open && !!userId,
+  });
+
+  const availablePhotos = useMemo(() => {
+    const urls: string[] = [];
+    const seen = new Set<string>();
+    for (const p of userPhotosData?.photos ?? []) {
+      if (p.url && !seen.has(p.url)) {
+        seen.add(p.url);
+        urls.push(p.url);
+      }
+    }
+    return urls;
+  }, [userPhotosData]);
+
+  const toggle = (url: string) => {
+    if (existingAlbumPhotoUrls.has(url)) return;
+    setSelectedPhotos((prev) =>
+      prev.includes(url) ? prev.filter((p) => p !== url) : [...prev, url]
+    );
+  };
+
+  const handleAdd = async () => {
+    if (selectedPhotos.length === 0) return;
+    setAdding(true);
+    setError(null);
+    try {
+      await addPhotos.mutateAsync({
+        albumId,
+        data: { photos: selectedPhotos.map((url) => ({ url })) },
+      });
+      setSelectedPhotos([]);
+      onPhotosAdded();
+      onOpenChange(false);
+    } catch {
+      setError("Failed to add photos to album. Please try again.");
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-xl max-h-[85vh] flex flex-col p-6 rounded-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold flex items-center gap-2">
+            <ImagePlus className="w-5 h-5 text-primary" />
+            <span>Add Photos to Album</span>
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="py-2 flex-1 overflow-y-auto space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Select photos from your uploads to add to this album.
+          </p>
+
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <span className="text-xs">Loading your photos...</span>
+            </div>
+          ) : availablePhotos.length === 0 ? (
+            <div className="p-6 rounded-xl border border-dashed border-border text-center bg-muted/20 my-2">
+              <p className="text-sm font-medium text-foreground">No uploaded photos available</p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
+                Only photos already uploaded in your posts can be added to albums.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 max-h-72 overflow-y-auto p-1 rounded-xl bg-muted/15 border border-border/40">
+              {availablePhotos.map((url, i) => {
+                const alreadyInAlbum = existingAlbumPhotoUrls.has(url);
+                const isSelected = selectedPhotos.includes(url);
+                return (
+                  <button
+                    key={`${url}-${i}`}
+                    type="button"
+                    disabled={alreadyInAlbum}
+                    onClick={() => toggle(url)}
+                    className={`relative aspect-square rounded-xl overflow-hidden group focus:outline-none border-2 transition-all ${
+                      alreadyInAlbum
+                        ? "opacity-40 cursor-not-allowed border-transparent"
+                        : isSelected
+                        ? "border-primary ring-2 ring-primary/40 scale-[0.98]"
+                        : "border-transparent hover:border-border/80 opacity-85 hover:opacity-100"
+                    }`}
+                  >
+                    <img src={url} className="w-full h-full object-cover bg-muted" alt="" />
+                    {alreadyInAlbum ? (
+                      <span className="absolute inset-x-1 bottom-1 bg-black/75 text-[10px] text-white font-medium py-0.5 rounded text-center">
+                        In album
+                      </span>
+                    ) : (
+                      <div
+                        className={`absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center transition-all ${
+                          isSelected
+                            ? "bg-primary text-primary-foreground shadow-md scale-100"
+                            : "bg-black/40 border border-white/60 text-transparent opacity-0 group-hover:opacity-100 scale-90"
+                        }`}
+                      >
+                        <Check className="w-3.5 h-3.5 stroke-[3]" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {error && <p className="text-sm text-destructive font-medium">{error}</p>}
+        </div>
+
+        <DialogFooter className="gap-2 sm:gap-0 pt-3 border-t border-border/60">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={adding}
+            className="rounded-xl"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAdd}
+            disabled={adding || selectedPhotos.length === 0}
+            className="rounded-xl gap-2 font-semibold"
+          >
+            {adding && <Loader2 className="w-4 h-4 animate-spin" />}
+            <span>Add Selected ({selectedPhotos.length})</span>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default function AlbumPage() {
   const { id } = useParams<{ id: string }>();
@@ -58,8 +224,7 @@ export default function AlbumPage() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
+  const [addPhotosDialogOpen, setAddPhotosDialogOpen] = useState(false);
   const [openPhoto, setOpenPhoto] = useState<AlbumPhoto | null>(null);
   const [tagPickerOpen, setTagPickerOpen] = useState(false);
 
@@ -70,7 +235,6 @@ export default function AlbumPage() {
     },
   });
 
-  const addPhotos = useAddAlbumPhotos();
   const deleteAlbum = useDeleteAlbum();
   const deletePhoto = useDeleteAlbumPhoto();
   const tagPhoto = useTagPhoto();
@@ -94,35 +258,6 @@ export default function AlbumPage() {
   const currentPhoto = openPhoto
     ? (data?.photos.find((p) => p.id === openPhoto.id) ?? null)
     : null;
-
-  const handleFiles = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    setUploading(true);
-    const urls: string[] = [];
-    try {
-      for (const file of Array.from(files)) {
-        if (!file.type.startsWith("image")) continue;
-        const uploaded = await uploadMedia(file);
-        urls.push(uploaded.url);
-      }
-    } catch (err) {
-      if (err instanceof UploadUnavailableError) {
-        const url = window.prompt(
-          "Direct upload isn't available here. Paste an image URL instead:",
-        );
-        if (url && /^https?:\/\//i.test(url.trim())) urls.push(url.trim());
-      }
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-    if (urls.length > 0) {
-      addPhotos.mutate(
-        { albumId, data: { photos: urls.map((url) => ({ url })) } },
-        { onSuccess: invalidate },
-      );
-    }
-  };
 
   const handleDeleteAlbum = () => {
     deleteAlbum.mutate(
@@ -196,6 +331,11 @@ export default function AlbumPage() {
   }
 
   const { album, owner, photos } = data;
+  const isSpecialAlbum =
+    album.kind === "profile" ||
+    album.kind === "cover" ||
+    album.name.toLowerCase().includes("profile") ||
+    album.name.toLowerCase().includes("cover");
   const taggedIds = new Set((currentPhoto?.tags ?? []).map((t) => t.userId));
   const taggableFriends = (friends ?? []).filter((f) => !taggedIds.has(f.id));
 
@@ -230,19 +370,14 @@ export default function AlbumPage() {
               )}
             </div>
           </div>
-          {isOwner && (
+          {isOwner && !isSpecialAlbum && (
             <div className="flex items-center gap-2 shrink-0">
               <Button
                 variant="outline"
                 size="sm"
-                disabled={uploading || addPhotos.isPending}
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => setAddPhotosDialogOpen(true)}
               >
-                {uploading || addPhotos.isPending ? (
-                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
-                ) : (
-                  <ImagePlus className="w-4 h-4 mr-1.5" />
-                )}
+                <ImagePlus className="w-4 h-4 mr-1.5" />
                 Add photos
               </Button>
               <AlertDialog>
@@ -282,19 +417,11 @@ export default function AlbumPage() {
             </div>
           )}
         </div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          className="hidden"
-          onChange={(e) => handleFiles(e.target.files)}
-        />
       </div>
 
       {photos.length === 0 ? (
         <div className="text-center py-14 bg-card border border-border rounded-xl text-muted-foreground">
-          {isOwner ? "Add your first photos to this album." : "No photos yet."}
+          {isOwner && !isSpecialAlbum ? "Add photos to this album." : "No photos yet."}
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -425,6 +552,16 @@ export default function AlbumPage() {
           )}
         </DialogContent>
       </Dialog>
+      {isOwner && user && !isSpecialAlbum && (
+        <AddPhotosToAlbumDialog
+          open={addPhotosDialogOpen}
+          onOpenChange={setAddPhotosDialogOpen}
+          albumId={albumId}
+          userId={user.id}
+          existingAlbumPhotoUrls={new Set(photos.map((p) => p.url))}
+          onPhotosAdded={invalidate}
+        />
+      )}
     </MainLayout>
   );
 }

@@ -320,11 +320,11 @@ function ProfileReelTimelineCard({
   };
 
   return (
-    <div className="aurora-glass-card rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-sm hover:shadow-md transition-shadow">
+    <div className="aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-border/70 p-3 sm:p-5 space-y-3.5 shadow-sm hover:shadow-md transition-shadow">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href={`/profile/${reel.author.id}`}>
+          <Link href={`/${reel.author.username || reel.author.id}`}>
             <img
               src={avatarSrc(reel.author.avatarUrl)}
               className="w-10 h-10 rounded-full object-cover bg-muted border border-border cursor-pointer"
@@ -333,7 +333,7 @@ function ProfileReelTimelineCard({
           </Link>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <Link href={`/profile/${reel.author.id}`}>
+              <Link href={`/${reel.author.username || reel.author.id}`}>
                 <span className="font-bold text-sm hover:underline text-foreground cursor-pointer">
                   {reel.author.displayName}
                 </span>
@@ -575,6 +575,13 @@ function ProfileReelTimelineCard({
   );
 }
 
+function limitWords(str: string, maxWords: number): string {
+  if (!str) return "";
+  const words = str.trim().split(/\s+/);
+  if (words.length <= maxWords) return str;
+  return words.slice(0, maxWords).join(" ") + "...";
+}
+
 export function ProfileView({
   profile,
   userId,
@@ -619,6 +626,23 @@ export function ProfileView({
       } catch (err) {
         console.warn("Failed to share photo update to feed:", err);
       }
+    }
+  };
+
+  const handleDeletePhoto = async (kind: "avatar" | "cover") => {
+    try {
+      if (kind === "avatar") {
+        await updateProfile.mutateAsync({ data: { avatarUrl: "" } });
+        toast.success("Profile picture removed");
+      } else {
+        await updateProfile.mutateAsync({ data: { coverUrl: "" } });
+        toast.success("Cover photo removed");
+      }
+      await refreshUser();
+      queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(userId) });
+      if (profile.id) queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(profile.id) });
+    } catch {
+      toast.error("Failed to remove photo. Please try again.");
     }
   };
 
@@ -768,13 +792,14 @@ export function ProfileView({
   return (
     <>
       {/* Cover + header */}
-      <div className="aurora-glass-card rounded-2xl overflow-hidden mb-4">
+      <div className="aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-border/70 overflow-hidden mb-3 sm:mb-4">
         <PhotoActionMenu
           photoUrl={profile.coverUrl}
           kind="cover"
           canChange={isOwnProfile}
           onView={coverEditor.onView}
           onPickFile={coverEditor.onPickFile}
+          onDelete={() => handleDeletePhoto("cover")}
         >
           <div className="h-48 md:h-64 lg:h-72 bg-muted relative">
             {profile.coverUrl ? (
@@ -794,6 +819,7 @@ export function ProfileView({
                   canChange={isOwnProfile}
                   onView={avatarEditor.onView}
                   onPickFile={avatarEditor.onPickFile}
+                  onDelete={() => handleDeletePhoto("avatar")}
                 >
                   <img
                     src={avatarSrc(profile.avatarUrl)}
@@ -816,6 +842,46 @@ export function ProfileView({
                   <span>•</span>
                   <span><b className="text-foreground">{profile.followerCount || 0}</b> Followers</span>
                 </div>
+                {/* Intro / Bio directly under name and counts (max 150 words) */}
+                {profile.bio && (
+                  <p className="text-[14px] text-foreground font-normal max-w-xl whitespace-pre-wrap leading-relaxed mt-2 text-center sm:text-left">
+                    {limitWords(profile.bio, 150)}
+                  </p>
+                )}
+                {hasIntro && (
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1.5 mt-2 text-xs text-muted-foreground">
+                    {profile.work && (
+                      <span className="flex items-center gap-1.5">
+                        <Briefcase className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span>Works at <b className="font-semibold text-foreground">{profile.work}</b></span>
+                      </span>
+                    )}
+                    {profile.education && (
+                      <span className="flex items-center gap-1.5">
+                        <GraduationCap className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span>Studied at <b className="font-semibold text-foreground">{profile.education}</b></span>
+                      </span>
+                    )}
+                    {profile.location && (
+                      <span className="flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span>Lives in <b className="font-semibold text-foreground">{profile.location}</b></span>
+                      </span>
+                    )}
+                    {profile.hometown && (
+                      <span className="flex items-center gap-1.5">
+                        <Home className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span>From <b className="font-semibold text-foreground">{profile.hometown}</b></span>
+                      </span>
+                    )}
+                    {profile.hobbies && (
+                      <span className="flex items-center gap-1.5">
+                        <Heart className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span>Hobbies: <span className="text-foreground">{profile.hobbies}</span></span>
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex items-center justify-center sm:justify-end gap-2 pb-1 flex-wrap">{headerActions}</div>
@@ -903,7 +969,7 @@ export function ProfileView({
                   <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
                 </div>
               ) : timelineItems.length === 0 ? (
-                <div className="text-center py-10 aurora-glass-card rounded-2xl text-muted-foreground">
+                <div className="text-center py-10 aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-border/70 text-muted-foreground">
                   {isOwnProfile ? "You haven't posted anything yet." : "No posts yet"}
                 </div>
               ) : (
@@ -1077,32 +1143,9 @@ export function ProfileView({
 
         {/* Secondary Sidebar Column (Right) */}
         <div className="lg:col-span-2 space-y-4">
-          {/* Intro */}
-          <div className="aurora-glass-card rounded-2xl p-4">
-            <h2 className="font-bold text-lg mb-3">Intro</h2>
-            {profile.bio && <p className="text-[15px] mb-3 whitespace-pre-wrap">{profile.bio}</p>}
-            {hasIntro ? (
-              <div className="space-y-2.5">
-                {profile.work && <IntroRow icon={<Briefcase className="w-5 h-5" />}>Works at <b>{profile.work}</b></IntroRow>}
-                {profile.education && <IntroRow icon={<GraduationCap className="w-5 h-5" />}>Studied at <b>{profile.education}</b></IntroRow>}
-                {profile.location && <IntroRow icon={<MapPin className="w-5 h-5" />}>Lives in <b>{profile.location}</b></IntroRow>}
-                {profile.hometown && <IntroRow icon={<Home className="w-5 h-5" />}>From <b>{profile.hometown}</b></IntroRow>}
-                {profile.hobbies && <IntroRow icon={<Heart className="w-5 h-5" />}>Hobbies: {profile.hobbies}</IntroRow>}
-                {profile.interests && <IntroRow icon={<Sparkles className="w-5 h-5" />}>Interests: {profile.interests}</IntroRow>}
-                {profile.email && <IntroRow icon={<Mail className="w-5 h-5" />}>{profile.email}</IntroRow>}
-                {profile.phone && <IntroRow icon={<Phone className="w-5 h-5" />}>{profile.phone}</IntroRow>}
-              </div>
-            ) : (
-              !profile.bio && (
-                <p className="text-muted-foreground text-sm">
-                  {isOwnProfile ? "Add details about yourself." : "No details yet."}
-                </p>
-              )
-            )}
-          </div>
 
           {/* Friends */}
-          <div className="aurora-glass-card rounded-2xl p-4">
+          <div className="aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-border/70 p-4">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-bold text-lg">Friends</h2>
               <Link href="/friends">
@@ -1115,7 +1158,7 @@ export function ProfileView({
             {friends && friends.length > 0 ? (
               <div className="grid grid-cols-3 gap-2">
                 {friends.slice(0, 9).map((f) => (
-                  <Link key={f.id} href={`/profile/${f.id}`}>
+                  <Link key={f.id} href={`/${f.username || f.id}`}>
                     <div className="cursor-pointer">
                       <img
                         src={avatarSrc(f.avatarUrl)}
@@ -1134,7 +1177,7 @@ export function ProfileView({
 
           {/* Circles / Groups */}
           {isOwnProfile && (
-            <div className="aurora-glass-card rounded-2xl p-4">
+            <div className="aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-border/70 p-4">
               <div className="flex items-center justify-between">
                 <h2 className="font-bold text-lg">Circles</h2>
                 <Link href="/groups?create=1">
@@ -1148,7 +1191,7 @@ export function ProfileView({
           )}
 
           {/* Reels Sidebar Widget */}
-          <div className="aurora-glass-card rounded-2xl p-4">
+          <div className="aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-border/70 p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Play className="w-4 h-4 text-primary fill-primary" />
@@ -1195,7 +1238,7 @@ export function ProfileView({
           </div>
 
           {/* Photos Sidebar */}
-          <div className="aurora-glass-card rounded-2xl p-4">
+          <div className="aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-border/70 p-4">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-bold text-lg">Photos</h2>
               {photoUrls.length > 0 && (
@@ -1233,7 +1276,7 @@ export function ProfileView({
           </div>
 
           {/* Albums Sidebar */}
-          <div className="aurora-glass-card rounded-2xl p-4">
+          <div className="aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-border/70 p-4">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-bold text-lg">Albums</h2>
               {isOwnProfile && (

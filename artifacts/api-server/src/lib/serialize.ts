@@ -198,6 +198,8 @@ export async function buildProfileDetail(userId: string, viewerId?: string) {
 
   let viewerIsFriend: boolean | undefined;
   let viewerHasPendingRequest: boolean | undefined;
+  let viewerHasIncomingRequest: boolean | undefined;
+  let viewerIncomingRequestId: number | null | undefined;
   let viewerFollows: boolean | undefined;
   let viewerCanSendRequest: boolean | undefined;
   if (viewerId && viewerId !== userId) {
@@ -230,7 +232,15 @@ export async function buildProfileDetail(userId: string, viewerId?: string) {
           ),
         ),
       );
-    viewerHasPendingRequest = Boolean(reqRow);
+    const isOutgoing = Boolean(
+      reqRow && reqRow.requesterId === viewerId && reqRow.addresseeId === userId,
+    );
+    const isIncoming = Boolean(
+      reqRow && reqRow.requesterId === userId && reqRow.addresseeId === viewerId,
+    );
+    viewerHasPendingRequest = isOutgoing;
+    viewerHasIncomingRequest = isIncoming;
+    viewerIncomingRequestId = isIncoming ? reqRow!.id : null;
     const [followRow] = await db
       .select()
       .from(followsTable)
@@ -246,7 +256,8 @@ export async function buildProfileDetail(userId: string, viewerId?: string) {
     // meaningful when not already friends and no request is pending.
     viewerCanSendRequest =
       !viewerIsFriend &&
-      !viewerHasPendingRequest &&
+      !isOutgoing &&
+      !isIncoming &&
       (await canSendFriendRequest(viewerId, userId));
   }
 
@@ -285,6 +296,8 @@ export async function buildProfileDetail(userId: string, viewerId?: string) {
     postCount: posts?.value ?? 0,
     viewerIsFriend,
     viewerHasPendingRequest,
+    viewerHasIncomingRequest,
+    viewerIncomingRequestId,
     viewerFollows,
     viewerCanSendRequest,
     isLocked,

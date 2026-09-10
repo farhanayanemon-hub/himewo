@@ -77,7 +77,7 @@ export function SponsoredCard({ ad }: { ad: ServedAd }) {
   return (
     <div
       ref={cardRef}
-      className="aurora-glass-card rounded-2xl p-4 animate-in fade-in slide-in-from-bottom-2 duration-300"
+      className="aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-border/70 p-3 sm:p-4 animate-in fade-in slide-in-from-bottom-2 duration-300"
     >
       <div className="flex items-center gap-3 mb-3">
         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
@@ -95,9 +95,9 @@ export function SponsoredCard({ ad }: { ad: ServedAd }) {
         <button
           type="button"
           onClick={handleClick}
-          className="block w-full rounded-lg overflow-hidden border border-border mb-3 text-left"
+          className="block -mx-3 sm:-mx-4 w-[calc(100%+1.5rem)] sm:w-[calc(100%+2rem)] overflow-hidden mb-3 text-left group cursor-pointer"
         >
-          <img src={image} className="w-full object-cover max-h-[500px]" alt="" />
+          <img src={image} className="w-full object-cover max-h-[540px] group-hover:scale-[1.01] transition-transform duration-200" alt="" />
         </button>
       )}
 

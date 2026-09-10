@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useListReels, type Reel } from "@workspace/api-client-react";
 import { avatarSrc } from "@/lib/avatar";
@@ -12,31 +12,19 @@ function ReelCard({ reel }: { reel: Reel }) {
     const video = videoRef.current;
     if (!video) return;
 
-    // Auto-play muted preview
+    // Auto-play muted continuous preview
     video.muted = true;
+    video.loop = true;
     const playPromise = video.play();
     if (playPromise !== undefined) {
       playPromise.catch(() => {
         // Autoplay was prevented by browser policy
       });
     }
-
-    // Loop continuously between 0 and 2 seconds
-    const handleTimeUpdate = () => {
-      if (video.currentTime >= 2.0) {
-        video.currentTime = 0;
-        video.play().catch(() => {});
-      }
-    };
-
-    video.addEventListener("timeupdate", handleTimeUpdate);
-    return () => {
-      video.removeEventListener("timeupdate", handleTimeUpdate);
-    };
   }, [reel.videoUrl]);
 
   const handleClick = () => {
-    setLocation("/reels");
+    setLocation(`/reels?id=${reel.id}`);
   };
 
   return (
@@ -44,7 +32,7 @@ function ReelCard({ reel }: { reel: Reel }) {
       onClick={handleClick}
       className="relative shrink-0 w-36 sm:w-44 h-64 sm:h-72 rounded-2xl overflow-hidden cursor-pointer group bg-black/90 border border-card-border shadow-sm hover:shadow-md transition-all duration-200 select-none"
     >
-      {/* 2-second looping preview video */}
+      {/* Continuous looping preview video */}
       <video
         ref={videoRef}
         src={reel.videoUrl}
@@ -88,10 +76,24 @@ function ReelCard({ reel }: { reel: Reel }) {
 }
 
 export function ReelsShelf() {
-  const { data: reels, isLoading } = useListReels({ limit: 12 });
+  const { data: reels, isLoading, refetch } = useListReels({ limit: 12 });
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+
+  useEffect(() => {
+    const handleReelCreated = () => {
+      refetch();
+    };
+    window.addEventListener("himewo:reel-created", handleReelCreated);
+    return () => window.removeEventListener("himewo:reel-created", handleReelCreated);
+  }, [refetch]);
+
+  // Randomize reels order for fresh variety in feed
+  const randomReels = useMemo(() => {
+    if (!reels || reels.length === 0) return [];
+    return [...reels].sort(() => Math.random() - 0.5);
+  }, [reels]);
 
   const checkScroll = () => {
     const el = scrollRef.current;
@@ -117,7 +119,7 @@ export function ReelsShelf() {
   }
 
   return (
-    <div className="relative bg-card border border-card-border rounded-2xl p-4 shadow-sm">
+    <div className="relative bg-card border-x-0 sm:border-x border-y sm:border border-card-border rounded-none sm:rounded-2xl p-3 sm:p-4 shadow-sm">
       {/* Header */}
       <div className="flex items-center justify-between mb-3 px-1">
         <div className="flex items-center gap-2">
@@ -169,7 +171,7 @@ export function ReelsShelf() {
         onScroll={checkScroll}
         className="flex gap-3 overflow-x-auto scrollbar-none py-1 px-1 scroll-smooth"
       >
-        {reels.map((reel) => (
+        {randomReels.map((reel) => (
           <ReelCard key={reel.id} reel={reel} />
         ))}
       </div>

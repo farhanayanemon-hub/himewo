@@ -1,5 +1,6 @@
 import { View, Text, Pressable, Platform, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import Svg, { Path } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useColors } from "@/hooks/useColors";
@@ -96,7 +97,12 @@ export function SolidDockTabBar({
                     },
                   ]}
                 >
-                  <Ionicons name={cfg.icon} size={28} color={c.primaryForeground} />
+                  <Svg width={25} height={25} viewBox="0 0 24 24">
+                    <Path
+                      d="M4 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H4zm10 4-1.5 2.5h-3L11 4h2.5L12 6.5h2zM8 4l-1.5 2.5H4V4h4zM4 9h16v11H4V9zm6 3v6l5-3-5-3z"
+                      fill={c.primaryForeground}
+                    />
+                  </Svg>
                 </View>
                 <Text
                   style={[
@@ -169,10 +175,10 @@ const styles = StyleSheet.create({
   },
   raised: {
     position: "absolute",
-    bottom: 18,
-    width: 58,
-    height: 58,
-    borderRadius: 20,
+    bottom: 20,
+    width: 54,
+    height: 54,
+    borderRadius: 18,
     borderWidth: 4,
     alignItems: "center",
     justifyContent: "center",

@@ -119,7 +119,7 @@ export function MediaGrid({ media, post }: { media: MediaItem[]; post?: Post }) 
     <button
       key={i}
       onClick={() => setOpen(i)}
-      className={`relative block w-full h-full overflow-hidden group focus:outline-none ${cls}`}
+      className={`relative block w-full h-full overflow-hidden group focus:outline-none cursor-pointer ${cls}`}
     >
       {m.type === "video" ? (
         <video src={m.url} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200" muted />
@@ -136,39 +136,39 @@ export function MediaGrid({ media, post }: { media: MediaItem[]; post?: Post }) 
 
   return (
     <>
-      <div className="w-full rounded-xl overflow-hidden border border-border mb-3 bg-muted/10">
+      <div className="-mx-3 sm:-mx-4 w-[calc(100%+1.5rem)] sm:w-[calc(100%+2rem)] overflow-hidden mb-3 bg-black/5 dark:bg-black/25">
         {shown.length === 1 &&
           (shown[0].type === "video" ? (
             <video
               src={shown[0].url}
               controls
-              className="w-full object-cover max-h-[580px]"
+              className="w-full object-cover max-h-[640px]"
             />
           ) : (
-            <button onClick={() => setOpen(0)} className="block w-full focus:outline-none overflow-hidden group">
+            <button onClick={() => setOpen(0)} className="block w-full focus:outline-none overflow-hidden group cursor-pointer">
               <img
                 src={shown[0].url}
                 alt=""
-                className="w-full object-cover max-h-[580px] group-hover:scale-[1.01] transition-transform duration-200"
+                className="w-full object-cover max-h-[640px] group-hover:scale-[1.01] transition-transform duration-200"
               />
             </button>
           ))}
         {shown.length === 2 && (
-          <div className="grid grid-cols-2 gap-1 w-full h-[320px] sm:h-[380px] md:h-[440px]">
+          <div className="grid grid-cols-2 gap-0.5 w-full h-[320px] sm:h-[380px] md:h-[440px]">
             {shown.map((m, i) => tile(m, i, ""))}
           </div>
         )}
         {shown.length === 3 && (
-          <div className="grid grid-cols-2 gap-1 w-full h-[360px] sm:h-[420px] md:h-[480px]">
+          <div className="grid grid-cols-2 gap-0.5 w-full h-[360px] sm:h-[420px] md:h-[480px]">
             {tile(shown[0], 0, "row-span-2 h-full")}
-            <div className="grid grid-rows-2 gap-1 h-full w-full">
+            <div className="grid grid-rows-2 gap-0.5 h-full w-full">
               {tile(shown[1], 1, "")}
               {tile(shown[2], 2, "")}
             </div>
           </div>
         )}
         {shown.length === 4 && (
-          <div className="grid grid-cols-2 grid-rows-2 gap-1 w-full h-[380px] sm:h-[460px] md:h-[520px]">
+          <div className="grid grid-cols-2 grid-rows-2 gap-0.5 w-full h-[380px] sm:h-[460px] md:h-[520px]">
             {shown.map((m, i) =>
               tile(m, i, "", i === 3 && extra > 0 ? extra : undefined),
             )}

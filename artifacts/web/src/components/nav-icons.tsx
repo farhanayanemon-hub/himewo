@@ -35,7 +35,7 @@ export function NavCirclesIcon(props: SVGProps<SVGSVGElement>) {
 export function NavHubsIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
-      <path d="M17 3H7a2 2 0 0 0-2 2v16l7-3 7 3V5a2 2 0 0 0-2-2zm-1 11.27-4-2.4-4 2.4V5h8v9.27z" />
+      <path d="M5 21a1 1 0 0 1-1-1V4a1 1 0 0 1 2 0v1h13.2a1 1 0 0 1 .82 1.57L17.3 10.5l2.72 3.93a1 1 0 0 1-.82 1.57H6v4a1 1 0 0 1-1 1z" />
     </svg>
   );
 }

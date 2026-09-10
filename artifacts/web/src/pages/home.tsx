@@ -93,7 +93,15 @@ function StoryRow() {
         musicTitle: data.musicTitle,
         musicArtist: data.musicArtist,
       } as ReelInput });
-      qc.invalidateQueries({ queryKey: getListReelsQueryKey() });
+        qc.invalidateQueries({ queryKey: getListReelsQueryKey() });
+        qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
+        qc.invalidateQueries({
+          predicate: (q) => {
+            const k = q.queryKey;
+            return Array.isArray(k) && (k[0] === "user-reels" || k[0] === "user-profile-reels");
+          },
+        });
+        window.dispatchEvent(new CustomEvent("himewo:reel-created"));
     }
     setEditorFile(null);
   };
@@ -216,11 +224,11 @@ function FriendRequestsRail() {
       <div className="space-y-2">
         {requests.slice(0, 4).map((req) => (
           <div key={req.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/40 transition-colors">
-            <Link href={`/profile/${req.requester.id}`}>
+            <Link href={`/${req.requester.username || req.requester.id}`}>
               <img src={avatarSrc(req.requester.avatarUrl)} className="w-12 h-12 rounded-full object-cover bg-muted shrink-0" alt="" />
             </Link>
             <div className="flex-1 min-w-0">
-              <Link href={`/profile/${req.requester.id}`} className="font-semibold text-sm hover:underline block truncate">
+              <Link href={`/${req.requester.username || req.requester.id}`} className="font-semibold text-sm hover:underline block truncate">
                 {req.requester.displayName}
               </Link>
               <div className="flex gap-1.5 mt-1">
@@ -265,7 +273,7 @@ function BirthdaysRail() {
           {birthdays.map((friend) => (
             <Link
               key={friend.id}
-              href={`/profile/${friend.id}`}
+              href={`/${friend.username || friend.id}`}
               className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/50 transition-colors"
             >
               <div className="relative shrink-0">
@@ -346,11 +354,11 @@ function PeopleYouMayKnowRail() {
       <div className="space-y-2">
         {suggestions.slice(0, 3).map((user) => (
           <div key={user.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/40 transition-colors">
-            <Link href={`/profile/${user.id}`}>
+            <Link href={`/${user.username || user.id}`}>
               <img src={avatarSrc(user.avatarUrl)} className="w-12 h-12 rounded-full object-cover bg-muted shrink-0" alt="" />
             </Link>
             <div className="flex-1 min-w-0">
-              <Link href={`/profile/${user.id}`} className="font-semibold text-sm hover:underline block truncate">
+              <Link href={`/${user.username || user.id}`} className="font-semibold text-sm hover:underline block truncate">
                 {user.displayName}
               </Link>
               {user.mutualFriendsCount > 0 && (
@@ -388,11 +396,21 @@ function HomeRightRail() {
 const FEED_PAGE_SIZE = 10;
 
 export default function HomePage() {
+  const qc = useQueryClient();
   const { actingPage } = useActingPage();
   const [pages, setPages] = useState<Post[][]>([]);
   const [cursor, setCursor] = useState<number | undefined>(undefined);
   const [hasMore, setHasMore] = useState(true);
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleReelCreated = () => {
+      qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
+      qc.invalidateQueries({ queryKey: getListReelsQueryKey() });
+    };
+    window.addEventListener("himewo:reel-created", handleReelCreated);
+    return () => window.removeEventListener("himewo:reel-created", handleReelCreated);
+  }, [qc]);
 
   const feedParams = {
     cursor,
@@ -462,32 +480,45 @@ export default function HomePage() {
 
   return (
     <MainLayout rightSidebar={<HomeRightRail />}>
-      <div className="space-y-6">
-        <StoryRow />
-
-        <PostComposer />
-
-        <ReelsShelf />
+      <div className="space-y-2 sm:space-y-3.5">
+        {/* Seamless Facebook-Style Unified Card for Stories + Composer */}
+        <div className="aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-card-border shadow-sm space-y-3 p-3 sm:p-3.5">
+          <StoryRow />
+          <div className="border-t border-border/60" />
+          <PostComposer className="mb-0 shadow-none border-0 bg-transparent p-0" />
+        </div>
 
         <ShopShowcaseShelf />
 
         {/* Feed */}
-        <div className="space-y-4">
+        <div className="space-y-2 sm:space-y-3.5">
           {isLoading && posts.length === 0 ? (
             <div className="text-center py-10 text-muted-foreground">
               <Loader2 className="w-6 h-6 animate-spin mx-auto" />
             </div>
           ) : posts.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground bg-card border border-border rounded-xl">No posts yet. Create one!</div>
+            <div className="space-y-4">
+              <div className="text-center py-10 text-muted-foreground bg-card border-x-0 sm:border border-border rounded-none sm:rounded-xl">
+                No posts yet. Create one!
+              </div>
+              <ReelsShelf />
+            </div>
           ) : (
             posts.map((post, i) => {
               const adIdx = Math.floor(i / AD_EVERY);
               const showAd =
                 i > 0 && i % AD_EVERY === 0 && ads && ads[adIdx - 1];
+              // Reels section appears after 4-5 posts (index 3), or after last post if fewer than 4 posts
+              const showReelsShelf = i === 3 || (posts.length < 4 && i === posts.length - 1);
               return (
-                <div key={post.id} className="space-y-4">
+                <div key={post.id} className="space-y-2 sm:space-y-3.5">
                   {showAd && <SponsoredCard ad={ads[adIdx - 1]} />}
                   <PostCard post={post} />
+                  {showReelsShelf && (
+                    <div className="pt-1">
+                      <ReelsShelf />
+                    </div>
+                  )}
                 </div>
               );
             })

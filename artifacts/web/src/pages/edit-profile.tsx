@@ -64,8 +64,16 @@ export default function EditProfilePage() {
     }
   };
 
+  const bioWords = (formData.bio || "").trim()
+    ? (formData.bio || "").trim().split(/\s+/).length
+    : 0;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (bioWords > 150) {
+      toast.error("Bio cannot exceed 150 words");
+      return;
+    }
     const payload = Object.fromEntries(
       Object.entries(formData).map(([k, v]) => [k, v.trim()]),
     ) as typeof formData;
@@ -99,33 +107,36 @@ export default function EditProfilePage() {
               <ArrowLeft className="w-5 h-5" />
             </Button>
           </Link>
-          <h1 className="text-2xl font-bold">Edit profile</h1>
+          <div>
+            <h1 className="text-lg font-bold">Edit Profile</h1>
+            <p className="text-xs text-muted-foreground">Manage your bio, avatar and details</p>
+          </div>
         </div>
 
         {/* Cover + avatar editor */}
         <div className="relative">
-          <input
-            ref={coverInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) handleImageUpload(f, "cover");
-              e.target.value = "";
-            }}
-          />
-          <div className="h-44 bg-muted relative">
+          <div className="h-36 bg-muted relative">
             {coverUrl ? (
               <img src={coverUrl} className="w-full h-full object-cover" alt="Cover" />
             ) : (
-              <div className="w-full h-full bg-gradient-to-r from-primary/20 to-primary/40" />
+              <div className="w-full h-full bg-gradient-to-r from-purple-600/30 to-pink-500/30" />
             )}
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleImageUpload(f, "cover");
+                e.target.value = "";
+              }}
+            />
             <button
               type="button"
               onClick={() => coverInputRef.current?.click()}
               disabled={uploading === "cover"}
-              className="absolute bottom-3 right-3 bg-card/90 hover:bg-card text-foreground px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 shadow"
+              className="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 backdrop-blur-sm"
             >
               {uploading === "cover" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
               Edit cover
@@ -184,8 +195,23 @@ export default function EditProfilePage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="bio">Bio</Label>
-            <Textarea id="bio" value={formData.bio} onChange={(e) => set("bio", e.target.value)} className="bg-muted/50 resize-none" rows={3} placeholder="Write something about yourself" />
+            <div className="flex items-center justify-between">
+              <Label htmlFor="bio">Bio</Label>
+              <span className={`text-xs ${bioWords > 150 ? "text-destructive font-bold" : "text-muted-foreground"}`}>
+                {bioWords}/150 words
+              </span>
+            </div>
+            <Textarea
+              id="bio"
+              value={formData.bio}
+              onChange={(e) => set("bio", e.target.value)}
+              className={`bg-muted/50 resize-none ${bioWords > 150 ? "border-destructive focus-visible:ring-destructive" : ""}`}
+              rows={3}
+              placeholder="Write something about yourself (up to 150 words)"
+            />
+            {bioWords > 150 && (
+              <p className="text-xs text-destructive">Bio cannot exceed 150 words.</p>
+            )}
           </div>
 
           <div>

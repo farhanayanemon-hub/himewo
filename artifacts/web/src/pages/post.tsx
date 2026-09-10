@@ -26,7 +26,7 @@ export default function PostPage() {
       <div className="space-y-6">
         <PostCard post={post} />
 
-        <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
+        <div className="bg-card border-x-0 sm:border border-border rounded-none sm:rounded-xl p-4 shadow-sm">
           <h3 className="font-semibold mb-4">Comments</h3>
           <PostComments postId={postId} commentsEnabled={post.commentsEnabled} />
         </div>

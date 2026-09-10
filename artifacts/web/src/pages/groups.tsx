@@ -737,7 +737,7 @@ function GroupDetail({ id }: { id: number }) {
 
   return (
     <MainLayout>
-      <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm mb-6 animate-in fade-in">
+      <div className="bg-card border-x-0 sm:border border-border rounded-none sm:rounded-xl overflow-hidden shadow-sm mb-6 animate-in fade-in">
         <div className="h-48 bg-muted relative">
           {group.coverUrl ? (
             <img
@@ -750,57 +750,69 @@ function GroupDetail({ id }: { id: number }) {
           )}
         </div>
         <div className="p-6">
-          <div className="flex justify-between items-start mb-4 gap-4">
-            <div className="min-w-0">
-              <h1 className="text-3xl font-extrabold">{group.name}</h1>
-              <div className="text-muted-foreground flex items-center gap-2 mt-1 font-medium capitalize">
-                {privacyIcon(group.privacy)} {group.privacy} circle •{" "}
-                {group.memberCount} members
-                {group.viewerRole && group.viewerRole !== "member" && (
-                  <Badge variant="secondary" className="capitalize ml-1">
-                    <Shield className="w-3 h-3 mr-1" />
-                    {group.viewerRole}
-                  </Badge>
-                )}
-              </div>
-            </div>
-            <div className="flex gap-2 shrink-0">
-              {group.viewerIsMember && (
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  title={
-                    group.viewerNotifyNewPosts
-                      ? "Notifications on — click to turn off"
-                      : "Notifications off — click to turn on"
-                  }
-                  disabled={setNotifications.isPending}
-                  onClick={() =>
-                    setNotifications.mutate(
-                      { id, data: { enabled: !group.viewerNotifyNewPosts } },
-                      { onSuccess: invalidateGroup },
-                    )
-                  }
-                >
-                  {group.viewerNotifyNewPosts ? (
-                    <Bell className="w-4 h-4" />
-                  ) : (
-                    <BellOff className="w-4 h-4" />
-                  )}
-                </Button>
-              )}
-              {group.viewerIsMember && (
-                <Button variant="secondary" onClick={() => setInviteOpen(true)}>
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Invite
-                </Button>
-              )}
-              {membershipButton()}
-            </div>
+          {/* Circle Name prominently displayed at the top */}
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-foreground tracking-tight break-words">
+            {group.name}
+          </h1>
+
+          {/* Circle members count and metadata directly below name */}
+          <div className="flex items-center gap-3 mt-2 text-muted-foreground font-medium text-sm sm:text-base flex-wrap">
+            <span className="inline-flex items-center gap-1.5 font-bold text-primary bg-primary/10 px-3 py-1 rounded-full text-xs sm:text-sm">
+              <Users className="w-4 h-4" />
+              <span>{group.memberCount} members</span>
+            </span>
+            <span className="flex items-center gap-1.5 capitalize text-xs sm:text-sm">
+              {privacyIcon(group.privacy)} {group.privacy} circle
+            </span>
+            {group.viewerRole && group.viewerRole !== "member" && (
+              <Badge variant="secondary" className="capitalize text-xs">
+                <Shield className="w-3.5 h-3.5 mr-1" />
+                {group.viewerRole}
+              </Badge>
+            )}
           </div>
+
+          {/* Description */}
           {group.description && (
-            <p className="text-[15px]">{group.description}</p>
+            <p className="text-[15px] text-foreground/90 mt-3 leading-relaxed max-w-3xl">
+              {group.description}
+            </p>
           )}
+
+          {/* Action options moved down below name and member count */}
+          <div className="flex items-center gap-2.5 mt-4 pt-4 border-t border-border/60 flex-wrap">
+            {membershipButton()}
+            {group.viewerIsMember && (
+              <Button variant="secondary" onClick={() => setInviteOpen(true)} className="gap-1.5">
+                <UserPlus className="w-4 h-4" />
+                Invite
+              </Button>
+            )}
+            {group.viewerIsMember && (
+              <Button
+                variant="secondary"
+                size="icon"
+                title={
+                  group.viewerNotifyNewPosts
+                    ? "Notifications on — click to turn off"
+                    : "Notifications off — click to turn on"
+                }
+                disabled={setNotifications.isPending}
+                onClick={() =>
+                  setNotifications.mutate(
+                    { id, data: { enabled: !group.viewerNotifyNewPosts } },
+                    { onSuccess: invalidateGroup },
+                  )
+                }
+              >
+                {group.viewerNotifyNewPosts ? (
+                  <Bell className="w-4 h-4 text-primary" />
+                ) : (
+                  <BellOff className="w-4 h-4" />
+                )}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

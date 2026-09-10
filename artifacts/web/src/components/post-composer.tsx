@@ -81,10 +81,12 @@ export function PostComposer({
   onPosted,
   groupId,
   pageId,
+  className,
 }: {
   onPosted?: () => void;
   groupId?: number;
   pageId?: number;
+  className?: string;
 } = {}) {
   // Group/page posts get their reach from membership / page ownership, not the
   // author's default audience — so we hide the privacy picker in that context.
@@ -250,7 +252,7 @@ export function PostComposer({
   };
 
   return (
-    <div className="aurora-glass-card rounded-2xl p-4 mb-6">
+    <div className={`aurora-glass-card rounded-2xl p-4 ${className ?? "mb-6"}`}>
       <div className="flex gap-3">
         <img src={avatarSrc(actingPage ? actingPage.avatarUrl : user?.avatarUrl)} className="w-10 h-10 rounded-full object-cover" alt="" />
         <div className="flex-1">

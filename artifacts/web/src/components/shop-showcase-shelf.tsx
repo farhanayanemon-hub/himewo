@@ -29,7 +29,7 @@ export function ShopShowcaseShelf() {
 
   return (
     <div className="space-y-4 my-6">
-      <div className="flex items-center justify-between px-1">
+      <div className="flex items-center justify-between px-3 sm:px-1">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
             <ShoppingBag className="w-4 h-4" />
@@ -79,7 +79,7 @@ function ShopShowcaseCard({
   };
 
   return (
-    <div className="bg-card border border-border/80 rounded-3xl p-4 sm:p-5 card-depth shadow-sm hover:border-border transition-colors">
+    <div className="bg-card border-x-0 sm:border-x border-y sm:border border-border/80 rounded-none sm:rounded-3xl p-3.5 sm:p-5 card-depth shadow-sm hover:border-border transition-colors">
       {/* Shop Header */}
       <div className="flex items-center justify-between gap-3 mb-3.5 pb-3 border-b border-border/50">
         <Link

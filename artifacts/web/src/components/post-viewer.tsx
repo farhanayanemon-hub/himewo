@@ -7,6 +7,7 @@ import { VerifiedBadge } from "@/components/verified-badge";
 import { RenderWithMentions } from "@/components/mention";
 import { PostComments } from "@/components/post-comments";
 import { ReactionControl, reactionConfig } from "@/components/reaction-picker";
+import { PostReactionsDialog } from "@/components/post-reactions-dialog";
 import {
   Post,
   ReactionType,
@@ -51,6 +52,7 @@ export function PostViewer({
 
   // Optimistic reaction state — same pattern as PostCard.
   const [summary, setSummary] = useState(post.reactions);
+  const [showReactionsDialog, setShowReactionsDialog] = useState(false);
   useEffect(() => {
     setSummary(post.reactions);
   }, [post.reactions]);
@@ -134,7 +136,7 @@ export function PostViewer({
   const item = items[index];
   if (!item) return null;
 
-  const authorHref = post.authorPage ? `/pages/${post.authorPage.id}` : `/profile/${post.author.id}`;
+  const authorHref = post.authorPage ? `/pages/${post.authorPage.id}` : `/${post.author.username || post.author.id}`;
   const authorName = post.authorPage ? post.authorPage.name : post.author.displayName;
   const authorAvatar = avatarSrc(post.authorPage ? post.authorPage.avatarUrl : post.author.avatarUrl);
   const PrivacyIcon = privacyIcons[post.privacy] ?? Globe;
@@ -219,7 +221,12 @@ export function PostViewer({
           <div className="flex justify-between items-center text-sm text-muted-foreground py-2 border-y border-border mb-2">
             <div className="flex items-center gap-1">
               {post.reactionsEnabled && summary.total > 0 && (
-                <>
+                <button
+                  type="button"
+                  onClick={() => setShowReactionsDialog(true)}
+                  className="flex items-center gap-1 hover:opacity-80 transition-opacity cursor-pointer group"
+                  title="See who reacted"
+                >
                   <div className="flex -space-x-1">
                     {Object.keys(summary.byType).slice(0, 3).map((type) => {
                       const rType = type as ReactionType;
@@ -230,8 +237,8 @@ export function PostViewer({
                       );
                     })}
                   </div>
-                  <span className="ml-1">{summary.total}</span>
-                </>
+                  <span className="ml-1 group-hover:underline">{summary.total}</span>
+                </button>
               )}
             </div>
             <div className="flex gap-3">
@@ -251,6 +258,12 @@ export function PostViewer({
           <PostComments postId={post.id} commentsEnabled={post.commentsEnabled} onChanged={invalidate} />
         </div>
       </div>
+
+      <PostReactionsDialog
+        postId={post.id}
+        open={showReactionsDialog}
+        onOpenChange={setShowReactionsDialog}
+      />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,7 @@ import {
   useCreateAlbum,
   useAddAlbumPhotos,
   getGetUserAlbumsQueryKey,
+  customFetch,
 } from "@workspace/api-client-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Check, Images, Info } from "lucide-react";
@@ -19,10 +20,12 @@ export function CreateAlbumDialog({
   open,
   onOpenChange,
   userId,
+  existingPhotos,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   userId: string;
+  existingPhotos?: string[];
 }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -33,20 +36,37 @@ export function CreateAlbumDialog({
   const createAlbum = useCreateAlbum();
   const addPhotos = useAddAlbumPhotos();
 
-  // Fetch already uploaded photos by this user
+  // Fetch already uploaded photos by this user using authenticated customFetch
   const { data: userPhotosData, isLoading: loadingPhotos } = useQuery<{
     photos: { url: string; createdAt: string }[];
   }>({
     queryKey: ["user-uploaded-photos", userId],
     queryFn: async () => {
-      const res = await fetch(`/api/users/${encodeURIComponent(userId)}/photos`);
-      if (!res.ok) return { photos: [] };
-      return res.json();
+      return customFetch<{ photos: { url: string; createdAt: string }[] }>(
+        `/api/users/${encodeURIComponent(userId)}/photos`,
+      ).catch(() => ({ photos: [] }));
     },
     enabled: open && !!userId,
   });
 
-  const availablePhotos = userPhotosData?.photos ?? [];
+  const availablePhotos = useMemo(() => {
+    const urls: string[] = [];
+    const seen = new Set<string>();
+
+    for (const p of userPhotosData?.photos ?? []) {
+      if (p.url && !seen.has(p.url)) {
+        seen.add(p.url);
+        urls.push(p.url);
+      }
+    }
+    for (const url of existingPhotos ?? []) {
+      if (url && !seen.has(url)) {
+        seen.add(url);
+        urls.push(url);
+      }
+    }
+    return urls;
+  }, [userPhotosData, existingPhotos]);
 
   const reset = () => {
     setName("");
@@ -164,13 +184,13 @@ export function CreateAlbumDialog({
               </div>
             ) : (
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 max-h-64 overflow-y-auto p-1 rounded-xl bg-muted/15 border border-border/40">
-                {availablePhotos.map((item, i) => {
-                  const isSelected = selectedPhotos.includes(item.url);
+                {availablePhotos.map((photoUrl, i) => {
+                  const isSelected = selectedPhotos.includes(photoUrl);
                   return (
                     <button
-                      key={`${item.url}-${i}`}
+                      key={`${photoUrl}-${i}`}
                       type="button"
-                      onClick={() => togglePhoto(item.url)}
+                      onClick={() => togglePhoto(photoUrl)}
                       className={`relative aspect-square rounded-xl overflow-hidden group focus:outline-none border-2 transition-all ${
                         isSelected
                           ? "border-primary ring-2 ring-primary/40 scale-[0.98]"
@@ -178,7 +198,7 @@ export function CreateAlbumDialog({
                       }`}
                     >
                       <img
-                        src={item.url}
+                        src={photoUrl}
                         className="w-full h-full object-cover bg-muted"
                         alt=""
                       />

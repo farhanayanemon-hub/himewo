@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Eye, Camera, ZoomIn, ZoomOut, X } from "lucide-react";
+import { Loader2, Eye, Camera, ZoomIn, ZoomOut, X, Trash2 } from "lucide-react";
 import { uploadMedia, UploadUnavailableError } from "@/lib/upload";
 import { toast } from "sonner";
 
@@ -62,7 +62,7 @@ export function PhotoViewer({
   );
 }
 
-/* ---------- Photo action menu (View / Change) ---------- */
+/* ---------- Photo action menu (View / Change / Delete) ---------- */
 
 export function PhotoActionMenu({
   children,
@@ -71,6 +71,7 @@ export function PhotoActionMenu({
   canChange,
   onView,
   onPickFile,
+  onDelete,
 }: {
   children: React.ReactNode;
   photoUrl: string | null | undefined;
@@ -78,16 +79,19 @@ export function PhotoActionMenu({
   canChange: boolean;
   onView: () => void;
   onPickFile: (file: File) => void;
+  onDelete?: () => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const label = kind === "avatar" ? "profile picture" : "cover photo";
 
   if (!canChange) {
-    // Viewer only: click to view (if there's a photo)
+    // Other's profile: clicking directly views photo in full screen
     return (
       <div
         className={photoUrl ? "cursor-pointer" : undefined}
         onClick={() => photoUrl && onView()}
+        role={photoUrl ? "button" : undefined}
+        title={photoUrl ? `View ${label}` : undefined}
       >
         {children}
       </div>
@@ -100,17 +104,26 @@ export function PhotoActionMenu({
         <DropdownMenuTrigger asChild>
           <div className="cursor-pointer">{children}</div>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align={kind === "avatar" ? "start" : "end"}>
+        <DropdownMenuContent align={kind === "avatar" ? "start" : "end"} className="w-56 p-1.5 rounded-xl shadow-lg">
           {photoUrl && (
-            <DropdownMenuItem onClick={onView}>
-              <Eye className="w-4 h-4 mr-2" />
-              View {label}
+            <DropdownMenuItem onClick={onView} className="flex items-center gap-2 cursor-pointer font-medium text-sm py-2 px-3 rounded-lg">
+              <Eye className="w-4 h-4 text-muted-foreground" />
+              <span>View {label}</span>
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem onClick={() => fileRef.current?.click()}>
-            <Camera className="w-4 h-4 mr-2" />
-            Change {label}
+          <DropdownMenuItem onClick={() => fileRef.current?.click()} className="flex items-center gap-2 cursor-pointer font-medium text-sm py-2 px-3 rounded-lg">
+            <Camera className="w-4 h-4 text-muted-foreground" />
+            <span>Change {label}</span>
           </DropdownMenuItem>
+          {photoUrl && onDelete && (
+            <DropdownMenuItem
+              onClick={onDelete}
+              className="flex items-center gap-2 cursor-pointer font-medium text-sm py-2 px-3 rounded-lg text-destructive focus:text-destructive focus:bg-destructive/10"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Delete {label}</span>
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
       <input

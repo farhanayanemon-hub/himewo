@@ -44,7 +44,7 @@ export default function SearchPage() {
                       key={user.id}
                       className="flex items-center gap-4 p-4 border border-border rounded-xl hover:bg-muted/50 transition-colors"
                     >
-                      <Link href={`/profile/${user.id}`} className="w-14 h-14 shrink-0">
+                      <Link href={`/${user.username || user.id}`} className="w-14 h-14 shrink-0">
                         <img
                           src={avatarSrc(user.avatarUrl)}
                           className="w-full h-full rounded-full object-cover bg-muted"
@@ -53,14 +53,14 @@ export default function SearchPage() {
                       </Link>
                       <div className="flex-1 min-w-0">
                         <Link
-                          href={`/profile/${user.id}`}
+                          href={`/${user.username || user.id}`}
                           className="font-bold hover:underline truncate block"
                         >
                           {user.displayName}
                         </Link>
                         <p className="text-sm text-muted-foreground truncate">@{user.username}</p>
                       </div>
-                      <Link href={`/profile/${user.id}`}>
+                      <Link href={`/${user.username || user.id}`}>
                         <Button variant="secondary">View Profile</Button>
                       </Link>
                     </div>

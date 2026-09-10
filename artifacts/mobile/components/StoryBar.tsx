@@ -141,7 +141,7 @@ function Avatar({ uri }: { uri?: string | null }) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { paddingVertical: 10, marginBottom: 8 },
+  wrap: { paddingVertical: 10 },
   row: { paddingHorizontal: 12, gap: 8 },
   tile: {
     width: 96,

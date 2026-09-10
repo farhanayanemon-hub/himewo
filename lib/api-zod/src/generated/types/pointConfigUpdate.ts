@@ -16,8 +16,6 @@ export interface PointConfigUpdate {
   pointsPerComment?: number;
   /** @minimum 0 */
   pointsPerShare?: number;
-  /** @minimum 0 */
-  pointsPerReel?: number;
   /** @minimum 1 */
   pointsPerDollar?: number;
   /** @minimum 1 */

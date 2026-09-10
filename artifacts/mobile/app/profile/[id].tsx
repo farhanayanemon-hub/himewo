@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -14,6 +15,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
+import { uploadMedia } from "@/lib/upload";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
@@ -22,10 +25,13 @@ import {
   useGetUserPosts,
   useGetUserFriends,
   useSendFriendRequest,
+  useAcceptFriendRequest,
+  useDeclineFriendRequest,
   useRemoveFriend,
   useFollowUser,
   useUnfollowUser,
   useCreateConversation,
+  useUpdateMyProfile,
   getGetUserQueryKey,
   getGetUserPostsQueryKey,
   getGetUserFriendsQueryKey,
@@ -45,6 +51,14 @@ import { CommentsSheet } from "@/components/CommentsSheet";
 import { useAuth } from "@/lib/auth";
 import { useColors } from "@/hooks/useColors";
 import { formatCount, timeAgo } from "@/lib/format";
+
+function limitWords(text?: string | null, maxWords: number = 150): string {
+  if (!text) return "";
+  const trimmed = text.trim();
+  const words = trimmed.split(/\s+/);
+  if (words.length <= maxWords) return trimmed;
+  return words.slice(0, maxWords).join(" ") + "...";
+}
 
 function MobileReelTimelineCard({
   reel,
@@ -320,10 +334,11 @@ export function ProfileBody({
 }) {
   const c = useColors();
   const qc = useQueryClient();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const isOwn = user?.id === userId;
 
   const [activePost, setActivePost] = useState<number | null>(null);
+  const [fullScreenPhoto, setFullScreenPhoto] = useState<{ url: string; title: string } | null>(null);
 
   const {
     data: profile,
@@ -452,14 +467,116 @@ export function ProfileBody({
   }, [userPhotosData, posts, profile?.avatarUrl, profile?.coverUrl]);
 
   const sendFriendRequest = useSendFriendRequest();
+  const acceptFriendRequest = useAcceptFriendRequest();
+  const declineFriendRequest = useDeclineFriendRequest();
   const removeFriend = useRemoveFriend();
   const followUser = useFollowUser();
   const unfollowUser = useUnfollowUser();
   const createConversation = useCreateConversation();
+  const updateMyProfile = useUpdateMyProfile();
+
+  const handlePickAndUpload = async (kind: "avatar" | "cover") => {
+    try {
+      const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: kind === "avatar" ? [1, 1] : [16, 9],
+        quality: 0.85,
+      });
+      if (!res.canceled && res.assets[0]) {
+        const asset = res.assets[0];
+        const uploaded = await uploadMedia({
+          uri: asset.uri,
+          mimeType: asset.mimeType ?? "image/jpeg",
+          fileName: asset.fileName ?? (kind === "avatar" ? "avatar.jpg" : "cover.jpg"),
+        });
+        if (kind === "avatar") {
+          await updateMyProfile.mutateAsync({ data: { avatarUrl: uploaded.url } });
+        } else {
+          await updateMyProfile.mutateAsync({ data: { coverUrl: uploaded.url } });
+        }
+        await refreshUser();
+        invalidateProfile();
+        Alert.alert("Success", `${kind === "avatar" ? "Profile picture" : "Cover photo"} updated successfully.`);
+      }
+    } catch (err) {
+      console.warn("Photo upload error:", err);
+      Alert.alert("Error", "Could not update photo. Please try again.");
+    }
+  };
+
+  const handleDeletePhoto = (kind: "avatar" | "cover") => {
+    Alert.alert(
+      `Delete ${kind === "avatar" ? "Profile Picture" : "Cover Photo"}`,
+      `Are you sure you want to remove your ${kind === "avatar" ? "profile picture" : "cover photo"}?`,
+      [
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              if (kind === "avatar") {
+                await updateMyProfile.mutateAsync({ data: { avatarUrl: "" } });
+              } else {
+                await updateMyProfile.mutateAsync({ data: { coverUrl: "" } });
+              }
+              await refreshUser();
+              invalidateProfile();
+            } catch {
+              Alert.alert("Error", "Could not remove photo. Please try again.");
+            }
+          },
+        },
+        { text: "Cancel", style: "cancel" },
+      ],
+    );
+  };
+
+  const handlePhotoPress = (kind: "avatar" | "cover") => {
+    const photoUrl = kind === "avatar" ? profile?.avatarUrl : profile?.coverUrl;
+    const title = kind === "avatar" ? "Profile Picture" : "Cover Photo";
+
+    if (!isOwn) {
+      if (photoUrl) {
+        setFullScreenPhoto({ url: photoUrl, title });
+      }
+      return;
+    }
+
+    // Own profile: 3 options (View, Change, Delete)
+    const options: { text: string; style?: "default" | "cancel" | "destructive"; onPress?: () => void }[] = [];
+
+    if (photoUrl) {
+      options.push({
+        text: `View ${title}`,
+        onPress: () => setFullScreenPhoto({ url: photoUrl, title }),
+      });
+    }
+
+    options.push({
+      text: `Change ${title}`,
+      onPress: () => void handlePickAndUpload(kind),
+    });
+
+    if (photoUrl) {
+      options.push({
+        text: `Delete ${title}`,
+        style: "destructive",
+        onPress: () => handleDeletePhoto(kind),
+      });
+    }
+
+    options.push({ text: "Cancel", style: "cancel" });
+
+    Alert.alert(title, "Choose an option", options);
+  };
 
   const invalidateProfile = useCallback(() => {
     qc.invalidateQueries({ queryKey: getGetUserQueryKey(userId) });
-  }, [qc, userId]);
+    if (targetId) qc.invalidateQueries({ queryKey: getGetUserQueryKey(targetId) });
+    qc.invalidateQueries({ queryKey: getGetUserFriendsQueryKey(userId) });
+    if (targetId) qc.invalidateQueries({ queryKey: getGetUserFriendsQueryKey(targetId) });
+  }, [qc, userId, targetId]);
 
   useEffect(() => {
     const sub = DeviceEventEmitter.addListener("himewo:follow-sync", (detail) => {
@@ -468,8 +585,17 @@ export function ProfileBody({
         invalidateProfile();
       }
     });
-    return () => sub.remove();
-  }, [userId, targetId, profile?.id, invalidateProfile]);
+    const subReel = DeviceEventEmitter.addListener("himewo:reel-created", () => {
+      qc.invalidateQueries({ queryKey: ["user-reels", targetId] });
+      qc.invalidateQueries({ queryKey: getGetUserPostsQueryKey(userId) });
+      refetchReels?.();
+      refetchPosts();
+    });
+    return () => {
+      sub.remove();
+      subReel.remove();
+    };
+  }, [userId, targetId, profile?.id, invalidateProfile, qc, refetchReels, refetchPosts]);
 
   const onRefresh = useCallback(() => {
     qc.invalidateQueries({ queryKey: getGetUserQueryKey(userId) });
@@ -485,13 +611,53 @@ export function ProfileBody({
   const onToggleFriend = () => {
     if (!profile) return;
     if (profile.viewerIsFriend) {
-      removeFriend.mutate({ userId }, { onSuccess: invalidateProfile });
+      Alert.alert(
+        "Unfriend",
+        `Are you sure you want to unfriend ${profile.displayName}?`,
+        [
+          {
+            text: "Unfriend",
+            style: "destructive",
+            onPress: () => {
+              removeFriend.mutate({ userId: targetId }, { onSuccess: invalidateProfile });
+            },
+          },
+          { text: "Cancel", style: "cancel" },
+        ],
+      );
     } else if (!profile.viewerHasPendingRequest) {
       sendFriendRequest.mutate(
-        { data: { addresseeId: userId } },
+        { data: { addresseeId: targetId } },
         { onSuccess: invalidateProfile },
       );
     }
+  };
+
+  const hasIncoming = Boolean(profile?.viewerHasIncomingRequest && profile?.viewerIncomingRequestId);
+
+  const onRespond = () => {
+    if (!profile?.viewerIncomingRequestId) return;
+    const reqId = profile.viewerIncomingRequestId;
+    Alert.alert(
+      "Respond to Friend Request",
+      `Do you want to accept or delete the friend request from ${profile.displayName}?`,
+      [
+        {
+          text: "Accept",
+          onPress: () => {
+            acceptFriendRequest.mutate({ id: reqId }, { onSuccess: invalidateProfile });
+          },
+        },
+        {
+          text: "Delete Request",
+          style: "destructive",
+          onPress: () => {
+            declineFriendRequest.mutate({ id: reqId }, { onSuccess: invalidateProfile });
+          },
+        },
+        { text: "Cancel", style: "cancel" },
+      ],
+    );
   };
 
   const onToggleFollow = () => {
@@ -534,18 +700,23 @@ export function ProfileBody({
   const showFriendButton =
     !!profile &&
     (profile.viewerIsFriend ||
+      hasIncoming ||
       profile.viewerHasPendingRequest ||
       profile.viewerCanSendRequest);
   const friendLabel = profile?.viewerIsFriend
     ? "Friends"
-    : profile?.viewerHasPendingRequest
-      ? "Requested"
-      : "Add Friend";
+    : hasIncoming
+      ? "Respond"
+      : profile?.viewerHasPendingRequest
+        ? "Requested"
+        : "Add Friend";
   const friendIcon: keyof typeof Ionicons.glyphMap = profile?.viewerIsFriend
     ? "people"
-    : profile?.viewerHasPendingRequest
-      ? "time"
-      : "person-add";
+    : hasIncoming
+      ? "checkmark-circle-outline"
+      : profile?.viewerHasPendingRequest
+        ? "time"
+        : "person-add";
 
   type IntroRow = { icon: keyof typeof Ionicons.glyphMap; label: string };
   const introRows: IntroRow[] = [];
@@ -594,19 +765,19 @@ export function ProfileBody({
           }
           ListHeaderComponent={
             <View>
-              <View style={styles.coverWrap}>
+              <Pressable style={styles.coverWrap} onPress={() => handlePhotoPress("cover")}>
                 {profile.coverUrl ? (
                   <Image source={{ uri: profile.coverUrl }} style={styles.cover} contentFit="cover" />
                 ) : (
                   <View style={[styles.cover, { backgroundColor: c.primary }]} />
                 )}
-              </View>
+              </Pressable>
 
-              <View style={styles.avatarWrap}>
+              <Pressable style={styles.avatarWrap} onPress={() => handlePhotoPress("avatar")}>
                 <View style={[styles.avatarRing, { borderColor: c.card }]}>
                   <Avatar uri={profile.avatarUrl} name={profile.displayName} size={96} />
                 </View>
-              </View>
+              </Pressable>
 
               <View style={styles.info}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
@@ -649,6 +820,25 @@ export function ProfileBody({
                   )}
                 </View>
 
+                {/* Intro / Bio directly under name and counts */}
+                {!!profile.bio && (
+                  <Text style={[styles.bio, { color: c.foreground, marginTop: 8, textAlign: "center" }]}>
+                    {limitWords(profile.bio, 150)}
+                  </Text>
+                )}
+                {introRows.length > 0 && (
+                  <View style={{ gap: 6, marginTop: 8, width: "100%", alignItems: "center" }}>
+                    {introRows.slice(0, 4).map((row, i) => (
+                      <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                        <Ionicons name={row.icon} size={14} color={c.mutedForeground} />
+                        <Text style={{ color: c.mutedForeground, fontSize: 13 }} numberOfLines={1}>
+                          {row.label}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
                 <View style={styles.actions}>
                   {isOwn ? (
                     <>
@@ -681,7 +871,7 @@ export function ProfileBody({
                               ? { backgroundColor: c.secondary }
                               : { backgroundColor: c.primary },
                           ]}
-                          onPress={onToggleFriend}
+                          onPress={hasIncoming ? onRespond : onToggleFriend}
                         >
                           <Ionicons
                             name={friendIcon}
@@ -703,12 +893,17 @@ export function ProfileBody({
                         onPress={onToggleFollow}
                       >
                         <Ionicons
-                          name={profile.viewerFollows ? "checkmark" : "add"}
+                          name={profile.viewerFollows ? "person-remove-outline" : "add"}
                           size={18}
-                          color={c.foreground}
+                          color={profile.viewerFollows ? c.destructive : c.foreground}
                         />
-                        <Text style={[styles.actionLabel, { color: c.foreground }]}>
-                          {profile.viewerFollows ? "Following" : "Follow"}
+                        <Text
+                          style={[
+                            styles.actionLabel,
+                            { color: profile.viewerFollows ? c.destructive : c.foreground },
+                          ]}
+                        >
+                          {profile.viewerFollows ? "Unfollow" : "Follow"}
                         </Text>
                       </Pressable>
                       <Pressable
@@ -739,30 +934,6 @@ export function ProfileBody({
                 </View>
               ) : (
               <>
-              {/* Intro card */}
-              <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
-                <Text style={[styles.cardTitle, { color: c.foreground }]}>Intro</Text>
-                {!!profile.bio && (
-                  <Text style={[styles.bio, { color: c.foreground }]}>{profile.bio}</Text>
-                )}
-                {introRows.length > 0 ? (
-                  <View style={{ gap: 10, marginTop: profile.bio ? 12 : 0 }}>
-                    {introRows.map((row, i) => (
-                      <View key={i} style={styles.introRow}>
-                        <Ionicons name={row.icon} size={18} color={c.mutedForeground} />
-                        <Text style={[styles.introText, { color: c.foreground }]}>{row.label}</Text>
-                      </View>
-                    ))}
-                  </View>
-                ) : (
-                  !profile.bio && (
-                    <Text style={{ color: c.mutedForeground, fontSize: 14 }}>
-                      {isOwn ? "Add details about yourself." : "No details yet."}
-                    </Text>
-                  )
-                )}
-              </View>
-
               {/* Friends */}
               <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
                 <View style={styles.cardHeaderRow}>
@@ -896,6 +1067,8 @@ export function ProfileBody({
                     paddingHorizontal: 16,
                     paddingVertical: 12,
                     backgroundColor: c.card,
+                    borderTopWidth: StyleSheet.hairlineWidth,
+                    borderTopColor: c.border,
                   }}
                 >
                   <Avatar uri={user?.avatarUrl} name={user?.displayName} size={40} />
@@ -914,7 +1087,17 @@ export function ProfileBody({
                 </Pressable>
               )}
 
-              <View style={[styles.sectionHeader, { borderTopColor: c.border }]}>
+              <View
+                style={[
+                  styles.sectionHeader,
+                  {
+                    backgroundColor: c.card,
+                    borderTopColor: c.border,
+                    borderBottomWidth: StyleSheet.hairlineWidth,
+                    borderBottomColor: c.border,
+                  },
+                ]}
+              >
                 <Text style={[styles.sectionTitle, { color: c.foreground }]}>Timeline</Text>
               </View>
               </>
@@ -957,6 +1140,52 @@ export function ProfileBody({
         visible={activePost != null}
         onClose={() => setActivePost(null)}
       />
+
+      <Modal
+        visible={!!fullScreenPhoto}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setFullScreenPhoto(null)}
+      >
+        <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+            }}
+          >
+            <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>
+              {fullScreenPhoto?.title}
+            </Text>
+            <Pressable
+              onPress={() => setFullScreenPhoto(null)}
+              hitSlop={12}
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                backgroundColor: "rgba(255,255,255,0.2)",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Ionicons name="close" size={22} color="#fff" />
+            </Pressable>
+          </View>
+          {fullScreenPhoto?.url ? (
+            <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+              <Image
+                source={{ uri: fullScreenPhoto.url }}
+                style={{ width: "100%", height: "100%" }}
+                contentFit="contain"
+              />
+            </View>
+          ) : null}
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -983,7 +1212,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  info: { paddingHorizontal: 16, paddingTop: 8 },
+  info: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 },
   name: { fontFamily: "Inter_700Bold", fontSize: 22 },
   username: { fontSize: 14, marginTop: 2 },
   bio: { fontSize: 15, lineHeight: 21 },
@@ -1005,13 +1234,11 @@ const styles = StyleSheet.create({
   actionLabel: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
   primaryLabel: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
   section: {
-    marginHorizontal: 12,
-    marginTop: 12,
-    padding: 16,
-    borderRadius: 14,
-    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
-  cardTitle: { fontFamily: "Inter_700Bold", fontSize: 18, marginBottom: 10 },
+  cardTitle: { fontFamily: "Inter_700Bold", fontSize: 17, marginBottom: 10 },
   cardHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1028,9 +1255,8 @@ const styles = StyleSheet.create({
   photo: { width: "31.5%", aspectRatio: 1, borderRadius: 8, backgroundColor: "#88888822" },
   sectionHeader: {
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginTop: 12,
+    paddingVertical: 12,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
-  sectionTitle: { fontFamily: "Inter_700Bold", fontSize: 17 },
+  sectionTitle: { fontFamily: "Inter_700Bold", fontSize: 16 },
 });

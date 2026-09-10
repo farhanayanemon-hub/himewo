@@ -1,4 +1,5 @@
 import { avatarSrc } from "@/lib/avatar";
+import { getAuthorProfileUrl } from "@/lib/user-link";
 import {
   useListComments,
   useCreateComment,
@@ -126,7 +127,7 @@ function CommentItem({
 
   return (
     <div className="flex gap-3 group/comment">
-      <Link href={comment.authorPage ? `/pages/${comment.authorPage.id}` : `/profile/${comment.author.id}`} className="shrink-0">
+      <Link href={getAuthorProfileUrl(comment.author, comment.authorPage)} className="shrink-0">
         <img
           src={avatarSrc(comment.authorPage ? comment.authorPage.avatarUrl : comment.author.avatarUrl)}
           className={`${isReply ? "w-7 h-7" : "w-8 h-8"} rounded-full object-cover shrink-0`}
@@ -137,7 +138,7 @@ function CommentItem({
         <div className="flex items-start gap-1">
           <div className="bg-muted/50 rounded-2xl px-4 py-2 inline-block max-w-full min-w-0">
             <Link
-              href={comment.authorPage ? `/pages/${comment.authorPage.id}` : `/profile/${comment.author.id}`}
+              href={getAuthorProfileUrl(comment.author, comment.authorPage)}
               className="font-semibold text-sm hover:underline"
             >
               {comment.authorPage ? comment.authorPage.name : comment.author.displayName}

@@ -1,49 +1,122 @@
+import { useEffect } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
-import { useGetUser, useGetUserPosts, useSendFriendRequest, useFollowUser, useUnfollowUser, getGetUserQueryKey, getGetUserPostsQueryKey } from "@workspace/api-client-react";
+import {
+  useGetUser,
+  useGetUserPosts,
+  useSendFriendRequest,
+  useAcceptFriendRequest,
+  useDeclineFriendRequest,
+  useRemoveFriend,
+  useFollowUser,
+  useUnfollowUser,
+  getGetUserQueryKey,
+  getGetUserPostsQueryKey,
+  getListFriendRequestsQueryKey,
+} from "@workspace/api-client-react";
 import { useParams, Link } from "wouter";
 import { ProfileView } from "@/components/profile-view";
-import { Loader2, Check, UserPlus, UserCheck } from "lucide-react";
+import { Loader2, Check, X, UserPlus, UserCheck, UserMinus, ChevronDown } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { syncUserFollowState } from "@/lib/follow-sync";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 export default function ProfilePage() {
-  const { id } = useParams<{ id: string }>();
+  const { id: rawId, username: rawUsername } = useParams<{ id?: string; username?: string }>();
+  const lookupKey = (rawUsername || rawId || "").trim();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const sendRequest = useSendFriendRequest();
+  const acceptRequest = useAcceptFriendRequest();
+  const declineRequest = useDeclineFriendRequest();
+  const removeFriend = useRemoveFriend();
   const followUser = useFollowUser();
   const unfollowUser = useUnfollowUser();
 
-  const { data: profile, isLoading: profileLoading } = useGetUser(id!, { query: { enabled: !!id, queryKey: getGetUserQueryKey(id!) } });
-  const effectiveUserId = profile?.id || id!;
+  const { data: profile, isLoading: profileLoading } = useGetUser(lookupKey, {
+    query: { enabled: !!lookupKey, queryKey: getGetUserQueryKey(lookupKey) },
+  });
+  const effectiveUserId = profile?.id || lookupKey;
   const { data: posts, isLoading: postsLoading } = useGetUserPosts(
     effectiveUserId,
     {},
     { query: { enabled: !!effectiveUserId, queryKey: getGetUserPostsQueryKey(effectiveUserId) } },
   );
 
-  const isOwnProfile = Boolean(user && profile && (user.id === profile.id || user.id === id));
+  const isOwnProfile = Boolean(
+    user && profile && (
+      user.id === profile.id ||
+      (user.username && profile.username && user.username.toLowerCase() === profile.username.toLowerCase()) ||
+      user.id === lookupKey ||
+      (user.username && user.username.toLowerCase() === lookupKey.toLowerCase())
+    )
+  );
+
+  // Address bar normalization: ensure Facebook-style himewo.com/username
+  useEffect(() => {
+    if (profile?.username && typeof window !== "undefined") {
+      const currentPath = window.location.pathname;
+      const cleanPath = `/${profile.username}`;
+      if (
+        currentPath.startsWith("/profile/") ||
+        (currentPath.toLowerCase() === cleanPath.toLowerCase() && currentPath !== cleanPath)
+      ) {
+        window.history.replaceState(null, "", cleanPath);
+      }
+    }
+  }, [profile?.username]);
 
   const invalidateProfile = () => {
-    if (id) queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(id) });
+    if (lookupKey) queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(lookupKey) });
     if (profile?.id) queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(profile.id) });
+    if (profile?.username) queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(profile.username) });
+    queryClient.invalidateQueries({ queryKey: getListFriendRequestsQueryKey() });
   };
 
   const handleAddFriend = () => {
-    if (!profile?.id && !id) return;
-    const addresseeId = profile?.id || id!;
+    if (!effectiveUserId) return;
     sendRequest.mutate(
-      { data: { addresseeId } },
+      { data: { addresseeId: effectiveUserId } },
       {
         onSuccess: invalidateProfile,
       },
     );
   };
 
+  const handleRemoveFriend = () => {
+    if (!effectiveUserId) return;
+    removeFriend.mutate(
+      { userId: effectiveUserId },
+      {
+        onSuccess: invalidateProfile,
+      },
+    );
+  };
+
+  const handleAcceptRequest = () => {
+    if (!profile?.viewerIncomingRequestId) return;
+    acceptRequest.mutate(
+      { id: profile.viewerIncomingRequestId },
+      { onSuccess: invalidateProfile },
+    );
+  };
+
+  const handleDeclineRequest = () => {
+    if (!profile?.viewerIncomingRequestId) return;
+    declineRequest.mutate(
+      { id: profile.viewerIncomingRequestId },
+      { onSuccess: invalidateProfile },
+    );
+  };
+
   const handleToggleFollow = () => {
-    if (!profile?.id && !id) return;
-    const targetId = profile?.id || id!;
+    if (!effectiveUserId) return;
+    const targetId = effectiveUserId;
     if (profile?.viewerFollows) {
       syncUserFollowState(queryClient, targetId, false);
       unfollowUser.mutate(
@@ -66,25 +139,94 @@ export default function ProfilePage() {
   };
 
   const friendPending = !!profile?.viewerHasPendingRequest;
+  const hasIncomingRequest = !!profile?.viewerHasIncomingRequest && !!profile?.viewerIncomingRequestId;
   const isFriend = !!profile?.viewerIsFriend;
   const canSendRequest = !!profile?.viewerCanSendRequest;
   const isFollowing = !!profile?.viewerFollows;
   const followBusy = followUser.isPending || unfollowUser.isPending;
 
   if (profileLoading) {
-    return <MainLayout><div className="py-10 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></MainLayout>;
+    return (
+      <MainLayout>
+        <div className="py-10 flex justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
   }
 
   if (!profile) {
-    return <MainLayout><div className="py-10 text-center text-muted-foreground">Profile not found</div></MainLayout>;
+    return (
+      <MainLayout>
+        <div className="py-10 text-center text-muted-foreground">Profile not found</div>
+      </MainLayout>
+    );
   }
 
   const headerActions = !isOwnProfile ? (
     <>
       {isFriend ? (
-        <span className="bg-muted text-muted-foreground px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-1.5">
-          <UserCheck className="w-4 h-4" /> Friends
-        </span>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              disabled={removeFriend.isPending}
+              className="bg-muted text-foreground px-4 py-2 rounded-lg font-medium text-sm hover:bg-muted/80 flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+            >
+              {removeFriend.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <UserCheck className="w-4 h-4 text-emerald-500" />
+              )}
+              <span>Friends</span>
+              <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44 p-1.5 rounded-xl">
+            <DropdownMenuItem
+              onClick={handleRemoveFriend}
+              disabled={removeFriend.isPending}
+              className="flex items-center gap-2 cursor-pointer font-medium text-sm py-2 px-3 rounded-lg text-destructive focus:text-destructive focus:bg-destructive/10"
+            >
+              <UserMinus className="w-4 h-4" />
+              <span>Unfriend</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : hasIncomingRequest ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              disabled={acceptRequest.isPending || declineRequest.isPending}
+              className="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium text-sm hover:bg-primary/90 flex items-center gap-1.5 disabled:opacity-60 cursor-pointer shadow-xs"
+            >
+              {acceptRequest.isPending || declineRequest.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <UserCheck className="w-4 h-4" />
+              )}
+              <span>Respond</span>
+              <ChevronDown className="w-3.5 h-3.5 opacity-80" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44 p-1.5 rounded-xl">
+            <DropdownMenuItem
+              onClick={handleAcceptRequest}
+              disabled={acceptRequest.isPending || declineRequest.isPending}
+              className="flex items-center gap-2 cursor-pointer font-medium text-sm py-2 px-3 rounded-lg"
+            >
+              <Check className="w-4 h-4 text-emerald-500" />
+              <span>Accept</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={handleDeclineRequest}
+              disabled={acceptRequest.isPending || declineRequest.isPending}
+              className="flex items-center gap-2 cursor-pointer font-medium text-sm py-2 px-3 rounded-lg text-destructive focus:text-destructive"
+            >
+              <X className="w-4 h-4" />
+              <span>Cancel / Delete</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       ) : friendPending ? (
         <button disabled className="bg-muted text-muted-foreground px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-1.5">
           <Check className="w-4 h-4" /> Request Sent
@@ -93,7 +235,7 @@ export default function ProfilePage() {
         <button
           onClick={handleAddFriend}
           disabled={sendRequest.isPending}
-          className="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium text-sm hover:bg-primary/90 flex items-center gap-1.5 disabled:opacity-60"
+          className="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium text-sm hover:bg-primary/90 flex items-center gap-1.5 disabled:opacity-60 cursor-pointer"
         >
           {sendRequest.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
           Add Friend
@@ -102,19 +244,25 @@ export default function ProfilePage() {
       <button
         onClick={handleToggleFollow}
         disabled={followBusy}
-        className={`px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-1.5 disabled:opacity-60 ${
+        className={`px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-1.5 transition-colors disabled:opacity-60 cursor-pointer ${
           isFollowing
-            ? "bg-muted text-foreground hover:bg-muted/70"
+            ? "bg-muted text-foreground hover:bg-destructive/10 hover:text-destructive"
             : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
         }`}
       >
-        {followBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-        {isFollowing ? "Following" : "Follow"}
+        {followBusy ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : isFollowing ? (
+          <UserMinus className="w-4 h-4" />
+        ) : (
+          <UserPlus className="w-4 h-4" />
+        )}
+        {isFollowing ? "Unfollow" : "Follow"}
       </button>
     </>
   ) : (
     <Link href="/edit-profile">
-      <button className="bg-muted text-foreground px-4 py-2 rounded-lg font-medium text-sm hover:bg-muted/70">
+      <button className="bg-muted text-foreground px-4 py-2 rounded-lg font-medium text-sm hover:bg-muted/70 cursor-pointer">
         Edit profile
       </button>
     </Link>
@@ -124,7 +272,7 @@ export default function ProfilePage() {
     <MainLayout>
       <ProfileView
         profile={profile}
-        userId={id!}
+        userId={effectiveUserId}
         isOwnProfile={isOwnProfile}
         posts={posts}
         postsLoading={postsLoading}
