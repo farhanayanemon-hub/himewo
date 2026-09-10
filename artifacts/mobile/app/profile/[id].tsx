@@ -44,6 +44,7 @@ import {
   type Reel,
 } from "@workspace/api-client-react";
 import { syncUserFollowState } from "@/lib/follow-sync";
+import { syncUserFriendState } from "@/lib/friend-sync";
 import { syncReelLikeState } from "@/lib/reel-sync";
 import { Avatar } from "@/components/Avatar";
 import { PostCard } from "@/components/PostCard";
@@ -585,6 +586,17 @@ export function ProfileBody({
         invalidateProfile();
       }
     });
+    const subFriend = DeviceEventEmitter.addListener("himewo:friend-sync", (detail) => {
+      if (!detail) return;
+      if (
+        detail.targetId === userId ||
+        detail.targetId === targetId ||
+        detail.targetId === profile?.id ||
+        (detail.username && profile?.username && detail.username.toLowerCase() === profile.username.toLowerCase())
+      ) {
+        invalidateProfile();
+      }
+    });
     const subReel = DeviceEventEmitter.addListener("himewo:reel-created", () => {
       qc.invalidateQueries({ queryKey: ["user-reels", targetId] });
       qc.invalidateQueries({ queryKey: getGetUserPostsQueryKey(userId) });
@@ -593,9 +605,10 @@ export function ProfileBody({
     });
     return () => {
       sub.remove();
+      subFriend.remove();
       subReel.remove();
     };
-  }, [userId, targetId, profile?.id, invalidateProfile, qc, refetchReels, refetchPosts]);
+  }, [userId, targetId, profile?.id, profile?.username, invalidateProfile, qc, refetchReels, refetchPosts]);
 
   const onRefresh = useCallback(() => {
     qc.invalidateQueries({ queryKey: getGetUserQueryKey(userId) });
@@ -610,6 +623,7 @@ export function ProfileBody({
 
   const onToggleFriend = () => {
     if (!profile) return;
+    const destId = profile.id || targetId;
     if (profile.viewerIsFriend) {
       Alert.alert(
         "Unfriend",
@@ -619,16 +633,29 @@ export function ProfileBody({
             text: "Unfriend",
             style: "destructive",
             onPress: () => {
-              removeFriend.mutate({ userId: targetId }, { onSuccess: invalidateProfile });
+              syncUserFriendState(qc, {
+                targetId: destId,
+                username: profile.username,
+                action: "unfriend",
+              });
+              removeFriend.mutate(
+                { userId: targetId },
+                { onError: invalidateProfile, onSettled: invalidateProfile },
+              );
             },
           },
           { text: "Cancel", style: "cancel" },
         ],
       );
     } else if (!profile.viewerHasPendingRequest) {
+      syncUserFriendState(qc, {
+        targetId: destId,
+        username: profile.username,
+        action: "send_request",
+      });
       sendFriendRequest.mutate(
         { data: { addresseeId: targetId } },
-        { onSuccess: invalidateProfile },
+        { onError: invalidateProfile, onSettled: invalidateProfile },
       );
     }
   };
@@ -638,6 +665,7 @@ export function ProfileBody({
   const onRespond = () => {
     if (!profile?.viewerIncomingRequestId) return;
     const reqId = profile.viewerIncomingRequestId;
+    const destId = profile.id || targetId;
     Alert.alert(
       "Respond to Friend Request",
       `Do you want to accept or delete the friend request from ${profile.displayName}?`,
@@ -645,14 +673,32 @@ export function ProfileBody({
         {
           text: "Accept",
           onPress: () => {
-            acceptFriendRequest.mutate({ id: reqId }, { onSuccess: invalidateProfile });
+            syncUserFriendState(qc, {
+              targetId: destId,
+              username: profile.username,
+              action: "accept_request",
+              requestId: reqId,
+            });
+            acceptFriendRequest.mutate(
+              { id: reqId },
+              { onError: invalidateProfile, onSettled: invalidateProfile },
+            );
           },
         },
         {
           text: "Delete Request",
           style: "destructive",
           onPress: () => {
-            declineFriendRequest.mutate({ id: reqId }, { onSuccess: invalidateProfile });
+            syncUserFriendState(qc, {
+              targetId: destId,
+              username: profile.username,
+              action: "decline_request",
+              requestId: reqId,
+            });
+            declineFriendRequest.mutate(
+              { id: reqId },
+              { onError: invalidateProfile, onSettled: invalidateProfile },
+            );
           },
         },
         { text: "Cancel", style: "cancel" },

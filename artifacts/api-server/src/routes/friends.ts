@@ -13,6 +13,7 @@ import { requireAuth } from "../lib/auth";
 import { toProfile } from "../lib/serialize";
 import { createNotification } from "../lib/notify";
 import { canSendFriendRequest } from "../lib/authz";
+import { realtime } from "../realtime";
 import {
   ListFriendsResponse,
   ListFriendRequestsResponse,
@@ -161,6 +162,16 @@ router.post("/friends/requests", requireAuth, async (req, res): Promise<void> =>
     entityType: "friend_request",
     entityId: row.id,
   });
+  realtime.toUser(targetId, {
+    type: "friend_request_received",
+    fromUserId: req.userId!,
+    requestId: row.id,
+  });
+  realtime.toUser(req.userId!, {
+    type: "friend_request_sent",
+    toUserId: targetId,
+    requestId: row.id,
+  });
   const [serialized] = await serializeRequests([row]);
   res.status(201).json(SendFriendRequestResponse.parse(serialized));
 });
@@ -201,6 +212,16 @@ router.post(
       type: "friend_accept",
       entityType: "user",
     });
+    realtime.toUser(reqRow.requesterId, {
+      type: "friend_request_accepted",
+      userId: req.userId!,
+      friendId: req.userId!,
+    });
+    realtime.toUser(req.userId!, {
+      type: "friend_request_accepted",
+      userId: reqRow.requesterId,
+      friendId: reqRow.requesterId,
+    });
     const [serialized] = await serializeRequests([
       { ...reqRow, status: "accepted" },
     ]);
@@ -233,6 +254,14 @@ router.post(
       .update(friendRequestsTable)
       .set({ status: "declined" })
       .where(eq(friendRequestsTable.id, params.data.id));
+    realtime.toUser(reqRow.requesterId, {
+      type: "friend_request_declined",
+      userId: req.userId!,
+    });
+    realtime.toUser(req.userId!, {
+      type: "friend_request_declined",
+      userId: reqRow.requesterId,
+    });
     const [serialized] = await serializeRequests([
       { ...reqRow, status: "declined" },
     ]);
@@ -257,6 +286,14 @@ router.delete("/friends/:userId", requireAuth, async (req, res): Promise<void> =
     .where(
       and(eq(friendshipsTable.userAId, a), eq(friendshipsTable.userBId, b)),
     );
+  realtime.toUser(targetId, {
+    type: "friend_removed",
+    userId: req.userId!,
+  });
+  realtime.toUser(req.userId!, {
+    type: "friend_removed",
+    userId: targetId,
+  });
   res.sendStatus(204);
 });
 
@@ -285,6 +322,16 @@ router.post("/follow/:userId", requireAuth, async (req, res): Promise<void> => {
     type: "follow",
     entityType: "user",
   });
+  realtime.toUser(targetId, {
+    type: "user_followed",
+    followerId: req.userId!,
+    targetId,
+  });
+  realtime.toUser(req.userId!, {
+    type: "user_followed",
+    followerId: req.userId!,
+    targetId,
+  });
   res.sendStatus(204);
 });
 
@@ -307,6 +354,16 @@ router.delete("/follow/:userId", requireAuth, async (req, res): Promise<void> =>
         eq(followsTable.followingId, targetId),
       ),
     );
+  realtime.toUser(targetId, {
+    type: "user_unfollowed",
+    followerId: req.userId!,
+    targetId,
+  });
+  realtime.toUser(req.userId!, {
+    type: "user_unfollowed",
+    followerId: req.userId!,
+    targetId,
+  });
   res.sendStatus(204);
 });
 

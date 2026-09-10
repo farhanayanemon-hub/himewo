@@ -19,6 +19,7 @@ import { Loader2, Check, X, UserPlus, UserCheck, UserMinus, ChevronDown } from "
 import { useAuth } from "@/lib/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { syncUserFollowState } from "@/lib/follow-sync";
+import { syncUserFriendState } from "@/lib/friend-sync";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -78,39 +79,88 @@ export default function ProfilePage() {
     queryClient.invalidateQueries({ queryKey: getListFriendRequestsQueryKey() });
   };
 
+  useEffect(() => {
+    const onFriendSync = (ev: Event) => {
+      const detail = (ev as CustomEvent).detail;
+      if (!detail) return;
+      if (
+        detail.targetId === effectiveUserId ||
+        detail.targetId === lookupKey ||
+        detail.targetId === profile?.id ||
+        (detail.username && profile?.username && detail.username.toLowerCase() === profile.username.toLowerCase())
+      ) {
+        invalidateProfile();
+      }
+    };
+    window.addEventListener("himewo:friend-sync", onFriendSync);
+    return () => window.removeEventListener("himewo:friend-sync", onFriendSync);
+  }, [effectiveUserId, lookupKey, profile?.id, profile?.username]);
+
   const handleAddFriend = () => {
     if (!effectiveUserId) return;
+    syncUserFriendState(queryClient, {
+      targetId: effectiveUserId,
+      username: profile?.username,
+      action: "send_request",
+    });
     sendRequest.mutate(
       { data: { addresseeId: effectiveUserId } },
       {
-        onSuccess: invalidateProfile,
+        onError: invalidateProfile,
+        onSettled: invalidateProfile,
       },
     );
   };
 
   const handleRemoveFriend = () => {
     if (!effectiveUserId) return;
+    syncUserFriendState(queryClient, {
+      targetId: effectiveUserId,
+      username: profile?.username,
+      action: "unfriend",
+    });
     removeFriend.mutate(
       { userId: effectiveUserId },
       {
-        onSuccess: invalidateProfile,
+        onError: invalidateProfile,
+        onSettled: invalidateProfile,
       },
     );
   };
 
   const handleAcceptRequest = () => {
     if (!profile?.viewerIncomingRequestId) return;
+    const reqId = profile.viewerIncomingRequestId;
+    syncUserFriendState(queryClient, {
+      targetId: effectiveUserId,
+      username: profile?.username,
+      action: "accept_request",
+      requestId: reqId,
+    });
     acceptRequest.mutate(
-      { id: profile.viewerIncomingRequestId },
-      { onSuccess: invalidateProfile },
+      { id: reqId },
+      {
+        onError: invalidateProfile,
+        onSettled: invalidateProfile,
+      },
     );
   };
 
   const handleDeclineRequest = () => {
     if (!profile?.viewerIncomingRequestId) return;
+    const reqId = profile.viewerIncomingRequestId;
+    syncUserFriendState(queryClient, {
+      targetId: effectiveUserId,
+      username: profile?.username,
+      action: "decline_request",
+      requestId: reqId,
+    });
     declineRequest.mutate(
-      { id: profile.viewerIncomingRequestId },
-      { onSuccess: invalidateProfile },
+      { id: reqId },
+      {
+        onError: invalidateProfile,
+        onSettled: invalidateProfile,
+      },
     );
   };
 

@@ -14,6 +14,7 @@ import {
   DEV_USER_STORAGE_KEY,
 } from "./supabase";
 import { useAuth } from "./auth";
+import { useQueryClient } from "@tanstack/react-query";
 
 export type RealtimeEvent =
   | { type: "connected"; userId: string }
@@ -75,6 +76,7 @@ const RealtimeContext = createContext<RealtimeContextValue | null>(null);
 
 export function RealtimeProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
+  const queryClient = useQueryClient();
   const [connected, setConnected] = useState(false);
   const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
   const wsRef = useRef<WebSocket | null>(null);
@@ -159,6 +161,50 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
             else next.delete(userId);
             return next;
           });
+        } else if (
+          data.type === "friend_request_received" ||
+          data.type === "friend_request_sent" ||
+          data.type === "friend_request_accepted" ||
+          data.type === "friend_request_declined" ||
+          data.type === "friend_removed"
+        ) {
+          queryClient.invalidateQueries({ queryKey: ["/api/friends"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/friends/requests"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+          const relId = (data as any).userId || (data as any).fromUserId || (data as any).toUserId || (data as any).friendId;
+          if (relId) {
+            queryClient.invalidateQueries({
+              predicate: (q) => {
+                const key = q.queryKey;
+                return Array.isArray(key) && key.some((k) => typeof k === "string" && k.includes(relId));
+              },
+            });
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(
+                new CustomEvent("himewo:friend-sync", {
+                  detail: { targetId: relId, action: data.type },
+                }),
+              );
+            }
+          }
+        } else if (data.type === "user_followed" || data.type === "user_unfollowed") {
+          queryClient.invalidateQueries({ queryKey: ["/api/feed"] });
+          const relId = (data as any).targetId || (data as any).followerId;
+          if (relId) {
+            queryClient.invalidateQueries({
+              predicate: (q) => {
+                const key = q.queryKey;
+                return Array.isArray(key) && key.some((k) => typeof k === "string" && k.includes(relId));
+              },
+            });
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(
+                new CustomEvent("himewo:follow-sync", {
+                  detail: { targetId: relId, isFollowing: data.type === "user_followed" },
+                }),
+              );
+            }
+          }
         }
         for (const handler of handlersRef.current) handler(data);
       };

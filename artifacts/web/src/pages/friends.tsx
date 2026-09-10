@@ -14,6 +14,7 @@ import {
 import { Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
+import { syncUserFriendState } from "@/lib/friend-sync";
 
 export default function FriendsPage() {
   const queryClient = useQueryClient();
@@ -77,17 +78,33 @@ export default function FriendsPage() {
                   </div>
                   <div className="flex gap-2 w-full">
                     <button
-                      onClick={() => acceptRequest.mutate({ id: req.id }, { onSuccess: invalidate })}
+                      onClick={() => {
+                        syncUserFriendState(queryClient, {
+                          targetId: req.requester.id,
+                          username: req.requester.username,
+                          action: "accept_request",
+                          requestId: req.id,
+                        });
+                        acceptRequest.mutate({ id: req.id }, { onError: invalidate, onSettled: invalidate });
+                      }}
                       disabled={acceptRequest.isPending || declineRequest.isPending}
-                      className="flex-1 bg-primary text-primary-foreground py-1.5 rounded-lg text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-1"
+                      className="flex-1 bg-primary text-primary-foreground py-1.5 rounded-lg text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-1 cursor-pointer"
                     >
                       {acceptRequest.isPending && acceptRequest.variables?.id === req.id && <Loader2 className="w-4 h-4 animate-spin" />}
                       Accept
                     </button>
                     <button
-                      onClick={() => declineRequest.mutate({ id: req.id }, { onSuccess: invalidate })}
+                      onClick={() => {
+                        syncUserFriendState(queryClient, {
+                          targetId: req.requester.id,
+                          username: req.requester.username,
+                          action: "decline_request",
+                          requestId: req.id,
+                        });
+                        declineRequest.mutate({ id: req.id }, { onError: invalidate, onSettled: invalidate });
+                      }}
                       disabled={acceptRequest.isPending || declineRequest.isPending}
-                      className="flex-1 bg-muted text-foreground py-1.5 rounded-lg text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-1"
+                      className="flex-1 bg-muted text-foreground py-1.5 rounded-lg text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-1 cursor-pointer"
                     >
                       {declineRequest.isPending && declineRequest.variables?.id === req.id && <Loader2 className="w-4 h-4 animate-spin" />}
                       Decline
@@ -116,9 +133,16 @@ export default function FriendsPage() {
                   )}
                 </div>
                 <button
-                  onClick={() => sendRequest.mutate({ data: { addresseeId: user.id } }, { onSuccess: invalidate })}
+                  onClick={() => {
+                    syncUserFriendState(queryClient, {
+                      targetId: user.id,
+                      username: user.username,
+                      action: "send_request",
+                    });
+                    sendRequest.mutate({ data: { addresseeId: user.id } }, { onError: invalidate, onSettled: invalidate });
+                  }}
                   disabled={sendRequest.isPending}
-                  className="w-full bg-primary/10 text-primary hover:bg-primary/20 py-1.5 rounded-lg text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-1"
+                  className="w-full bg-primary/10 text-primary hover:bg-primary/20 py-1.5 rounded-lg text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-1 cursor-pointer"
                 >
                   {sendRequest.isPending && sendRequest.variables?.data.addresseeId === user.id && <Loader2 className="w-4 h-4 animate-spin" />}
                   Add Friend
