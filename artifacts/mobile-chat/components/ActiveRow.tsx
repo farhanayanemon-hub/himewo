@@ -7,10 +7,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListFriends,
+  useListConversations,
   useCreateConversation,
   getListConversationsQueryKey,
   ConversationInputType,
   type Profile,
+  type Conversation,
 } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
 import { useAuth } from "@/lib/auth";
@@ -23,15 +25,40 @@ export function ActiveRow() {
   const qc = useQueryClient();
   const { user } = useAuth();
   const { isOnline } = useRealtime();
-  const { data } = useListFriends();
-  const friends = (data ?? []) as Profile[];
+  const { data: friendData } = useListFriends();
+  const friends = (friendData ?? []) as Profile[];
+  const { data: convData } = useListConversations();
+  const conversations = (convData ?? []) as Conversation[];
   const createConversation = useCreateConversation();
   const [busy, setBusy] = useState(false);
+
+  // Combine confirmed friends and conversation peers so all contacts appear
+  const contactMap = new Map<string, Profile>();
+  for (const f of friends) {
+    if (f.id !== user?.id) {
+      contactMap.set(f.id, f);
+    }
+  }
+  for (const conv of conversations) {
+    for (const m of conv.members) {
+      if (m.user.id !== user?.id && !contactMap.has(m.user.id)) {
+        contactMap.set(m.user.id, m.user);
+      }
+    }
+  }
+  const allContacts = Array.from(contactMap.values());
 
   const open = async (id: string) => {
     if (busy) return;
     setBusy(true);
     try {
+      const existing = conversations.find(
+        (conv) => conv.type === "direct" && conv.members.some((m) => m.user.id === id),
+      );
+      if (existing) {
+        router.push(`/messages/${existing.id}`);
+        return;
+      }
       const conv = await createConversation.mutateAsync({
         data: { type: ConversationInputType.direct, memberIds: [id] },
       });
@@ -45,7 +72,7 @@ export function ActiveRow() {
   const isActive = (f: Profile) =>
     isOnline(f.id) || f.presence?.status === "online";
 
-  const sorted = [...friends].sort(
+  const sorted = [...allContacts].sort(
     (a, b) => Number(isActive(b)) - Number(isActive(a)),
   );
 
