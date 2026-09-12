@@ -5506,6 +5506,11 @@ components:
         id: { type: integer }
         ownerId: { type: string }
         name: { type: string }
+        accountNumber: { type: ["string", "null"] }
+        phone: { type: ["string", "null"] }
+        businessAddress: { type: ["string", "null"] }
+        tin: { type: ["string", "null"] }
+        bin: { type: ["string", "null"] }
         currency: { type: string }
         timezone: { type: string }
         balanceCents: { type: integer }
@@ -5528,12 +5533,20 @@ components:
         name: { type: string, minLength: 1 }
         currency: { type: string }
         timezone: { type: string }
+        phone: { type: string }
+        businessAddress: { type: string }
+        tin: { type: string }
+        bin: { type: string }
     AdAccountUpdate:
       type: object
       properties:
         name: { type: string, minLength: 1 }
         currency: { type: string }
         timezone: { type: string }
+        phone: { type: string }
+        businessAddress: { type: string }
+        tin: { type: string }
+        bin: { type: string }
         status: { type: string, enum: [active, suspended, closed] }
     AdAccountMember:
       type: object

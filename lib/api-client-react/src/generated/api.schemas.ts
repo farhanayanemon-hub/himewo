@@ -1231,6 +1231,11 @@ export interface AdAccount {
   id: number;
   ownerId: string;
   name: string;
+  accountNumber?: string | null;
+  phone?: string | null;
+  businessAddress?: string | null;
+  tin?: string | null;
+  bin?: string | null;
   currency: string;
   timezone: string;
   balanceCents: number;
@@ -1255,6 +1260,22 @@ export interface AdAccountInput {
   name: string;
   currency?: string;
   timezone?: string;
+  phone?: string;
+  businessAddress?: string;
+  tin?: string;
+  bin?: string;
+}
+
+export interface AdAccountUpdate {
+  /** @minLength 1 */
+  name?: string;
+  currency?: string;
+  timezone?: string;
+  phone?: string;
+  businessAddress?: string;
+  tin?: string;
+  bin?: string;
+  status?: AdAccountUpdateStatus;
 }
 
 export type AdAccountUpdateStatus = typeof AdAccountUpdateStatus[keyof typeof AdAccountUpdateStatus];
