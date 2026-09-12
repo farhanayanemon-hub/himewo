@@ -206,6 +206,21 @@ function MobileReelTimelineCard({
               <Text style={{ fontSize: 12, color: c.mutedForeground }}>@{reel.author.username}</Text>
               <Text style={{ fontSize: 12, color: c.mutedForeground }}>•</Text>
               <Text style={{ fontSize: 12, color: c.mutedForeground }}>{timeAgo(reel.createdAt)}</Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 3,
+                  backgroundColor: "rgba(168, 85, 247, 0.15)",
+                  paddingHorizontal: 6,
+                  paddingVertical: 1.5,
+                  borderRadius: 6,
+                  marginLeft: 2,
+                }}
+              >
+                <Ionicons name="film-outline" size={10} color="#a855f7" />
+                <Text style={{ fontSize: 10, fontWeight: "700", color: "#a855f7" }}>Reel</Text>
+              </View>
             </View>
           </View>
         </View>

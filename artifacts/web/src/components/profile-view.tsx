@@ -364,11 +364,15 @@ function ProfileReelTimelineCard({
                 </button>
               )}
             </div>
-            <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap">
               <span>@{reel.author.username}</span>
               <span>•</span>
               <span title={new Date(reel.createdAt).toLocaleString()}>
                 {formatDistanceToNow(new Date(reel.createdAt), { addSuffix: true })}
+              </span>
+              <span>•</span>
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-purple-500/15 text-purple-600 dark:text-purple-400 font-semibold text-[10px]">
+                <Play className="w-2.5 h-2.5 fill-current" /> Reel
               </span>
             </div>
           </div>
