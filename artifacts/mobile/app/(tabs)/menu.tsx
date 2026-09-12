@@ -1,4 +1,5 @@
 import {
+  Alert,
   Pressable,
   ScrollView,
   Text,
@@ -59,6 +60,19 @@ export default function MenuScreen() {
     : SHORTCUTS;
 
   const hasPages = !!pages && pages.length > 0;
+
+  const confirmLogout = () => {
+    Alert.alert("Log out", "Are you sure you want to log out?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Log out",
+        style: "destructive",
+        onPress: () => {
+          void signOut();
+        },
+      },
+    ]);
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top"]}>
@@ -261,7 +275,7 @@ export default function MenuScreen() {
 
         <Pressable
           style={[styles.logout, { backgroundColor: c.secondary }]}
-          onPress={() => signOut()}
+          onPress={confirmLogout}
         >
           <Ionicons name="log-out-outline" size={20} color={c.destructive} />
           <Text style={[styles.logoutText, { color: c.destructive }]}>Log out</Text>

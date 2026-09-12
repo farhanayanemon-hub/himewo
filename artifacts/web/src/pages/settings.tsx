@@ -1,7 +1,6 @@
 import { MainLayout } from "@/components/layout/main-layout";
 import { useAuth } from "@/lib/auth";
 import { Link } from "wouter";
-import { Button } from "@/components/ui/button";
 import {
   UserCog,
   ShieldCheck,
@@ -10,7 +9,6 @@ import {
   Globe,
   HelpCircle,
   ChevronRight,
-  LogOut,
 } from "lucide-react";
 
 const SECTIONS = [
@@ -53,7 +51,7 @@ const SECTIONS = [
 ];
 
 export default function SettingsPage() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
 
   return (
     <MainLayout>
@@ -87,17 +85,6 @@ export default function SettingsPage() {
               </Link>
             );
           })}
-        </div>
-
-        <div className="mt-6">
-          <Button
-            variant="destructive"
-            className="w-full"
-            onClick={signOut}
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Log out
-          </Button>
         </div>
       </div>
     </MainLayout>

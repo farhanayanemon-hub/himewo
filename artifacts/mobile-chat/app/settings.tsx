@@ -28,12 +28,6 @@ export default function SettingsScreen() {
   const { themeMode, activeStatus, setThemeMode, setActiveStatus } = usePreferences();
   const [switchOpen, setSwitchOpen] = useState(false);
 
-  const confirmLogout = () => {
-    Alert.alert("Log out", "Are you sure you want to log out?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Log out", style: "destructive", onPress: () => void signOut() },
-    ]);
-  };
 
   const switchTo = async (id: string) => {
     setSwitchOpen(false);
@@ -111,9 +105,7 @@ export default function SettingsScreen() {
               } else {
                 setSwitchOpen(true);
               }
-            }} />
-          <Row c={c} icon="log-out" iconColor={c.destructive} title="Log out"
-            titleColor={c.destructive} onPress={confirmLogout} last />
+            }} last />
         </View>
       </ScrollView>
 

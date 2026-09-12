@@ -1,5 +1,4 @@
 import {
-  Alert,
   Pressable,
   ScrollView,
   Text,
@@ -58,20 +57,7 @@ const SECTIONS: {
 
 export default function SettingsScreen() {
   const c = useColors();
-  const { user, signOut } = useAuth();
-
-  const confirmLogout = () => {
-    Alert.alert("Log out", "Are you sure you want to log out?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Log out",
-        style: "destructive",
-        onPress: () => {
-          void signOut();
-        },
-      },
-    ]);
-  };
+  const { user } = useAuth();
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
@@ -163,24 +149,6 @@ export default function SettingsScreen() {
             </Pressable>
           ))}
         </View>
-
-        <View style={{ paddingHorizontal: 16, marginTop: 24 }}>
-          <Pressable
-            style={[styles.logout, { borderColor: c.destructive }]}
-            onPress={confirmLogout}
-          >
-            <Ionicons name="log-out-outline" size={20} color={c.destructive} />
-            <Text
-              style={{
-                color: c.destructive,
-                fontFamily: "Inter_700Bold",
-                fontSize: 15,
-              }}
-            >
-              Log out
-            </Text>
-          </Pressable>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -225,14 +193,5 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-  },
-  logout: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingVertical: 14,
   },
 });

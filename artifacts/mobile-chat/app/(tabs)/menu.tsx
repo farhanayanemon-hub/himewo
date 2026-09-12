@@ -2,6 +2,7 @@ import { Touchable } from "@/components/Touchable";
 import { fs } from "@/constants/typography";
 import { shadow, glow } from "@/constants/shadows";
 import {
+  Alert,
   Pressable,
   ScrollView,
   Text,
@@ -18,7 +19,7 @@ import { useColors } from "@/hooks/useColors";
 
 export default function MenuScreen() {
   const c = useColors();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { data } = useListFriendRequests();
   const requestCount = ((data ?? []) as FriendRequest[]).length;
 
@@ -37,6 +38,19 @@ export default function MenuScreen() {
     },
     { icon: "archive-outline", label: "Archive", onPress: () => router.push("/archive") },
   ];
+
+  const confirmLogout = () => {
+    Alert.alert("Log out", "Are you sure you want to log out?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Log out",
+        style: "destructive",
+        onPress: () => {
+          void signOut();
+        },
+      },
+    ]);
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top"]}>
@@ -83,6 +97,14 @@ export default function MenuScreen() {
             </Touchable>
           ))}
         </View>
+
+        <Touchable
+          style={[styles.logout, { backgroundColor: c.secondary }]}
+          onPress={confirmLogout}
+        >
+          <Ionicons name="log-out-outline" size={20} color={c.destructive} />
+          <Text style={[styles.logoutText, { color: c.destructive }]}>Log out</Text>
+        </Touchable>
       </ScrollView>
     </SafeAreaView>
   );
@@ -129,4 +151,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   badgeText: { color: "#fff", fontFamily: "Inter_700Bold", fontSize: fs(11) },
+  logout: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginHorizontal: 12,
+    marginTop: 16,
+    marginBottom: 24,
+    borderRadius: 14,
+    paddingVertical: 14,
+  },
+  logoutText: { fontFamily: "Inter_700Bold", fontSize: fs(15) },
 });
