@@ -244,6 +244,71 @@ function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
   const [shareOpen, setShareOpen] = useState(false);
   const handleShare = () => setShareOpen(true);
 
+  const handleMore = () => {
+    if (isOwn) {
+      Alert.alert("Reel Options", undefined, [
+        {
+          text: "Delete Reel",
+          style: "destructive",
+          onPress: () => {
+            Alert.alert(
+              "Delete Reel",
+              "Are you sure you want to delete this reel? It will be moved to trash and removed from your profile.",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Delete",
+                  style: "destructive",
+                  onPress: async () => {
+                    try {
+                      await customFetch(`/api/reels/${reel.id}`, { method: "DELETE" });
+                      qc.setQueryData<Reel[]>(getListReelsQueryKey(), (old) => {
+                        if (!old) return old;
+                        return old.filter((r) => r.id !== reel.id);
+                      });
+                      qc.invalidateQueries({ queryKey: getListReelsQueryKey() });
+                      qc.invalidateQueries({ queryKey: ["user-reels"] });
+                      qc.invalidateQueries({ queryKey: ["user-profile-reels"] });
+                      Alert.alert("Reel Deleted", "Your reel has been moved to trash.");
+                    } catch (err: any) {
+                      Alert.alert("Error", err?.message || "Could not delete reel.");
+                    }
+                  },
+                },
+              ],
+            );
+          },
+        },
+        {
+          text: "Copy Link",
+          onPress: async () => {
+            const url = `https://himewo.com/reels?id=${reel.id}`;
+            await Share.share({ message: url, url });
+          },
+        },
+        { text: "Cancel", style: "cancel" },
+      ]);
+    } else {
+      Alert.alert("Reel Options", undefined, [
+        {
+          text: "Report Reel",
+          style: "destructive",
+          onPress: () => {
+            Alert.alert("Report", "Thank you. Reel reported to moderators for review.");
+          },
+        },
+        {
+          text: "Copy Link",
+          onPress: async () => {
+            const url = `https://himewo.com/reels?id=${reel.id}`;
+            await Share.share({ message: url, url });
+          },
+        },
+        { text: "Cancel", style: "cancel" },
+      ]);
+    }
+  };
+
   const { cleanCaption, overlays } = parseReelOverlays(reel.caption);
 
   return (
@@ -386,6 +451,10 @@ function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
           <Pressable style={styles.action} onPress={handleShare}>
             <Ionicons name="paper-plane-outline" size={28} color="#fff" />
             <Text style={styles.actionLabel}>Share</Text>
+          </Pressable>
+          <Pressable style={styles.action} onPress={handleMore}>
+            <Ionicons name="ellipsis-horizontal" size={26} color="#fff" />
+            <Text style={styles.actionLabel}>More</Text>
           </Pressable>
         </View>
       </View>
