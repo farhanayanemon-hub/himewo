@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Alert,
   Modal,
@@ -68,7 +68,7 @@ const privacyOptions: {
   { value: "private", label: "Only me", icon: "lock-closed" },
 ];
 
-export function PostCard({ post, onComment, onShare, hideFollowButton = false }: PostCardProps) {
+export const PostCard = React.memo(function PostCard({ post, onComment, onShare, hideFollowButton = false }: PostCardProps) {
   const c = useColors();
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -578,7 +578,7 @@ export function PostCard({ post, onComment, onShare, hideFollowButton = false }:
       />
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: { marginBottom: 8, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth },

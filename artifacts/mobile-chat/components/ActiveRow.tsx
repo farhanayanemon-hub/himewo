@@ -1,6 +1,6 @@
 import { Touchable } from "@/components/Touchable";
 import { fs } from "@/constants/typography";
-import { useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,7 +20,7 @@ import { useRealtime } from "@/lib/realtime";
 import { useColors } from "@/hooks/useColors";
 import { lastActiveLabel } from "@/lib/format";
 
-export function ActiveRow() {
+export const ActiveRow = React.memo(function ActiveRow() {
   const c = useColors();
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -32,21 +32,31 @@ export function ActiveRow() {
   const createConversation = useCreateConversation();
   const [busy, setBusy] = useState(false);
 
+  const isActive = useCallback(
+    (f: Profile) => isOnline(f.id) || f.presence?.status === "online",
+    [isOnline],
+  );
+
   // Combine confirmed friends and conversation peers so all contacts appear
-  const contactMap = new Map<string, Profile>();
-  for (const f of friends) {
-    if (f.id !== user?.id) {
-      contactMap.set(f.id, f);
-    }
-  }
-  for (const conv of conversations) {
-    for (const m of conv.members) {
-      if (m.user.id !== user?.id && !contactMap.has(m.user.id)) {
-        contactMap.set(m.user.id, m.user);
+  const sorted = useMemo(() => {
+    const contactMap = new Map<string, Profile>();
+    for (const f of friends) {
+      if (f.id !== user?.id) {
+        contactMap.set(f.id, f);
       }
     }
-  }
-  const allContacts = Array.from(contactMap.values());
+    for (const conv of conversations) {
+      for (const m of conv.members) {
+        if (m.user.id !== user?.id && !contactMap.has(m.user.id)) {
+          contactMap.set(m.user.id, m.user);
+        }
+      }
+    }
+    const allContacts = Array.from(contactMap.values());
+    return [...allContacts].sort(
+      (a, b) => Number(isActive(b)) - Number(isActive(a)),
+    );
+  }, [friends, conversations, user?.id, isActive]);
 
   const open = async (id: string) => {
     if (busy) return;
@@ -68,13 +78,6 @@ export function ActiveRow() {
       setBusy(false);
     }
   };
-
-  const isActive = (f: Profile) =>
-    isOnline(f.id) || f.presence?.status === "online";
-
-  const sorted = [...allContacts].sort(
-    (a, b) => Number(isActive(b)) - Number(isActive(a)),
-  );
 
   return (
     <View style={[styles.wrap, { borderBottomColor: c.border }]}>
@@ -126,7 +129,7 @@ export function ActiveRow() {
       </ScrollView>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   wrap: { paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },

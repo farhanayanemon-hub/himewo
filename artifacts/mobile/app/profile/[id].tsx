@@ -644,6 +644,11 @@ export function ProfileBody({
     if (targetId) qc.invalidateQueries({ queryKey: getGetUserQueryKey(targetId) });
     qc.invalidateQueries({ queryKey: getGetUserFriendsQueryKey(userId) });
     if (targetId) qc.invalidateQueries({ queryKey: getGetUserFriendsQueryKey(targetId) });
+    qc.invalidateQueries({ queryKey: ["/api/feed"] });
+    qc.invalidateQueries({ queryKey: ["/api/posts"] });
+    qc.invalidateQueries({ queryKey: ["/api/stories"] });
+    qc.invalidateQueries({ queryKey: ["/api/users", "me"] });
+    qc.invalidateQueries({ queryKey: ["/api/profiles"] });
   }, [qc, userId, targetId]);
 
   useEffect(() => {

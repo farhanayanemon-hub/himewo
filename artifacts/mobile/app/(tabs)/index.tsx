@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -185,6 +186,12 @@ export default function HomeScreen() {
                 ? "feed-reels-shelf"
                 : `post-${item.post.id}`
           }
+          removeClippedSubviews={Platform.OS !== "web"}
+          maxToRenderPerBatch={6}
+          windowSize={7}
+          initialNumToRender={5}
+          updateCellsBatchingPeriod={50}
+          showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={onRefresh} tintColor={c.primary} />
           }

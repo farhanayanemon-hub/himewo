@@ -1,5 +1,5 @@
+import React, { memo } from "react";
 import { fs } from "@/constants/typography";
-import { shadow } from "@/constants/shadows";
 import { Image } from "expo-image";
 import { View, Text, StyleSheet } from "react-native";
 import { useColors } from "@/hooks/useColors";
@@ -20,40 +20,50 @@ function initials(name?: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-export function Avatar({ uri, name, size = 40, online, ring }: AvatarProps) {
+function AvatarComponent({ uri, name, size = 40, online, ring }: AvatarProps) {
   const c = useColors();
   const radius = size / 2;
+  const validUri = typeof uri === "string" && uri.trim().length > 0 ? uri.trim() : null;
+  const [hasError, setHasError] = React.useState(false);
+
+  // Reset error state when validUri changes
+  React.useEffect(() => {
+    setHasError(false);
+  }, [validUri]);
 
   return (
-    <View style={[{ width: size, height: size, borderRadius: radius }, shadow("sm")]}>
+    <View style={{ width: size, height: size, position: "relative" }}>
       <View
         style={[
+          styles.container,
           {
             width: size,
             height: size,
             borderRadius: radius,
             backgroundColor: c.secondary,
-            alignItems: "center",
-            justifyContent: "center",
-            overflow: "hidden",
           },
           ring && { borderWidth: 2, borderColor: c.primary },
         ]}
       >
-        {uri ? (
+        {validUri && !hasError ? (
           <Image
-            source={{ uri }}
+            source={{ uri: validUri }}
             style={{ width: size, height: size }}
             contentFit="cover"
-            transition={150}
+            cachePolicy="memory-disk"
+            priority="high"
+            recyclingKey={validUri}
+            onError={() => setHasError(true)}
           />
         ) : (
           <Text
-            style={{
-              color: c.mutedForeground,
-              fontFamily: "Inter_600SemiBold",
-              fontSize: size * 0.4,
-            }}
+            style={[
+              styles.initials,
+              {
+                color: c.mutedForeground,
+                fontSize: size * 0.4,
+              },
+            ]}
           >
             {initials(name)}
           </Text>
@@ -64,9 +74,9 @@ export function Avatar({ uri, name, size = 40, online, ring }: AvatarProps) {
           style={[
             styles.dot,
             {
-              width: size * 0.28,
-              height: size * 0.28,
-              borderRadius: size * 0.14,
+              width: Math.max(12, size * 0.28),
+              height: Math.max(12, size * 0.28),
+              borderRadius: Math.max(6, size * 0.14),
               borderColor: c.card,
               backgroundColor: online ? "#31a24c" : "#9ca3af",
             },
@@ -77,11 +87,21 @@ export function Avatar({ uri, name, size = 40, online, ring }: AvatarProps) {
   );
 }
 
+export const Avatar = memo(AvatarComponent);
+
 const styles = StyleSheet.create({
+  container: {
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  initials: {
+    fontFamily: "Inter_600SemiBold",
+  },
   dot: {
     position: "absolute",
     right: 0,
     bottom: 0,
-    borderWidth: 2,
+    borderWidth: 2.5,
   },
 });

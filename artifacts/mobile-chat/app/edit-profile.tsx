@@ -18,6 +18,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   useUpdateMyProfile,
   getGetCurrentUserQueryKey,
+  getListConversationsQueryKey,
+  getListFriendsQueryKey,
+  getListStoriesQueryKey,
   type ProfileUpdate,
 } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
@@ -48,6 +51,9 @@ export default function EditProfileScreen() {
       };
       await updateProfile.mutateAsync({ data });
       qc.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
+      qc.invalidateQueries({ queryKey: getListConversationsQueryKey() });
+      qc.invalidateQueries({ queryKey: getListFriendsQueryKey() });
+      qc.invalidateQueries({ queryKey: getListStoriesQueryKey() });
       await refreshUser();
     } catch {
       // Silent: next blur retries.
@@ -68,6 +74,9 @@ export default function EditProfileScreen() {
       const uploaded = await uploadMedia(asset);
       await updateProfile.mutateAsync({ data: { avatarUrl: uploaded.url } });
       qc.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
+      qc.invalidateQueries({ queryKey: getListConversationsQueryKey() });
+      qc.invalidateQueries({ queryKey: getListFriendsQueryKey() });
+      qc.invalidateQueries({ queryKey: getListStoriesQueryKey() });
       await refreshUser();
     } catch (err) {
       setAvatarUrl(user?.avatarUrl ?? null);

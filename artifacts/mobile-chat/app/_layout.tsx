@@ -48,7 +48,15 @@ if (Platform.OS === "web" && typeof document !== "undefined") {
 }
 
 const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: 1, staleTime: 15_000 } },
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 60_000,
+      gcTime: 15 * 60_000,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+    },
+  },
 });
 
 function RootNavigator() {

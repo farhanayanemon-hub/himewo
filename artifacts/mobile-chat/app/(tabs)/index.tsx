@@ -1,12 +1,13 @@
 import { Touchable } from "@/components/Touchable";
 import { fs } from "@/constants/typography";
 import { shadow, glow } from "@/constants/shadows";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   Text,
@@ -49,6 +50,126 @@ function otherMember(conv: Conversation, myId?: string): Profile | undefined {
   const others = conv.members.filter((m) => m.user.id !== myId);
   return others[0]?.user;
 }
+
+interface ConversationRowProps {
+  item: Conversation;
+  myId?: string;
+  online?: boolean;
+  onPress: () => void;
+  onLongPress: () => void;
+}
+
+const ConversationRow = React.memo(function ConversationRow({
+  item,
+  myId,
+  online,
+  onPress,
+  onLongPress,
+}: ConversationRowProps) {
+  const c = useColors();
+  const peer = otherMember(item, myId);
+  const isGroup = item.type === "group";
+  const name = isGroup
+    ? item.title || "Group chat"
+    : peer?.displayName || "Unknown";
+  const avatarUri = isGroup ? item.avatarUrl : peer?.avatarUrl;
+  const last = item.lastMessage;
+  const preview = last
+    ? last.type === "text"
+      ? last.content
+      : last.type === "image"
+        ? "Photo"
+        : last.type === "video"
+          ? "Video"
+          : last.type === "audio"
+            ? "🎤 Voice message"
+            : "Attachment"
+    : "No messages yet";
+  const mine = last && last.sender.id === myId;
+  const unread = item.unreadCount > 0 || item.markedUnread;
+
+  return (
+    <Touchable
+      style={styles.row}
+      onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={300}
+    >
+      <Avatar uri={avatarUri} name={name} size={56} online={online} />
+      <View style={styles.rowContent}>
+        <View style={styles.rowTop}>
+          <Text
+            numberOfLines={1}
+            style={[
+              styles.name,
+              {
+                color: c.foreground,
+                fontFamily: unread ? "Inter_700Bold" : "Inter_600SemiBold",
+              },
+            ]}
+          >
+            {name}
+          </Text>
+          <View style={styles.rowTopRight}>
+            {item.isPinned && (
+              <Ionicons
+                name="pin"
+                size={12}
+                color={c.mutedForeground}
+                style={{ marginRight: 4 }}
+              />
+            )}
+            {item.isMuted && (
+              <Ionicons
+                name="notifications-off"
+                size={12}
+                color={c.mutedForeground}
+                style={{ marginRight: 4 }}
+              />
+            )}
+            <Text
+              style={[
+                styles.time,
+                {
+                  color: unread ? c.primary : c.mutedForeground,
+                  fontFamily: unread ? "Inter_600SemiBold" : "Inter_400Regular",
+                },
+              ]}
+            >
+              {timeAgo(item.lastMessageAt)}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.rowBottom}>
+          <Text
+            numberOfLines={1}
+            style={{
+              flex: 1,
+              color: unread ? c.foreground : c.mutedForeground,
+              fontFamily: unread ? "Inter_600SemiBold" : "Inter_400Regular",
+              fontSize: fs(14),
+            }}
+          >
+            {mine ? "You: " : ""}
+            {preview}
+          </Text>
+          {unread ? (
+            item.unreadCount > 1 ? (
+              <View style={[styles.badge, { backgroundColor: c.primary }]}>
+                <Text style={styles.badgeText}>
+                  {item.unreadCount > 99 ? "99+" : item.unreadCount}
+                </Text>
+              </View>
+            ) : (
+              <View style={[styles.unreadDot, { backgroundColor: c.primary }]} />
+            )
+          ) : null}
+        </View>
+      </View>
+    </Touchable>
+  );
+});
 
 export default function ConversationsScreen() {
   const c = useColors();
@@ -104,44 +225,66 @@ export default function ConversationsScreen() {
     return unsub;
   }, [subscribe, qc]);
 
+  const renderItem = useCallback(
+    ({ item }: { item: Conversation }) => {
+      const peer = otherMember(item, user?.id);
+      const online = item.type !== "group" && peer ? isOnline(peer.id) : undefined;
+      return (
+        <ConversationRow
+          item={item}
+          myId={user?.id}
+          online={online}
+          onPress={() => router.push(`/messages/${item.id}`)}
+          onLongPress={() => setMenuConv(item)}
+        />
+      );
+    },
+    [user?.id, isOnline],
+  );
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top"]}>
-      <View style={[styles.header, { backgroundColor: c.card }, shadow("sm")]}>
-        <Touchable onPress={() => router.push("/settings")} hitSlop={8}>
-          <Avatar uri={user?.avatarUrl} name={user?.displayName} size={36} />
-        </Touchable>
-        <Text style={[styles.wordmark, { color: c.primary }]}>himewo chat</Text>
+      {/* Native Messenger Top Bar */}
+      <View style={[styles.header, { backgroundColor: c.background }]}>
+        <View style={styles.headerLeft}>
+          <Touchable onPress={() => router.push("/settings")} hitSlop={8}>
+            <Avatar uri={user?.avatarUrl} name={user?.displayName} size={38} />
+          </Touchable>
+          <Text style={[styles.chatsTitle, { color: c.foreground }]}>Chats</Text>
+        </View>
         <View style={styles.headerRight}>
           <Touchable
-            style={[styles.iconBtn, { backgroundColor: c.secondary }, shadow("sm")]}
+            style={[styles.iconBtn, { backgroundColor: c.secondary }]}
             onPress={() => setNewOpen(true)}
+            hitSlop={6}
           >
             <Ionicons name="create-outline" size={20} color={c.foreground} />
           </Touchable>
           <Touchable
-            style={[styles.iconBtn, { backgroundColor: c.secondary }, shadow("sm")]}
+            style={[styles.iconBtn, { backgroundColor: c.secondary }]}
             onPress={() => openMainApp()}
             hitSlop={6}
           >
-            <Ionicons name="apps" size={20} color={c.foreground} />
+            <Ionicons name="grid-outline" size={19} color={c.foreground} />
           </Touchable>
         </View>
       </View>
 
+      {/* Messenger Pill Search */}
       <View style={styles.searchWrap}>
-        <View style={[styles.searchBox, { backgroundColor: c.card }, shadow("sm")]}>
-          <Ionicons name="search" size={18} color={c.mutedForeground} />
+        <View style={[styles.searchBox, { backgroundColor: c.secondary }]}>
+          <Ionicons name="search" size={17} color={c.mutedForeground} />
           <TextInput
             value={search}
             onChangeText={setSearch}
-            placeholder="Search chats"
+            placeholder="Search"
             placeholderTextColor={c.mutedForeground}
             underlineColorAndroid="transparent"
-            style={{ flex: 1, color: c.foreground, fontSize: fs(16), paddingVertical: 0 }}
+            style={{ flex: 1, color: c.foreground, fontSize: fs(15), paddingVertical: 0 }}
           />
           {search.length > 0 && (
             <Touchable onPress={() => setSearch("")} hitSlop={8}>
-              <Ionicons name="close-circle" size={18} color={c.mutedForeground} />
+              <Ionicons name="close-circle" size={17} color={c.mutedForeground} />
             </Touchable>
           )}
         </View>
@@ -153,6 +296,15 @@ export default function ConversationsScreen() {
         <FlatList
           data={filtered}
           keyExtractor={(item) => String(item.id)}
+          removeClippedSubviews={Platform.OS !== "web"}
+          maxToRenderPerBatch={10}
+          windowSize={7}
+          initialNumToRender={10}
+          updateCellsBatchingPeriod={40}
+          showsVerticalScrollIndicator={false}
+          ItemSeparatorComponent={() => (
+            <View style={[styles.separator, { backgroundColor: c.border }]} />
+          )}
           ListHeaderComponent={
             search.trim().length > 0 ? null : (
               <View>
@@ -162,18 +314,18 @@ export default function ConversationsScreen() {
                     style={[styles.requestRow, { borderBottomColor: c.border }]}
                     onPress={() => router.push("/message-requests")}
                   >
-                    <View style={[styles.requestIcon, { backgroundColor: c.primary }, glow(c.primary)]}>
+                    <View style={[styles.requestIcon, { backgroundColor: c.primary }]}>
                       <Ionicons name="chatbox-ellipses" size={24} color="#fff" />
                     </View>
                     <View style={{ flex: 1, marginLeft: 12 }}>
-                      <Text style={{ color: c.foreground, fontFamily: "Inter_700Bold", fontSize: fs(16) }}>
+                      <Text style={{ color: c.foreground, fontFamily: "Inter_700Bold", fontSize: fs(15) }}>
                         Message requests
                       </Text>
                       <Text style={{ color: c.mutedForeground, fontSize: fs(13), marginTop: 2 }}>
                         {requestCount} {requestCount === 1 ? "person wants" : "people want"} to connect
                       </Text>
                     </View>
-                    <View style={[styles.badge, { backgroundColor: c.primary }, glow(c.primary)]}>
+                    <View style={[styles.badge, { backgroundColor: c.primary }]}>
                       <Text style={styles.badgeText}>{requestCount > 99 ? "99+" : requestCount}</Text>
                     </View>
                   </Touchable>
@@ -184,85 +336,7 @@ export default function ConversationsScreen() {
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={onRefresh} tintColor={c.primary} />
           }
-          renderItem={({ item }) => {
-            const peer = otherMember(item, user?.id);
-            const isGroup = item.type === "group";
-            const name = isGroup
-              ? item.title || "Group chat"
-              : peer?.displayName || "Unknown";
-            const avatarUri = isGroup ? item.avatarUrl : peer?.avatarUrl;
-            const online = !isGroup && peer ? isOnline(peer.id) : undefined;
-            const last = item.lastMessage;
-            const preview = last
-              ? last.type === "text"
-                ? last.content
-                : last.type === "image"
-                  ? "Photo"
-                  : last.type === "video"
-                    ? "Video"
-                    : last.type === "audio"
-                      ? "🎤 Voice message"
-                      : "Attachment"
-              : "No messages yet";
-            const mine = last && last.sender.id === user?.id;
-            const unread = item.unreadCount > 0 || item.markedUnread;
-
-            return (
-              <Touchable
-                style={[styles.row, { borderBottomColor: c.border }]}
-                onPress={() => router.push(`/messages/${item.id}`)}
-                onLongPress={() => setMenuConv(item)}
-                delayLongPress={300}
-              >
-                <Avatar uri={avatarUri} name={name} size={56} online={online} />
-                <View style={{ flex: 1, marginLeft: 12 }}>
-                  <View style={styles.rowTop}>
-                    <Text
-                      numberOfLines={1}
-                      style={[
-                        styles.name,
-                        { color: c.foreground, fontFamily: unread ? "Inter_700Bold" : "Inter_600SemiBold" },
-                      ]}
-                    >
-                      {name}
-                    </Text>
-                    {item.isPinned && (
-                      <Ionicons name="pin" size={13} color={c.mutedForeground} style={{ marginRight: 4 }} />
-                    )}
-                    {item.isMuted && (
-                      <Ionicons name="notifications-off" size={13} color={c.mutedForeground} style={{ marginRight: 4 }} />
-                    )}
-                    <Text style={[styles.time, { color: c.mutedForeground }]}>
-                      {timeAgo(item.lastMessageAt)}
-                    </Text>
-                  </View>
-                  <View style={styles.rowBottom}>
-                    <Text
-                      numberOfLines={1}
-                      style={{
-                        flex: 1,
-                        color: unread ? c.foreground : c.mutedForeground,
-                        fontFamily: unread ? "Inter_600SemiBold" : "Inter_400Regular",
-                        fontSize: fs(14),
-                      }}
-                    >
-                      {mine ? "You: " : ""}
-                      {preview}
-                    </Text>
-                    {item.unreadCount > 0 ? (
-                      <View style={[styles.badge, { backgroundColor: c.primary }, glow(c.primary)]}>
-                        <Text style={styles.badgeText}>
-                          {item.unreadCount > 99 ? "99+" : item.unreadCount}
-                        </Text>
-                      </View>
-                    ) : item.markedUnread ? (
-                      <View style={[styles.unreadDot, { backgroundColor: c.primary }, glow(c.primary)]} />
-                    ) : null}
-                  </View>
-                </View>
-              </Touchable>
-            );
-          }}
+          renderItem={renderItem}
           ListEmptyComponent={
             <View style={{ alignItems: "center", marginTop: 60, paddingHorizontal: 20 }}>
               <Ionicons name="chatbubbles-outline" size={48} color={c.mutedForeground} />
@@ -681,11 +755,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     paddingVertical: 10,
     zIndex: 2,
   },
-  searchWrap: { paddingHorizontal: 12, paddingTop: 12, paddingBottom: 4 },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  chatsTitle: {
+    fontFamily: "Inter_700Bold",
+    fontSize: fs(24),
+    letterSpacing: -0.5,
+  },
+  searchWrap: { paddingHorizontal: 16, paddingTop: 6, paddingBottom: 6 },
   headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },
   backBtn: { width: 38, height: 38, alignItems: "center", justifyContent: "center" },
   title: { fontFamily: "Inter_700Bold", fontSize: fs(20) },
@@ -700,7 +784,7 @@ const styles = StyleSheet.create({
   requestRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
@@ -714,14 +798,22 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  rowContent: {
+    flex: 1,
+    marginLeft: 12,
   },
   rowTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  rowBottom: { flexDirection: "row", alignItems: "center", marginTop: 2, gap: 8 },
+  rowTopRight: { flexDirection: "row", alignItems: "center" },
+  rowBottom: { flexDirection: "row", alignItems: "center", marginTop: 3, gap: 8 },
   name: { flex: 1, fontSize: fs(16), marginRight: 8 },
   time: { fontSize: fs(12) },
+  separator: {
+    height: StyleSheet.hairlineWidth,
+    marginLeft: 84,
+  },
   badge: {
     minWidth: 20,
     height: 20,
@@ -738,7 +830,7 @@ const styles = StyleSheet.create({
     gap: 8,
     borderRadius: 20,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 9,
   },
   userRow: {
     flexDirection: "row",

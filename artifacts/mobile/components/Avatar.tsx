@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import { Image } from "expo-image";
 import { View, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -19,10 +20,19 @@ function initials(name?: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-export function Avatar({ uri, name, size = 40, online, ring }: AvatarProps) {
+export const Avatar = React.memo(function Avatar({
+  uri,
+  name,
+  size = 40,
+  online,
+  ring,
+}: AvatarProps) {
   const c = useColors();
   const radius = size / 2;
   const innerSize = ring ? size - 4 : size;
+  const [hasError, setHasError] = useState(false);
+
+  const showImage = Boolean(uri && !hasError);
 
   const inner = (
     <View
@@ -36,12 +46,15 @@ export function Avatar({ uri, name, size = 40, online, ring }: AvatarProps) {
         overflow: "hidden",
       }}
     >
-      {uri ? (
+      {showImage ? (
         <Image
-          source={{ uri }}
+          source={{ uri: uri! }}
           style={{ width: innerSize, height: innerSize }}
           contentFit="cover"
-          transition={150}
+          transition={100}
+          cachePolicy="memory-disk"
+          priority="high"
+          onError={() => setHasError(true)}
         />
       ) : (
         <Text
@@ -94,7 +107,7 @@ export function Avatar({ uri, name, size = 40, online, ring }: AvatarProps) {
       )}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   dot: {

@@ -19,6 +19,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   useUpdateMyProfile,
   getGetCurrentUserQueryKey,
+  getGetFeedQueryKey,
+  getListStoriesQueryKey,
+  getListFriendsQueryKey,
   customFetch,
   type ProfileUpdate,
 } from "@workspace/api-client-react";
@@ -142,11 +145,19 @@ export default function EditProfileScreen() {
             console.warn("Failed to share photo to feed:", e);
           }
         }
-        qc.invalidateQueries({ queryKey: ["/api/feed"] });
-        qc.invalidateQueries({ queryKey: ["/api/posts"] });
       }
 
       qc.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
+      qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
+      qc.invalidateQueries({ queryKey: getListStoriesQueryKey() });
+      qc.invalidateQueries({ queryKey: getListFriendsQueryKey() });
+      qc.invalidateQueries({ queryKey: ["/api/feed"] });
+      qc.invalidateQueries({ queryKey: ["/api/posts"] });
+      if (user?.id) {
+        qc.invalidateQueries({ queryKey: ["/api/users", user.id] });
+      }
+      qc.invalidateQueries({ queryKey: ["/api/profiles"] });
+
       await refreshUser();
       router.back();
     } catch {
