@@ -73,3 +73,4 @@
 - [Shop system](himewo-shop-system.md) — stalls/orders/wallet money+authz invariants: paisa ints, idempotent completion commission (COD debits), guarded stock restore, shop.* admin perms; ghpush2 now handles new dirs + deletions.
 - [Shop reviews](himewo-shop-reviews.md) — once-per-ORDER buyer reviews on completed orders; live-computed rating aggregates (no counter cols); myReviewRating is buyer-viewer-only.
 - [Signup country flags + block-list](himewo-signup-country-access.md) — flags MUST be flagcdn images (emoji don't render on Win/Android); "unsupported"=Supabase OTP provider not our code; phone-signup block-list in siteSettings, enforced on first-phone-bind vs verified dial code.
+- [Landing Page App Version & Download Sync](himewo-app-landing-version-sync.md) — whenever apps are updated, ALWAYS update version numbers and download links on the landing page (app.himewo.com).
