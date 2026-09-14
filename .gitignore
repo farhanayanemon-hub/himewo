@@ -50,3 +50,16 @@ Thumbs.db
 !.env.example
 
 downloads/
+
+# Android
+local.properties
+.gradle/
+**/android/build/
+**/android/app/build/
+*.keystore
+*.keystore.json
+dist-test/
+test-bundle.bundle
+scripts/
+
+

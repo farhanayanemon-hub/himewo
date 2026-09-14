@@ -42,7 +42,7 @@ export const DEFAULT_APP_LANDING_CONFIG = {
       "Offline caching & lightning fast performance",
       "Full privacy controls & 2FA security"
     ],
-    directUrl: "https://github.com/farhanayanemon-hub/himewo/releases/download/v1.0.0/himewo-social.apk",
+    directUrl: "https://github.com/farhanayanemon-hub/himewo/releases/download/v1.2.0/himewo-social.apk",
     directEnabled: true,
     directButtonText: "Direct APK Download",
     playStoreUrl: "https://play.google.com/store/apps/details?id=com.himewo.social",
@@ -56,14 +56,14 @@ export const DEFAULT_APP_LANDING_CONFIG = {
     title: "HiMewo Chat Messenger",
     tagline: "Ultra-fast, private & standalone messaging app.",
     description: "Dedicated messaging built for speed. Enjoy end-to-end encrypted chats, crystal-clear voice & video calls, stickers, voice notes, and group chats without distractions.",
-    version: "v1.0.4 (Latest)",
+    version: "v1.2.0 (Latest)",
     features: [
       "Ultra-low latency instant messaging",
       "HD 1-on-1 and group voice/video calls",
       "Media, document & voice message sharing",
       "Synced seamlessly across all devices"
     ],
-    directUrl: "https://github.com/farhanayanemon-hub/himewo/releases/download/v1.0.0/himewo-chat.apk",
+    directUrl: "https://github.com/farhanayanemon-hub/himewo/releases/download/v1.2.0/himewo-chat.apk",
     directEnabled: true,
     directButtonText: "Direct APK Download",
     playStoreUrl: "https://play.google.com/store/apps/details?id=com.himewo.chat",
