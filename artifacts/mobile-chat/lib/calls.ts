@@ -32,3 +32,29 @@ export async function fetchStreamCredentials(): Promise<StreamCredentials> {
 
   return (await res.json()) as StreamCredentials;
 }
+
+/**
+ * Ensures the peer and caller are registered in Stream Video before placing a call.
+ */
+export async function prepareCall(peerId: string): Promise<void> {
+  const origin = getApiOrigin();
+  if (!origin) return;
+
+  const authToken = await getAuthToken();
+  try {
+    const res = await fetch(`${origin}/api/calls/prepare`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      },
+      body: JSON.stringify({ peerId }),
+    });
+    if (!res.ok && res.status !== 503) {
+      console.warn(`Could not prepare call for peer ${peerId}: status ${res.status}`);
+    }
+  } catch (err) {
+    console.warn("Error calling /api/calls/prepare:", err);
+  }
+}
+

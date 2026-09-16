@@ -14,7 +14,7 @@ import {
   useCalls,
 } from "@stream-io/video-react-native-sdk";
 import { useAuth } from "@/lib/auth";
-import { fetchStreamCredentials, CallsUnavailableError } from "@/lib/calls";
+import { fetchStreamCredentials, prepareCall, CallsUnavailableError } from "@/lib/calls";
 import { CallContext, type CallContextValue } from "./callContext";
 
 /**
@@ -74,7 +74,15 @@ export default function CallEngine({ children }: { children: ReactNode }) {
       }
       void (async () => {
         try {
-          const callId = `${[user.id, peerId].sort().join("-")}-${Date.now()}`;
+          // 1. Ensure peer exists in Stream Video server-side before initiating call
+          await prepareCall(peerId);
+
+          // 2. Stream call ID must be <= 64 characters (UUIDs joined exceed 64 chars)
+          const cleanU1 = user.id.replace(/-/g, "").slice(0, 12);
+          const cleanU2 = peerId.replace(/-/g, "").slice(0, 12);
+          const pair = [cleanU1, cleanU2].sort().join("_");
+          const callId = `c_${pair}_${Date.now()}`;
+
           const call = client.call("default", callId);
           await call.getOrCreate({
             ring: true,
@@ -85,8 +93,12 @@ export default function CallEngine({ children }: { children: ReactNode }) {
           if (!withVideo) {
             await call.camera.disable();
           }
-        } catch {
-          Alert.alert("Call failed", "Could not start the call. Please try again.");
+        } catch (err: any) {
+          console.error("Stream call failed:", err);
+          Alert.alert(
+            "Call failed",
+            err?.message || "Could not start the call. Please try again.",
+          );
         }
       })();
     },

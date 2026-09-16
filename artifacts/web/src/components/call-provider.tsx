@@ -22,7 +22,7 @@ import {
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
-import { fetchStreamCredentials, CallsUnavailableError } from "@/lib/calls";
+import { fetchStreamCredentials, prepareCall, CallsUnavailableError } from "@/lib/calls";
 
 export interface CallPeer {
   id: string;
@@ -97,7 +97,15 @@ export function CallProvider({ children }: { children: ReactNode }) {
       }
       void (async () => {
         try {
-          const callId = `${[user.id, peer.id].sort().join("-")}-${Date.now()}`;
+          // 1. Ensure peer exists in Stream Video server-side before placing call
+          await prepareCall(peer.id);
+
+          // 2. Stream call ID must be <= 64 characters
+          const cleanU1 = user.id.replace(/-/g, "").slice(0, 12);
+          const cleanU2 = peer.id.replace(/-/g, "").slice(0, 12);
+          const pair = [cleanU1, cleanU2].sort().join("_");
+          const callId = `c_${pair}_${Date.now()}`;
+
           const call = client.call("default", callId);
           await call.getOrCreate({
             ring: true,
@@ -108,9 +116,10 @@ export function CallProvider({ children }: { children: ReactNode }) {
           if (!withVideo) {
             await call.camera.disable();
           }
-        } catch {
+        } catch (err: any) {
+          console.error("Web call failed:", err);
           toast.error("Call failed", {
-            description: "Could not start the call. Please try again.",
+            description: err?.message || "Could not start the call. Please try again.",
           });
         }
       })();
