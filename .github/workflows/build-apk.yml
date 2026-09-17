@@ -75,19 +75,32 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease --no-daemon -Dorg.gradle.jvmargs="-Xmx4096m -XX:MaxMetaspaceSize=1024m"
 
-      - name: Sign APK with Release Keystore
+      - name: Optimize and Sign APK with Release Keystore
         run: |
           BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n 1)
           echo "Using Android Build Tools: $BUILD_TOOLS_DIR"
           UNSIGNED_APK=$(find artifacts/mobile-chat/android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
           echo "Found built APK: $UNSIGNED_APK"
+
+          python3 -c "
+          import zipfile
+          with zipfile.ZipFile('$UNSIGNED_APK', 'r') as zin, zipfile.ZipFile('artifacts/mobile-chat/chat-arm.apk', 'w', compression=zipfile.ZIP_DEFLATED) as zout:
+              for item in zin.infolist():
+                  if item.filename.startswith('lib/x86/') or item.filename.startswith('lib/x86_64/') or item.filename.startswith('META-INF/'):
+                      continue
+                  zout.writestr(item, zin.read(item.filename))
+          "
+
+          $BUILD_TOOLS_DIR/zipalign -p -f 4 artifacts/mobile-chat/chat-arm.apk artifacts/mobile-chat/chat-aligned.apk
+
           $BUILD_TOOLS_DIR/apksigner sign \
             --ks credentials/chat-release.keystore \
             --ks-key-alias "${{ secrets.CHAT_KEY_ALIAS }}" \
             --ks-pass "pass:${{ secrets.CHAT_KEYSTORE_PASSWORD }}" \
             --key-pass "pass:${{ secrets.CHAT_KEY_PASSWORD }}" \
             --out artifacts/mobile-chat/himewo-chat.apk \
-            "$UNSIGNED_APK"
+            artifacts/mobile-chat/chat-aligned.apk
+
           $BUILD_TOOLS_DIR/apksigner verify --verbose artifacts/mobile-chat/himewo-chat.apk
           ls -lh artifacts/mobile-chat/himewo-chat.apk
 
@@ -155,19 +168,32 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease --no-daemon -Dorg.gradle.jvmargs="-Xmx4096m -XX:MaxMetaspaceSize=1024m"
 
-      - name: Sign APK with Release Keystore
+      - name: Optimize and Sign APK with Release Keystore
         run: |
           BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n 1)
           echo "Using Android Build Tools: $BUILD_TOOLS_DIR"
           UNSIGNED_APK=$(find artifacts/mobile/android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
           echo "Found built APK: $UNSIGNED_APK"
+
+          python3 -c "
+          import zipfile
+          with zipfile.ZipFile('$UNSIGNED_APK', 'r') as zin, zipfile.ZipFile('artifacts/mobile/social-arm.apk', 'w', compression=zipfile.ZIP_DEFLATED) as zout:
+              for item in zin.infolist():
+                  if item.filename.startswith('lib/x86/') or item.filename.startswith('lib/x86_64/') or item.filename.startswith('META-INF/'):
+                      continue
+                  zout.writestr(item, zin.read(item.filename))
+          "
+
+          $BUILD_TOOLS_DIR/zipalign -p -f 4 artifacts/mobile/social-arm.apk artifacts/mobile/social-aligned.apk
+
           $BUILD_TOOLS_DIR/apksigner sign \
             --ks credentials/social-release.keystore \
             --ks-key-alias "${{ secrets.SOCIAL_KEY_ALIAS }}" \
             --ks-pass "pass:${{ secrets.SOCIAL_KEYSTORE_PASSWORD }}" \
             --key-pass "pass:${{ secrets.SOCIAL_KEY_PASSWORD }}" \
             --out artifacts/mobile/himewo-social.apk \
-            "$UNSIGNED_APK"
+            artifacts/mobile/social-aligned.apk
+
           $BUILD_TOOLS_DIR/apksigner verify --verbose artifacts/mobile/himewo-social.apk
           ls -lh artifacts/mobile/himewo-social.apk
 

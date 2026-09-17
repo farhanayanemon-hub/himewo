@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { execSync } from "child_process";
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN || process.env.RELEASE_GITHUB_TOKEN;
 const REPO = "farhanayanemon-hub/himewo";
@@ -18,7 +19,6 @@ async function ghRequest(endpoint, options = {}) {
 
 export async function uploadAsset(releaseId, filePath, assetName) {
   const stats = fs.statSync(filePath);
-  const fileStream = fs.readFileSync(filePath);
 
   const relRes = await ghRequest(`/releases/${releaseId}`);
   const relData = await relRes.json();
@@ -31,23 +31,13 @@ export async function uploadAsset(releaseId, filePath, assetName) {
   const uploadUrl = `https://uploads.github.com/repos/${REPO}/releases/${releaseId}/assets?name=${encodeURIComponent(assetName)}`;
   console.log(`Uploading ${assetName} (${(stats.size / 1024 / 1024).toFixed(2)} MB) to release ${releaseId}...`);
 
-  const res = await fetch(uploadUrl, {
-    method: "POST",
-    headers: {
-      Authorization: `token ${GITHUB_TOKEN}`,
-      "User-Agent": "HiMewo-Release-Bot",
-      "Content-Type": "application/vnd.android.package-archive",
-      "Content-Length": stats.size.toString(),
-    },
-    body: fileStream,
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Upload failed (${res.status}): ${errText}`);
+  const curlCmd = `curl --http1.1 -s -S -X POST -H "Authorization: token ${GITHUB_TOKEN}" -H "Content-Type: application/vnd.android.package-archive" --data-binary "@${filePath}" "${uploadUrl}"`;
+  const stdout = execSync(curlCmd, { maxBuffer: 50 * 1024 * 1024 }).toString();
+  const uploaded = JSON.parse(stdout);
+  if (!uploaded.browser_download_url) {
+    throw new Error(`Upload failed: ${stdout}`);
   }
 
-  const uploaded = await res.json();
   console.log(`Successfully uploaded ${assetName}: ${uploaded.browser_download_url}`);
   return uploaded;
 }
