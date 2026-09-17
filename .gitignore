@@ -60,6 +60,6 @@ local.properties
 *.keystore.json
 dist-test/
 test-bundle.bundle
-scripts/
+!scripts/publish-release.mjs
 
 
