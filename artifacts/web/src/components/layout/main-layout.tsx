@@ -7,6 +7,7 @@ import {
   useGetUnreadNotificationCount,
   useGetEarningsSummary,
   useListPages,
+  useListConversations,
 } from "@workspace/api-client-react";
 import {
   DropdownMenu,
@@ -268,6 +269,8 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
   const { actingPage } = useActingPage();
   const [location, navigate] = useLocation();
   const { data: unreadCount } = useGetUnreadNotificationCount();
+  const { data: convData } = useListConversations();
+  const unreadChatCount = (convData ?? []).reduce((acc, c) => acc + (c.unreadCount || 0), 0);
   const { data: earnings } = useGetEarningsSummary();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -411,8 +414,13 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <Link href="/messages">
-              <Button variant="ghost" size="icon" className="rounded-full aurora-glass hover:bg-muted/60">
+              <Button variant="ghost" size="icon" className="rounded-full aurora-glass hover:bg-muted/60 relative">
                 <MessageCircle className="w-5 h-5" />
+                {unreadChatCount > 0 ? (
+                  <span className="absolute top-0 right-0 w-4 h-4 bg-destructive text-white text-[10px] font-bold flex items-center justify-center rounded-full">
+                    {unreadChatCount > 9 ? '9+' : unreadChatCount}
+                  </span>
+                ) : null}
               </Button>
             </Link>
             <Link href="/notifications">
@@ -514,7 +522,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
         )}
       </div>
 
-      <MobileNav user={user} unreadCount={unreadCount?.count ?? 0} />
+      <MobileNav user={user} unreadCount={unreadChatCount} />
     </div>
   );
 }

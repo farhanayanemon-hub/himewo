@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from "@/lib/auth";
 import { RealtimeProvider } from "@/lib/realtime";
 import { ActingPageProvider } from "@/lib/acting-page";
 import { CallProvider } from "@/components/call-provider";
+import { ChatPreferencesProvider } from "@/lib/chat-preferences";
 import { OnboardingFlow } from "@/components/onboarding-flow";
 import NotFound from "@/pages/not-found";
 
@@ -130,12 +131,14 @@ function App() {
         <RealtimeProvider>
           <ActingPageProvider>
             <CallProvider>
-              <TooltipProvider>
-              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-                <AppRoutes />
-              </WouterRouter>
-              <Toaster />
-              </TooltipProvider>
+              <ChatPreferencesProvider>
+                <TooltipProvider>
+                  <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+                    <AppRoutes />
+                  </WouterRouter>
+                  <Toaster />
+                </TooltipProvider>
+              </ChatPreferencesProvider>
             </CallProvider>
           </ActingPageProvider>
         </RealtimeProvider>

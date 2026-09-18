@@ -9,6 +9,7 @@ import {
 } from "@/components/nav-icons";
 import {
   Bell,
+  MessageCircle,
   UserCircle,
   Menu as MenuIcon,
   Settings,
@@ -246,10 +247,10 @@ export function MobileNav({
         </Link>
 
         <StdItem
-          href="/notifications"
-          icon={Bell}
-          label="Alerts"
-          active={isActive("/notifications")}
+          href="/messages"
+          icon={MessageCircle}
+          label="Chats"
+          active={isActive("/messages")}
           badge={unreadCount}
         />
         <StdItem
