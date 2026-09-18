@@ -68,9 +68,25 @@ function Build-TargetApp([string]$target) {
     exit 1
   }
 
-  Write-Host "`n>>> [3/4] Signing APK with $target release keystore..." -ForegroundColor Yellow
-  $ksJson = Get-Content $ksJsonFile | ConvertFrom-Json
+  Write-Host "`n>>> [3/5] Optimizing APK (ARM architecture)..." -ForegroundColor Yellow
+  $armApk = "$unsigned.FullName.arm.apk"
+  $alignedApk = "$unsigned.FullName.aligned.apk"
   $destApk = "$repoRoot\downloads\$outName"
+
+  python -c @"
+import zipfile
+with zipfile.ZipFile(r'$($unsigned.FullName)', 'r') as zin, zipfile.ZipFile(r'$armApk', 'w', compression=zipfile.ZIP_DEFLATED) as zout:
+    for item in zin.infolist():
+        if item.filename.startswith('lib/x86/') or item.filename.startswith('lib/x86_64/') or item.filename.startswith('META-INF/'):
+            continue
+        zout.writestr(item, zin.read(item.filename))
+"@
+
+  Write-Host "`n>>> [4/5] Aligning and signing APK with $target release keystore..." -ForegroundColor Yellow
+  $zipalign = Join-Path $buildTools.FullName "zipalign.exe"
+  & $zipalign -p -f 4 $armApk $alignedApk
+
+  $ksJson = Get-Content $ksJsonFile | ConvertFrom-Json
 
   & $apksigner sign `
     --ks $ksFile `
@@ -78,7 +94,10 @@ function Build-TargetApp([string]$target) {
     --ks-pass "pass:$($ksJson.keystorePassword)" `
     --key-pass "pass:$($ksJson.keyPassword)" `
     --out $destApk `
-    $unsigned.FullName
+    $alignedApk
+
+  # Clean up temp intermediate files
+  Remove-Item $armApk, $alignedApk -Force -ErrorAction SilentlyContinue
 
   Write-Host "[OK] Verifying signed APK..." -ForegroundColor Green
   & $apksigner verify --verbose $destApk
@@ -87,7 +106,7 @@ function Build-TargetApp([string]$target) {
   Write-Host "[SUCCESS] $outName generated at $destApk ($apkSize MB)" -ForegroundColor Green
 
   if ($Publish) {
-    Write-Host "`n>>> [4/4] Publishing $outName to GitHub Releases..." -ForegroundColor Yellow
+    Write-Host "`n>>> [5/5] Publishing $outName to GitHub Releases..." -ForegroundColor Yellow
     Set-Location $repoRoot
     if (-not $env:GITHUB_TOKEN -and (Test-Path "$repoRoot\.env")) {
       Get-Content "$repoRoot\.env" | ForEach-Object {
