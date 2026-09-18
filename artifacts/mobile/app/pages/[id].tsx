@@ -53,8 +53,18 @@ import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/lib/auth";
 import { useActingPage } from "@/lib/acting-page";
 import { PostCard } from "@/components/PostCard";
+import { Avatar } from "@/components/Avatar";
+import { formatCount, timeAgo } from "@/lib/format";
 import { uploadMedia, UploadUnavailableError } from "@/lib/upload";
 import { PAGE_CATEGORIES } from "./index";
+
+function limitWords(text?: string | null, maxWords: number = 150): string {
+  if (!text) return "";
+  const trimmed = text.trim();
+  const words = trimmed.split(/\s+/);
+  if (words.length <= maxWords) return trimmed;
+  return words.slice(0, maxWords).join(" ") + "...";
+}
 
 type CtaType = Page["ctaType"];
 const CTA_OPTIONS: CtaType[] = ["none", "message", "call", "shop", "signup"];
@@ -806,7 +816,7 @@ export default function PageDetailScreen() {
   const updatePage = useUpdatePage();
   const createConversation = useCreateConversation();
 
-  const [tab, setTab] = useState<"posts" | "media">("posts");
+  const [tab, setTab] = useState<"posts" | "reels" | "media" | "about">("posts");
   const [editOpen, setEditOpen] = useState(false);
   const [accessOpen, setAccessOpen] = useState(false);
   const [photoBusy, setPhotoBusy] = useState<null | "avatar" | "cover">(null);
@@ -814,6 +824,9 @@ export default function PageDetailScreen() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [followersOpen, setFollowersOpen] = useState(false);
   const [followingOpen, setFollowingOpen] = useState(false);
+
+  const { data: media, isLoading: mediaLoading } = useListPageMedia(id);
+  const videoReels = (media ?? []).filter((m) => m.type === "video");
 
   const { data: followers, isLoading: followersLoading } = useListPageFollowers(id, {
     query: { enabled: followersOpen, queryKey: getListPageFollowersQueryKey(id) },
@@ -946,8 +959,7 @@ export default function PageDetailScreen() {
           : page.ctaType === "signup"
             ? "Sign Up"
             : null;
-  // CTA buttons (Message/Call/etc.) are for OTHER users — hide them when the
-  // viewer is browsing AS this page or owns it (you can't message yourself).
+
   const showCta =
     actingPage?.id !== page.id &&
     !isOwner &&
@@ -965,15 +977,18 @@ export default function PageDetailScreen() {
           </Pressable>
         ),
       }} />
-      <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 36 }}>
+        {/* Cover Photo */}
         <Pressable
-          style={[styles.cover, { backgroundColor: c.secondary }]}
+          style={[styles.coverWrap, { backgroundColor: c.secondary }]}
           disabled={!isManager || photoBusy !== null}
           onPress={() => editPhoto("cover")}
         >
           {page.coverUrl ? (
-            <Image source={{ uri: page.coverUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
-          ) : null}
+            <Image source={{ uri: page.coverUrl }} style={styles.cover} contentFit="cover" />
+          ) : (
+            <View style={[styles.cover, { backgroundColor: c.primary + "30" }]} />
+          )}
           {isManager ? (
             <View style={styles.coverCam}>
               {photoBusy === "cover" ? (
@@ -984,140 +999,315 @@ export default function PageDetailScreen() {
             </View>
           ) : null}
         </Pressable>
-        <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-          <View style={styles.avatarRow}>
-            <Pressable
-              style={[styles.avatar, { backgroundColor: c.secondary, borderColor: c.background }]}
-              disabled={!isManager || photoBusy !== null}
-              onPress={() => editPhoto("avatar")}
-            >
-              {page.avatarUrl ? (
-                <Image source={{ uri: page.avatarUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
-              ) : (
-                <Ionicons name="document-text" size={36} color={c.primary} />
-              )}
-              {isManager ? (
-                <View style={styles.avatarCam}>
-                  {photoBusy === "avatar" ? (
-                    <ActivityIndicator color="#fff" size="small" />
-                  ) : (
-                    <Ionicons name="camera" size={14} color="#fff" />
-                  )}
-                </View>
-              ) : null}
+
+        {/* Circular Avatar Overlapping Cover */}
+        <Pressable
+          style={styles.avatarWrap}
+          disabled={!isManager || photoBusy !== null}
+          onPress={() => editPhoto("avatar")}
+        >
+          <View style={[styles.avatarRing, { borderColor: c.background, backgroundColor: c.card }]}>
+            <Avatar uri={page.avatarUrl} name={page.name} size={96} />
+            {isManager ? (
+              <View style={styles.avatarCam}>
+                {photoBusy === "avatar" ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Ionicons name="camera" size={14} color="#fff" />
+                )}
+              </View>
+            ) : null}
+          </View>
+        </Pressable>
+
+        {/* Info Block (Name, Badge, Counts, Bio, Contact Pills, Actions) */}
+        <View style={styles.info}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <Text style={[styles.name, { color: c.foreground }]}>{page.name}</Text>
+            {(page as any).isVerified && (
+              <Ionicons name="checkmark-circle" size={18} color={c.primary} />
+            )}
+            {page.category ? (
+              <View style={[styles.categoryBadge, { backgroundColor: c.primary + "15" }]}>
+                <Text style={[styles.categoryText, { color: c.primary }]}>{page.category}</Text>
+              </View>
+            ) : null}
+          </View>
+
+          {/* Counts: Followers, Following, Rating */}
+          <View style={styles.counts}>
+            <Pressable style={styles.countItem} onPress={() => setFollowersOpen(true)} hitSlop={6}>
+              <Text style={[styles.countValue, { color: c.foreground }]}>{formatCount(page.followerCount)}</Text>
+              <Text style={{ color: c.mutedForeground, fontSize: 13 }}>Followers</Text>
             </Pressable>
-            <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-end", flexShrink: 1, flexWrap: "wrap", justifyContent: "flex-end" }}>
-              {showCta && ctaLabel ? (
+            <Pressable style={styles.countItem} onPress={() => setFollowingOpen(true)} hitSlop={6}>
+              <Text style={[styles.countValue, { color: c.foreground }]}>{formatCount(page.followingCount)}</Text>
+              <Text style={{ color: c.mutedForeground, fontSize: 13 }}>Following</Text>
+            </Pressable>
+            {page.reviewCount > 0 ? (
+              <View style={styles.countItem}>
+                <Ionicons name="star" size={14} color="#facc15" />
+                <Text style={[styles.countValue, { color: c.foreground }]}>
+                  {page.averageRating?.toFixed(1)}
+                </Text>
+                <Text style={{ color: c.mutedForeground, fontSize: 13 }}>({page.reviewCount})</Text>
+              </View>
+            ) : null}
+          </View>
+
+          {/* Bio / Description (Max 150 words) */}
+          {page.description ? (
+            <Text style={[styles.bio, { color: c.foreground, marginTop: 10 }]}>
+              {limitWords(page.description, 150)}
+            </Text>
+          ) : null}
+
+          {/* Quick Contact Pills */}
+          {hasAbout ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 8, marginTop: 10 }}
+            >
+              {page.contactPhone ? (
                 <Pressable
-                  style={[styles.iconBtn, { backgroundColor: c.secondary }]}
-                  onPress={handleCta}
-                  disabled={createConversation.isPending}
+                  onPress={() => Linking.openURL(`tel:${page.contactPhone}`)}
+                  style={[styles.pill, { backgroundColor: c.secondary, borderColor: c.border }]}
                 >
-                  {createConversation.isPending && page.ctaType === "message" ? (
-                    <ActivityIndicator color={c.foreground} size="small" />
-                  ) : (
-                    <Text style={{ color: c.foreground, fontFamily: "Inter_700Bold" }}>{ctaLabel}</Text>
-                  )}
+                  <Ionicons name="call-outline" size={13} color={c.primary} />
+                  <Text style={{ color: c.foreground, fontSize: 12 }}>{page.contactPhone}</Text>
                 </Pressable>
               ) : null}
-              {/* Hide the Follow button when browsing AS this same page — you
-                  can't follow yourself. It reappears when acting as your profile. */}
-              {actingPage?.id !== page.id ? (
+              {page.contactEmail ? (
                 <Pressable
-                  style={[styles.iconBtn, { backgroundColor: page.viewerFollows ? c.secondary : c.primary }]}
+                  onPress={() => Linking.openURL(`mailto:${page.contactEmail}`)}
+                  style={[styles.pill, { backgroundColor: c.secondary, borderColor: c.border }]}
+                >
+                  <Ionicons name="mail-outline" size={13} color={c.primary} />
+                  <Text style={{ color: c.foreground, fontSize: 12 }}>{page.contactEmail}</Text>
+                </Pressable>
+              ) : null}
+              {page.website ? (
+                <Pressable
+                  onPress={() => Linking.openURL(page.website!)}
+                  style={[styles.pill, { backgroundColor: c.secondary, borderColor: c.border }]}
+                >
+                  <Ionicons name="globe-outline" size={13} color={c.primary} />
+                  <Text style={{ color: c.foreground, fontSize: 12 }}>{page.website}</Text>
+                </Pressable>
+              ) : null}
+              {page.address ? (
+                <View style={[styles.pill, { backgroundColor: c.secondary, borderColor: c.border }]}>
+                  <Ionicons name="location-outline" size={13} color={c.primary} />
+                  <Text style={{ color: c.foreground, fontSize: 12 }}>{page.address}</Text>
+                </View>
+              ) : null}
+              {page.hours ? (
+                <View style={[styles.pill, { backgroundColor: c.secondary, borderColor: c.border }]}>
+                  <Ionicons name="time-outline" size={13} color={c.primary} />
+                  <Text style={{ color: c.foreground, fontSize: 12 }}>{page.hours}</Text>
+                </View>
+              ) : null}
+            </ScrollView>
+          ) : null}
+
+          {/* Action Buttons Row (Persona Aware & Profile Styled) */}
+          <View style={styles.actions}>
+            {actingPage?.id === page.id ? (
+              <>
+                <Pressable
+                  style={[styles.actionBtn, styles.primaryBtn, { backgroundColor: c.primary }]}
+                  onPress={() => router.push("/create-post")}
+                >
+                  <Ionicons name="create-outline" size={18} color="#fff" />
+                  <Text style={[styles.primaryLabel, { color: "#fff" }]}>Write Post</Text>
+                </Pressable>
+                {isManager ? (
+                  <Pressable
+                    style={[styles.actionBtn, { backgroundColor: c.secondary }]}
+                    onPress={() => setEditOpen(true)}
+                  >
+                    <Ionicons name="create-outline" size={18} color={c.foreground} />
+                    <Text style={[styles.actionLabel, { color: c.foreground }]}>Edit Hub</Text>
+                  </Pressable>
+                ) : null}
+                {isOwner ? (
+                  <Pressable
+                    style={[styles.actionBtn, styles.iconOnly, { backgroundColor: c.secondary }]}
+                    onPress={() => setAccessOpen(true)}
+                  >
+                    <Ionicons name="people-outline" size={18} color={c.foreground} />
+                  </Pressable>
+                ) : null}
+                <Pressable
+                  style={[styles.actionBtn, styles.iconOnly, { backgroundColor: c.secondary }]}
+                  onPress={() => setMenuOpen(true)}
+                >
+                  <Ionicons name="ellipsis-horizontal" size={18} color={c.foreground} />
+                </Pressable>
+              </>
+            ) : isManager ? (
+              <>
+                <Pressable
+                  style={[
+                    styles.actionBtn,
+                    page.viewerFollows ? { backgroundColor: c.secondary } : { backgroundColor: c.primary },
+                  ]}
                   onPress={handleFollow}
                   disabled={busy}
                 >
                   {busy ? (
                     <ActivityIndicator color={page.viewerFollows ? c.foreground : "#fff"} size="small" />
                   ) : (
-                    <Text style={{ color: page.viewerFollows ? c.foreground : "#fff", fontFamily: "Inter_700Bold" }}>
-                      {page.viewerFollows ? "Following" : "Follow"}
-                    </Text>
+                    <>
+                      <Ionicons
+                        name={page.viewerFollows ? "checkmark" : "add"}
+                        size={18}
+                        color={page.viewerFollows ? c.foreground : "#fff"}
+                      />
+                      <Text
+                        style={[
+                          styles.actionLabel,
+                          { color: page.viewerFollows ? c.foreground : "#fff" },
+                        ]}
+                      >
+                        {page.viewerFollows ? "Following" : "Follow"}
+                      </Text>
+                    </>
                   )}
                 </Pressable>
-              ) : null}
-              {isManager ? (
-                <Pressable style={[styles.squareBtn, { backgroundColor: c.secondary }]} onPress={() => setEditOpen(true)}>
+                <Pressable
+                  style={[styles.actionBtn, { backgroundColor: c.secondary }]}
+                  onPress={() => setEditOpen(true)}
+                >
                   <Ionicons name="create-outline" size={18} color={c.foreground} />
+                  <Text style={[styles.actionLabel, { color: c.foreground }]}>Edit Hub</Text>
                 </Pressable>
-              ) : null}
-              {isOwner ? (
-                <Pressable style={[styles.squareBtn, { backgroundColor: c.secondary }]} onPress={() => setAccessOpen(true)}>
-                  <Ionicons name="people-outline" size={18} color={c.foreground} />
+                {isOwner ? (
+                  <Pressable
+                    style={[styles.actionBtn, styles.iconOnly, { backgroundColor: c.secondary }]}
+                    onPress={() => setAccessOpen(true)}
+                  >
+                    <Ionicons name="people-outline" size={18} color={c.foreground} />
+                  </Pressable>
+                ) : null}
+                <Pressable
+                  style={[styles.actionBtn, styles.iconOnly, { backgroundColor: c.secondary }]}
+                  onPress={() => setMenuOpen(true)}
+                >
+                  <Ionicons name="ellipsis-horizontal" size={18} color={c.foreground} />
                 </Pressable>
-              ) : null}
-              <Pressable style={[styles.squareBtn, { backgroundColor: c.secondary }]} onPress={() => setMenuOpen(true)}>
-                <Ionicons name="ellipsis-horizontal" size={18} color={c.foreground} />
-              </Pressable>
-            </View>
-          </View>
-          <Text style={[styles.name, { color: c.foreground }]}>{page.name}</Text>
-          {page.category ? (
-            <Text style={[styles.category, { color: c.mutedForeground }]}>{page.category}</Text>
-          ) : null}
-          {page.description ? (
-            <Text style={[styles.desc, { color: c.foreground }]}>{page.description}</Text>
-          ) : null}
-          <View style={styles.statsRow}>
-            <Pressable onPress={() => setFollowersOpen(true)} hitSlop={6}>
-              <Text style={[styles.stat, { color: c.mutedForeground }]}>{page.followerCount} Followers</Text>
-            </Pressable>
-            <Pressable onPress={() => setFollowingOpen(true)} hitSlop={6}>
-              <Text style={[styles.stat, { color: c.mutedForeground }]}>{page.followingCount} Following</Text>
-            </Pressable>
-            {page.reviewCount > 0 ? (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                <Ionicons name="star" size={14} color="#facc15" />
-                <Text style={[styles.stat, { color: c.mutedForeground }]}>
-                  {page.averageRating?.toFixed(1)} ({page.reviewCount})
-                </Text>
-              </View>
-            ) : null}
+              </>
+            ) : (
+              <>
+                <Pressable
+                  style={[
+                    styles.actionBtn,
+                    page.viewerFollows ? { backgroundColor: c.secondary } : { backgroundColor: c.primary },
+                  ]}
+                  onPress={handleFollow}
+                  disabled={busy}
+                >
+                  {busy ? (
+                    <ActivityIndicator color={page.viewerFollows ? c.foreground : "#fff"} size="small" />
+                  ) : (
+                    <>
+                      <Ionicons
+                        name={page.viewerFollows ? "checkmark" : "add"}
+                        size={18}
+                        color={page.viewerFollows ? c.foreground : "#fff"}
+                      />
+                      <Text
+                        style={[
+                          styles.actionLabel,
+                          { color: page.viewerFollows ? c.foreground : "#fff" },
+                        ]}
+                      >
+                        {page.viewerFollows ? "Following" : "Follow"}
+                      </Text>
+                    </>
+                  )}
+                </Pressable>
+                {showCta && ctaLabel ? (
+                  <Pressable
+                    style={[styles.actionBtn, { backgroundColor: c.secondary }]}
+                    onPress={handleCta}
+                    disabled={createConversation.isPending}
+                  >
+                    {createConversation.isPending && page.ctaType === "message" ? (
+                      <ActivityIndicator color={c.foreground} size="small" />
+                    ) : (
+                      <>
+                        <Ionicons
+                          name={
+                            page.ctaType === "message"
+                              ? "chatbubble-ellipses-outline"
+                              : page.ctaType === "call"
+                                ? "call-outline"
+                                : "link-outline"
+                          }
+                          size={18}
+                          color={c.foreground}
+                        />
+                        <Text style={[styles.actionLabel, { color: c.foreground }]}>{ctaLabel}</Text>
+                      </>
+                    )}
+                  </Pressable>
+                ) : null}
+                <Pressable
+                  style={[styles.actionBtn, styles.iconOnly, { backgroundColor: c.secondary }]}
+                  onPress={() => setMenuOpen(true)}
+                >
+                  <Ionicons name="ellipsis-horizontal" size={18} color={c.foreground} />
+                </Pressable>
+              </>
+            )}
           </View>
         </View>
 
-        <View style={{ paddingHorizontal: 16, gap: 12 }}>
-          {hasAbout ? (
-            <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
-              <Text style={[styles.cardTitle, { color: c.foreground, marginBottom: 10 }]}>About</Text>
-              {page.contactPhone ? <AboutRow icon="call-outline" text={page.contactPhone} color={c.foreground} muted={c.mutedForeground} /> : null}
-              {page.contactEmail ? <AboutRow icon="mail-outline" text={page.contactEmail} color={c.foreground} muted={c.mutedForeground} /> : null}
-              {page.website ? <AboutRow icon="globe-outline" text={page.website} color={c.foreground} muted={c.mutedForeground} /> : null}
-              {page.address ? <AboutRow icon="location-outline" text={page.address} color={c.foreground} muted={c.mutedForeground} /> : null}
-              {page.hours ? <AboutRow icon="time-outline" text={page.hours} color={c.foreground} muted={c.mutedForeground} /> : null}
-            </View>
-          ) : null}
-
-          {page.reviewsEnabled ? <ReviewsBlock page={page} /> : null}
-
-          <View style={[styles.tabBar, { borderBottomColor: c.border }]}>
-            <Pressable onPress={() => setTab("posts")} style={styles.tabBtn}>
-              <Text style={[styles.tabLabel, { color: tab === "posts" ? c.primary : c.mutedForeground }]}>Posts</Text>
-              {tab === "posts" ? <View style={[styles.tabUnderline, { backgroundColor: c.primary }]} /> : null}
-            </Pressable>
-            <Pressable onPress={() => setTab("media")} style={styles.tabBtn}>
-              <Text style={[styles.tabLabel, { color: tab === "media" ? c.primary : c.mutedForeground }]}>Photos & Videos</Text>
-              {tab === "media" ? <View style={[styles.tabUnderline, { backgroundColor: c.primary }]} /> : null}
-            </Pressable>
-          </View>
+        {/* Facebook-style Tabs */}
+        <View style={[styles.tabBar, { borderBottomColor: c.border, backgroundColor: c.background }]}>
+          <Pressable onPress={() => setTab("posts")} style={styles.tabBtn}>
+            <Text style={[styles.tabLabel, { color: tab === "posts" ? c.primary : c.mutedForeground }]}>Posts</Text>
+            {tab === "posts" ? <View style={[styles.tabUnderline, { backgroundColor: c.primary }]} /> : null}
+          </Pressable>
+          <Pressable onPress={() => setTab("reels")} style={styles.tabBtn}>
+            <Text style={[styles.tabLabel, { color: tab === "reels" ? c.primary : c.mutedForeground }]}>
+              Reels {videoReels.length > 0 ? `(${videoReels.length})` : ""}
+            </Text>
+            {tab === "reels" ? <View style={[styles.tabUnderline, { backgroundColor: c.primary }]} /> : null}
+          </Pressable>
+          <Pressable onPress={() => setTab("media")} style={styles.tabBtn}>
+            <Text style={[styles.tabLabel, { color: tab === "media" ? c.primary : c.mutedForeground }]}>Photos</Text>
+            {tab === "media" ? <View style={[styles.tabUnderline, { backgroundColor: c.primary }]} /> : null}
+          </Pressable>
+          <Pressable onPress={() => setTab("about")} style={styles.tabBtn}>
+            <Text style={[styles.tabLabel, { color: tab === "about" ? c.primary : c.mutedForeground }]}>About</Text>
+            {tab === "about" ? <View style={[styles.tabUnderline, { backgroundColor: c.primary }]} /> : null}
+          </Pressable>
         </View>
 
-        {tab === "posts" ? (
-          <View style={{ paddingHorizontal: 16, marginTop: 12, gap: 12 }}>
+        {/* Tab Panels */}
+        {tab === "posts" && (
+          <View style={{ marginTop: 12, gap: 12 }}>
             {isManager ? (
               <Pressable
-                style={[styles.composeBtn, { backgroundColor: c.card, borderColor: c.border }]}
+                style={[styles.composeBar, { backgroundColor: c.card, borderColor: c.border }]}
                 onPress={() => router.push("/create-post")}
               >
-                <Ionicons name="create-outline" size={18} color={c.primary} />
-                <Text style={{ color: c.mutedForeground, fontFamily: "Inter_500Medium" }}>Write a post…</Text>
+                <Avatar uri={page.avatarUrl} name={page.name} size={40} />
+                <View style={[styles.composeInput, { backgroundColor: c.secondary }]}>
+                  <Text style={{ color: c.mutedForeground }}>What's on your mind?</Text>
+                </View>
+                <Ionicons name="images" size={24} color="#31a24c" />
               </Pressable>
             ) : null}
+
             {postsLoading ? (
               <ActivityIndicator color={c.primary} style={{ marginVertical: 24 }} />
             ) : !posts || posts.length === 0 ? (
-              <View style={[styles.emptyBox, { backgroundColor: c.card, borderColor: c.border }]}>
+              <View style={[styles.emptyBox, { backgroundColor: c.card, borderColor: c.border, marginHorizontal: 16 }]}>
+                <Ionicons name="newspaper-outline" size={32} color={c.mutedForeground} style={{ marginBottom: 6 }} />
                 <Text style={{ color: c.mutedForeground, fontFamily: "Inter_500Medium" }}>No posts yet.</Text>
               </View>
             ) : (
@@ -1126,9 +1316,77 @@ export default function PageDetailScreen() {
               ))
             )}
           </View>
-        ) : (
+        )}
+
+        {tab === "reels" && (
+          <View style={{ paddingHorizontal: 16, marginTop: 12 }}>
+            {mediaLoading ? (
+              <ActivityIndicator color={c.primary} style={{ marginVertical: 24 }} />
+            ) : videoReels.length === 0 ? (
+              <View style={[styles.emptyBox, { backgroundColor: c.card, borderColor: c.border }]}>
+                <Ionicons name="film-outline" size={32} color={c.mutedForeground} style={{ marginBottom: 6 }} />
+                <Text style={{ color: c.mutedForeground, fontFamily: "Inter_500Medium" }}>
+                  No reels or videos yet.
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.reelGrid}>
+                {videoReels.map((item) => (
+                  <Pressable
+                    key={item.id}
+                    style={styles.reelCell}
+                    onPress={() => router.push(`/post/${item.postId}`)}
+                  >
+                    <Image
+                      source={{ uri: item.thumbnailUrl ?? item.url }}
+                      style={StyleSheet.absoluteFill}
+                      contentFit="cover"
+                    />
+                    <View style={styles.reelPlayBadge}>
+                      <Ionicons name="play" size={18} color="#fff" />
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
+
+        {tab === "media" && (
           <View style={{ paddingHorizontal: 16, marginTop: 12 }}>
             <MediaGridBlock pageId={id} />
+          </View>
+        )}
+
+        {tab === "about" && (
+          <View style={{ paddingHorizontal: 16, marginTop: 12, gap: 12 }}>
+            {hasAbout ? (
+              <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+                <Text style={[styles.cardTitle, { color: c.foreground, marginBottom: 10 }]}>About {page.name}</Text>
+                {page.description ? (
+                  <Text style={[styles.aboutText, { color: c.foreground, marginBottom: 12, lineHeight: 21 }]}>
+                    {page.description}
+                  </Text>
+                ) : null}
+                {page.category ? <AboutRow icon="pricetag-outline" text={page.category} color={c.foreground} muted={c.mutedForeground} /> : null}
+                {page.contactPhone ? <AboutRow icon="call-outline" text={page.contactPhone} color={c.foreground} muted={c.mutedForeground} /> : null}
+                {page.contactEmail ? <AboutRow icon="mail-outline" text={page.contactEmail} color={c.foreground} muted={c.mutedForeground} /> : null}
+                {page.website ? <AboutRow icon="globe-outline" text={page.website} color={c.foreground} muted={c.mutedForeground} /> : null}
+                {page.address ? <AboutRow icon="location-outline" text={page.address} color={c.foreground} muted={c.mutedForeground} /> : null}
+                {page.hours ? <AboutRow icon="time-outline" text={page.hours} color={c.foreground} muted={c.mutedForeground} /> : null}
+              </View>
+            ) : null}
+
+            {page.reviewsEnabled ? <ReviewsBlock page={page} /> : null}
+
+            {!hasAbout && !page.reviewsEnabled ? (
+              <View style={[styles.emptyBox, { backgroundColor: c.card, borderColor: c.border }]}>
+                <Ionicons name="information-circle-outline" size={32} color={c.mutedForeground} style={{ marginBottom: 6 }} />
+                <Text style={{ color: c.mutedForeground, fontFamily: "Inter_500Medium" }}>
+                  No additional information provided.
+                </Text>
+              </View>
+            ) : null}
           </View>
         )}
       </ScrollView>
@@ -1198,54 +1456,101 @@ export default function PageDetailScreen() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  cover: { height: 150 },
+  coverWrap: { width: "100%", height: 160 },
+  cover: { width: "100%", height: "100%" },
   coverCam: {
     position: "absolute",
     right: 12,
     bottom: 12,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    borderRadius: 16,
-    width: 32,
-    height: 32,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: 18,
+    width: 36,
+    height: 36,
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    overflow: "hidden",
-    marginTop: -50,
+  avatarWrap: { marginTop: -52, paddingHorizontal: 16 },
+  avatarRing: {
+    width: 104,
+    height: 104,
+    borderRadius: 52,
     borderWidth: 4,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
   avatarCam: {
     position: "absolute",
     right: 2,
     bottom: 2,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    borderRadius: 13,
-    width: 26,
-    height: 26,
+    backgroundColor: "rgba(0,0,0,0.65)",
+    borderRadius: 14,
+    width: 28,
+    height: 28,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: "#fff",
   },
-  iconBtn: { borderRadius: 10, paddingVertical: 10, paddingHorizontal: 18, marginBottom: 8 },
-  squareBtn: {
+  info: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 },
+  name: { fontFamily: "Inter_700Bold", fontSize: 22 },
+  categoryBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 },
+  categoryText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  username: { fontSize: 14, marginTop: 2 },
+  bio: { fontSize: 15, lineHeight: 21, fontFamily: "Inter_400Regular" },
+  counts: { flexDirection: "row", gap: 20, marginTop: 12, flexWrap: "wrap", alignItems: "center" },
+  countItem: { flexDirection: "row", alignItems: "center", gap: 5 },
+  countValue: { fontFamily: "Inter_700Bold", fontSize: 15 },
+  pill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+  },
+  actions: { flexDirection: "row", gap: 8, marginTop: 16 },
+  actionBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 10,
     borderRadius: 10,
-    width: 40,
-    height: 40,
+  },
+  primaryBtn: {},
+  iconOnly: { flex: 0, width: 44, paddingHorizontal: 0 },
+  actionLabel: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  primaryLabel: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  tabBar: { flexDirection: "row", gap: 4, borderBottomWidth: 1, marginTop: 4 },
+  tabBtn: { paddingVertical: 12, paddingHorizontal: 14, position: "relative" },
+  tabLabel: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  tabUnderline: { position: "absolute", left: 0, right: 0, bottom: -1, height: 2, borderRadius: 2 },
+  composeBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderRadius: 14,
+    marginHorizontal: 16,
+  },
+  composeInput: { flex: 1, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10 },
+  reelGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  reelCell: { width: "48.5%", aspectRatio: 9 / 16, borderRadius: 12, overflow: "hidden", backgroundColor: "#000" },
+  reelPlayBadge: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 8,
+    backgroundColor: "rgba(0,0,0,0.25)",
   },
-  name: { fontFamily: "Inter_700Bold", fontSize: 22, marginTop: 12 },
-  category: { fontFamily: "Inter_500Medium", fontSize: 14, marginTop: 2 },
-  desc: { fontFamily: "Inter_400Regular", fontSize: 15, marginTop: 10, lineHeight: 21 },
-  statsRow: { flexDirection: "row", alignItems: "center", gap: 14, marginTop: 14, flexWrap: "wrap" },
-  stat: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
   card: { borderWidth: 1, borderRadius: 14, padding: 14 },
   cardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 },
   cardTitle: { fontFamily: "Inter_700Bold", fontSize: 17 },
@@ -1282,19 +1587,6 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
-  },
-  tabBar: { flexDirection: "row", gap: 4, borderBottomWidth: 1, marginTop: 2 },
-  tabBtn: { paddingVertical: 10, paddingHorizontal: 14, position: "relative" },
-  tabLabel: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
-  tabUnderline: { position: "absolute", left: 0, right: 0, bottom: -1, height: 2, borderRadius: 2 },
-  composeBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
   },
   emptyBox: { borderWidth: 1, borderRadius: 14, padding: 24, alignItems: "center" },
   mediaGrid: { flexDirection: "row", flexWrap: "wrap", gap: 3 },

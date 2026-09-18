@@ -26,6 +26,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
+import { useActingPage } from "@/lib/acting-page";
 import { PhotoActionMenu, usePhotoEditor } from "@/components/photo-editor";
 import { PostCard } from "@/components/post-card";
 import { VerifiedBadge } from "@/components/verified-badge";
@@ -98,6 +99,7 @@ function ProfileReelTimelineCard({
   hideFollowButton?: boolean;
 }) {
   const { user } = useAuth();
+  const { actingPage } = useActingPage();
   const queryClient = useQueryClient();
   const likeReel = useLikeReel();
   const unlikeReel = useUnlikeReel();
@@ -106,7 +108,7 @@ function ProfileReelTimelineCard({
   const followUser = useFollowUser();
   const unfollowUser = useUnfollowUser();
 
-  const isAuthor = user?.id === reel.author.id;
+  const isAuthor = !actingPage && Boolean(user?.id === reel.author.id);
   const [following, setFollowing] = useState(Boolean(reel.author.viewerFollows));
   const [liked, setLiked] = useState(Boolean(reel.viewerHasLiked ?? (reel as any).viewerLiked));
   const [likeCount, setLikeCount] = useState(reel.likeCount ?? 0);

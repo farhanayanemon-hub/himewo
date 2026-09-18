@@ -20,6 +20,7 @@ import { ProfileView } from "@/components/profile-view";
 import { Loader2, Check, X, UserPlus, UserCheck, UserMinus, ChevronDown, UserX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
+import { useActingPage } from "@/lib/acting-page";
 import { useQueryClient } from "@tanstack/react-query";
 import { syncUserFollowState } from "@/lib/follow-sync";
 import { syncUserFriendState } from "@/lib/friend-sync";
@@ -35,6 +36,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 export default function ProfilePage() {
   const { id: rawId, username: rawUsername } = useParams<{ id?: string; username?: string }>();
   const { user } = useAuth();
+  const { actingPage } = useActingPage();
   const queryClient = useQueryClient();
   const sendRequest = useSendFriendRequest();
   const acceptRequest = useAcceptFriendRequest();
@@ -108,12 +110,15 @@ export default function ProfilePage() {
   );
 
   const isOwnProfile = Boolean(
-    user && profile && (
-      user.id === profile.id ||
-      (user.username && profile.username && user.username.toLowerCase() === profile.username.toLowerCase()) ||
-      user.id === lookupKey ||
-      (user.username && user.username.toLowerCase() === lookupKey.toLowerCase())
-    )
+    !actingPage &&
+      user &&
+      profile &&
+      (user.id === profile.id ||
+        (user.username &&
+          profile.username &&
+          user.username.toLowerCase() === profile.username.toLowerCase()) ||
+        user.id === lookupKey ||
+        (user.username && user.username.toLowerCase() === lookupKey.toLowerCase()))
   );
 
   // Address bar normalization: ensure Facebook-style himewo.com/username

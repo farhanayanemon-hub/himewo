@@ -49,6 +49,7 @@ import {
   customFetch,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
+import { useActingPage } from "@/lib/acting-page";
 import * as Haptics from "expo-haptics";
 import { Avatar } from "@/components/Avatar";
 import { EmojiPickerSheet } from "@/components/EmojiPickerSheet";
@@ -74,7 +75,8 @@ function ReelItem({ reel, height, active, onComment }: ReelItemProps) {
   const c = useColors();
   const qc = useQueryClient();
   const { user } = useAuth();
-  const isOwn = user?.id === reel.author.id;
+  const { actingPage } = useActingPage();
+  const isOwn = !actingPage && Boolean(user && user.id === reel.author.id);
   const followUser = useFollowUser();
   const unfollowUser = useUnfollowUser();
   const [following, setFollowing] = useState(Boolean(reel.author.viewerFollows));

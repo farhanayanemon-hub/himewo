@@ -52,6 +52,7 @@ import { Avatar } from "@/components/Avatar";
 import { PostCard } from "@/components/PostCard";
 import { CommentsSheet } from "@/components/CommentsSheet";
 import { useAuth } from "@/lib/auth";
+import { useActingPage } from "@/lib/acting-page";
 import { useColors } from "@/hooks/useColors";
 import { formatCount, timeAgo } from "@/lib/format";
 
@@ -75,8 +76,9 @@ function MobileReelTimelineCard({
   onReelDeleted?: () => void;
 }) {
   const qc = useQueryClient();
+  const { actingPage } = useActingPage();
   const cleanCaption = (reel.caption ?? "").replace(/#\w+/g, "").trim();
-  const isAuthor = currentUserId === reel.author.id;
+  const isAuthor = !actingPage && Boolean(currentUserId === reel.author.id);
 
   const [liked, setLiked] = useState(Boolean(reel.viewerHasLiked ?? (reel as any).viewerLiked));
   const [likeCount, setLikeCount] = useState(reel.likeCount ?? 0);
@@ -370,7 +372,8 @@ export function ProfileBody({
   }
 
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  const isOwn = Boolean(
+  const { actingPage } = useActingPage();
+  const isOwn = !actingPage && Boolean(
     user && userId && (
       user.id === userId ||
       (user.username && user.username.toLowerCase() === userId.toLowerCase())

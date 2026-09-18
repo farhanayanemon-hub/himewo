@@ -114,9 +114,9 @@ export function PostCard({
   }, [post.reactions]);
 
   const isPage = Boolean(post.authorPage);
-  const isOwner = isPage
-    ? (!!actingPageId && actingPageId === post.authorPage?.id) || (!!user && user.id === post.author.id)
-    : (!!user && user.id === post.author.id);
+  const isOwner = actingPageId != null
+    ? (isPage && post.authorPage?.id === actingPageId)
+    : (!isPage && !!user && user.id === post.author.id);
   const initialFollowing = isPage
     ? Boolean((post.authorPage as any)?.viewerFollows)
     : Boolean(post.author.viewerFollows);

@@ -548,7 +548,7 @@ export default function PostDetailScreen() {
       <CommentActionsSheet
         comment={actionsFor}
         visible={actionsFor != null}
-        canModify={!!user && actionsFor?.author.id === user.id}
+        canModify={!actingPage && !!user && actionsFor?.author.id === user.id}
         onClose={() => setActionsFor(null)}
         onReply={startReply}
         onEdit={startEdit}

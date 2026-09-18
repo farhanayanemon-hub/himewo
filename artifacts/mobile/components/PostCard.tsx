@@ -75,9 +75,9 @@ export const PostCard = React.memo(function PostCard({ post, onComment, onShare,
   const { actingPage } = useActingPage();
   const [summary, setSummary] = useState<ReactionSummary>(post.reactions);
   const isPage = Boolean(post.authorPage);
-  const isOwner = isPage
-    ? (!!actingPage && actingPage.id === post.authorPage?.id) || (!!user && user.id === post.author.id)
-    : (!!user && user.id === post.author.id);
+  const isOwner = actingPage != null
+    ? (isPage && post.authorPage?.id === actingPage.id)
+    : (!isPage && !!user && user.id === post.author.id);
 
   const initialFollowing = isPage
     ? Boolean((post.authorPage as any)?.viewerFollows)

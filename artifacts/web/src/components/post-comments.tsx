@@ -70,7 +70,7 @@ function CommentItem({
   const [editText, setEditText] = useState("");
   const [showReplies, setShowReplies] = useState(false);
 
-  const isOwn = !!user && user.id === comment.author.id;
+  const isOwn = !actingPage && !!user && user.id === comment.author.id;
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: getListCommentsQueryKey(postId) });

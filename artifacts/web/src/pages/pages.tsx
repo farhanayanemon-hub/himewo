@@ -72,6 +72,8 @@ import {
   Lock,
   Sliders,
   ShieldCheck,
+  Play,
+  Images,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -120,6 +122,13 @@ function safeHttpUrl(url: string | null | undefined): string | null {
   } catch {
     return null;
   }
+}
+
+function limitWords(str: string | null | undefined, maxWords: number): string {
+  if (!str) return "";
+  const words = str.trim().split(/\s+/);
+  if (words.length <= maxWords) return str;
+  return words.slice(0, maxWords).join(" ") + "...";
 }
 
 export default function PagesView() {
@@ -405,30 +414,37 @@ function AboutCard({ page }: { page: Page }) {
   if (page.address) rows.push({ icon: <MapPin className="w-4 h-4" />, value: page.address });
   if (page.hours) rows.push({ icon: <Clock className="w-4 h-4" />, value: page.hours });
 
-  if (rows.length === 0) return null;
+  if (!page.description && rows.length === 0) return null;
 
   return (
-    <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
-      <h2 className="font-bold text-lg mb-3">About</h2>
-      <div className="space-y-2.5">
-        {rows.map((r, i) => (
-          <div key={i} className="flex items-center gap-3 text-[15px]">
-            <span className="text-muted-foreground shrink-0">{r.icon}</span>
-            {r.href ? (
-              <a
-                href={r.href}
-                target={r.href.startsWith("http") ? "_blank" : undefined}
-                rel="noopener noreferrer"
-                className="text-primary hover:underline break-all"
-              >
-                {r.value}
-              </a>
-            ) : (
-              <span className="break-words">{r.value}</span>
-            )}
-          </div>
-        ))}
-      </div>
+    <div className="aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-border/70 p-4 shadow-sm">
+      <h2 className="font-bold text-lg mb-3">About Hub</h2>
+      {page.description && (
+        <p className="text-sm text-foreground/90 leading-relaxed mb-3 whitespace-pre-wrap">
+          {page.description}
+        </p>
+      )}
+      {rows.length > 0 && (
+        <div className="space-y-2.5 pt-2 border-t border-border/50">
+          {rows.map((r, i) => (
+            <div key={i} className="flex items-center gap-3 text-[14px]">
+              <span className="text-muted-foreground shrink-0">{r.icon}</span>
+              {r.href ? (
+                <a
+                  href={r.href}
+                  target={r.href.startsWith("http") ? "_blank" : undefined}
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline break-all"
+                >
+                  {r.value}
+                </a>
+              ) : (
+                <span className="break-words text-foreground">{r.value}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -501,7 +517,7 @@ function ReviewsSection({ page }: { page: Page }) {
   };
 
   return (
-    <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
+    <div className="aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-border/70 p-4 shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-bold text-lg">Reviews</h2>
         {page.reviewCount > 0 && (
@@ -1238,12 +1254,16 @@ function PageMediaGrid({ pageId }: { pageId: number }) {
     return <div className="py-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
   }
   if (!media || media.length === 0) {
-    return <div className="py-10 text-center bg-card border border-border rounded-xl text-muted-foreground">No photos or videos yet.</div>;
+    return (
+      <div className="py-10 text-center aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-border/70 text-muted-foreground">
+        No photos or videos yet.
+      </div>
+    );
   }
   return (
-    <div className="grid grid-cols-3 gap-1 bg-card border border-border rounded-xl p-1 overflow-hidden">
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-border/70 p-4 shadow-sm">
       {media.map((item) => (
-        <div key={item.id} className="relative aspect-square bg-muted overflow-hidden">
+        <div key={item.id} className="relative aspect-square bg-muted rounded-xl overflow-hidden group">
           {item.type === "video" ? (
             <video
               src={item.url}
@@ -1254,7 +1274,7 @@ function PageMediaGrid({ pageId }: { pageId: number }) {
               controls
             />
           ) : (
-            <img src={item.url} className="w-full h-full object-cover" alt="" loading="lazy" />
+            <img src={item.url} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" alt="" loading="lazy" />
           )}
         </div>
       ))}
@@ -1443,6 +1463,129 @@ function InvitePageFriendsDialog({
   );
 }
 
+function PageFollowersPreviewCard({
+  pageId,
+  followerCount,
+  onOpenDialog,
+}: {
+  pageId: number;
+  followerCount: number;
+  onOpenDialog: () => void;
+}) {
+  const { data: followers, isLoading } = useListPageFollowers(pageId, {
+    query: { queryKey: getListPageFollowersQueryKey(pageId) },
+  });
+
+  return (
+    <div className="aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-border/70 p-4 shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-bold text-lg">Followers</h2>
+        <button
+          type="button"
+          onClick={onOpenDialog}
+          className="text-primary text-sm hover:underline cursor-pointer font-medium"
+        >
+          See all
+        </button>
+      </div>
+      {followerCount != null && (
+        <p className="text-muted-foreground text-sm mb-3">
+          {followerCount} follower{followerCount === 1 ? "" : "s"}
+        </p>
+      )}
+      {isLoading ? (
+        <div className="py-4 text-center">
+          <Loader2 className="w-5 h-5 animate-spin mx-auto text-primary" />
+        </div>
+      ) : followers && followers.length > 0 ? (
+        <div className="grid grid-cols-3 gap-2">
+          {followers.slice(0, 9).map((f) => (
+            <Link key={f.id} href={getUserProfileUrl(f)}>
+              <div className="cursor-pointer group">
+                <img
+                  src={avatarSrc(f.avatarUrl)}
+                  className="w-full aspect-square rounded-lg object-cover bg-muted group-hover:opacity-90 transition-opacity"
+                  alt={f.displayName || f.username}
+                />
+                <p className="text-xs font-medium mt-1 truncate group-hover:underline">
+                  {f.displayName || f.username}
+                </p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <p className="text-muted-foreground text-sm">No followers yet.</p>
+      )}
+    </div>
+  );
+}
+
+function PagePhotosPreviewCard({
+  pageId,
+  onSelectTab,
+}: {
+  pageId: number;
+  onSelectTab: () => void;
+}) {
+  const { data: media, isLoading } = useListPageMedia(pageId);
+
+  return (
+    <div className="aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-border/70 p-4 shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-bold text-lg">Photos & Media</h2>
+        {media && media.length > 0 && (
+          <button
+            type="button"
+            onClick={onSelectTab}
+            className="text-primary text-sm hover:underline cursor-pointer font-medium"
+          >
+            See all ({media.length})
+          </button>
+        )}
+      </div>
+      {isLoading ? (
+        <div className="py-4 text-center">
+          <Loader2 className="w-5 h-5 animate-spin mx-auto text-primary" />
+        </div>
+      ) : media && media.length > 0 ? (
+        <div className="grid grid-cols-3 gap-2">
+          {media.slice(0, 9).map((m) => (
+            <div
+              key={m.id}
+              onClick={onSelectTab}
+              className="aspect-square rounded-lg overflow-hidden bg-muted cursor-pointer group relative"
+            >
+              {m.type === "video" ? (
+                <div className="w-full h-full relative">
+                  <video
+                    src={m.url}
+                    poster={m.thumbnailUrl ?? undefined}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    muted
+                  />
+                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                    <Play className="w-5 h-5 text-white fill-white" />
+                  </div>
+                </div>
+              ) : (
+                <img
+                  src={m.url}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  alt=""
+                  loading="lazy"
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-muted-foreground text-sm">No photos or media uploaded yet.</p>
+      )}
+    </div>
+  );
+}
+
 function PageDetail({ id }: { id: number }) {
   const { actingPage } = useActingPage();
   const { data: page, isLoading } = useGetPage(
@@ -1450,11 +1593,12 @@ function PageDetail({ id }: { id: number }) {
     actingPage ? { asPageId: actingPage.id } : undefined,
   );
   const { data: posts, isLoading: postsLoading } = useGetPagePosts(id);
+  const { data: media, isLoading: mediaLoading } = useListPageMedia(id);
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [editOpen, setEditOpen] = useState(false);
   const [accessOpen, setAccessOpen] = useState(false);
-  const [tab, setTab] = useState<"posts" | "media">("posts");
+  const [tab, setTab] = useState<"posts" | "reels" | "media">("posts");
   const [followersOpen, setFollowersOpen] = useState(false);
   const [followingOpen, setFollowingOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -1486,11 +1630,21 @@ function PageDetail({ id }: { id: number }) {
   });
 
   if (isLoading) {
-    return <MainLayout><div className="py-10 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></MainLayout>;
+    return (
+      <MainLayout>
+        <div className="py-10 flex justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
   }
 
   if (!page) {
-    return <MainLayout><div className="py-10 text-center text-muted-foreground">Hub not found</div></MainLayout>;
+    return (
+      <MainLayout>
+        <div className="py-10 text-center text-muted-foreground">Hub not found</div>
+      </MainLayout>
+    );
   }
 
   const followParams = actingPage ? { asPageId: actingPage.id } : undefined;
@@ -1502,9 +1656,12 @@ function PageDetail({ id }: { id: number }) {
     }
   };
 
+  const videoReels = (media ?? []).filter((m) => m.type === "video");
+
   return (
     <MainLayout>
-      <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm mb-6 animate-in fade-in">
+      {/* Cover + Header Card (Identical layout to ProfileView) */}
+      <div className="aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-border/70 overflow-hidden mb-3 sm:mb-4">
         <PhotoActionMenu
           photoUrl={page.coverUrl}
           kind="cover"
@@ -1543,12 +1700,12 @@ function PageDetail({ id }: { id: number }) {
                   <span className="text-foreground tracking-tight">{page.name}</span>
                   {(page as any).isVerified && <VerifiedBadge className="w-6 h-6" />}
                 </h1>
-                <p className="text-muted-foreground text-sm font-medium">{page.category}</p>
+                <p className="text-muted-foreground text-sm font-medium">{page.category || "Hub"}</p>
                 <div className="text-sm text-muted-foreground font-medium flex items-center justify-center sm:justify-start gap-3 mt-1.5">
                   <button
                     type="button"
                     onClick={() => setFollowersOpen(true)}
-                    className="hover:text-foreground hover:underline transition-colors"
+                    className="hover:text-foreground hover:underline transition-colors cursor-pointer"
                   >
                     <b className="text-foreground">{page.followerCount}</b> Followers
                   </button>
@@ -1556,11 +1713,63 @@ function PageDetail({ id }: { id: number }) {
                   <button
                     type="button"
                     onClick={() => setFollowingOpen(true)}
-                    className="hover:text-foreground hover:underline transition-colors"
+                    className="hover:text-foreground hover:underline transition-colors cursor-pointer"
                   >
                     <b className="text-foreground">{page.followingCount}</b> Following
                   </button>
+                  {page.reviewCount > 0 && (
+                    <>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                        <b className="text-foreground">{page.averageRating?.toFixed(1)}</b> ({page.reviewCount})
+                      </span>
+                    </>
+                  )}
                 </div>
+
+                {/* Bio / Description directly under name and counts (max 150 words) */}
+                {page.description && (
+                  <p className="text-[14px] text-foreground font-normal max-w-xl whitespace-pre-wrap leading-relaxed mt-2 text-center sm:text-left">
+                    {limitWords(page.description, 150)}
+                  </p>
+                )}
+
+                {/* Quick metadata chips row */}
+                {(page.address || page.contactPhone || page.contactEmail || page.website || page.hours) && (
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1.5 mt-2 text-xs text-muted-foreground">
+                    {page.address && (
+                      <span className="flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span>{page.address}</span>
+                      </span>
+                    )}
+                    {page.contactPhone && (
+                      <span className="flex items-center gap-1.5">
+                        <Phone className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <a href={`tel:${page.contactPhone}`} className="hover:underline text-foreground font-medium">{page.contactPhone}</a>
+                      </span>
+                    )}
+                    {page.contactEmail && (
+                      <span className="flex items-center gap-1.5">
+                        <Mail className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <a href={`mailto:${page.contactEmail}`} className="hover:underline text-foreground font-medium">{page.contactEmail}</a>
+                      </span>
+                    )}
+                    {page.website && (
+                      <span className="flex items-center gap-1.5">
+                        <Globe className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <a href={safeHttpUrl(page.website) ?? undefined} target="_blank" rel="noopener noreferrer" className="hover:underline text-primary font-medium">{page.website}</a>
+                      </span>
+                    )}
+                    {page.hours && (
+                      <span className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span>{page.hours}</span>
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1608,54 +1817,157 @@ function PageDetail({ id }: { id: number }) {
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="space-y-4">
-        <AboutCard page={page} />
-        {page.reviewsEnabled && <ReviewsSection page={page} />}
-
-        <div className="flex gap-1 border-b border-border px-2">
+        {/* Profile Tabs Navigation (Identical structure to ProfileView) */}
+        <div className="flex items-center gap-2 border-t border-border/60 px-6 pt-1 overflow-x-auto">
           <button
             type="button"
             onClick={() => setTab("posts")}
-            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${tab === "posts" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+            className={`px-4 py-3 font-semibold text-sm transition-all border-b-2 flex items-center gap-1.5 cursor-pointer ${
+              tab === "posts"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
           >
-            Posts
+            <span>Posts</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("reels")}
+            className={`px-4 py-3 font-semibold text-sm transition-all border-b-2 flex items-center gap-1.5 cursor-pointer ${
+              tab === "reels"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Play className="w-3.5 h-3.5 fill-current" />
+            <span>Reels</span>
+            {videoReels.length > 0 && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
+                {videoReels.length}
+              </span>
+            )}
           </button>
           <button
             type="button"
             onClick={() => setTab("media")}
-            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${tab === "media" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+            className={`px-4 py-3 font-semibold text-sm transition-all border-b-2 flex items-center gap-1.5 cursor-pointer ${
+              tab === "media"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
           >
-            Photos & Videos
+            <Images className="w-3.5 h-3.5" />
+            <span>Photos & Videos</span>
           </button>
         </div>
+      </div>
 
-        {tab === "posts" ? (
-          <>
-            {page.viewerCanPost && <PostComposer pageId={id} />}
-            {postsLoading ? (
-              <div className="py-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
-            ) : posts?.length === 0 ? (
-              <div className="py-10 text-center bg-card border border-border rounded-xl text-muted-foreground">No posts yet.</div>
-            ) : (
-              posts?.map(post => <PostCard key={post.id} post={post} />)
-            )}
-          </>
-        ) : (
-          <PageMediaGrid pageId={id} />
-        )}
+      {/* Two-Column Facebook-Style Layout: Main Timeline (Left: 3 cols) | Sidebar Widgets (Right: 2 cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-start">
+        {/* Main Content Column (Left/Center) */}
+        <div className="lg:col-span-3 space-y-4">
+          {tab === "posts" && (
+            <>
+              {page.viewerCanPost && <PostComposer pageId={id} />}
+              <div className="flex items-center justify-between px-2">
+                <h2 className="font-bold text-lg">Timeline</h2>
+                {posts && posts.length > 0 && (
+                  <span className="text-xs text-muted-foreground font-medium">
+                    {posts.length} {posts.length === 1 ? "post" : "posts"}
+                  </span>
+                )}
+              </div>
+              {postsLoading ? (
+                <div className="py-8 text-center">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
+                </div>
+              ) : !posts || posts.length === 0 ? (
+                <div className="text-center py-10 aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-border/70 text-muted-foreground">
+                  {page.viewerCanPost ? "You haven't posted anything to this Hub yet." : "No posts yet"}
+                </div>
+              ) : (
+                posts.map((post) => <PostCard key={post.id} post={post} />)
+              )}
+            </>
+          )}
+
+          {tab === "reels" && (
+            <div className="aurora-glass-card rounded-2xl p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="font-bold text-xl flex items-center gap-2">
+                  <Play className="w-5 h-5 text-primary fill-primary" />
+                  <span>Reels & Videos</span>
+                  {videoReels.length > 0 && (
+                    <span className="text-sm font-normal text-muted-foreground">({videoReels.length})</span>
+                  )}
+                </h2>
+              </div>
+
+              {mediaLoading ? (
+                <div className="py-12 text-center">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+                  <p className="text-sm text-muted-foreground mt-2">Loading videos...</p>
+                </div>
+              ) : videoReels.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Play className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
+                  <p className="font-medium text-foreground">No reels or videos uploaded yet</p>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                    {page.viewerCanPost
+                      ? "Share short videos and reels with your followers."
+                      : "This Hub hasn't uploaded any reels or videos yet."}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
+                  {videoReels.map((reel) => (
+                    <div
+                      key={reel.id}
+                      className="group relative aspect-[9/16] rounded-2xl overflow-hidden bg-black shadow-md hover:shadow-xl transition-all duration-300"
+                    >
+                      <video
+                        src={reel.url}
+                        poster={reel.thumbnailUrl ?? undefined}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        controls
+                        playsInline
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {tab === "media" && (
+            <PageMediaGrid pageId={id} />
+          )}
+        </div>
+
+        {/* Secondary Sidebar Column (Right) */}
+        <div className="lg:col-span-2 space-y-4">
+          <AboutCard page={page} />
+          {page.reviewsEnabled && <ReviewsSection page={page} />}
+          <PageFollowersPreviewCard
+            pageId={id}
+            followerCount={page.followerCount}
+            onOpenDialog={() => setFollowersOpen(true)}
+          />
+          <PagePhotosPreviewCard
+            pageId={id}
+            onSelectTab={() => setTab("media")}
+          />
+        </div>
       </div>
 
       {page.viewerCanPost && (
-        <>
-          <EditPageDialog
-            page={page}
-            open={editOpen}
-            onOpenChange={setEditOpen}
-            onOpenSettings={user?.id === page.ownerId ? () => setAccessOpen(true) : undefined}
-          />
-        </>
+        <EditPageDialog
+          page={page}
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          onOpenSettings={user?.id === page.ownerId ? () => setAccessOpen(true) : undefined}
+        />
       )}
       {user?.id === page.ownerId && (
         <PageAccessDialog page={page} open={accessOpen} onOpenChange={setAccessOpen} />
