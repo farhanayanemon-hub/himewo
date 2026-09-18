@@ -58,6 +58,14 @@ function Build-TargetApp([string]$target) {
   Set-Location $appDir
   pnpm exec expo prebuild --platform android --no-install --clean
 
+  # Configure Ultra-Lite: 64-bit modern ARM only + compressed native libraries
+  if (Test-Path "$appDir\android\gradle.properties") {
+    (Get-Content "$appDir\android\gradle.properties") `
+      -replace 'reactNativeArchitectures=.*', 'reactNativeArchitectures=arm64-v8a' `
+      -replace 'expo.useLegacyPackaging=.*', 'expo.useLegacyPackaging=true' |
+      Set-Content "$appDir\android\gradle.properties"
+  }
+
   Write-Host "`n>>> [2/4] Compiling release APK with Gradle..." -ForegroundColor Yellow
   Set-Location "$appDir\android"
   cmd.exe /c "gradlew.bat assembleRelease --no-daemon -Dorg.gradle.jvmargs=""-Xmx4096m -XX:MaxMetaspaceSize=1024m"""
@@ -68,23 +76,12 @@ function Build-TargetApp([string]$target) {
     exit 1
   }
 
-  Write-Host "`n>>> [3/5] Optimizing APK (ARM architecture)..." -ForegroundColor Yellow
-  $armApk = "$unsigned.FullName.arm.apk"
+  Write-Host "`n>>> [3/4] Aligning and signing APK with $target release keystore..." -ForegroundColor Yellow
+  $zipalign = Join-Path $buildTools.FullName "zipalign.exe"
   $alignedApk = "$unsigned.FullName.aligned.apk"
   $destApk = "$repoRoot\downloads\$outName"
 
-  python -c @"
-import zipfile
-with zipfile.ZipFile(r'$($unsigned.FullName)', 'r') as zin, zipfile.ZipFile(r'$armApk', 'w', compression=zipfile.ZIP_DEFLATED) as zout:
-    for item in zin.infolist():
-        if item.filename.startswith('lib/x86/') or item.filename.startswith('lib/x86_64/') or item.filename.startswith('META-INF/'):
-            continue
-        zout.writestr(item, zin.read(item.filename))
-"@
-
-  Write-Host "`n>>> [4/5] Aligning and signing APK with $target release keystore..." -ForegroundColor Yellow
-  $zipalign = Join-Path $buildTools.FullName "zipalign.exe"
-  & $zipalign -p -f 4 $armApk $alignedApk
+  & $zipalign -f 4 $unsigned.FullName $alignedApk
 
   $ksJson = Get-Content $ksJsonFile | ConvertFrom-Json
 
@@ -96,8 +93,7 @@ with zipfile.ZipFile(r'$($unsigned.FullName)', 'r') as zin, zipfile.ZipFile(r'$a
     --out $destApk `
     $alignedApk
 
-  # Clean up temp intermediate files
-  Remove-Item $armApk, $alignedApk -Force -ErrorAction SilentlyContinue
+  Remove-Item $alignedApk -Force -ErrorAction SilentlyContinue
 
   Write-Host "[OK] Verifying signed APK..." -ForegroundColor Green
   & $apksigner verify --verbose $destApk

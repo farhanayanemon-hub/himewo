@@ -68,6 +68,9 @@ jobs:
         run: |
           cd artifacts/mobile-chat
           npx expo prebuild --platform android --no-install --clean
+          # Configure Ultra-Lite: 64-bit modern ARM only + compressed native libraries
+          sed -i 's/reactNativeArchitectures=.*/reactNativeArchitectures=arm64-v8a/' android/gradle.properties
+          sed -i 's/expo.useLegacyPackaging=.*/expo.useLegacyPackaging=true/' android/gradle.properties
 
       - name: Assemble Release APK
         run: |
@@ -82,16 +85,7 @@ jobs:
           UNSIGNED_APK=$(find artifacts/mobile-chat/android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
           echo "Found built APK: $UNSIGNED_APK"
 
-          python3 -c "
-          import zipfile
-          with zipfile.ZipFile('$UNSIGNED_APK', 'r') as zin, zipfile.ZipFile('artifacts/mobile-chat/chat-arm.apk', 'w', compression=zipfile.ZIP_DEFLATED) as zout:
-              for item in zin.infolist():
-                  if item.filename.startswith('lib/x86/') or item.filename.startswith('lib/x86_64/') or item.filename.startswith('META-INF/'):
-                      continue
-                  zout.writestr(item, zin.read(item.filename))
-          "
-
-          $BUILD_TOOLS_DIR/zipalign -p -f 4 artifacts/mobile-chat/chat-arm.apk artifacts/mobile-chat/chat-aligned.apk
+          $BUILD_TOOLS_DIR/zipalign -f 4 "$UNSIGNED_APK" artifacts/mobile-chat/chat-aligned.apk
 
           $BUILD_TOOLS_DIR/apksigner sign \
             --ks credentials/chat-release.keystore \
@@ -161,6 +155,9 @@ jobs:
         run: |
           cd artifacts/mobile
           npx expo prebuild --platform android --no-install --clean
+          # Configure Ultra-Lite: 64-bit modern ARM only + compressed native libraries
+          sed -i 's/reactNativeArchitectures=.*/reactNativeArchitectures=arm64-v8a/' android/gradle.properties
+          sed -i 's/expo.useLegacyPackaging=.*/expo.useLegacyPackaging=true/' android/gradle.properties
 
       - name: Assemble Release APK
         run: |
@@ -175,16 +172,7 @@ jobs:
           UNSIGNED_APK=$(find artifacts/mobile/android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
           echo "Found built APK: $UNSIGNED_APK"
 
-          python3 -c "
-          import zipfile
-          with zipfile.ZipFile('$UNSIGNED_APK', 'r') as zin, zipfile.ZipFile('artifacts/mobile/social-arm.apk', 'w', compression=zipfile.ZIP_DEFLATED) as zout:
-              for item in zin.infolist():
-                  if item.filename.startswith('lib/x86/') or item.filename.startswith('lib/x86_64/') or item.filename.startswith('META-INF/'):
-                      continue
-                  zout.writestr(item, zin.read(item.filename))
-          "
-
-          $BUILD_TOOLS_DIR/zipalign -p -f 4 artifacts/mobile/social-arm.apk artifacts/mobile/social-aligned.apk
+          $BUILD_TOOLS_DIR/zipalign -f 4 "$UNSIGNED_APK" artifacts/mobile/social-aligned.apk
 
           $BUILD_TOOLS_DIR/apksigner sign \
             --ks credentials/social-release.keystore \
