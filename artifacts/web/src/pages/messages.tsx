@@ -10,7 +10,9 @@ import {
   getListMessagesQueryKey,
   getListConversationsQueryKey,
   getListFriendsQueryKey,
-  type StoryEmbed
+  type StoryEmbed,
+  type Conversation,
+  type Message,
 } from "@workspace/api-client-react";
 import { storyBackground } from "@/pages/stories";
 import { Link, useParams, useLocation } from "wouter";
@@ -20,7 +22,21 @@ import { useAuth } from "@/lib/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Phone, Video, Info, Loader2, MessageCircle, SquarePen, X, ArrowLeft } from "lucide-react";
+import {
+  Send,
+  Phone,
+  Video,
+  Info,
+  Loader2,
+  MessageCircle,
+  SquarePen,
+  X,
+  ArrowLeft,
+  Check,
+  CheckCheck,
+  Clock,
+  Eye,
+} from "lucide-react";
 import { EmojiPickerButton } from "@/components/emoji-picker";
 
 function StoryEmbedInline({ story, isMe }: { story: StoryEmbed; isMe: boolean }) {
@@ -94,14 +110,83 @@ export default function MessagesPage() {
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTypingRef = useRef(false);
 
-  const otherMember = conversations
-    ?.find((c) => c.id === conversationId)
-    ?.members.find((m) => m.user.id !== user?.id)?.user;
+  const currentConv = conversations?.find((c) => c.id === conversationId);
+  const peerMember = currentConv?.members.find((m) => m.user.id !== user?.id);
+  const otherMember = peerMember?.user;
+  const isGroup = currentConv?.type === "group";
+  const [peerLastReadId, setPeerLastReadId] = useState<number>(() => peerMember?.lastReadMessageId ?? 0);
+
+  useEffect(() => {
+    if (peerMember?.lastReadMessageId != null) {
+      setPeerLastReadId((prev) => Math.max(prev, peerMember.lastReadMessageId ?? 0));
+    }
+  }, [peerMember?.lastReadMessageId]);
+
+  useEffect(() => {
+    setPeerLastReadId(peerMember?.lastReadMessageId ?? 0);
+  }, [conversationId]);
 
   // Subscribe to real-time events: messages, typing, seen
   useEffect(() => {
     const unsubscribe = realtime.subscribe((event) => {
-      if (event.type === "message" || event.type === "message_deleted") {
+      if (event.type === "seen") {
+        const e = event as { conversationId: number; messageId: number; userId: string };
+        if (conversationId && e.conversationId === conversationId && e.userId !== user?.id) {
+          setPeerLastReadId((prev) => Math.max(prev, Number(e.messageId) || 0));
+        }
+        queryClient.setQueryData<Conversation[]>(getListConversationsQueryKey(), (old = []) => {
+          if (!Array.isArray(old)) return old;
+          return old.map((c) => {
+            if (c.id === e.conversationId) {
+              return {
+                ...c,
+                members: c.members.map((m) =>
+                  m.user.id === e.userId
+                    ? {
+                        ...m,
+                        lastReadMessageId: Math.max(
+                          m.lastReadMessageId ?? 0,
+                          Number(e.messageId) || 0,
+                        ),
+                      }
+                    : m,
+                ),
+              };
+            }
+            return c;
+          });
+        });
+      } else if (event.type === "message") {
+        const e = event as { conversationId: number; message?: Message };
+        if (conversationId && e.conversationId === conversationId && e.message) {
+          queryClient.setQueryData<Message[]>(getListMessagesQueryKey(conversationId), (old = []) => {
+            if (!Array.isArray(old)) return [e.message!];
+            if (old.some((m) => m.id === e.message!.id)) return old;
+            return [e.message!, ...old];
+          });
+        }
+        if (e.message) {
+          queryClient.setQueryData<Conversation[]>(getListConversationsQueryKey(), (old = []) => {
+            if (!Array.isArray(old)) return old;
+            const exists = old.some((c) => c.id === e.conversationId);
+            if (!exists) {
+              queryClient.invalidateQueries({ queryKey: getListConversationsQueryKey() });
+              return old;
+            }
+            return old.map((c) => {
+              if (c.id === e.conversationId) {
+                return {
+                  ...c,
+                  lastMessage: e.message,
+                  lastMessageAt: e.message!.createdAt,
+                  unreadCount: c.unreadCount + (e.message!.sender.id === user?.id ? 0 : 1),
+                };
+              }
+              return c;
+            });
+          });
+        }
+      } else if (event.type === "message_deleted") {
         queryClient.invalidateQueries({ queryKey: getListConversationsQueryKey() });
         if (conversationId && event.conversationId === conversationId) {
           queryClient.invalidateQueries({ queryKey: getListMessagesQueryKey(conversationId) });
@@ -110,8 +195,6 @@ export default function MessagesPage() {
         setPeerTyping(true);
       } else if (event.type === "stop_typing" && event.conversationId === conversationId && event.userId !== user?.id) {
         setPeerTyping(false);
-      } else if (event.type === "seen" && conversationId && event.conversationId === conversationId) {
-        queryClient.invalidateQueries({ queryKey: getListMessagesQueryKey(conversationId) });
       }
     });
     return unsubscribe;
@@ -166,21 +249,81 @@ export default function MessagesPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, peerTyping]);
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !conversationId) return;
+    const content = newMessage.trim();
+    if (!content || !conversationId || !user) return;
 
+    // Instant local clear & typing stop (0ms response)
+    setNewMessage("");
     stopTyping();
-    sendMessage.mutate(
-      { id: conversationId, data: { content: newMessage, type: "text" } },
-      {
-        onSuccess: () => {
-          setNewMessage("");
-          queryClient.invalidateQueries({ queryKey: getListMessagesQueryKey(conversationId) });
-          queryClient.invalidateQueries({ queryKey: getListConversationsQueryKey() });
+
+    const tempId = -Date.now();
+    const optimisticMsg: Message = {
+      id: tempId,
+      conversationId,
+      sender: user as any,
+      content,
+      type: "text" as any,
+      createdAt: new Date().toISOString(),
+      attachments: [],
+      reactions: [],
+    };
+
+    // 1. Instantly insert into messages query cache
+    queryClient.setQueryData<Message[]>(getListMessagesQueryKey(conversationId), (old = []) => [
+      optimisticMsg,
+      ...(Array.isArray(old) ? old : []),
+    ]);
+
+    // 2. Instantly update conversation list preview
+    queryClient.setQueryData<Conversation[]>(getListConversationsQueryKey(), (old = []) => {
+      if (!Array.isArray(old)) return old;
+      return old.map((conv) => {
+        if (conv.id === conversationId) {
+          return {
+            ...conv,
+            lastMessage: optimisticMsg,
+            lastMessageAt: optimisticMsg.createdAt,
+          };
         }
-      }
-    );
+        return conv;
+      });
+    });
+
+    try {
+      const sent = await sendMessage.mutateAsync({
+        id: conversationId,
+        data: { content, type: "text" as any },
+      });
+
+      // Replace optimistic message with confirmed server message
+      queryClient.setQueryData<Message[]>(getListMessagesQueryKey(conversationId), (old = []) => {
+        if (!Array.isArray(old)) return [sent as Message];
+        return old.map((m) => (m.id === tempId ? (sent as Message) : m));
+      });
+
+      queryClient.setQueryData<Conversation[]>(getListConversationsQueryKey(), (old = []) => {
+        if (!Array.isArray(old)) return old;
+        return old.map((conv) => {
+          if (conv.id === conversationId) {
+            return {
+              ...conv,
+              lastMessage: sent as Message,
+              lastMessageAt: (sent as Message).createdAt,
+            };
+          }
+          return conv;
+        });
+      });
+    } catch {
+      // Revert if network error
+      queryClient.setQueryData<Message[]>(getListMessagesQueryKey(conversationId), (old = []) => {
+        if (!Array.isArray(old)) return [];
+        return old.filter((m) => m.id !== tempId);
+      });
+      setNewMessage(content);
+    }
   };
 
   const activeConv = conversations?.find(c => c.id === conversationId);
@@ -203,10 +346,26 @@ export default function MessagesPage() {
             {convsLoading ? (
               <div className="flex justify-center p-4"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
             ) : conversations?.map(conv => {
-              const otherMember = conv.members.find(m => m.user.id !== user?.id)?.user;
-              const displayTitle = conv.title || otherMember?.displayName || "Unknown Chat";
-              const avatar = conv.avatarUrl || otherMember?.avatarUrl;
-              const isOnline = otherMember ? realtime.isOnline(otherMember.id) : false;
+              const other = conv.members.find(m => m.user.id !== user?.id)?.user;
+              const displayTitle = conv.title || other?.displayName || "Unknown Chat";
+              const avatar = conv.avatarUrl || other?.avatarUrl;
+              const isOnline = other ? realtime.isOnline(other.id) : false;
+
+              const isGroupConv = conv.type === "group";
+              const peerMem = !isGroupConv ? conv.members.find(m => m.user.id !== user?.id) : undefined;
+              const lastMsg = conv.lastMessage;
+              const isLastMe = lastMsg && lastMsg.sender.id === user?.id;
+              const isLastSeen = !isGroupConv && !!(
+                isLastMe &&
+                lastMsg &&
+                peerMem?.lastReadMessageId != null &&
+                peerMem.lastReadMessageId >= lastMsg.id
+              );
+              const isLastDelivered = !isGroupConv && !!(
+                isLastMe &&
+                lastMsg &&
+                (isOnline || (peerMem?.lastReadMessageId != null && peerMem.lastReadMessageId > 0))
+              );
 
               return (
                 <Link 
@@ -227,16 +386,33 @@ export default function MessagesPage() {
                         {conv.lastMessageAt ? new Date(conv.lastMessageAt).toLocaleDateString() : ""}
                       </div>
                     </div>
-                    <div className="text-sm truncate text-muted-foreground">
-                      {conv.lastMessage?.sender.id === user?.id ? "You: " : ""}
-                      {conv.lastMessage?.content || "Say hi!"}
+                    <div className="text-sm truncate text-muted-foreground flex items-center gap-1">
+                      {isLastMe && lastMsg && (
+                        <span className="inline-flex shrink-0">
+                          {isLastSeen ? (
+                            <CheckCheck className="w-3.5 h-3.5 text-primary" />
+                          ) : isLastDelivered ? (
+                            <CheckCheck className="w-3.5 h-3.5 text-muted-foreground" />
+                          ) : (
+                            <Check className="w-3.5 h-3.5 text-muted-foreground" />
+                          )}
+                        </span>
+                      )}
+                      <span className="truncate">
+                        {isLastMe ? "You: " : ""}
+                        {lastMsg?.content || "Say hi!"}
+                      </span>
                     </div>
                   </div>
-                  {conv.unreadCount > 0 && (
-                    <div className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">
+                  {isLastSeen ? (
+                    <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center shrink-0" title="Seen">
+                      <Eye className="w-3 h-3 text-primary" />
+                    </div>
+                  ) : conv.unreadCount > 0 ? (
+                    <div className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">
                       {conv.unreadCount}
                     </div>
-                  )}
+                  ) : null}
                 </Link>
               );
             })}
@@ -281,8 +457,15 @@ export default function MessagesPage() {
                 ) : (
                   <>
                     <div className="text-center text-xs text-muted-foreground my-6">Beginning of the conversation</div>
-                    {messages?.slice().reverse().map((msg, i) => {
+                    {messages?.slice().reverse().map((msg) => {
                       const isMe = msg.sender.id === user?.id;
+                      const isSending = msg.id < 0;
+                      const isSeen = !isGroup && peerLastReadId >= msg.id && msg.id > 0;
+                      const isDelivered = !isGroup && (
+                        (otherMember ? realtime.isOnline(otherMember.id) : false) || 
+                        (peerLastReadId > 0 && msg.id > 0)
+                      );
+
                       return (
                         <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}>
                           {!isMe && (
@@ -299,10 +482,24 @@ export default function MessagesPage() {
                             >
                               <div className="text-[15px] leading-relaxed break-words">{msg.content}</div>
                             </div>
-                            <span className="text-[10px] text-muted-foreground mt-1 px-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              {isMe && i === 0 && (msg as { seenBy?: unknown[] }).seenBy?.length ? " · Seen" : ""}
-                            </span>
+                            <div className={`flex items-center gap-1 text-[10px] text-muted-foreground mt-1 px-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
+                              <span>
+                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                              {isMe && (
+                                <span className="inline-flex items-center ml-0.5">
+                                  {isSending ? (
+                                    <Clock className="w-3 h-3 text-muted-foreground animate-pulse" />
+                                  ) : isSeen ? (
+                                    <CheckCheck className="w-3.5 h-3.5 text-primary" />
+                                  ) : isDelivered ? (
+                                    <CheckCheck className="w-3.5 h-3.5 text-muted-foreground" />
+                                  ) : (
+                                    <Check className="w-3.5 h-3.5 text-muted-foreground" />
+                                  )}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );
@@ -344,7 +541,7 @@ export default function MessagesPage() {
                   <Button 
                     type="submit" 
                     size="icon" 
-                    disabled={!newMessage.trim() || sendMessage.isPending}
+                    disabled={!newMessage.trim()}
                     className="shrink-0 rounded-full h-10 w-10 shadow-sm"
                   >
                     <Send className="w-4 h-4 ml-1" />
