@@ -158,4 +158,40 @@ router.put(
   }
 );
 
+// Public endpoint for in-app version checking
+router.get("/app/version", async (_req, res): Promise<void> => {
+  try {
+    const [row] = await db
+      .select({ value: siteSettingsTable.value })
+      .from(siteSettingsTable)
+      .where(eq(siteSettingsTable.key, "app_landing_config"))
+      .limit(1);
+
+    let cfg: any = DEFAULT_APP_LANDING_CONFIG;
+    if (row?.value) {
+      try {
+        cfg = { ...DEFAULT_APP_LANDING_CONFIG, ...JSON.parse(row.value) };
+      } catch {
+        // fallback
+      }
+    }
+
+    res.json({
+      latestVersion: cfg.mobileApp?.version?.split(" ")[0] || "1.2.0",
+      latestVersionCode: 2,
+      releaseNotes: "Instant message sending, WhatsApp status ticks, seen eye badge and performance upgrades.",
+      socialApkUrl: cfg.mobileApp?.directUrl || DEFAULT_APP_LANDING_CONFIG.mobileApp.directUrl,
+      chatApkUrl: cfg.chatApp?.directUrl || DEFAULT_APP_LANDING_CONFIG.chatApp.directUrl,
+    });
+  } catch {
+    res.json({
+      latestVersion: "1.2.0",
+      latestVersionCode: 2,
+      releaseNotes: "Instant message sending, WhatsApp status ticks, seen eye badge and performance upgrades.",
+      socialApkUrl: DEFAULT_APP_LANDING_CONFIG.mobileApp.directUrl,
+      chatApkUrl: DEFAULT_APP_LANDING_CONFIG.chatApp.directUrl,
+    });
+  }
+});
+
 export default router;

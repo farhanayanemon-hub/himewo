@@ -4,6 +4,7 @@ import {
   Animated,
   FlatList,
   Image,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -375,10 +376,14 @@ export default function SignupScreen() {
         </View>
       )}
 
-      <ScrollView
-        contentContainerStyle={styles.body}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1 }}
       >
+        <ScrollView
+          contentContainerStyle={styles.body}
+          keyboardShouldPersistTaps="handled"
+        >
         <Animated.View style={{ transform: [{ translateY: slide }], gap: 14 }}>
           {step === "name" && (
             <>
@@ -703,6 +708,7 @@ export default function SignupScreen() {
           )}
         </Animated.View>
       </ScrollView>
+    </KeyboardAvoidingView>
 
       {/* Country picker */}
       <Modal visible={pickerOpen} animationType="slide" onRequestClose={() => setPickerOpen(false)}>

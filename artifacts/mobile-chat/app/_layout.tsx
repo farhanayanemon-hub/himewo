@@ -22,6 +22,7 @@ import { AuthProvider, useAuth } from "@/lib/auth";
 import { RealtimeProvider } from "@/lib/realtime";
 import { PreferencesProvider, usePreferencesOptional } from "@/lib/preferences";
 import { useColors } from "@/hooks/useColors";
+import { useAppUpdate, UpdatePromptModal } from "@/lib/useAppUpdate";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -102,6 +103,7 @@ function ThemedRoot() {
   const prefs = usePreferencesOptional();
   const mode = prefs?.themeMode ?? "system";
   const effective = mode === "system" ? scheme : mode;
+  const update = useAppUpdate("chat");
   return (
     <>
       <StatusBar style={effective === "dark" ? "light" : "dark"} />
@@ -110,6 +112,13 @@ function ThemedRoot() {
           <CallProvider>
             <RootNavigator />
             <ChatHeads />
+            <UpdatePromptModal
+              visible={update.modalVisible}
+              versionData={update.versionData}
+              currentVersion={update.currentVersion}
+              onUpdate={update.downloadAndInstall}
+              onDismiss={update.dismiss}
+            />
           </CallProvider>
         </RealtimeProvider>
       </AuthProvider>

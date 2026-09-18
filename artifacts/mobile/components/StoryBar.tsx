@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Text, View, StyleSheet } from "react-native";
+import { Modal, Pressable, ScrollView, Text, View, StyleSheet } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -18,10 +18,83 @@ export function StoryBar() {
   const { data } = useListStories();
   const groups = (data ?? []) as StoryGroup[];
 
+  const [showCreatePicker, setShowCreatePicker] = useState(false);
   const [launcherMode, setLauncherMode] = useState<"story" | "reel" | null>(null);
 
   return (
     <>
+      {/* 2-Option Create Picker Sheet (Story or Reel) */}
+      <Modal
+        visible={showCreatePicker}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={() => setShowCreatePicker(false)}
+      >
+        <Pressable
+          style={styles.pickerBackdrop}
+          onPress={() => setShowCreatePicker(false)}
+        >
+          <View
+            style={[styles.pickerSheet, { backgroundColor: c.card, borderColor: c.border }]}
+            onStartShouldSetResponder={() => true}
+          >
+            <View style={[styles.pickerHandle, { backgroundColor: c.border }]} />
+            <Text style={[styles.pickerTitle, { color: c.foreground }]}>Create Content</Text>
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.pickerOption,
+                { backgroundColor: pressed ? c.secondary : "transparent" },
+              ]}
+              onPress={() => {
+                setShowCreatePicker(false);
+                setLauncherMode("story");
+              }}
+            >
+              <View style={[styles.pickerIconWrap, { backgroundColor: c.primary + "18" }]}>
+                <Ionicons name="book-outline" size={24} color={c.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.pickerOptionTitle, { color: c.foreground }]}>
+                  Create Story
+                </Text>
+                <Text style={[styles.pickerOptionSub, { color: c.mutedForeground }]}>
+                  Share photos, videos or text with 50+ filters
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
+            </Pressable>
+
+            <View style={[styles.pickerDivider, { backgroundColor: c.border }]} />
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.pickerOption,
+                { backgroundColor: pressed ? c.secondary : "transparent" },
+              ]}
+              onPress={() => {
+                setShowCreatePicker(false);
+                setLauncherMode("reel");
+              }}
+            >
+              <View style={[styles.pickerIconWrap, { backgroundColor: "#c026d318" }]}>
+                <Ionicons name="videocam-outline" size={24} color="#c026d3" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.pickerOptionTitle, { color: c.foreground }]}>
+                  Create Reel
+                </Text>
+                <Text style={[styles.pickerOptionSub, { color: c.mutedForeground }]}>
+                  Share short-form video reels with music & stickers
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
+
       <CreateMediaLauncherSheet
         visible={!!launcherMode}
         mode={launcherMode ?? "story"}
@@ -34,10 +107,10 @@ export function StoryBar() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.row}
         >
-          {/* Create Story */}
+          {/* Single + Create Card */}
           <Pressable
             style={[styles.tile, { backgroundColor: c.secondary }]}
-            onPress={() => setLauncherMode("story")}
+            onPress={() => setShowCreatePicker(true)}
           >
             <View style={styles.createTop}>
               <Avatar uri={actingPage ? actingPage.avatarUrl : user?.avatarUrl} />
@@ -50,30 +123,9 @@ export function StoryBar() {
                 numberOfLines={1}
                 style={{ color: c.foreground, fontSize: 11, fontFamily: "Inter_600SemiBold" }}
               >
-                Create story
+                Create
               </Text>
             </View>
-          </Pressable>
-
-          {/* Create Reel */}
-          <Pressable
-            style={[styles.tile, styles.createReelTile]}
-            onPress={() => setLauncherMode("reel")}
-          >
-            <LinearGradient
-              colors={colorTokens.auroraGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={StyleSheet.absoluteFill}
-            />
-            <View style={styles.reelIconWrap}>
-              <View style={styles.reelIconCircle}>
-                <Ionicons name="videocam" size={22} color="#fff" />
-              </View>
-            </View>
-            <Text numberOfLines={1} style={styles.reelLabel}>
-              Create reel
-            </Text>
           </Pressable>
 
           {groups.map((group) => {
@@ -200,6 +252,59 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
+  },
+  pickerBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "flex-end",
+  },
+  pickerSheet: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 36,
+  },
+  pickerHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: 16,
+  },
+  pickerTitle: {
+    fontSize: 18,
+    fontFamily: "Inter_700Bold",
+    marginBottom: 16,
+  },
+  pickerOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+  },
+  pickerIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pickerOptionTitle: {
+    fontSize: 15,
+    fontFamily: "Inter_600SemiBold",
+  },
+  pickerOptionSub: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  pickerDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginVertical: 4,
+    marginLeft: 68,
   },
 });
 

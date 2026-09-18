@@ -20,6 +20,7 @@ import { useAuth } from "@/lib/auth";
 import { useColors } from "@/hooks/useColors";
 import { usePreferences } from "@/lib/preferences";
 import { openMainApp } from "@/lib/mainApp";
+import { useAppUpdate, UpdatePromptModal } from "@/lib/useAppUpdate";
 
 export default function SettingsScreen() {
   const c = useColors();
@@ -27,6 +28,7 @@ export default function SettingsScreen() {
   const { user, signOut, supabaseEnabled, devUsers, signInAsDevUser } = useAuth();
   const { themeMode, activeStatus, setThemeMode, setActiveStatus } = usePreferences();
   const [switchOpen, setSwitchOpen] = useState(false);
+  const update = useAppUpdate("chat");
 
 
   const switchTo = async (id: string) => {
@@ -107,6 +109,27 @@ export default function SettingsScreen() {
               }
             }} last />
         </View>
+
+        <Text style={[styles.sectionTitle, { color: c.mutedForeground }]}>APP UPDATES</Text>
+        <View style={[styles.card, { backgroundColor: c.card }, shadow("md")]}>
+          <Row
+            c={c}
+            icon="cloud-download"
+            iconColor="#0ea5e9"
+            title="Check for updates"
+            subtitle={update.loading ? "Checking for updates..." : `HiMewo Chat v${update.currentVersion}`}
+            onPress={() => update.checkForUpdate(true)}
+            last
+          />
+        </View>
+
+        <UpdatePromptModal
+          visible={update.modalVisible}
+          versionData={update.versionData}
+          currentVersion={update.currentVersion}
+          onUpdate={update.downloadAndInstall}
+          onDismiss={update.dismiss}
+        />
       </ScrollView>
 
       <Modal

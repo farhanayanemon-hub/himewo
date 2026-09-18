@@ -22,6 +22,7 @@ import { AuthProvider, useAuth } from "@/lib/auth";
 import { RealtimeProvider } from "@/lib/realtime";
 import { ActingPageProvider } from "@/lib/acting-page";
 import { useColors } from "@/hooks/useColors";
+import { useAppUpdate, UpdatePromptModal } from "@/lib/useAppUpdate";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -155,6 +156,7 @@ function RootNavigator() {
 
 function ThemedRoot() {
   const scheme = useColorScheme();
+  const update = useAppUpdate("social");
   return (
     <>
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
@@ -163,6 +165,13 @@ function ThemedRoot() {
           <ActingPageProvider>
             <CallProvider>
               <RootNavigator />
+              <UpdatePromptModal
+                visible={update.modalVisible}
+                versionData={update.versionData}
+                currentVersion={update.currentVersion}
+                onUpdate={update.downloadAndInstall}
+                onDismiss={update.dismiss}
+              />
             </CallProvider>
           </ActingPageProvider>
         </RealtimeProvider>

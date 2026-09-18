@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   Text,
@@ -154,96 +156,101 @@ export default function CreatePostScreen() {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 }}>
-          <Avatar
-            uri={actingPage ? actingPage.avatarUrl : user?.avatarUrl}
-            name={actingPage?.name ?? user?.displayName}
-            size={44}
-          />
-          <View>
-            <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}>
-              {actingPage?.name ?? user?.displayName}
-            </Text>
-            <View style={styles.privacyRow}>
-              {privacyOptions.map((opt) => (
-                <Pressable
-                  key={opt.value}
-                  style={[
-                    styles.privacyChip,
-                    {
-                      backgroundColor: privacy === opt.value ? c.primary : c.secondary,
-                    },
-                  ]}
-                  onPress={() => setPrivacy(opt.value)}
-                >
-                  <Ionicons
-                    name={opt.icon}
-                    size={12}
-                    color={privacy === opt.value ? "#fff" : c.mutedForeground}
-                  />
-                  <Text
-                    style={{
-                      color: privacy === opt.value ? "#fff" : c.mutedForeground,
-                      fontSize: 11,
-                      fontFamily: "Inter_500Medium",
-                    }}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1 }}
+      >
+        <ScrollView contentContainerStyle={{ padding: 16 }} keyboardShouldPersistTaps="handled">
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 }}>
+            <Avatar
+              uri={actingPage ? actingPage.avatarUrl : user?.avatarUrl}
+              name={actingPage?.name ?? user?.displayName}
+              size={44}
+            />
+            <View>
+              <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}>
+                {actingPage?.name ?? user?.displayName}
+              </Text>
+              <View style={styles.privacyRow}>
+                {privacyOptions.map((opt) => (
+                  <Pressable
+                    key={opt.value}
+                    style={[
+                      styles.privacyChip,
+                      {
+                        backgroundColor: privacy === opt.value ? c.primary : c.secondary,
+                      },
+                    ]}
+                    onPress={() => setPrivacy(opt.value)}
                   >
-                    {opt.label}
-                  </Text>
-                </Pressable>
-              ))}
+                    <Ionicons
+                      name={opt.icon}
+                      size={12}
+                      color={privacy === opt.value ? "#fff" : c.mutedForeground}
+                    />
+                    <Text
+                      style={{
+                        color: privacy === opt.value ? "#fff" : c.mutedForeground,
+                        fontSize: 11,
+                        fontFamily: "Inter_500Medium",
+                      }}
+                    >
+                      {opt.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
             </View>
           </View>
+
+          <TextInput
+            value={content}
+            onChangeText={setContent}
+            placeholder="What's on your mind?"
+            placeholderTextColor={c.mutedForeground}
+            underlineColorAndroid="transparent"
+            multiline
+            autoFocus
+            style={{ color: c.foreground, fontSize: 18, minHeight: 120, lineHeight: 24 }}
+          />
+
+          {assets.length > 0 && (
+            <View style={styles.mediaPreview}>
+              {assets.map((a, i) => (
+                <View key={i} style={styles.mediaThumb}>
+                  <Image source={{ uri: a.uri }} style={StyleSheet.absoluteFill} contentFit="cover" />
+                  <Pressable
+                    style={styles.removeMedia}
+                    onPress={() => setAssets((prev) => prev.filter((_, idx) => idx !== i))}
+                  >
+                    <Ionicons name="close" size={16} color="#fff" />
+                  </Pressable>
+                  {(a.type === "video") && (
+                    <View style={styles.videoTag}>
+                      <Ionicons name="videocam" size={14} color="#fff" />
+                    </View>
+                  )}
+                </View>
+              ))}
+            </View>
+          )}
+        </ScrollView>
+
+        <View style={[styles.toolbar, { borderTopColor: c.border }]}>
+          <Pressable style={styles.tool} onPress={pick}>
+            <Ionicons name="images" size={24} color="#31a24c" />
+            <Text style={[styles.toolLabel, { color: c.foreground }]}>Gallery</Text>
+          </Pressable>
+          <Pressable style={styles.tool} onPress={capture}>
+            <Ionicons name="camera" size={24} color="#1877f2" />
+            <Text style={[styles.toolLabel, { color: c.foreground }]}>Camera</Text>
+          </Pressable>
+          <Pressable style={styles.tool} onPress={() => setEmojiOpen(true)}>
+            <Ionicons name="happy" size={24} color="#f7b125" />
+            <Text style={[styles.toolLabel, { color: c.foreground }]}>Emoji</Text>
+          </Pressable>
         </View>
-
-        <TextInput
-          value={content}
-          onChangeText={setContent}
-          placeholder="What's on your mind?"
-          placeholderTextColor={c.mutedForeground}
-          underlineColorAndroid="transparent"
-          multiline
-          autoFocus
-          style={{ color: c.foreground, fontSize: 18, minHeight: 120, lineHeight: 24 }}
-        />
-
-        {assets.length > 0 && (
-          <View style={styles.mediaPreview}>
-            {assets.map((a, i) => (
-              <View key={i} style={styles.mediaThumb}>
-                <Image source={{ uri: a.uri }} style={StyleSheet.absoluteFill} contentFit="cover" />
-                <Pressable
-                  style={styles.removeMedia}
-                  onPress={() => setAssets((prev) => prev.filter((_, idx) => idx !== i))}
-                >
-                  <Ionicons name="close" size={16} color="#fff" />
-                </Pressable>
-                {(a.type === "video") && (
-                  <View style={styles.videoTag}>
-                    <Ionicons name="videocam" size={14} color="#fff" />
-                  </View>
-                )}
-              </View>
-            ))}
-          </View>
-        )}
-      </ScrollView>
-
-      <View style={[styles.toolbar, { borderTopColor: c.border }]}>
-        <Pressable style={styles.tool} onPress={pick}>
-          <Ionicons name="images" size={24} color="#31a24c" />
-          <Text style={[styles.toolLabel, { color: c.foreground }]}>Gallery</Text>
-        </Pressable>
-        <Pressable style={styles.tool} onPress={capture}>
-          <Ionicons name="camera" size={24} color="#1877f2" />
-          <Text style={[styles.toolLabel, { color: c.foreground }]}>Camera</Text>
-        </Pressable>
-        <Pressable style={styles.tool} onPress={() => setEmojiOpen(true)}>
-          <Ionicons name="happy" size={24} color="#f7b125" />
-          <Text style={[styles.toolLabel, { color: c.foreground }]}>Emoji</Text>
-        </Pressable>
-      </View>
+      </KeyboardAvoidingView>
 
       <EmojiPickerSheet
         visible={emojiOpen}

@@ -20,6 +20,7 @@
     "android": {
       "package": "com.himewo.chat",
       "versionCode": 2,
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#090D16"

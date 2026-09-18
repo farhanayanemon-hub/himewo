@@ -17,6 +17,7 @@ import {
   PhoneCall,
   CheckCircle2,
   ChevronRight,
+  ChevronLeft,
   Laptop,
   Layers,
   X,
@@ -278,6 +279,16 @@ export default function App() {
     store: "Play Store" | "App Store";
     directUrl: string;
   } | null>(null);
+  const [heroSlide, setHeroSlide] = useState<number>(0);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (isPaused) return;
+    const timer = setInterval(() => {
+      setHeroSlide((prev) => (prev + 1) % 3);
+    }, 5500);
+    return () => clearInterval(timer);
+  }, [isPaused]);
 
   useEffect(() => {
     fetch("https://workspaceapi-server-production-5e99.up.railway.app/api/app-landing/config")
@@ -376,49 +387,359 @@ export default function App() {
           {config.hero.subheadline}
         </p>
 
-        {/* Quick Tier Jump Navigation */}
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-          <a
-            href="#mobile"
-            className="clean-card px-6 py-3.5 rounded-2xl font-bold text-sm text-slate-900 flex items-center gap-3"
-          >
-            <div className="h-9 w-9 rounded-xl bg-purple-100 flex items-center justify-center text-purple-700">
-              <Smartphone className="h-5 w-5" />
-            </div>
-            <div className="text-left">
-              <div className="text-[10px] text-purple-600 font-semibold uppercase tracking-wider">Social App</div>
-              <div className="text-sm font-bold text-slate-900">HiMewo Mobile</div>
-            </div>
-            <ChevronRight className="h-4 w-4 text-slate-400 ml-1" />
-          </a>
+        {/* Interactive Hero Download & Launch Carousel */}
+        <div
+          className="mt-12 max-w-5xl mx-auto"
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+        >
+          {/* Segmented Platform Tabs */}
+          <div className="flex flex-wrap items-center justify-center gap-2 p-1.5 bg-purple-100/70 backdrop-blur-md rounded-2xl max-w-lg mx-auto mb-8 border border-purple-200 shadow-sm">
+            <button
+              onClick={() => setHeroSlide(0)}
+              className={`flex-1 min-w-[120px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                heroSlide === 0
+                  ? "bg-white text-purple-700 shadow-md shadow-purple-500/10 scale-[1.02]"
+                  : "text-slate-600 hover:text-purple-700 hover:bg-white/50"
+              }`}
+            >
+              <Smartphone className="h-4 w-4 text-purple-600" />
+              <span>Social App</span>
+            </button>
+            <button
+              onClick={() => setHeroSlide(1)}
+              className={`flex-1 min-w-[120px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                heroSlide === 1
+                  ? "bg-white text-fuchsia-700 shadow-md shadow-fuchsia-500/10 scale-[1.02]"
+                  : "text-slate-600 hover:text-fuchsia-700 hover:bg-white/50"
+              }`}
+            >
+              <MessageSquare className="h-4 w-4 text-fuchsia-600" />
+              <span>Chat Messenger</span>
+            </button>
+            <button
+              onClick={() => setHeroSlide(2)}
+              className={`flex-1 min-w-[120px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                heroSlide === 2
+                  ? "bg-white text-indigo-700 shadow-md shadow-indigo-500/10 scale-[1.02]"
+                  : "text-slate-600 hover:text-indigo-700 hover:bg-white/50"
+              }`}
+            >
+              <Globe className="h-4 w-4 text-indigo-600" />
+              <span>Web Platform</span>
+            </button>
+          </div>
 
-          <a
-            href="#chat"
-            className="clean-card px-6 py-3.5 rounded-2xl font-bold text-sm text-slate-900 flex items-center gap-3"
-          >
-            <div className="h-9 w-9 rounded-xl bg-fuchsia-100 flex items-center justify-center text-fuchsia-700">
-              <MessageSquare className="h-5 w-5" />
-            </div>
-            <div className="text-left">
-              <div className="text-[10px] text-fuchsia-600 font-semibold uppercase tracking-wider">Dedicated Chat</div>
-              <div className="text-sm font-bold text-slate-900">HiMewo Messenger</div>
-            </div>
-            <ChevronRight className="h-4 w-4 text-slate-400 ml-1" />
-          </a>
+          {/* Carousel Card Container */}
+          <div className="relative clean-glass-panel rounded-3xl p-6 sm:p-10 border-2 border-purple-200/80 shadow-2xl overflow-hidden text-left">
+            {/* Nav Arrows */}
+            <button
+              onClick={() => setHeroSlide((prev) => (prev - 1 + 3) % 3)}
+              className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/90 hover:bg-white border border-purple-200 shadow-lg text-slate-700 hover:text-purple-700 flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
+              aria-label="Previous platform"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              onClick={() => setHeroSlide((prev) => (prev + 1) % 3)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/90 hover:bg-white border border-purple-200 shadow-lg text-slate-700 hover:text-purple-700 flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer"
+              aria-label="Next platform"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
 
-          <a
-            href="#web"
-            className="clean-card px-6 py-3.5 rounded-2xl font-bold text-sm text-slate-900 flex items-center gap-3"
-          >
-            <div className="h-9 w-9 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-700">
-              <Globe className="h-5 w-5" />
+            {/* Slide 0: HiMewo Social Mobile App */}
+            {heroSlide === 0 && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center px-4 sm:px-8 py-2 animate-in fade-in duration-300">
+                <div className="lg:col-span-7 space-y-5">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100 text-purple-800 text-xs font-bold border border-purple-200">
+                    <Smartphone className="h-3.5 w-3.5 text-purple-600" />
+                    <span>HiMewo Social · v{config.mobileApp.version || "1.2.0"} (Ultra-Lite)</span>
+                  </div>
+                  <h3 className="font-['Outfit',sans-serif] text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                    {config.mobileApp.title || "HiMewo Social Mobile App"}
+                  </h3>
+                  <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
+                    {config.mobileApp.description || "The all-in-one social platform. Share stories with music, discover endless reels, buy & sell on marketplace, and grow your community."}
+                  </p>
+
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-purple-50 text-purple-700 text-xs font-semibold border border-purple-100">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-purple-600" /> 24h Stories & Reels
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-purple-50 text-purple-700 text-xs font-semibold border border-purple-100">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-purple-600" /> Marketplace Stalls
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-purple-50 text-purple-700 text-xs font-semibold border border-purple-100">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-purple-600" /> Fast & 29 MB APK
+                    </span>
+                  </div>
+
+                  {/* Direct Download Button */}
+                  <div className="pt-3 space-y-3">
+                    <a
+                      href={config.mobileApp.directUrl || "https://github.com/farhanayanemon-hub/himewo/releases/download/v1.2.0/himewo-social.apk"}
+                      download
+                      className="inline-flex items-center justify-center gap-3 w-full sm:w-auto purple-gradient purple-gradient-hover px-7 py-4 rounded-2xl font-bold text-white shadow-xl shadow-purple-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+                    >
+                      <Download className="h-5 w-5" />
+                      <div className="text-left">
+                        <div className="text-sm font-extrabold leading-tight">Download Social APK (Direct)</div>
+                        <div className="text-[11px] text-purple-100 font-medium">Verified Ultra-Lite APK · v{config.mobileApp.version || "1.2.0"} · 29 MB</div>
+                      </div>
+                    </a>
+
+                    {/* Secondary Stores */}
+                    <div className="flex flex-wrap items-center gap-3 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadClick(config.mobileApp.playStoreUrl, config.mobileApp.playStoreComingSoon, "HiMewo Social", "Play Store", config.mobileApp.directUrl)}
+                        className="px-4 py-2.5 rounded-xl border border-purple-200 bg-white hover:bg-purple-50/50 text-slate-700 text-xs font-semibold flex items-center gap-2 transition-all shadow-xs cursor-pointer"
+                      >
+                        <GooglePlayIcon className="h-4 w-4" />
+                        <span>Google Play</span>
+                        {config.mobileApp.playStoreComingSoon && <span className="text-[10px] text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded-full font-bold">Review</span>}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadClick(config.mobileApp.appStoreUrl, config.mobileApp.appStoreComingSoon, "HiMewo Social", "App Store", config.mobileApp.directUrl)}
+                        className="px-4 py-2.5 rounded-xl border border-purple-200 bg-white hover:bg-purple-50/50 text-slate-700 text-xs font-semibold flex items-center gap-2 transition-all shadow-xs cursor-pointer"
+                      >
+                        <AppleLogoIcon className="h-4 w-4 text-slate-900" />
+                        <span>App Store</span>
+                        {config.mobileApp.appStoreComingSoon && <span className="text-[10px] text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded-full font-bold">Review</span>}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Visual Preview */}
+                <div className="lg:col-span-5 flex justify-center">
+                  <div className="relative w-full max-w-[280px] rounded-3xl p-5 bg-gradient-to-b from-purple-100/60 to-purple-50/40 border border-purple-200/80 shadow-lg text-center space-y-4">
+                    <div className="w-16 h-16 mx-auto rounded-2xl purple-gradient p-0.5 shadow-md flex items-center justify-center">
+                      <div className="w-full h-full bg-slate-950 rounded-2xl flex items-center justify-center">
+                        <Smartphone className="h-8 w-8 text-white" />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-base font-bold text-slate-900">HiMewo Social for Android</div>
+                      <div className="text-xs text-purple-700 font-semibold mt-0.5">Package: com.himewo.app</div>
+                      <div className="text-xs text-slate-500 mt-2">Latest release packaged with optimized Hermes bytecode for instantaneous cold starts.</div>
+                    </div>
+                    <div className="p-3 bg-white rounded-xl border border-purple-100 text-xs text-slate-600 space-y-1 text-left">
+                      <div className="flex justify-between font-semibold text-slate-900">
+                        <span>Architecture:</span>
+                        <span className="text-purple-700">Universal ARM64 / x86</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>APK Size:</span>
+                        <span className="font-bold text-emerald-600">~29.4 MB</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Status:</span>
+                        <span className="text-emerald-600 font-bold">Ready to Install</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Slide 1: HiMewo Chat Messenger */}
+            {heroSlide === 1 && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center px-4 sm:px-8 py-2 animate-in fade-in duration-300">
+                <div className="lg:col-span-7 space-y-5">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-fuchsia-100 text-fuchsia-800 text-xs font-bold border border-fuchsia-200">
+                    <MessageSquare className="h-3.5 w-3.5 text-fuchsia-600" />
+                    <span>HiMewo Chat · v{config.chatApp.version || "1.2.0"} (Ultra-Lite)</span>
+                  </div>
+                  <h3 className="font-['Outfit',sans-serif] text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                    {config.chatApp.title || "HiMewo Chat Messenger"}
+                  </h3>
+                  <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
+                    {config.chatApp.description || "Fast, standalone messenger. Enjoy real-time WhatsApp-style delivered & seen receipts, crystal-clear voice notes, stickers, and HD calling."}
+                  </p>
+
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-fuchsia-50 text-fuchsia-700 text-xs font-semibold border border-fuchsia-100">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-fuchsia-600" /> Seen Receipts & Eye Icons
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-fuchsia-50 text-fuchsia-700 text-xs font-semibold border border-fuchsia-100">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-fuchsia-600" /> HD Voice & Video Calls
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-fuchsia-50 text-fuchsia-700 text-xs font-semibold border border-fuchsia-100">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-fuchsia-600" /> Fast & 28 MB APK
+                    </span>
+                  </div>
+
+                  {/* Direct Download Button */}
+                  <div className="pt-3 space-y-3">
+                    <a
+                      href={config.chatApp.directUrl || "https://github.com/farhanayanemon-hub/himewo/releases/download/v1.2.0/himewo-chat.apk"}
+                      download
+                      className="inline-flex items-center justify-center gap-3 w-full sm:w-auto bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700 px-7 py-4 rounded-2xl font-bold text-white shadow-xl shadow-fuchsia-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+                    >
+                      <Download className="h-5 w-5" />
+                      <div className="text-left">
+                        <div className="text-sm font-extrabold leading-tight">Download Chat APK (Direct)</div>
+                        <div className="text-[11px] text-fuchsia-100 font-medium">Verified Ultra-Lite APK · v{config.chatApp.version || "1.2.0"} · 28 MB</div>
+                      </div>
+                    </a>
+
+                    {/* Secondary Stores */}
+                    <div className="flex flex-wrap items-center gap-3 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadClick(config.chatApp.playStoreUrl, config.chatApp.playStoreComingSoon, "HiMewo Chat", "Play Store", config.chatApp.directUrl)}
+                        className="px-4 py-2.5 rounded-xl border border-fuchsia-200 bg-white hover:bg-fuchsia-50/50 text-slate-700 text-xs font-semibold flex items-center gap-2 transition-all shadow-xs cursor-pointer"
+                      >
+                        <GooglePlayIcon className="h-4 w-4" />
+                        <span>Google Play</span>
+                        {config.chatApp.playStoreComingSoon && <span className="text-[10px] text-fuchsia-600 bg-fuchsia-100 px-1.5 py-0.5 rounded-full font-bold">Review</span>}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadClick(config.chatApp.appStoreUrl, config.chatApp.appStoreComingSoon, "HiMewo Chat", "App Store", config.chatApp.directUrl)}
+                        className="px-4 py-2.5 rounded-xl border border-fuchsia-200 bg-white hover:bg-fuchsia-50/50 text-slate-700 text-xs font-semibold flex items-center gap-2 transition-all shadow-xs cursor-pointer"
+                      >
+                        <AppleLogoIcon className="h-4 w-4 text-slate-900" />
+                        <span>App Store</span>
+                        {config.chatApp.appStoreComingSoon && <span className="text-[10px] text-fuchsia-600 bg-fuchsia-100 px-1.5 py-0.5 rounded-full font-bold">Review</span>}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Visual Preview */}
+                <div className="lg:col-span-5 flex justify-center">
+                  <div className="relative w-full max-w-[280px] rounded-3xl p-5 bg-gradient-to-b from-fuchsia-100/60 to-purple-50/40 border border-fuchsia-200/80 shadow-lg text-center space-y-4">
+                    <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-fuchsia-600 to-purple-600 p-0.5 shadow-md flex items-center justify-center">
+                      <div className="w-full h-full bg-slate-950 rounded-2xl flex items-center justify-center">
+                        <MessageSquare className="h-8 w-8 text-white" />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-base font-bold text-slate-900">HiMewo Chat for Android</div>
+                      <div className="text-xs text-fuchsia-700 font-semibold mt-0.5">Package: com.himewo.chat</div>
+                      <div className="text-xs text-slate-500 mt-2">Equipped with real-time WebSockets, WebRTC calling and instant message receipt statuses.</div>
+                    </div>
+                    <div className="p-3 bg-white rounded-xl border border-fuchsia-100 text-xs text-slate-600 space-y-1 text-left">
+                      <div className="flex justify-between font-semibold text-slate-900">
+                        <span>Architecture:</span>
+                        <span className="text-fuchsia-700">Universal ARM64 / x86</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>APK Size:</span>
+                        <span className="font-bold text-emerald-600">~28.2 MB</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Status:</span>
+                        <span className="text-emerald-600 font-bold">Ready to Install</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Slide 2: HiMewo Web Platform */}
+            {heroSlide === 2 && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center px-4 sm:px-8 py-2 animate-in fade-in duration-300">
+                <div className="lg:col-span-7 space-y-5">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 text-indigo-800 text-xs font-bold border border-indigo-200">
+                    <Globe className="h-3.5 w-3.5 text-indigo-600" />
+                    <span>HiMewo Web Platform · Browser Access</span>
+                  </div>
+                  <h3 className="font-['Outfit',sans-serif] text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                    {config.webSection.title || "HiMewo Web Platform"}
+                  </h3>
+                  <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
+                    {config.webSection.description || "Full desktop social networking experience in your browser. Create stories, reels, posts, manage shop stalls, and chat without installing any software."}
+                  </p>
+
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-semibold border border-indigo-100">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-indigo-600" /> No Download Required
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-semibold border border-indigo-100">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-indigo-600" /> Desktop & Mobile Optimized
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-semibold border border-indigo-100">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-indigo-600" /> Complete Feature Set
+                    </span>
+                  </div>
+
+                  {/* Launch Web App Button */}
+                  <div className="pt-3 space-y-3">
+                    <a
+                      href={config.hero.webUrl || "https://himewo.com"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-3 w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 px-7 py-4 rounded-2xl font-bold text-white shadow-xl shadow-indigo-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+                    >
+                      <Globe className="h-5 w-5" />
+                      <div className="text-left">
+                        <div className="text-sm font-extrabold leading-tight">Launch Web App Now ↗</div>
+                        <div className="text-[11px] text-indigo-100 font-medium">himewo.com · Open in Browser</div>
+                      </div>
+                    </a>
+
+                    <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-slate-500">
+                      <span>✓ Chrome, Safari, Firefox, Edge</span>
+                      <span>·</span>
+                      <span>✓ Real-time Sync with Mobile</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Visual Preview */}
+                <div className="lg:col-span-5 flex justify-center">
+                  <div className="relative w-full max-w-[280px] rounded-3xl p-5 bg-gradient-to-b from-indigo-100/60 to-purple-50/40 border border-indigo-200/80 shadow-lg text-center space-y-4">
+                    <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 p-0.5 shadow-md flex items-center justify-center">
+                      <div className="w-full h-full bg-slate-950 rounded-2xl flex items-center justify-center">
+                        <Globe className="h-8 w-8 text-white" />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-base font-bold text-slate-900">Cloud Web Application</div>
+                      <div className="text-xs text-indigo-700 font-semibold mt-0.5">https://himewo.com</div>
+                      <div className="text-xs text-slate-500 mt-2">Progressive web app architecture with responsive layouts for Mac, Windows, Linux and iPad.</div>
+                    </div>
+                    <div className="p-3 bg-white rounded-xl border border-indigo-100 text-xs text-slate-600 space-y-1 text-left">
+                      <div className="flex justify-between font-semibold text-slate-900">
+                        <span>Platform:</span>
+                        <span className="text-indigo-700">Any Modern Browser</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Bandwidth:</span>
+                        <span className="font-bold text-emerald-600">Ultra-low Data</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Availability:</span>
+                        <span className="text-emerald-600 font-bold">100% Online</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Dots Indicator */}
+            <div className="flex items-center justify-center gap-2 pt-6">
+              {[0, 1, 2].map((idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setHeroSlide(idx)}
+                  className={`h-2.5 rounded-full transition-all cursor-pointer ${
+                    heroSlide === idx
+                      ? "w-8 bg-purple-600"
+                      : "w-2.5 bg-purple-200 hover:bg-purple-300"
+                  }`}
+                  aria-label={`Go to slide ${idx + 1}`}
+                />
+              ))}
             </div>
-            <div className="text-left">
-              <div className="text-[10px] text-indigo-600 font-semibold uppercase tracking-wider">Browser Version</div>
-              <div className="text-sm font-bold text-slate-900">Web Platform</div>
-            </div>
-            <ChevronRight className="h-4 w-4 text-slate-400 ml-1" />
-          </a>
+          </div>
         </div>
       </section>
 
@@ -1017,9 +1338,6 @@ export default function App() {
           </a>
           <a href="https://ads.himewo.com" className="hover:text-purple-600 transition-colors">
             Ads Manager
-          </a>
-          <a href="https://admin.himewo.com" className="hover:text-purple-600 transition-colors">
-            Admin Console
           </a>
           <a href="https://himewo.com/privacy" className="hover:text-purple-600 transition-colors">
             Privacy Policy

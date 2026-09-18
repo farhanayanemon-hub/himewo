@@ -256,8 +256,17 @@ export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) 
   );
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
+      <KeyboardAvoidingView
+        style={styles.backdrop}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
         <Pressable style={{ flex: 1 }} onPress={onClose} />
         <View style={[styles.sheet, { backgroundColor: c.background }]}>
           <View style={[styles.handle, { backgroundColor: c.border }]} />
@@ -325,10 +334,7 @@ export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) 
             />
           )}
 
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
-            keyboardVerticalOffset={10}
-          >
+          <View>
             {mentionQuery && (
               <MentionSuggestions
                 query={mentionQuery}
@@ -390,9 +396,9 @@ export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) 
                 />
               </Pressable>
             </View>
-          </KeyboardAvoidingView>
+          </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
 
       <EmojiPickerSheet
         visible={emojiOpen}

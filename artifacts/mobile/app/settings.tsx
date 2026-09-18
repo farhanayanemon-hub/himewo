@@ -1,4 +1,5 @@
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
   Text,
@@ -10,6 +11,7 @@ import { router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/lib/auth";
 import { useColors } from "@/hooks/useColors";
+import { useAppUpdate, UpdatePromptModal } from "@/lib/useAppUpdate";
 
 const SECTIONS: {
   href: Href;
@@ -58,6 +60,7 @@ const SECTIONS: {
 export default function SettingsScreen() {
   const c = useColors();
   const { user } = useAuth();
+  const update = useAppUpdate("social");
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
@@ -149,6 +152,51 @@ export default function SettingsScreen() {
             </Pressable>
           ))}
         </View>
+
+        <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border, marginTop: 16 }]}>
+          <Pressable
+            onPress={() => update.checkForUpdate(true)}
+            style={styles.row}
+          >
+            <View style={[styles.iconWrap, { backgroundColor: c.primary + "1A" }]}>
+              <Ionicons name="cloud-download-outline" size={20} color={c.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  color: c.foreground,
+                  fontFamily: "Inter_600SemiBold",
+                  fontSize: 15,
+                }}
+              >
+                Check for updates
+              </Text>
+              <Text
+                style={{
+                  color: c.mutedForeground,
+                  fontFamily: "Inter_400Regular",
+                  fontSize: 13,
+                  marginTop: 2,
+                }}
+              >
+                {update.loading ? "Checking for updates..." : `HiMewo Social v${update.currentVersion}`}
+              </Text>
+            </View>
+            {update.loading ? (
+              <ActivityIndicator size="small" color={c.primary} />
+            ) : (
+              <Ionicons name="chevron-forward" size={20} color={c.mutedForeground} />
+            )}
+          </Pressable>
+        </View>
+
+        <UpdatePromptModal
+          visible={update.modalVisible}
+          versionData={update.versionData}
+          currentVersion={update.currentVersion}
+          onUpdate={update.downloadAndInstall}
+          onDismiss={update.dismiss}
+        />
       </ScrollView>
     </SafeAreaView>
   );
