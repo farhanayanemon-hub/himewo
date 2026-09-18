@@ -83,6 +83,15 @@ export default function ChatThreadScreen() {
   const headerAvatar = isGroup ? conversation?.avatarUrl : peer?.avatarUrl;
   const online = !isGroup && peer ? isOnline(peer.id) : undefined;
 
+  const peerMember = conversation?.members.find((m) => m.user.id !== user?.id);
+  const [peerLastReadId, setPeerLastReadId] = useState<number>(() => peerMember?.lastReadMessageId ?? 0);
+
+  useEffect(() => {
+    if (peerMember?.lastReadMessageId != null) {
+      setPeerLastReadId((prev) => Math.max(prev, peerMember.lastReadMessageId ?? 0));
+    }
+  }, [peerMember?.lastReadMessageId]);
+
   const { data: msgData, isLoading } = useListMessages(convId);
   const messages = useMemo(() => {
     const list = (msgData ?? []) as Message[];
@@ -116,7 +125,7 @@ export default function ChatThreadScreen() {
   const isTypingRef = useRef(false);
 
   const markConversationRead = useCallback(() => {
-    const latest = messages[0];
+    const latest = messages.find((m) => m.id > 0);
     if (!latest) return;
     markRead.mutate(
       { id: convId, data: { messageId: latest.id } },
@@ -138,8 +147,19 @@ export default function ChatThreadScreen() {
 
   useEffect(() => {
     const unsub = subscribe((event: RealtimeEvent) => {
-      if (
-        event.type === "message" ||
+      if (event.type === "message") {
+        const e = event as { conversationId: number; message?: Message };
+        if (e.conversationId === convId && e.message) {
+          qc.setQueryData<Message[]>(getListMessagesQueryKey(convId), (old = []) => {
+            if (old.some((m) => m.id === e.message!.id)) return old;
+            return [e.message!, ...old];
+          });
+          markConversationRead();
+        } else if (e.conversationId === convId) {
+          qc.invalidateQueries({ queryKey: getListMessagesQueryKey(convId) });
+        }
+        qc.invalidateQueries({ queryKey: getListConversationsQueryKey() });
+      } else if (
         event.type === "message_updated" ||
         event.type === "message_deleted"
       ) {
@@ -147,6 +167,11 @@ export default function ChatThreadScreen() {
         if (e.conversationId === convId) {
           qc.invalidateQueries({ queryKey: getListMessagesQueryKey(convId) });
           qc.invalidateQueries({ queryKey: getListConversationsQueryKey() });
+        }
+      } else if (event.type === "seen") {
+        const e = event as { conversationId: number; messageId: number; userId: string };
+        if (e.conversationId === convId && e.userId !== user?.id) {
+          setPeerLastReadId((prev) => Math.max(prev, Number(e.messageId) || 0));
         }
       } else if (event.type === "typing") {
         const e = event as { conversationId: number; userId: string };
@@ -166,7 +191,7 @@ export default function ChatThreadScreen() {
       unsub();
       if (peerTypingTimeout.current) clearTimeout(peerTypingTimeout.current);
     };
-  }, [subscribe, convId, qc, user?.id]);
+  }, [subscribe, convId, qc, user?.id, markConversationRead]);
 
   const onChangeText = useCallback(
     (value: string) => {
@@ -199,33 +224,89 @@ export default function ChatThreadScreen() {
 
   const sendText = async () => {
     const content = text.trim();
-    if (!content || sending) return;
+    if (!content) return;
+
+    // Instant local clear & typing stop (0ms response)
     setText("");
     stopTyping();
-    setSending(true);
-    try {
-      if (editing) {
-        const target = editing;
-        setEditing(null);
+
+    if (editing) {
+      const target = editing;
+      setEditing(null);
+      try {
         await editMessage.mutateAsync({ id: target.id, data: { content } });
-      } else {
-        const reply = replyTo;
-        setReplyTo(null);
-        await sendMessage.mutateAsync({
-          id: convId,
-          data: {
-            content,
-            type: MessageInputType.text,
-            ...(reply ? { replyToId: reply.id } : {}),
-          },
-        });
+        afterSend();
+      } catch {
+        setText(content);
+        Alert.alert("Error", "Could not edit message. Please try again.");
       }
-      afterSend();
+      return;
+    }
+
+    const reply = replyTo;
+    setReplyTo(null);
+
+    // Optimistic temporary message placed instantly on screen
+    const tempId = -Date.now();
+    const optimisticMsg: Message = {
+      id: tempId,
+      conversationId: convId,
+      sender: user!,
+      content,
+      type: MessageInputType.text,
+      replyToId: reply ? reply.id : undefined,
+      createdAt: new Date().toISOString(),
+      attachments: [],
+      reactions: [],
+    };
+
+    // 1. Immediately insert into messages cache (instant 0ms render)
+    qc.setQueryData<Message[]>(getListMessagesQueryKey(convId), (old = []) => [
+      optimisticMsg,
+      ...old,
+    ]);
+
+    // 2. Immediately update conversation list preview
+    qc.setQueryData<Conversation[]>(getListConversationsQueryKey(), (old = []) => {
+      if (!Array.isArray(old)) return old;
+      return old.map((conv) => {
+        if (conv.id === convId) {
+          return {
+            ...conv,
+            lastMessage: optimisticMsg,
+            lastMessageAt: optimisticMsg.createdAt,
+          };
+        }
+        return conv;
+      });
+    });
+
+    // 3. Send to server in the background
+    try {
+      const sent = await sendMessage.mutateAsync({
+        id: convId,
+        data: {
+          content,
+          type: MessageInputType.text,
+          ...(reply ? { replyToId: reply.id } : {}),
+        },
+      });
+
+      // Replace optimistic message with confirmed server message
+      qc.setQueryData<Message[]>(getListMessagesQueryKey(convId), (old = []) => {
+        if (!Array.isArray(old)) return [sent as Message];
+        return old.map((m) => (m.id === tempId ? (sent as Message) : m));
+      });
+
+      qc.invalidateQueries({ queryKey: getListConversationsQueryKey() });
     } catch {
+      // If network fails, roll back optimistic message and notify
+      qc.setQueryData<Message[]>(getListMessagesQueryKey(convId), (old = []) => {
+        if (!Array.isArray(old)) return [];
+        return old.filter((m) => m.id !== tempId);
+      });
       setText(content);
-      Alert.alert("Error", "Could not send your message. Please try again.");
-    } finally {
-      setSending(false);
+      Alert.alert("Failed", "Could not send message. Please check your connection.");
     }
   };
 
@@ -382,7 +463,7 @@ export default function ChatThreadScreen() {
     };
   }, []);
 
-  const canSend = text.trim().length > 0 && !sending;
+  const canSend = text.trim().length > 0;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top", "bottom"]}>
@@ -444,6 +525,12 @@ export default function ChatThreadScreen() {
                 showAvatar={isGroup}
                 replySource={
                   item.replyToId ? messageById.get(item.replyToId) : undefined
+                }
+                isSending={item.id < 0}
+                isSeen={!isGroup && peerLastReadId >= item.id && item.id > 0}
+                isDelivered={
+                  !isGroup &&
+                  (online === true || (peerLastReadId > 0 && item.id > 0))
                 }
                 onLongPress={() => {
                   if (!item.deletedAt) setActionsFor(item);
@@ -557,11 +644,7 @@ export default function ChatThreadScreen() {
                 end={{ x: 1, y: 1 }}
                 style={styles.sendBtnFill}
               >
-                {sending ? (
-                  <ActivityIndicator color="#fff" size="small" />
-                ) : (
-                  <Ionicons name="send" size={18} color="#fff" />
-                )}
+                <Ionicons name="send" size={18} color="#fff" />
               </LinearGradient>
             </Touchable>
           ) : (
@@ -794,12 +877,18 @@ function MessageBubble({
   mine,
   showAvatar,
   replySource,
+  isSending,
+  isSeen,
+  isDelivered,
   onLongPress,
 }: {
   message: Message;
   mine: boolean;
   showAvatar: boolean;
   replySource?: Message;
+  isSending?: boolean;
+  isSeen?: boolean;
+  isDelivered?: boolean;
   onLongPress?: () => void;
 }) {
   const c = useColors();
@@ -940,15 +1029,39 @@ function MessageBubble({
               </Text>
             </View>
           ))}
-        <Text
-          style={[
-            styles.time,
-            { color: c.mutedForeground, textAlign: mine ? "right" : "left" },
-          ]}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: mine ? "flex-end" : "flex-start",
+            gap: 4,
+            marginTop: 2,
+            marginHorizontal: 4,
+          }}
         >
-          {formatClock(message.createdAt)}
-          {message.editedAt ? " · Edited" : ""}
-        </Text>
+          <Text
+            style={[
+              styles.time,
+              { color: c.mutedForeground, marginTop: 0, marginHorizontal: 0 },
+            ]}
+          >
+            {formatClock(message.createdAt)}
+            {message.editedAt ? " · Edited" : ""}
+          </Text>
+          {mine && (
+            <View style={{ justifyContent: "center" }}>
+              {isSending ? (
+                <Ionicons name="time-outline" size={13} color={c.mutedForeground} />
+              ) : isSeen ? (
+                <Ionicons name="checkmark-done" size={16} color="#0084ff" />
+              ) : isDelivered ? (
+                <Ionicons name="checkmark-done" size={16} color={c.mutedForeground} />
+              ) : (
+                <Ionicons name="checkmark" size={15} color={c.mutedForeground} />
+              )}
+            </View>
+          )}
+        </View>
       </View>
     </Pressable>
   );

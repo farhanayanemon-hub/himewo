@@ -37,6 +37,7 @@ import {
   type Conversation,
   type Profile,
   type FriendRequest,
+  type Message,
 } from "@workspace/api-client-react";
 import { Avatar } from "@/components/Avatar";
 import { ActiveRow } from "@/components/ActiveRow";
@@ -87,6 +88,19 @@ const ConversationRow = React.memo(function ConversationRow({
     : "No messages yet";
   const mine = last && last.sender.id === myId;
   const unread = item.unreadCount > 0 || item.markedUnread;
+
+  const peerMember = !isGroup ? item.members.find((m) => m.user.id !== myId) : undefined;
+  const isLastSeen = !isGroup && !!(
+    mine &&
+    last &&
+    peerMember?.lastReadMessageId != null &&
+    peerMember.lastReadMessageId >= last.id
+  );
+  const isDelivered = !isGroup && !!(
+    mine &&
+    last &&
+    (online || (peerMember?.lastReadMessageId != null && peerMember.lastReadMessageId > 0))
+  );
 
   return (
     <Touchable
@@ -142,19 +156,56 @@ const ConversationRow = React.memo(function ConversationRow({
         </View>
 
         <View style={styles.rowBottom}>
-          <Text
-            numberOfLines={1}
-            style={{
-              flex: 1,
-              color: unread ? c.foreground : c.mutedForeground,
-              fontFamily: unread ? "Inter_600SemiBold" : "Inter_400Regular",
-              fontSize: fs(14),
-            }}
-          >
-            {mine ? "You: " : ""}
-            {preview}
-          </Text>
-          {unread ? (
+          <View style={{ flex: 1, flexDirection: "row", alignItems: "center", marginRight: 6 }}>
+            {mine && last && (
+              <View style={{ marginRight: 4, justifyContent: "center" }}>
+                {isLastSeen ? (
+                  <Ionicons name="checkmark-done" size={15} color="#0084ff" />
+                ) : isDelivered ? (
+                  <Ionicons name="checkmark-done" size={15} color={c.mutedForeground} />
+                ) : (
+                  <Ionicons name="checkmark" size={14} color={c.mutedForeground} />
+                )}
+              </View>
+            )}
+            <Text
+              numberOfLines={1}
+              style={{
+                flex: 1,
+                color: unread ? c.foreground : c.mutedForeground,
+                fontFamily: unread ? "Inter_600SemiBold" : "Inter_400Regular",
+                fontSize: fs(14),
+              }}
+            >
+              {mine ? "You: " : ""}
+              {preview}
+            </Text>
+          </View>
+
+          {isLastSeen ? (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 3,
+                paddingHorizontal: 7,
+                paddingVertical: 3,
+                borderRadius: 12,
+                backgroundColor: c.primary + "18",
+              }}
+            >
+              <Ionicons name="eye" size={13} color={c.primary} />
+              <Text
+                style={{
+                  fontSize: fs(11),
+                  color: c.primary,
+                  fontFamily: "Inter_600SemiBold",
+                }}
+              >
+                Seen
+              </Text>
+            </View>
+          ) : unread ? (
             item.unreadCount > 1 ? (
               <View style={[styles.badge, { backgroundColor: c.primary }]}>
                 <Text style={styles.badgeText}>
@@ -214,16 +265,62 @@ export default function ConversationsScreen() {
 
   useEffect(() => {
     const unsub = subscribe((event) => {
-      if (
-        event.type === "message" ||
-        event.type === "message_deleted" ||
-        event.type === "seen"
-      ) {
+      if (event.type === "seen") {
+        const e = event as { conversationId: number; messageId: number; userId: string };
+        qc.setQueryData<Conversation[]>(getListConversationsQueryKey(), (old = []) => {
+          if (!Array.isArray(old)) return old;
+          return old.map((c) => {
+            if (c.id === e.conversationId) {
+              return {
+                ...c,
+                members: c.members.map((m) =>
+                  m.user.id === e.userId
+                    ? {
+                        ...m,
+                        lastReadMessageId: Math.max(
+                          m.lastReadMessageId ?? 0,
+                          Number(e.messageId) || 0,
+                        ),
+                      }
+                    : m,
+                ),
+              };
+            }
+            return c;
+          });
+        });
+      } else if (event.type === "message") {
+        const e = event as { conversationId: number; message?: Message };
+        if (e.message) {
+          qc.setQueryData<Conversation[]>(getListConversationsQueryKey(), (old = []) => {
+            if (!Array.isArray(old)) return old;
+            const exists = old.some((c) => c.id === e.conversationId);
+            if (!exists) {
+              qc.invalidateQueries({ queryKey: getListConversationsQueryKey() });
+              return old;
+            }
+            return old.map((c) => {
+              if (c.id === e.conversationId) {
+                return {
+                  ...c,
+                  lastMessage: e.message,
+                  lastMessageAt: e.message!.createdAt,
+                  unreadCount:
+                    c.unreadCount + (e.message!.sender.id === user?.id ? 0 : 1),
+                };
+              }
+              return c;
+            });
+          });
+        } else {
+          qc.invalidateQueries({ queryKey: getListConversationsQueryKey() });
+        }
+      } else if (event.type === "message_deleted") {
         qc.invalidateQueries({ queryKey: getListConversationsQueryKey() });
       }
     });
     return unsub;
-  }, [subscribe, qc]);
+  }, [subscribe, qc, user?.id]);
 
   const renderItem = useCallback(
     ({ item }: { item: Conversation }) => {
