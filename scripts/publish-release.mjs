@@ -2,6 +2,14 @@ import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
 
+if (!process.env.GITHUB_TOKEN && fs.existsSync(".env")) {
+  const envContent = fs.readFileSync(".env", "utf8");
+  for (const line of envContent.split("\n")) {
+    const m = line.match(/^GITHUB_TOKEN=(.*)$/);
+    if (m) process.env.GITHUB_TOKEN = m[1].trim();
+  }
+}
+
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN || process.env.RELEASE_GITHUB_TOKEN;
 const REPO = "farhanayanemon-hub/himewo";
 

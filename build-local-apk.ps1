@@ -1,6 +1,6 @@
 param(
-  [ValidateSet("chat", "social", "both")]
-  [string]$App = "chat",
+  [ValidateSet("app", "social", "chat", "both")]
+  [string]$App = "app",
   [switch]$Publish
 )
 
@@ -46,7 +46,7 @@ function Build-TargetApp([string]$target) {
     $appDir = "$repoRoot\artifacts\mobile"
     $ksFile = "$repoRoot\social-release.keystore"
     $ksJsonFile = "$repoRoot\social-release.keystore.json"
-    $outName = "himewo-social.apk"
+    $outName = "himewo.apk"
     $pkgName = "@workspace/mobile"
   }
 
@@ -101,6 +101,12 @@ function Build-TargetApp([string]$target) {
   $apkSize = [math]::Round(((Get-Item $destApk).Length / 1MB), 2)
   Write-Host "[SUCCESS] $outName generated at $destApk ($apkSize MB)" -ForegroundColor Green
 
+  if ($target -eq "app" -or $target -eq "social") {
+    $socialCopy = "$repoRoot\downloads\himewo-social.apk"
+    Copy-Item $destApk $socialCopy -Force
+    Write-Host "[OK] Mirrored $destApk -> $socialCopy for backwards compatibility." -ForegroundColor Green
+  }
+
   if ($Publish) {
     Write-Host "`n>>> [5/5] Publishing $outName to GitHub Releases..." -ForegroundColor Yellow
     Set-Location $repoRoot
@@ -110,14 +116,17 @@ function Build-TargetApp([string]$target) {
       }
     }
     node scripts/publish-release.mjs $destApk $outName "v1.2.0"
+    if ($target -eq "app" -or $target -eq "social") {
+      node scripts/publish-release.mjs "$repoRoot\downloads\himewo-social.apk" "himewo-social.apk" "v1.2.0"
+    }
   }
 }
 
 if ($App -eq "chat" -or $App -eq "both") {
   Build-TargetApp "chat"
 }
-if ($App -eq "social" -or $App -eq "both") {
-  Build-TargetApp "social"
+if ($App -eq "app" -or $App -eq "social" -or $App -eq "both") {
+  Build-TargetApp "app"
 }
 
 Set-Location $repoRoot

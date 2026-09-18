@@ -103,10 +103,25 @@ export default function ConversationsScreen() {
                   ? "Photo"
                   : last.type === "video"
                     ? "Video"
-                    : "Attachment"
+                    : last.type === "audio"
+                      ? "🎤 Voice message"
+                      : "Attachment"
               : "No messages yet";
             const mine = last && last.sender.id === user?.id;
             const unread = item.unreadCount > 0;
+
+            const peerMember = !isGroup ? item.members.find((m) => m.user.id !== user?.id) : undefined;
+            const isLastSeen = !isGroup && !!(
+              mine &&
+              last &&
+              peerMember?.lastReadMessageId != null &&
+              peerMember.lastReadMessageId >= last.id
+            );
+            const isDelivered = !isGroup && !!(
+              mine &&
+              last &&
+              (online || (peerMember?.lastReadMessageId != null && peerMember.lastReadMessageId > 0))
+            );
 
             return (
               <Pressable
@@ -130,25 +145,52 @@ export default function ConversationsScreen() {
                     </Text>
                   </View>
                   <View style={styles.rowBottom}>
-                    <Text
-                      numberOfLines={1}
-                      style={{
-                        flex: 1,
-                        color: unread ? c.foreground : c.mutedForeground,
-                        fontFamily: unread ? "Inter_600SemiBold" : "Inter_400Regular",
-                        fontSize: 14,
-                      }}
-                    >
-                      {mine ? "You: " : ""}
-                      {preview}
-                    </Text>
-                    {unread && (
+                    <View style={{ flex: 1, flexDirection: "row", alignItems: "center", marginRight: 6 }}>
+                      {mine && last && (
+                        <View style={{ marginRight: 4, justifyContent: "center" }}>
+                          {isLastSeen ? (
+                            <Ionicons name="checkmark-done" size={15} color={c.primary} />
+                          ) : isDelivered ? (
+                            <Ionicons name="checkmark-done" size={15} color={c.mutedForeground} />
+                          ) : (
+                            <Ionicons name="checkmark" size={14} color={c.mutedForeground} />
+                          )}
+                        </View>
+                      )}
+                      <Text
+                        numberOfLines={1}
+                        style={{
+                          flex: 1,
+                          color: unread ? c.foreground : c.mutedForeground,
+                          fontFamily: unread ? "Inter_600SemiBold" : "Inter_400Regular",
+                          fontSize: 14,
+                        }}
+                      >
+                        {mine ? "You: " : ""}
+                        {preview}
+                      </Text>
+                    </View>
+
+                    {isLastSeen ? (
+                      <View
+                        style={{
+                          width: 22,
+                          height: 22,
+                          borderRadius: 11,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor: c.primary + "18",
+                        }}
+                      >
+                        <Ionicons name="eye" size={13} color={c.primary} />
+                      </View>
+                    ) : unread ? (
                       <View style={[styles.badge, { backgroundColor: c.primary }]}>
                         <Text style={styles.badgeText}>
                           {item.unreadCount > 99 ? "99+" : item.unreadCount}
                         </Text>
                       </View>
-                    )}
+                    ) : null}
                   </View>
                 </View>
               </Pressable>

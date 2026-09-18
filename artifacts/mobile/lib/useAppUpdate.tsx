@@ -17,6 +17,7 @@ export interface AppVersionData {
   latestVersion: string;
   latestVersionCode: number;
   releaseNotes: string;
+  apkUrl?: string;
   socialApkUrl: string;
   chatApkUrl: string;
 }
@@ -99,11 +100,12 @@ export function useAppUpdate(appType: "social" | "chat" = "social") {
 
   const downloadAndInstall = async () => {
     const url =
-      appType === "social"
+      versionData?.apkUrl ||
+      (appType === "social"
         ? versionData?.socialApkUrl ||
-          "https://github.com/farhanayanemon-hub/himewo/releases/download/v1.2.0/himewo-social.apk"
+          "https://github.com/farhanayanemon-hub/himewo/releases/download/v1.2.0/himewo.apk"
         : versionData?.chatApkUrl ||
-          "https://github.com/farhanayanemon-hub/himewo/releases/download/v1.2.0/himewo-chat.apk";
+          "https://github.com/farhanayanemon-hub/himewo/releases/download/v1.2.0/himewo-chat.apk");
 
     setModalVisible(false);
     try {

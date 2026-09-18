@@ -1,8 +1,8 @@
 /**
  * Soft-3D elevation tokens for the HiMewo mobile app.
  *
- * Gives elevated surfaces (cards, FABs, badges) a gentle, clean depth —
- * warm-tinted to sit naturally on the orange palette. Returns a
+ * Gives elevated surfaces (headers, cards, FABs, badges, story rings) a gentle,
+ * clean depth — warm-tinted to sit naturally on the orange palette. Returns a
  * platform-correct style: a `boxShadow` string on web (the live preview) and
  * native `shadow*` + `elevation` on iOS/Android.
  */

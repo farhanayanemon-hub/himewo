@@ -32,23 +32,23 @@ export const DEFAULT_APP_LANDING_CONFIG = {
     ]
   },
   mobileApp: {
-    title: "HiMewo Social App",
-    tagline: "The full social experience in your pocket.",
-    description: "Stay connected with friends and family wherever you go. Share reels, explore creator feeds, buy & sell on shop stalls, and receive instant push notifications.",
+    title: "HiMewo Mobile App",
+    tagline: "The all-in-one social & messaging app in your pocket.",
+    description: "Stay connected with friends and family wherever you go. Watch reels, share 24h stories, explore feeds, buy & sell on shop stalls, and chat instantly with voice notes and seen receipts.",
     version: "v1.2.0 (Latest)",
     features: [
-      "High quality video reels & stories",
-      "Audio & video calling with friends",
-      "Offline caching & lightning fast performance",
-      "Full privacy controls & 2FA security"
+      "High quality video reels & 24h stories",
+      "Real-time chat, voice notes & seen receipts",
+      "Digital marketplace stalls & creator hub",
+      "Full privacy controls & ultra-fast performance"
     ],
-    directUrl: "https://github.com/farhanayanemon-hub/himewo/releases/download/v1.2.0/himewo-social.apk",
+    directUrl: "https://github.com/farhanayanemon-hub/himewo/releases/download/v1.2.0/himewo.apk",
     directEnabled: true,
     directButtonText: "Direct APK Download",
-    playStoreUrl: "https://play.google.com/store/apps/details?id=com.himewo.social",
+    playStoreUrl: "https://play.google.com/store/apps/details?id=com.himewo.app",
     playStoreComingSoon: true,
     playStoreEnabled: true,
-    appStoreUrl: "https://apps.apple.com/app/himewo-social/id123456789",
+    appStoreUrl: "https://apps.apple.com/app/himewo/id123456789",
     appStoreComingSoon: true,
     appStoreEnabled: true,
   },
@@ -179,7 +179,8 @@ router.get("/app/version", async (_req, res): Promise<void> => {
     res.json({
       latestVersion: cfg.mobileApp?.version?.split(" ")[0] || "1.2.0",
       latestVersionCode: 2,
-      releaseNotes: "Instant message sending, WhatsApp status ticks, seen eye badge and performance upgrades.",
+      releaseNotes: "HiMewo All-in-One: Feed, Stories, Reels, Marketplace, and Instant Messaging in one unified app!",
+      apkUrl: cfg.mobileApp?.directUrl || DEFAULT_APP_LANDING_CONFIG.mobileApp.directUrl,
       socialApkUrl: cfg.mobileApp?.directUrl || DEFAULT_APP_LANDING_CONFIG.mobileApp.directUrl,
       chatApkUrl: cfg.chatApp?.directUrl || DEFAULT_APP_LANDING_CONFIG.chatApp.directUrl,
     });
@@ -187,7 +188,8 @@ router.get("/app/version", async (_req, res): Promise<void> => {
     res.json({
       latestVersion: "1.2.0",
       latestVersionCode: 2,
-      releaseNotes: "Instant message sending, WhatsApp status ticks, seen eye badge and performance upgrades.",
+      releaseNotes: "HiMewo All-in-One: Feed, Stories, Reels, Marketplace, and Instant Messaging in one unified app!",
+      apkUrl: DEFAULT_APP_LANDING_CONFIG.mobileApp.directUrl,
       socialApkUrl: DEFAULT_APP_LANDING_CONFIG.mobileApp.directUrl,
       chatApkUrl: DEFAULT_APP_LANDING_CONFIG.chatApp.directUrl,
     });

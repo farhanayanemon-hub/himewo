@@ -22,6 +22,7 @@ import {
   useGetFollowedShopShowcase,
   useServeAds,
   useRecordAdImpression,
+  useListConversations,
   type Post,
   type ServedAd,
 } from "@workspace/api-client-react";
@@ -54,6 +55,12 @@ export default function HomeScreen() {
   const { actingPage } = useActingPage();
   const [activePost, setActivePost] = useState<number | null>(null);
   const [sharePostId, setSharePostId] = useState<number | null>(null);
+
+  const { data: convsData } = useListConversations();
+  const unreadMsgCount = (convsData ?? []).reduce(
+    (acc: number, conv: any) => acc + (conv.unreadCount || 0),
+    0,
+  );
 
   const {
     data,
@@ -166,10 +173,30 @@ export default function HomeScreen() {
             <Ionicons name="search" size={20} color={c.foreground} />
           </Pressable>
           <Pressable
-            style={[styles.iconBtn, { backgroundColor: c.secondary }]}
+            style={[styles.iconBtn, { backgroundColor: c.secondary, position: "relative" }]}
             onPress={() => router.push("/messages")}
           >
             <Ionicons name="chatbubbles" size={20} color={c.foreground} />
+            {unreadMsgCount > 0 ? (
+              <View
+                style={{
+                  position: "absolute",
+                  top: -2,
+                  right: -2,
+                  minWidth: 16,
+                  height: 16,
+                  borderRadius: 8,
+                  backgroundColor: c.destructive || "#ef4444",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  paddingHorizontal: 3,
+                }}
+              >
+                <Text style={{ color: "#fff", fontSize: 10, fontWeight: "bold" }}>
+                  {unreadMsgCount > 99 ? "99+" : unreadMsgCount}
+                </Text>
+              </View>
+            ) : null}
           </Pressable>
         </View>
       </View>
