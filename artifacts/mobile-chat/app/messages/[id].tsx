@@ -1053,7 +1053,7 @@ function MessageBubble({
               {isSending ? (
                 <Ionicons name="time-outline" size={13} color={c.mutedForeground} />
               ) : isSeen ? (
-                <Ionicons name="checkmark-done" size={16} color="#0084ff" />
+                <Ionicons name="checkmark-done" size={16} color={c.primary} />
               ) : isDelivered ? (
                 <Ionicons name="checkmark-done" size={16} color={c.mutedForeground} />
               ) : (

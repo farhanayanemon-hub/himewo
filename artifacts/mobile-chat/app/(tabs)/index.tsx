@@ -160,7 +160,7 @@ const ConversationRow = React.memo(function ConversationRow({
             {mine && last && (
               <View style={{ marginRight: 4, justifyContent: "center" }}>
                 {isLastSeen ? (
-                  <Ionicons name="checkmark-done" size={15} color="#0084ff" />
+                  <Ionicons name="checkmark-done" size={15} color={c.primary} />
                 ) : isDelivered ? (
                   <Ionicons name="checkmark-done" size={15} color={c.mutedForeground} />
                 ) : (
@@ -185,25 +185,15 @@ const ConversationRow = React.memo(function ConversationRow({
           {isLastSeen ? (
             <View
               style={{
-                flexDirection: "row",
+                width: 22,
+                height: 22,
+                borderRadius: 11,
                 alignItems: "center",
-                gap: 3,
-                paddingHorizontal: 7,
-                paddingVertical: 3,
-                borderRadius: 12,
+                justifyContent: "center",
                 backgroundColor: c.primary + "18",
               }}
             >
               <Ionicons name="eye" size={13} color={c.primary} />
-              <Text
-                style={{
-                  fontSize: fs(11),
-                  color: c.primary,
-                  fontFamily: "Inter_600SemiBold",
-                }}
-              >
-                Seen
-              </Text>
             </View>
           ) : unread ? (
             item.unreadCount > 1 ? (
