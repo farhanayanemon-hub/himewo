@@ -11,7 +11,7 @@ import {
   View,
   StyleSheet,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -39,6 +39,7 @@ import { useCall } from "@/components/CallProvider";
 import { useColors } from "@/hooks/useColors";
 import { formatClock } from "@/lib/format";
 import { uploadMedia, UploadUnavailableError, type PickedAsset } from "@/lib/upload";
+import { useChatPreferences } from "@/lib/chatPreferences";
 
 function peerOf(conv: Conversation | undefined, myId?: string): Profile | undefined {
   if (!conv) return undefined;
@@ -51,6 +52,8 @@ export default function ChatThreadScreen() {
   const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const convId = Number(id);
+  const insets = useSafeAreaInsets();
+  const { readReceipts } = useChatPreferences();
   const { isOnline, subscribe, sendTyping, sendSeen } = useRealtime();
   const { startCall } = useCall();
 
@@ -95,8 +98,10 @@ export default function ChatThreadScreen() {
         },
       },
     );
-    sendSeen(convId, latest.id);
-  }, [convId, messages, markRead, qc, sendSeen]);
+    if (readReceipts) {
+      sendSeen(convId, latest.id);
+    }
+  }, [convId, messages, markRead, qc, sendSeen, readReceipts]);
 
   useFocusEffect(
     useCallback(() => {
@@ -275,29 +280,40 @@ export default function ChatThreadScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
-        {isLoading ? (
-          <ActivityIndicator color={c.primary} style={{ marginTop: 40 }} />
-        ) : (
-          <FlatList
-            data={messages}
-            inverted
-            keyExtractor={(item) => String(item.id)}
-            contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 12 }}
-            keyboardShouldPersistTaps="handled"
-            renderItem={({ item }) => (
-              <MessageBubble message={item} mine={item.sender.id === user?.id} showAvatar={isGroup} />
-            )}
-            ListEmptyComponent={
-              <View style={{ alignItems: "center", marginTop: 60, transform: [{ scaleY: -1 }] }}>
-                <Text style={{ color: c.mutedForeground }}>
-                  No messages yet. Say hello!
-                </Text>
-              </View>
-            }
-          />
-        )}
+        <View style={{ flex: 1, justifyContent: isLoading ? "center" : undefined }}>
+          {isLoading ? (
+            <ActivityIndicator color={c.primary} size="large" />
+          ) : (
+            <FlatList
+              data={messages}
+              inverted
+              keyExtractor={(item) => String(item.id)}
+              contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 12 }}
+              keyboardShouldPersistTaps="handled"
+              renderItem={({ item }) => (
+                <MessageBubble message={item} mine={item.sender.id === user?.id} showAvatar={isGroup} />
+              )}
+              ListEmptyComponent={
+                <View style={{ alignItems: "center", marginTop: 60, transform: [{ scaleY: -1 }] }}>
+                  <Text style={{ color: c.mutedForeground }}>
+                    No messages yet. Say hello!
+                  </Text>
+                </View>
+              }
+            />
+          )}
+        </View>
 
-        <View style={[styles.composer, { backgroundColor: c.card, borderTopColor: c.border }]}>
+        <View
+          style={[
+            styles.composer,
+            {
+              backgroundColor: c.card,
+              borderTopColor: c.border,
+              paddingBottom: Math.max(insets.bottom, 10),
+            },
+          ]}
+        >
           <Pressable onPress={attach} hitSlop={6} style={styles.composerBtn}>
             <Ionicons name="image" size={24} color={c.primary} />
           </Pressable>

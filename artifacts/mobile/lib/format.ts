@@ -35,3 +35,12 @@ export function formatClock(iso: string): string {
     minute: "2-digit",
   });
 }
+
+export function lastActiveLabel(iso?: string | null): string {
+  if (!iso) return "Offline";
+  const diff = Date.now() - new Date(iso).getTime();
+  if (diff < 60_000) return "Active now";
+  if (diff < 3600_000) return `Active ${Math.floor(diff / 60_000)}m ago`;
+  if (diff < 86400_000) return `Active ${Math.floor(diff / 3600_000)}h ago`;
+  return `Active ${Math.floor(diff / 86400_000)}d ago`;
+}

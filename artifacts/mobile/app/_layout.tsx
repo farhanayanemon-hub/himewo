@@ -23,6 +23,7 @@ import { RealtimeProvider } from "@/lib/realtime";
 import { ActingPageProvider } from "@/lib/acting-page";
 import { useColors } from "@/hooks/useColors";
 import { useAppUpdate, UpdatePromptModal } from "@/lib/useAppUpdate";
+import { ChatPreferencesProvider } from "@/lib/chatPreferences";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -161,20 +162,22 @@ function ThemedRoot() {
     <>
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
       <AuthProvider>
-        <RealtimeProvider>
-          <ActingPageProvider>
-            <CallProvider>
-              <RootNavigator />
-              <UpdatePromptModal
-                visible={update.modalVisible}
-                versionData={update.versionData}
-                currentVersion={update.currentVersion}
-                onUpdate={update.downloadAndInstall}
-                onDismiss={update.dismiss}
-              />
-            </CallProvider>
-          </ActingPageProvider>
-        </RealtimeProvider>
+        <ChatPreferencesProvider>
+          <RealtimeProvider>
+            <ActingPageProvider>
+              <CallProvider>
+                <RootNavigator />
+                <UpdatePromptModal
+                  visible={update.modalVisible}
+                  versionData={update.versionData}
+                  currentVersion={update.currentVersion}
+                  onUpdate={update.downloadAndInstall}
+                  onDismiss={update.dismiss}
+                />
+              </CallProvider>
+            </ActingPageProvider>
+          </RealtimeProvider>
+        </ChatPreferencesProvider>
       </AuthProvider>
     </>
   );

@@ -23,16 +23,16 @@ const TABS: Record<string, TabConfig> = {
   index: { label: "Feed", icon: "home", iconOutline: "home-outline" },
   friends: { label: "Friends", icon: "people", iconOutline: "people-outline" },
   reels: { label: "Reels", icon: "film", iconOutline: "film-outline", raised: true },
-  notifications: {
-    label: "Alerts",
-    icon: "notifications",
-    iconOutline: "notifications-outline",
+  chats: {
+    label: "Chats",
+    icon: "chatbubbles",
+    iconOutline: "chatbubbles-outline",
     badge: true,
   },
   profile: { label: "Profile", icon: "person-circle", iconOutline: "person-circle-outline" },
 };
 
-const ORDER = ["index", "friends", "reels", "notifications", "profile"];
+const ORDER = ["index", "friends", "reels", "chats", "profile"];
 
 export function SolidDockTabBar({
   state,

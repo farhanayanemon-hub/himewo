@@ -164,7 +164,18 @@ export default function NotificationsScreen() {
       <View
         style={[styles.header, { backgroundColor: c.card, borderBottomColor: c.border }]}
       >
-        <Text style={[styles.title, { color: c.foreground }]}>Notifications</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          {router.canGoBack() ? (
+            <Pressable
+              onPress={() => router.back()}
+              hitSlop={8}
+              style={{ width: 36, height: 36, alignItems: "center", justifyContent: "center" }}
+            >
+              <Ionicons name="arrow-back" size={24} color={c.foreground} />
+            </Pressable>
+          ) : null}
+          <Text style={[styles.title, { color: c.foreground }]}>Notifications</Text>
+        </View>
         <Pressable onPress={handleMarkAll} hitSlop={8}>
           <Text style={[styles.markAll, { color: c.primary }]}>Mark all read</Text>
         </Pressable>

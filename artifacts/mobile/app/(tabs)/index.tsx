@@ -22,7 +22,8 @@ import {
   useGetFollowedShopShowcase,
   useServeAds,
   useRecordAdImpression,
-  useListConversations,
+  useGetUnreadNotificationCount,
+  getGetUnreadNotificationCountQueryKey,
   type Post,
   type ServedAd,
 } from "@workspace/api-client-react";
@@ -56,11 +57,13 @@ export default function HomeScreen() {
   const [activePost, setActivePost] = useState<number | null>(null);
   const [sharePostId, setSharePostId] = useState<number | null>(null);
 
-  const { data: convsData } = useListConversations();
-  const unreadMsgCount = (convsData ?? []).reduce(
-    (acc: number, conv: any) => acc + (conv.unreadCount || 0),
-    0,
-  );
+  const { data: unreadNotifData } = useGetUnreadNotificationCount({
+    query: {
+      refetchInterval: 15_000,
+      queryKey: getGetUnreadNotificationCountQueryKey(),
+    },
+  });
+  const unreadNotificationCount = (unreadNotifData as { count?: number } | undefined)?.count ?? 0;
 
   const {
     data,
@@ -174,10 +177,10 @@ export default function HomeScreen() {
           </Pressable>
           <Pressable
             style={[styles.iconBtn, { backgroundColor: c.secondary, position: "relative" }]}
-            onPress={() => router.push("/messages")}
+            onPress={() => router.push("/notifications" as never)}
           >
-            <Ionicons name="chatbubbles" size={20} color={c.foreground} />
-            {unreadMsgCount > 0 ? (
+            <Ionicons name="notifications-outline" size={20} color={c.foreground} />
+            {unreadNotificationCount > 0 ? (
               <View
                 style={{
                   position: "absolute",
@@ -193,7 +196,7 @@ export default function HomeScreen() {
                 }}
               >
                 <Text style={{ color: "#fff", fontSize: 10, fontWeight: "bold" }}>
-                  {unreadMsgCount > 99 ? "99+" : unreadMsgCount}
+                  {unreadNotificationCount > 99 ? "99+" : unreadNotificationCount}
                 </Text>
               </View>
             ) : null}
