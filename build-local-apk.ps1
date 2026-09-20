@@ -125,17 +125,14 @@ function Build-TargetApp([string]$target) {
   }
 
   if ($Publish) {
-    Write-Host "`n>>> [5/5] Publishing $outName to GitHub Releases..." -ForegroundColor Yellow
+    Write-Host "`n>>> [4/4] Publishing $outName & Auto-Deploying to Landing Page..." -ForegroundColor Yellow
     Set-Location $repoRoot
     if (-not $env:GITHUB_TOKEN -and (Test-Path "$repoRoot\.env")) {
       Get-Content "$repoRoot\.env" | ForEach-Object {
         if ($_ -match "^GITHUB_TOKEN=(.*)$") { $env:GITHUB_TOKEN = $matches[1].Trim() }
       }
     }
-    node scripts/publish-release.mjs $destApk $outName "v1.2.0"
-    if ($target -eq "app" -or $target -eq "social") {
-      node scripts/publish-release.mjs "$repoRoot\downloads\himewo-social.apk" "himewo-social.apk" "v1.2.0"
-    }
+    node scripts/update-landing-apk.mjs "v1.2.0"
   }
 }
 

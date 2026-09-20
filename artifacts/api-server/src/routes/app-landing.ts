@@ -42,7 +42,7 @@ export const DEFAULT_APP_LANDING_CONFIG = {
       "Digital marketplace stalls & creator hub",
       "Full privacy controls & ultra-fast performance"
     ],
-    directUrl: "https://github.com/farhanayanemon-hub/himewo/releases/download/v1.2.0/himewo.apk",
+    directUrl: "https://github.com/farhanayanemon-hub/himewo/releases/latest/download/himewo.apk",
     directEnabled: true,
     directButtonText: "Direct APK Download",
     playStoreUrl: "https://play.google.com/store/apps/details?id=com.himewo.app",
@@ -63,7 +63,7 @@ export const DEFAULT_APP_LANDING_CONFIG = {
       "Media, document & voice message sharing",
       "Synced seamlessly across all devices"
     ],
-    directUrl: "https://github.com/farhanayanemon-hub/himewo/releases/download/v1.2.0/himewo-chat.apk",
+    directUrl: "https://github.com/farhanayanemon-hub/himewo/releases/latest/download/himewo-chat.apk",
     directEnabled: true,
     directButtonText: "Direct APK Download",
     playStoreUrl: "https://play.google.com/store/apps/details?id=com.himewo.chat",

@@ -222,7 +222,7 @@ const DEFAULT_CONFIG: AppLandingConfig = {
       "Marketplace digital stalls & creator hubs",
       "Universal ~29 MB APK with lightning fast load times",
     ],
-    directUrl: "https://github.com/farhanayanemon-hub/himewo/releases/download/v1.2.0/himewo.apk",
+    directUrl: "https://github.com/farhanayanemon-hub/himewo/releases/latest/download/himewo.apk",
     directEnabled: true,
     directButtonText: "Direct APK Download",
     playStoreUrl: "https://play.google.com/store/apps/details?id=com.himewo.app",
@@ -244,7 +244,7 @@ const DEFAULT_CONFIG: AppLandingConfig = {
       "Voice notes & seen receipts",
       "End-to-end security",
     ],
-    directUrl: "https://github.com/farhanayanemon-hub/himewo/releases/download/v1.2.0/himewo.apk",
+    directUrl: "https://github.com/farhanayanemon-hub/himewo/releases/latest/download/himewo-chat.apk",
     directEnabled: true,
     directButtonText: "Direct APK Download",
     playStoreUrl: "https://play.google.com/store/apps/details?id=com.himewo.app",
@@ -468,7 +468,7 @@ export default function App() {
                   {/* Direct Download Button */}
                   <div className="pt-3 space-y-3">
                     <a
-                      href={config.mobileApp.directUrl || "https://github.com/farhanayanemon-hub/himewo/releases/download/v1.2.0/himewo.apk"}
+                      href={config.mobileApp.directUrl || "https://github.com/farhanayanemon-hub/himewo/releases/latest/download/himewo.apk"}
                       download
                       className="inline-flex items-center justify-center gap-3 w-full sm:w-auto purple-gradient purple-gradient-hover px-7 py-4 rounded-2xl font-bold text-white shadow-xl shadow-purple-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
                     >
