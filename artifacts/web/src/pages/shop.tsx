@@ -89,19 +89,49 @@ import {
   Check,
   ExternalLink,
   Settings,
+  Rocket,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
+import { useActingPage } from "@/lib/acting-page";
 import { uploadMedia, UploadUnavailableError } from "@/lib/upload";
 import { toast } from "@/hooks/use-toast";
 
 /* ---------------- Helpers ---------------- */
 
-/** priceCents → "$125.50" (system currency is always USD) */
-export function formatTaka(cents: number) {
-  const taka = cents / 100;
-  return `$${taka.toLocaleString(undefined, {
+let webShopCurrency: "BDT" | "USD" = "BDT";
+let webShopRate = 120;
+
+if (typeof window !== "undefined") {
+  fetch("/api/shop/currency")
+    .then((r) => r.json())
+    .then((data) => {
+      if (data && data.currency) {
+        webShopCurrency = data.currency;
+        webShopRate = data.rate || 120;
+      }
+    })
+    .catch(() => {});
+}
+
+export function setWebShopCurrency(curr: "BDT" | "USD", rate = 120) {
+  webShopCurrency = curr;
+  webShopRate = rate;
+}
+
+/** priceCents → ৳125.50 (for Bangladesh IP) or $1.05 (for outside Bangladesh) */
+export function formatTaka(cents: number, forceCurrency?: "BDT" | "USD") {
+  const curr = forceCurrency || webShopCurrency;
+  const taka = (cents ?? 0) / 100;
+  if (curr === "USD") {
+    const usd = taka / (webShopRate || 120);
+    return `$${usd.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  }
+  return `৳${taka.toLocaleString(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
@@ -1633,11 +1663,86 @@ function ReviewDialog({
 
 /* ---------------- Seller dashboard (My stall) ---------------- */
 export function ShopMyStallPage() {
+  const { actingPage, switchTo } = useActingPage();
+  const { data: myPages, isLoading: pagesLoading } = useListPages({ mine: true });
+
   const { data: myStall, isLoading } = useGetMyStall({
     query: { queryKey: getGetMyStallQueryKey(), retry: false },
   });
   const [tab, setTab] = useState<"products" | "orders" | "wallet">("products");
   const [editOpen, setEditOpen] = useState(false);
+
+  if (!actingPage) {
+    return (
+      <MainLayout>
+        <Link href="/shop">
+          <Button variant="ghost" className="mb-3 press">
+            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Shop
+          </Button>
+        </Link>
+        <div className="bg-card border border-border rounded-3xl p-8 max-w-xl mx-auto text-center space-y-6 shadow-sm animate-in fade-in my-8">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto text-primary">
+            <Store className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold">Selling is Exclusive to Hubs</h1>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Personal profiles are strictly for shopping and ordering. To open a stall and sell products, please switch to your Hub or create a new one.
+            </p>
+          </div>
+
+          {pagesLoading ? (
+            <div className="py-6 flex justify-center">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            </div>
+          ) : (myPages ?? []).length > 0 ? (
+            <div className="space-y-3 text-left">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Your Creator Hubs
+              </p>
+              {(myPages ?? []).map((hub) => (
+                <div
+                  key={hub.id}
+                  className="flex items-center justify-between gap-3 p-3.5 border border-border rounded-2xl hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <img
+                      src={avatarSrc(hub.avatarUrl)}
+                      className="w-10 h-10 rounded-full object-cover bg-muted shrink-0"
+                      alt=""
+                    />
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm truncate">{hub.name}</p>
+                      <p className="text-xs text-muted-foreground">Switch to open stall</p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      switchTo({ id: hub.id, name: hub.name, avatarUrl: hub.avatarUrl ?? null });
+                    }}
+                  >
+                    Switch & Manage
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          <div className="pt-2 flex flex-col sm:flex-row gap-3">
+            <Link href="/pages" className="flex-1">
+              <Button className="w-full h-11 rounded-xl">Create a New Hub</Button>
+            </Link>
+            <Link href="/shop" className="flex-1">
+              <Button variant="outline" className="w-full h-11 rounded-xl">
+                Browse Shop as Buyer
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -2021,14 +2126,28 @@ function ProductManageRow({
           {formatTaka(product.priceCents)} · {product.stockQty} in stock
         </p>
       </div>
-      <div className="flex gap-1.5 shrink-0">
-        <Button variant="secondary" size="icon" className="press" onClick={onEdit}>
+      <div className="flex items-center gap-1.5 shrink-0">
+        <a
+          href="https://ads.himewo.com/campaigns"
+          target="_blank"
+          rel="noreferrer"
+          title="Boost with Ads"
+        >
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 text-xs font-semibold text-primary border-primary/30 hover:bg-primary/10 h-9 px-2.5"
+          >
+            <Rocket className="w-3.5 h-3.5" /> Boost
+          </Button>
+        </a>
+        <Button variant="secondary" size="icon" className="press h-9 w-9" onClick={onEdit}>
           <Pencil className="w-4 h-4" />
         </Button>
         <Button
           variant="destructive"
           size="icon"
-          className="press"
+          className="press h-9 w-9"
           disabled={deleteProduct.isPending}
           onClick={remove}
         >

@@ -180,4 +180,52 @@ export async function awardPoints(params: {
   }
 }
 
+/**
+ * Revoke/deduct points when an entity (post, reel, etc.) is deleted.
+ * Inserts an offsetting negative ledger entry so the user's total balance
+ * accurately reflects the removal of that content.
+ */
+export async function revokePoints(params: {
+  userId: string;
+  action: string;
+  entityType: string;
+  entityId: number;
+  note?: string;
+}): Promise<void> {
+  try {
+    const existingAwards = await db
+      .select({ points: pointTransactionsTable.points })
+      .from(pointTransactionsTable)
+      .where(
+        and(
+          eq(pointTransactionsTable.userId, params.userId),
+          eq(pointTransactionsTable.action, params.action),
+          eq(pointTransactionsTable.entityType, params.entityType),
+          eq(pointTransactionsTable.entityId, params.entityId),
+          gt(pointTransactionsTable.points, 0),
+        ),
+      );
+
+    const totalEarned = existingAwards.reduce((acc, row) => acc + row.points, 0);
+    if (totalEarned <= 0) return;
+
+    await db.transaction(async (tx) => {
+      await tx.execute(
+        sql`SELECT pg_advisory_xact_lock(hashtext(${params.userId})::bigint)`,
+      );
+      await tx.insert(pointTransactionsTable).values({
+        userId: params.userId,
+        action: `${params.action}_deleted`,
+        points: -totalEarned,
+        entityType: params.entityType,
+        entityId: params.entityId,
+        note: params.note ?? `Points revoked because ${params.entityType} #${params.entityId} was deleted`,
+      });
+    });
+  } catch (err) {
+    logger.error({ err, params }, "revokePoints failed");
+  }
+}
+
 export { EARN_ACTIONS };
+

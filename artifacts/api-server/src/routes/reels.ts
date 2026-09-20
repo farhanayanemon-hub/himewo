@@ -14,8 +14,7 @@ import { resolveUserId } from "../lib/resolve-user";
 import { filterVisibleReels, canViewReel } from "../lib/authz";
 import { toProfile, buildReels, buildReelById } from "../lib/serialize";
 import { shareMusicToLibrary } from "./stories";
-import { createNotification } from "../lib/notify";
-import { awardPoints } from "../lib/earnings";
+import { awardPoints, revokePoints } from "../lib/earnings";
 import {
   ListReelsQueryParams,
   ListReelsResponse,
@@ -233,6 +232,13 @@ router.delete("/reels/:id", requireAuth, async (req, res): Promise<void> => {
     res.status(403).json({ error: "You can only delete your own reel" });
     return;
   }
+  // Revoke/deduct coins earned for this reel
+  await revokePoints({
+    userId: req.userId!,
+    action: "reel",
+    entityType: "reel",
+    entityId: id,
+  });
   await db
     .update(reelsTable)
     .set({ deletedAt: new Date() })

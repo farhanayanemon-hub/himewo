@@ -1,17 +1,43 @@
-/** USD helpers for the Shop. Prices are stored as integer cents. */
+/** Dynamic Currency helpers for the Shop. Base prices are stored as integer paisa (BDT cents). */
 
-export const BDT = "$";
+let currentCurrency: "BDT" | "USD" = "BDT";
+let currentRate = 1; // 1 USD = 120 BDT
 
-/** Format integer cents → "$125.50". */
-export function formatTaka(cents: number): string {
-  const taka = (cents ?? 0) / 100;
-  return `${BDT}${taka.toLocaleString(undefined, {
+export function setShopCurrency(currency: "BDT" | "USD", rate = 120) {
+  currentCurrency = currency;
+  currentRate = rate > 0 ? rate : 120;
+}
+
+export function getShopCurrency(): "BDT" | "USD" {
+  return currentCurrency;
+}
+
+export const BDT = "৳";
+
+/**
+ * Format integer cents dynamically based on IP:
+ * - Bangladesh IP: "৳125.50" (or 125.50 TK)
+ * - Outside Bangladesh: "$1.05" (converted at 1 USD = 120 BDT)
+ */
+export function formatTaka(cents: number, forceCurrency?: "BDT" | "USD"): string {
+  const curr = forceCurrency ?? currentCurrency;
+  const baseTaka = (cents ?? 0) / 100;
+
+  if (curr === "USD") {
+    const usd = baseTaka / (currentRate || 120);
+    return `$${usd.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  }
+
+  return `৳${baseTaka.toLocaleString(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
 }
 
-/** Parse a taka string (e.g. "125.50") → integer paisa. */
+/** Parse a taka/amount string (e.g. "125.50") → integer paisa. */
 export function takaToCents(taka: string): number {
   const n = Number(taka);
   if (!Number.isFinite(n) || n < 0) return 0;

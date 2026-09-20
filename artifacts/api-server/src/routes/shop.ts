@@ -377,7 +377,14 @@ async function enrichOrders(orders: ShopOrder[], viewerId: string) {
   );
 }
 
-async function loadMyStall(userId: string): Promise<ShopStall | undefined> {
+async function loadMyStall(userId: string, pageId?: number): Promise<ShopStall | undefined> {
+  if (pageId != null && Number.isFinite(pageId)) {
+    const [stallByPage] = await db
+      .select()
+      .from(shopStallsTable)
+      .where(and(eq(shopStallsTable.userId, userId), eq(shopStallsTable.pageId, pageId)));
+    if (stallByPage) return stallByPage;
+  }
   const [stall] = await db
     .select()
     .from(shopStallsTable)
@@ -409,7 +416,8 @@ router.get("/shop/settings", requireAuth, async (_req, res): Promise<void> => {
 // ---------------------------------------------------------------------------
 
 router.get("/shop/stall", requireAuth, async (req, res): Promise<void> => {
-  const stall = await loadMyStall(req.userId!);
+  const pageId = req.query.pageId ? Number(req.query.pageId) : undefined;
+  const stall = await loadMyStall(req.userId!, Number.isFinite(pageId) ? pageId : undefined);
   if (!stall) {
     res.status(404).json({ error: "Stall not found" });
     return;
@@ -437,7 +445,12 @@ router.get("/shop/stall", requireAuth, async (req, res): Promise<void> => {
 });
 
 router.patch("/shop/stall", requireAuth, async (req, res): Promise<void> => {
-  const stall = await loadMyStall(req.userId!);
+  const pageId = req.query.pageId
+    ? Number(req.query.pageId)
+    : req.body?.pageId
+      ? Number(req.body.pageId)
+      : undefined;
+  const stall = await loadMyStall(req.userId!, Number.isFinite(pageId) ? pageId : undefined);
   if (!stall) {
     res.status(404).json({ error: "Stall not found" });
     return;
@@ -448,13 +461,28 @@ router.patch("/shop/stall", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   const data = parsed.data;
-  const updates: Partial<typeof shopStallsTable.$inferInsert> = {};
-  if (data.coverUrl !== undefined) updates.coverUrl = data.coverUrl;
+  const updates: Partial<typeof shopStallsTable.$inferInsert> = {
+    updatedAt: new Date(),
+  };
+  if (data.coverUrl !== undefined) updates.coverUrl = data.coverUrl || null;
   if (data.description !== undefined) updates.description = data.description.trim();
   if (data.website !== undefined) updates.website = data.website.trim();
   if (data.address !== undefined) updates.address = data.address.trim();
   if (data.contactPhone !== undefined) updates.contactPhone = data.contactPhone.trim();
   if (data.contactEmail !== undefined) updates.contactEmail = data.contactEmail.trim();
+
+  // Also support updating name or avatar on the connected Hub page if sent in req.body
+  const rawBody = req.body as any;
+  const pageUpdates: Partial<typeof pagesTable.$inferInsert> = {};
+  if (typeof rawBody?.name === "string" && rawBody.name.trim().length > 0) {
+    pageUpdates.name = rawBody.name.trim();
+  }
+  if (typeof rawBody?.avatarUrl === "string") {
+    pageUpdates.avatarUrl = rawBody.avatarUrl.trim() || null;
+  }
+  if (Object.keys(pageUpdates).length > 0) {
+    await db.update(pagesTable).set(pageUpdates).where(eq(pagesTable.id, stall.pageId));
+  }
 
   const [updated] = await db
     .update(shopStallsTable)

@@ -9,7 +9,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
   useSearchAll,
@@ -28,8 +28,17 @@ type Row =
 
 export default function SearchScreen() {
   const c = useColors();
-  const [query, setQuery] = useState("");
-  const [debounced, setDebounced] = useState("");
+  const searchParamsFromNav = useLocalSearchParams<{ q?: string }>();
+  const initialQ = searchParamsFromNav.q ? String(searchParamsFromNav.q) : "";
+  const [query, setQuery] = useState(initialQ);
+  const [debounced, setDebounced] = useState(initialQ.trim());
+
+  useEffect(() => {
+    if (searchParamsFromNav.q && typeof searchParamsFromNav.q === "string" && searchParamsFromNav.q !== query) {
+      setQuery(searchParamsFromNav.q);
+      setDebounced(searchParamsFromNav.q.trim());
+    }
+  }, [searchParamsFromNav.q]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(query.trim()), 300);

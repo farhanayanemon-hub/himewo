@@ -42,7 +42,7 @@ import {
   buildCommentById,
 } from "../lib/serialize";
 import { createNotification, notifyGroupNewPost } from "../lib/notify";
-import { awardPoints } from "../lib/earnings";
+import { awardPoints, revokePoints } from "../lib/earnings";
 import { canViewPost, filterVisiblePosts, canManagePage } from "../lib/authz";
 import {
   GetFeedQueryParams,
@@ -483,13 +483,16 @@ router.post("/posts", requireAuth, async (req, res): Promise<void> => {
       authorId: req.userId!,
     });
   }
-  await awardPoints({
-    userId: req.userId!,
-    action: "post",
-    entityType: "post",
-    entityId: post.id,
-    ip: req.ip,
-  });
+  // Award coins/points ONLY for public posts. Private or friends-only posts do not earn coins.
+  if (post.privacy === "public" && groupId == null && !pendingApproval) {
+    await awardPoints({
+      userId: req.userId!,
+      action: "post",
+      entityType: "post",
+      entityId: post.id,
+      ip: req.ip,
+    });
+  }
   const built = await buildPostById(post.id, req.userId);
   res.status(201).json(CreatePostResponse.parse(built));
 });
@@ -567,6 +570,13 @@ router.delete("/posts/:id", requireAuth, async (req, res): Promise<void> => {
     res.status(403).json({ error: "Not your post" });
     return;
   }
+  // Deduct/revoke coins earned for this post
+  await revokePoints({
+    userId: req.userId!,
+    action: "post",
+    entityType: "post",
+    entityId: params.data.id,
+  });
   await db.delete(postsTable).where(eq(postsTable.id, params.data.id));
   res.sendStatus(204);
 });

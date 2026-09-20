@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -42,6 +42,7 @@ import {
 import { Avatar } from "@/components/Avatar";
 import { uploadMedia, UploadUnavailableError } from "@/lib/upload";
 import { useColors } from "@/hooks/useColors";
+import { useActingPage } from "@/lib/acting-page";
 import {
   formatTaka,
   takaToCents,
@@ -54,6 +55,12 @@ type Colors = ReturnType<typeof useColors>;
 
 export default function MyStallScreen() {
   const c = useColors();
+  const { actingPage, switchTo } = useActingPage();
+
+  if (!actingPage) {
+    return <PersonalProfileShopNotice c={c} onSwitch={switchTo} />;
+  }
+
   const { data: stall, isLoading, isError } = useGetMyStall({
     query: { queryKey: getGetMyStallQueryKey(), retry: false },
   });
@@ -70,16 +77,151 @@ export default function MyStallScreen() {
     return <SellerDashboard stall={stall} c={c} />;
   }
 
-  return <StallSetup c={c} />;
+  return <StallSetup c={c} defaultPageId={actingPage.id} />;
+}
+
+function PersonalProfileShopNotice({
+  c,
+  onSwitch,
+}: {
+  c: Colors;
+  onSwitch: (page: any) => void;
+}) {
+  const { data: pages, isLoading } = useListPages({ mine: true });
+  const myHubs = pages ?? [];
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["bottom"]}>
+      <ScrollView contentContainerStyle={{ padding: 20, alignItems: "center", gap: 20, paddingTop: 40 }}>
+        <View
+          style={{
+            width: 80,
+            height: 80,
+            borderRadius: 40,
+            backgroundColor: c.primary + "18",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Ionicons name="storefront" size={40} color={c.primary} />
+        </View>
+
+        <View style={{ alignItems: "center", gap: 8, maxWidth: 320 }}>
+          <Text
+            style={{
+              fontFamily: "Inter_700Bold",
+              fontSize: 22,
+              color: c.foreground,
+              textAlign: "center",
+            }}
+          >
+            Selling is Exclusive to Hubs
+          </Text>
+          <Text
+            style={{
+              fontFamily: "Inter_400Regular",
+              fontSize: 14,
+              color: c.mutedForeground,
+              textAlign: "center",
+              lineHeight: 20,
+            }}
+          >
+            Personal profiles are strictly for shopping and ordering. To open a stall and sell products, please switch to an existing Hub or create a new one.
+          </Text>
+        </View>
+
+        {isLoading ? (
+          <ActivityIndicator color={c.primary} style={{ marginTop: 20 }} />
+        ) : myHubs.length > 0 ? (
+          <View style={{ width: "100%", gap: 12, marginTop: 10 }}>
+            <Text
+              style={{
+                fontFamily: "Inter_600SemiBold",
+                fontSize: 14,
+                color: c.foreground,
+              }}
+            >
+              Your Creator Hubs:
+            </Text>
+            {myHubs.map((hub) => (
+              <Pressable
+                key={hub.id}
+                onPress={() => {
+                  onSwitch({ id: hub.id, name: hub.name, avatarUrl: hub.avatarUrl });
+                }}
+                style={[
+                  styles.hubSwitchCard,
+                  { backgroundColor: c.card, borderColor: c.border },
+                ]}
+              >
+                <Avatar uri={hub.avatarUrl} name={hub.name} size={44} />
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontFamily: "Inter_600SemiBold",
+                      fontSize: 15,
+                      color: c.foreground,
+                    }}
+                    numberOfLines={1}
+                  >
+                    {hub.name}
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: "Inter_400Regular",
+                      fontSize: 12,
+                      color: c.mutedForeground,
+                    }}
+                  >
+                    Tap to switch & open stall
+                  </Text>
+                </View>
+                <Ionicons name="arrow-forward-circle" size={24} color={c.primary} />
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
+
+        <View style={{ width: "100%", gap: 10, marginTop: 16 }}>
+          <Pressable
+            style={[
+              styles.submit,
+              { backgroundColor: c.primary },
+              glow(c.primary),
+            ]}
+            onPress={() => router.push("/pages/create")}
+          >
+            <Ionicons name="add-circle-outline" size={20} color="#fff" />
+            <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: 16 }}>
+              Create a New Hub
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.submit,
+              { backgroundColor: c.secondary, borderColor: c.border, borderWidth: 1 },
+            ]}
+            onPress={() => router.replace("/shop")}
+          >
+            <Ionicons name="cart-outline" size={18} color={c.foreground} />
+            <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}>
+              Browse Shop as Buyer
+            </Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
 }
 
 /* ---------------------------------------------------------------- setup --- */
 
-function StallSetup({ c }: { c: Colors }) {
+function StallSetup({ c, defaultPageId }: { c: Colors; defaultPageId?: number }) {
   const qc = useQueryClient();
   const { data: pages, isLoading } = useListPages({ mine: true });
   const createStall = useCreateStall();
-  const [selected, setSelected] = useState<number | null>(null);
+  const [selected, setSelected] = useState<number | null>(defaultPageId ?? null);
   const [address, setAddress] = useState("");
   const [productType, setProductType] =
     useState<CreateStallInputProductType>("physical");
@@ -1104,18 +1246,17 @@ function EditStallModal({
   const [contactPhone, setContactPhone] = useState(stall.contactPhone ?? "");
   const [contactEmail, setContactEmail] = useState(stall.contactEmail ?? "");
   const [uploading, setUploading] = useState(false);
-  const [ready, setReady] = useState(false);
 
-  if (visible && !ready) {
-    setCoverUrl(stall.coverUrl ?? null);
-    setDescription(stall.description ?? "");
-    setWebsite(stall.website ?? "");
-    setAddress(stall.address ?? "");
-    setContactPhone(stall.contactPhone ?? "");
-    setContactEmail(stall.contactEmail ?? "");
-    setReady(true);
-  }
-  if (!visible && ready) setReady(false);
+  useEffect(() => {
+    if (visible) {
+      setCoverUrl(stall.coverUrl ?? null);
+      setDescription(stall.description ?? "");
+      setWebsite(stall.website ?? "");
+      setAddress(stall.address ?? "");
+      setContactPhone(stall.contactPhone ?? "");
+      setContactEmail(stall.contactEmail ?? "");
+    }
+  }, [visible, stall]);
 
   const pickCover = async () => {
     const res = await ImagePicker.launchImageLibraryAsync({
@@ -1476,5 +1617,13 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
+  },
+  hubSwitchCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
   },
 });
