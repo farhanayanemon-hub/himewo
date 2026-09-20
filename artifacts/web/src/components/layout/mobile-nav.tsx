@@ -59,9 +59,9 @@ export function MobileMenuButton({
       <button
         onClick={() => setMenuOpen(true)}
         aria-label="Menu"
-        className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl aurora-glass press"
+        className="md:hidden flex items-center justify-center w-11 h-11 rounded-full bg-card border border-border/80 shadow-[0_4px_14px_rgba(0,0,0,0.06)] active:scale-90 transition-transform cursor-pointer"
       >
-        <MenuIcon className="w-5 h-5 text-foreground" />
+        <MenuIcon className="w-5 h-5 text-foreground stroke-[2.4]" />
       </button>
 
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
@@ -98,10 +98,15 @@ export function MobileMenuButton({
                   className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
                 >
                   <NavIcon icon={Icon} iconUrl={item.iconUrl} />
-                  <span className="font-medium">{item.label}</span>
+                  <span className="font-medium text-sm">{item.label}</span>
                 </Link>
               );
             })}
+
+            <div className="my-2 border-t border-border" />
+            <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Shortcuts
+            </div>
 
             {shortcutItems.map((item) => {
               const Icon = item.icon;
@@ -113,7 +118,7 @@ export function MobileMenuButton({
                   className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
                 >
                   <NavIcon icon={Icon} iconUrl={item.iconUrl} />
-                  <span className="font-medium">{item.label}</span>
+                  <span className="font-medium text-sm">{item.label}</span>
                 </Link>
               );
             })}
@@ -125,18 +130,19 @@ export function MobileMenuButton({
               onClick={() => setMenuOpen(false)}
               className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
             >
-              <NavIcon icon={Settings} />
-              <span className="font-medium">Settings</span>
+              <Settings className="w-5 h-5" />
+              <span className="font-medium text-sm">Settings & Privacy</span>
             </Link>
+
             <button
               onClick={() => {
                 setMenuOpen(false);
                 onSignOut();
               }}
-              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
+              className="flex items-center gap-3 p-3 rounded-xl hover:bg-destructive/10 text-destructive transition-colors w-full text-left"
             >
-              <NavIcon icon={LogOut} />
-              <span className="font-medium">Log Out</span>
+              <LogOut className="w-5 h-5" />
+              <span className="font-medium text-sm">Log Out</span>
             </button>
           </div>
         </SheetContent>
@@ -146,9 +152,11 @@ export function MobileMenuButton({
 }
 
 /**
- * Bottom tab bar (mobile only): Home / Friends / Reels(raised) / Market / Profile.
- * "Solid Dock" style — a solid docked bar with a label under every item and a
- * raised squircle center button (Reels) that lifts above the bar.
+ * 3-Island Floating Dock Navigation (mobile only):
+ * Exact match to Dribbble design reference:
+ * - Island 1 (Left): Separate dark circular button [ 💬 ] (Messages)
+ * - Island 2 (Middle): Combined dark pill [ ⌂ Home ] + Electric Cyan [ + ] (Create)
+ * - Island 3 (Right): Separate dark circular button [ 👤 ] (Profile)
  */
 export function MobileNav({
   user,
@@ -157,108 +165,88 @@ export function MobileNav({
   user: { displayName?: string | null; avatarUrl?: string | null; username?: string | null } | null;
   unreadCount?: number;
 }) {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const { actingPage } = useActingPage();
   const profileHref = actingPage ? `/pages/${actingPage.id}` : "/me";
 
-  const isActive = (href: string) =>
-    href === "/" ? location === "/" : location.startsWith(href);
-
-  const profileActive =
+  const isHomeActive = location === "/";
+  const isChatsActive = location.startsWith("/messages");
+  const isProfileActive =
     location === profileHref ||
     location === "/me" ||
     location.startsWith("/profile/") ||
     Boolean(user?.username && location === `/${user.username}`);
 
-  const StdItem = ({
-    href,
-    icon: Icon,
-    label,
-    active,
-    badge,
-  }: {
-    href: string;
-    icon: IconType;
-    label: string;
-    active: boolean;
-    badge?: number;
-  }) => (
-    <Link
-      href={href}
-      className="flex flex-1 flex-col items-center justify-end h-full gap-1 pb-2 press"
-    >
-      <span
-        className={`relative flex items-center justify-center transition-transform duration-200 ${
-          active ? "-translate-y-[3px]" : ""
-        }`}
-      >
-        <Icon
-          className={`w-6 h-6 ${
-            active ? "text-violet-500 dark:text-violet-400" : "text-muted-foreground"
-          }`}
-          {...(active ? { fill: "currentColor" } : {})}
-        />
-        {badge && badge > 0 ? (
-          <span className="absolute -top-1.5 -right-2 flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-destructive text-white text-[9px] font-bold leading-none border border-background">
-            {badge > 99 ? "99+" : badge}
-          </span>
-        ) : null}
-      </span>
-      <span
-        className={`text-[10px] leading-none ${
-          active ? "text-violet-500 dark:text-violet-400 font-bold" : "text-muted-foreground font-medium"
-        }`}
-      >
-        {label}
-      </span>
-    </Link>
-  );
-
-  const reelsActive = isActive("/reels");
+  const handleCreate = () => {
+    if (location === "/") {
+      const el = document.getElementById("main-post-composer");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        const input = el.querySelector("textarea");
+        input?.focus();
+        return;
+      }
+    }
+    navigate("/");
+  };
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-background/95 backdrop-blur-md border-t border-border shadow-[0_-12px_40px_rgba(0,0,0,0.10)]"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      className="md:hidden fixed bottom-3 inset-x-0 z-50 pointer-events-none flex justify-center pb-[env(safe-area-inset-bottom)]"
     >
-      <div className="relative flex items-end justify-around h-16 px-1">
-        <StdItem href="/" icon={NavHomeIcon} label="Feed" active={isActive("/")} />
-        <StdItem href="/friends" icon={NavFriendsIcon} label="Friends" active={isActive("/friends")} />
-
-        {/* Reels — raised center button with matching desktop clapperboard icon */}
+      <div className="pointer-events-auto flex items-center gap-2.5">
+        {/* ISLAND 1 (LEFT): Separate Dark Circle [ 💬 ] */}
         <Link
-          href="/reels"
-          className="relative flex flex-1 flex-col items-center justify-end h-full pb-1.5 press"
+          href="/messages"
+          aria-label="Chats"
+          className={`relative w-[48px] h-[48px] rounded-full bg-[#14171D] text-white flex items-center justify-center shadow-[0_12px_28px_rgba(0,0,0,0.35)] border border-white/10 active:scale-90 transition-transform ${
+            isChatsActive ? "ring-2 ring-white/30" : ""
+          }`}
         >
-          <span
-            className={`absolute bottom-[20px] flex items-center justify-center w-[54px] h-[54px] rounded-[18px] bg-violet-500 dark:bg-violet-500 text-white shadow-[0_10px_24px_-4px_rgba(139,92,246,0.55)] ring-4 ring-background transition-transform duration-200 ${
-              reelsActive ? "scale-105" : ""
-            }`}
-          >
-            <NavReelsIcon className="w-6 h-6 text-white" />
-          </span>
-          <span
-            className={`relative z-10 text-[10px] leading-tight font-medium ${
-              reelsActive ? "text-violet-500 dark:text-violet-400 font-bold" : "text-muted-foreground"
-            }`}
-          >
-            Reels
-          </span>
+          <MessageCircle className="w-5 h-5 text-white" />
+          {unreadCount > 0 ? (
+            <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[17px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-extrabold leading-none border-2 border-[#14171D]">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          ) : null}
         </Link>
 
-        <StdItem
-          href="/messages"
-          icon={MessageCircle}
-          label="Chats"
-          active={isActive("/messages")}
-          badge={unreadCount}
-        />
-        <StdItem
+        {/* ISLAND 2 (MIDDLE): Combined Pill [ ⌂ Home ] + [ + ] */}
+        <div className="h-[48px] px-1.5 rounded-full bg-[#14171D] text-white flex items-center gap-1.5 shadow-[0_12px_28px_rgba(0,0,0,0.35)] border border-white/10">
+          {/* Active Home Pill */}
+          <Link
+            href="/"
+            aria-label="Home Feed"
+            className={`h-[38px] px-3.5 rounded-full flex items-center gap-1.5 active:scale-95 transition-all ${
+              isHomeActive
+                ? "bg-white/15 text-white font-bold"
+                : "text-white/70 hover:text-white"
+            }`}
+          >
+            <NavHomeIcon className="w-4 h-4 text-white" fill={isHomeActive ? "currentColor" : "none"} />
+            <span className="text-xs font-bold tracking-tight">Home</span>
+          </Link>
+
+          {/* Cyan Plus Button */}
+          <button
+            onClick={handleCreate}
+            aria-label="Create Post"
+            className="w-[38px] h-[38px] rounded-full bg-[#00C2E8] text-[#14171D] flex items-center justify-center font-black text-xl shadow-[0_0_14px_rgba(0,194,232,0.55)] active:scale-90 transition-transform cursor-pointer"
+          >
+            +
+          </button>
+        </div>
+
+        {/* ISLAND 3 (RIGHT): Separate Dark Circle [ 👤 ] */}
+        <Link
           href={profileHref}
-          icon={UserCircle}
-          label="Profile"
-          active={profileActive}
-        />
+          aria-label="Profile"
+          className={`w-[48px] h-[48px] rounded-full bg-[#14171D] text-white flex items-center justify-center shadow-[0_12px_28px_rgba(0,0,0,0.35)] border border-white/10 active:scale-90 transition-transform ${
+            isProfileActive ? "ring-2 ring-white/30" : ""
+          }`}
+        >
+          <UserCircle className="w-5 h-5 text-white" />
+        </Link>
       </div>
     </nav>
   );

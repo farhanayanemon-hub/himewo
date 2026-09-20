@@ -9,6 +9,7 @@ import {
   Text,
   View,
   StyleSheet,
+  Platform,
 } from "react-native";
 import { Image } from "expo-image";
 import { useVideoPlayer, VideoView } from "expo-video";
@@ -128,9 +129,128 @@ function FullscreenViewer({
 }
 
 /**
- * Post media: single item renders full width; multiple items become a
- * swipeable, paged carousel with dot indicators (Facebook/Instagram style).
- * Tapping a photo opens a fullscreen viewer with a back button.
+ * 3D Fanned Photo Deck:
+ * Displays multi-photo travel posts with left/right tilted cards and an elevated center card,
+ * matching the exact Dribbble design reference.
+ */
+function FannedPhotoDeck({
+  media,
+  onOpenViewer,
+}: {
+  media: MediaItem[];
+  onOpenViewer: (idx: number) => void;
+}) {
+  const c = useColors();
+  const cardWidth = 220;
+  const cardHeight = 260;
+
+  if (media.length === 2) {
+    return (
+      <View style={styles.fannedContainer}>
+        {/* Left Tilted Photo */}
+        <Pressable
+          style={[
+            styles.fannedCard,
+            {
+              width: cardWidth,
+              height: cardHeight,
+              borderColor: c.card,
+              transform: [{ rotate: "-6deg" }, { translateX: -32 }, { scale: 0.94 }],
+              zIndex: 1,
+            },
+          ]}
+          onPress={() => onOpenViewer(0)}
+        >
+          <Image source={{ uri: media[0].url }} style={StyleSheet.absoluteFill} contentFit="cover" />
+        </Pressable>
+
+        {/* Right Elevated Photo */}
+        <Pressable
+          style={[
+            styles.fannedCard,
+            {
+              width: cardWidth,
+              height: cardHeight,
+              borderColor: c.card,
+              transform: [{ rotate: "5deg" }, { translateX: 32 }, { scale: 1.0 }],
+              zIndex: 2,
+            },
+          ]}
+          onPress={() => onOpenViewer(1)}
+        >
+          <Image source={{ uri: media[1].url }} style={StyleSheet.absoluteFill} contentFit="cover" />
+        </Pressable>
+      </View>
+    );
+  }
+
+  // 3 or 4 photos
+  const leftItem = media[0];
+  const rightItem = media[2] ?? media[1];
+  const centerItem = media[1] ?? media[0];
+
+  return (
+    <View style={styles.fannedContainer}>
+      {/* Left Tilted Photo */}
+      <Pressable
+        style={[
+          styles.fannedCard,
+          {
+            width: cardWidth * 0.9,
+            height: cardHeight * 0.92,
+            borderColor: c.card,
+            transform: [{ rotate: "-7deg" }, { translateX: -48 }, { scale: 0.92 }],
+            zIndex: 1,
+          },
+        ]}
+        onPress={() => onOpenViewer(0)}
+      >
+        <Image source={{ uri: leftItem.url }} style={StyleSheet.absoluteFill} contentFit="cover" />
+      </Pressable>
+
+      {/* Right Tilted Photo */}
+      <Pressable
+        style={[
+          styles.fannedCard,
+          {
+            width: cardWidth * 0.9,
+            height: cardHeight * 0.92,
+            borderColor: c.card,
+            transform: [{ rotate: "7deg" }, { translateX: 48 }, { scale: 0.92 }],
+            zIndex: 2,
+          },
+        ]}
+        onPress={() => onOpenViewer(media.length > 2 ? 2 : 1)}
+      >
+        <Image source={{ uri: rightItem.url }} style={StyleSheet.absoluteFill} contentFit="cover" />
+      </Pressable>
+
+      {/* Center Hero Photo */}
+      <Pressable
+        style={[
+          styles.fannedCard,
+          styles.fannedCenterCard,
+          {
+            width: cardWidth,
+            height: cardHeight,
+            borderColor: c.card,
+            transform: [{ rotate: "0deg" }, { scale: 1.03 }],
+            zIndex: 10,
+          },
+        ]}
+        onPress={() => onOpenViewer(1)}
+      >
+        <Image source={{ uri: centerItem.url }} style={StyleSheet.absoluteFill} contentFit="cover" />
+      </Pressable>
+    </View>
+  );
+}
+
+/**
+ * Post media:
+ * - Single item renders full width with 22px rounded corners.
+ * - 2 to 4 photos render the 3D fanned photo deck (exact Dribbble presentation).
+ * - Multi-item with video or > 4 items becomes a swipeable carousel.
  */
 export function MediaGrid({ media }: { media: MediaItem[] }) {
   const c = useColors();
@@ -139,14 +259,16 @@ export function MediaGrid({ media }: { media: MediaItem[] }) {
   const pageRef = useRef(0);
   const scrollRef = useRef<ScrollView>(null);
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+
   if (!media || media.length === 0) return null;
 
+  // Single Item
   if (media.length === 1) {
     const m = media[0];
     const h = m.type === "video" ? 240 : SLIDE_HEIGHT;
     if (m.type === "video") return <VideoTile uri={m.url} height={h} />;
     return (
-      <>
+      <View style={{ marginHorizontal: 12, borderRadius: 24, overflow: "hidden" }}>
         <Pressable onPress={() => setViewerIndex(0)}>
           <Image
             source={{ uri: m.url }}
@@ -158,10 +280,24 @@ export function MediaGrid({ media }: { media: MediaItem[] }) {
         {viewerIndex !== null && (
           <FullscreenViewer media={media} startIndex={0} onClose={() => setViewerIndex(null)} />
         )}
-      </>
+      </View>
     );
   }
 
+  // Multi-photo 3D Fanned Deck (2 to 4 photos, no video)
+  const isAllPhotos = media.every((m) => m.type !== "video");
+  if (isAllPhotos && media.length <= 4) {
+    return (
+      <View style={{ width: "100%" }}>
+        <FannedPhotoDeck media={media} onOpenViewer={(i) => setViewerIndex(i)} />
+        {viewerIndex !== null && (
+          <FullscreenViewer media={media} startIndex={viewerIndex} onClose={() => setViewerIndex(null)} />
+        )}
+      </View>
+    );
+  }
+
+  // Fallback to Swipeable Carousel
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const i = Math.round(e.nativeEvent.contentOffset.x / width);
     if (i !== pageRef.current && i >= 0 && i < media.length) {
@@ -170,9 +306,6 @@ export function MediaGrid({ media }: { media: MediaItem[] }) {
     }
   };
 
-  // When the screen re-lays-out (e.g. after navigating back), the ScrollView
-  // resets its offset to 0 and visibly "rewinds" through the slides. Snap
-  // straight back to the current page without animation instead.
   const restoreOffset = () => {
     scrollRef.current?.scrollTo({ x: pageRef.current * width, animated: false });
   };
@@ -248,6 +381,45 @@ export function MediaGrid({ media }: { media: MediaItem[] }) {
 }
 
 const styles = StyleSheet.create({
+  fannedContainer: {
+    height: 290,
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: 10,
+    overflow: "hidden",
+  },
+  fannedCard: {
+    position: "absolute",
+    borderRadius: 24,
+    borderWidth: 2.5,
+    overflow: "hidden",
+    ...Platform.select({
+      web: {
+        boxShadow: "0 10px 24px -4px rgba(0,0,0,0.18)",
+      } as object,
+      default: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.22,
+        shadowRadius: 12,
+        elevation: 8,
+      },
+    }),
+  },
+  fannedCenterCard: {
+    ...Platform.select({
+      web: {
+        boxShadow: "0 18px 36px -4px rgba(0,0,0,0.28)",
+      } as object,
+      default: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.32,
+        shadowRadius: 18,
+        elevation: 14,
+      },
+    }),
+  },
   playOverlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",

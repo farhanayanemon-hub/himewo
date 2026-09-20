@@ -1,221 +1,267 @@
-import { View, Text, Pressable, Platform, StyleSheet } from "react-native";
+import { View, Text, Pressable, Platform, StyleSheet, DeviceEventEmitter } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Svg, { Path } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import * as Haptics from "expo-haptics";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { useColors } from "@/hooks/useColors";
-
-type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
-
-type TabConfig = {
-  label: string;
-  icon: IoniconName;
-  iconOutline: IoniconName;
-  raised?: boolean;
-  badge?: boolean;
-};
-
-/**
- * Per-route presentation for the "Solid Dock" tab bar. Route names that are not
- * listed here (e.g. the header-driven "menu" route) are skipped.
- */
-const TABS: Record<string, TabConfig> = {
-  index: { label: "Feed", icon: "home", iconOutline: "home-outline" },
-  friends: { label: "Friends", icon: "people", iconOutline: "people-outline" },
-  reels: { label: "Reels", icon: "film", iconOutline: "film-outline", raised: true },
-  chats: {
-    label: "Chats",
-    icon: "chatbubbles",
-    iconOutline: "chatbubbles-outline",
-    badge: true,
-  },
-  profile: { label: "Profile", icon: "person-circle", iconOutline: "person-circle-outline" },
-};
-
-const ORDER = ["index", "friends", "reels", "chats", "profile"];
 
 export function SolidDockTabBar({
   state,
   navigation,
   unreadCount = 0,
 }: BottomTabBarProps & { unreadCount?: number }) {
-  const c = useColors();
   const insets = useSafeAreaInsets();
+  const currentRouteName = state.routes[state.index]?.name;
 
-  const routeByName = Object.fromEntries(state.routes.map((r) => [r.name, r]));
+  const triggerHaptic = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+  };
+
+  const navigateTo = (routeName: string) => {
+    triggerHaptic();
+    const route = state.routes.find((r) => r.name === routeName);
+    if (!route) return;
+
+    const focused = currentRouteName === routeName;
+    const event = navigation.emit({
+      type: "tabPress",
+      target: route.key,
+      canPreventDefault: true,
+    });
+    if (!focused && !event.defaultPrevented) {
+      navigation.navigate(routeName);
+    } else if (focused && routeName === "index") {
+      DeviceEventEmitter.emit("himewo:scroll-feed-to-top");
+    }
+  };
+
+  const handleCreatePress = () => {
+    triggerHaptic();
+    DeviceEventEmitter.emit("himewo:open-create-sheet");
+  };
+
+  const isHomeFocused = currentRouteName === "index";
+  const isChatsFocused = currentRouteName === "chats";
+  const isProfileFocused = currentRouteName === "profile";
 
   return (
-    <View style={{ backgroundColor: c.surface }}>
-      <View
-        style={[
-          styles.bar,
-          {
-            backgroundColor: c.surface,
-            borderTopColor: c.border,
-            shadowColor: "#000",
-          },
-        ]}
-      >
-        {ORDER.map((name) => {
-          const cfg = TABS[name];
-          const route = routeByName[name];
-          if (!cfg || !route) return null;
-
-          const routeIndex = state.routes.findIndex((r) => r.key === route.key);
-          const focused = state.index === routeIndex;
-
-          const onPress = () => {
-            const event = navigation.emit({
-              type: "tabPress",
-              target: route.key,
-              canPreventDefault: true,
-            });
-            if (!focused && !event.defaultPrevented) {
-              navigation.navigate(route.name);
-            }
-          };
-
-          const showBadge = cfg.badge && unreadCount > 0;
-
-          if (cfg.raised) {
-            return (
-              <Pressable
-                key={name}
-                style={styles.item}
-                onPress={onPress}
-                // The raised button lifts above the bar; extend the touch area
-                // upward so its protruding top stays tappable in React Native.
-                hitSlop={{ top: 24, bottom: 0, left: 6, right: 6 }}
-              >
-                <View
-                  style={[
-                    styles.raised,
-                    {
-                      backgroundColor: c.primary,
-                      shadowColor: c.primary,
-                      borderColor: c.surface,
-                    },
-                  ]}
-                >
-                  <Svg width={25} height={25} viewBox="0 0 24 24">
-                    <Path
-                      d="M4 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H4zm10 4-1.5 2.5h-3L11 4h2.5L12 6.5h2zM8 4l-1.5 2.5H4V4h4zM4 9h16v11H4V9zm6 3v6l5-3-5-3z"
-                      fill={c.primaryForeground}
-                    />
-                  </Svg>
-                </View>
-                <Text
-                  style={[
-                    styles.label,
-                    { color: focused ? c.primary : c.mutedForeground },
-                    focused && styles.labelActive,
-                  ]}
-                >
-                  {cfg.label}
-                </Text>
-              </Pressable>
-            );
-          }
-
-          return (
-            <Pressable key={name} style={styles.item} onPress={onPress}>
-              <View style={{ transform: [{ translateY: focused ? -3 : 0 }] }}>
-                <Ionicons
-                  name={focused ? cfg.icon : cfg.iconOutline}
-                  size={26}
-                  color={focused ? c.primary : c.mutedForeground}
-                />
-                {showBadge && (
-                  <View style={[styles.badge, { backgroundColor: c.destructive, borderColor: c.surface }]}>
-                    <Text style={styles.badgeText}>{unreadCount > 99 ? "99+" : unreadCount}</Text>
-                  </View>
-                )}
-              </View>
-              <Text
-                style={[
-                  styles.label,
-                  { color: focused ? c.primary : c.mutedForeground },
-                  focused && styles.labelActive,
-                ]}
-              >
-                {cfg.label}
+    <View
+      pointerEvents="box-none"
+      style={[
+        styles.container,
+        { bottom: Math.max(insets.bottom, 12) + 6 },
+      ]}
+    >
+      <View pointerEvents="box-none" style={styles.dockRow}>
+        {/* ISLAND 1 (LEFT): Separate Dark Circle [ 💬 ] */}
+        <Pressable
+          onPress={() => navigateTo("chats")}
+          style={({ pressed }) => [
+            styles.circleIsland,
+            isChatsFocused && styles.islandActive,
+            { transform: [{ scale: pressed ? 0.92 : 1 }] },
+          ]}
+          accessibilityLabel="Chats"
+          hitSlop={8}
+        >
+          <Ionicons
+            name={isChatsFocused ? "chatbubbles" : "chatbubbles-outline"}
+            size={22}
+            color="#FFFFFF"
+          />
+          {unreadCount > 0 ? (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>
+                {unreadCount > 99 ? "99+" : unreadCount}
               </Text>
-            </Pressable>
-          );
-        })}
+            </View>
+          ) : null}
+        </Pressable>
+
+        {/* ISLAND 2 (MIDDLE): Combined Pill [ ⌂ Home ] + [ + ] */}
+        <View style={styles.centerIsland}>
+          {/* Active / Inactive Home Pill */}
+          <Pressable
+            onPress={() => navigateTo("index")}
+            style={({ pressed }) => [
+              styles.homePill,
+              isHomeFocused && styles.homePillActive,
+              { transform: [{ scale: pressed ? 0.94 : 1 }] },
+            ]}
+            accessibilityLabel="Home Feed"
+            hitSlop={6}
+          >
+            <Ionicons
+              name={isHomeFocused ? "home" : "home-outline"}
+              size={18}
+              color="#FFFFFF"
+            />
+            <Text
+              style={[
+                styles.homeText,
+                { color: isHomeFocused ? "#FFFFFF" : "rgba(255,255,255,0.7)" },
+              ]}
+            >
+              Home
+            </Text>
+          </Pressable>
+
+          {/* Electric Cyan Plus Button */}
+          <Pressable
+            onPress={handleCreatePress}
+            style={({ pressed }) => [
+              styles.cyanPlusBtn,
+              { transform: [{ scale: pressed ? 0.90 : 1 }] },
+            ]}
+            accessibilityLabel="Create Post or Story"
+            hitSlop={8}
+          >
+            <Ionicons name="add" size={26} color="#14171D" />
+          </Pressable>
+        </View>
+
+        {/* ISLAND 3 (RIGHT): Separate Dark Circle [ 👤 ] */}
+        <Pressable
+          onPress={() => navigateTo("profile")}
+          style={({ pressed }) => [
+            styles.circleIsland,
+            isProfileFocused && styles.islandActive,
+            { transform: [{ scale: pressed ? 0.92 : 1 }] },
+          ]}
+          accessibilityLabel="Profile"
+          hitSlop={8}
+        >
+          <Ionicons
+            name={isProfileFocused ? "person" : "person-outline"}
+            size={22}
+            color="#FFFFFF"
+          />
+        </Pressable>
       </View>
-      <View style={{ height: insets.bottom, backgroundColor: c.surface }} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  bar: {
+  container: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 999,
+  },
+  dockRow: {
     flexDirection: "row",
-    alignItems: "flex-end",
-    height: 64,
-    paddingHorizontal: 8,
-    paddingBottom: 8,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+  },
+  circleIsland: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "#14171D",
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
     ...Platform.select({
-      web: { boxShadow: "0 -8px 30px rgba(0,0,0,0.08)" } as object,
+      web: {
+        boxShadow: "0 14px 34px -4px rgba(0,0,0,0.38), 0 4px 14px rgba(0,0,0,0.22)",
+      } as object,
       default: {
-        shadowOffset: { width: 0, height: -4 },
-        shadowOpacity: 0.08,
-        shadowRadius: 14,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.38,
+        shadowRadius: 16,
         elevation: 12,
       },
     }),
   },
-  item: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "flex-end",
-    height: "100%",
+  islandActive: {
+    borderColor: "rgba(255,255,255,0.25)",
   },
-  raised: {
-    position: "absolute",
-    bottom: 20,
-    width: 54,
-    height: 54,
-    borderRadius: 18,
-    borderWidth: 4,
+  centerIsland: {
+    height: 52,
+    paddingLeft: 6,
+    paddingRight: 6,
+    borderRadius: 26,
+    backgroundColor: "#14171D",
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
     ...Platform.select({
-      web: { boxShadow: "0 12px 24px rgba(0,0,0,0.28)" } as object,
+      web: {
+        boxShadow: "0 14px 34px -4px rgba(0,0,0,0.38), 0 4px 14px rgba(0,0,0,0.22)",
+      } as object,
       default: {
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.4,
-        shadowRadius: 12,
-        elevation: 10,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.38,
+        shadowRadius: 16,
+        elevation: 12,
       },
     }),
   },
-  label: {
-    fontSize: 10,
-    marginTop: 4,
-    fontFamily: "Inter_500Medium",
+  homePill: {
+    height: 40,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
-  labelActive: {
-    fontFamily: "Inter_700Bold",
+  homePillActive: {
+    backgroundColor: "rgba(255,255,255,0.15)",
+  },
+  homeText: {
+    fontSize: 13,
+    fontWeight: "700",
+    letterSpacing: -0.2,
+  },
+  cyanPlusBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#00C2E8",
+    alignItems: "center",
+    justifyContent: "center",
+    ...Platform.select({
+      web: {
+        boxShadow: "0 0 16px rgba(0, 194, 232, 0.55)",
+      } as object,
+      default: {
+        shadowColor: "#00C2E8",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.6,
+        shadowRadius: 8,
+        elevation: 6,
+      },
+    }),
   },
   badge: {
     position: "absolute",
-    top: -5,
-    right: -8,
-    minWidth: 17,
-    height: 17,
+    top: -2,
+    right: -2,
+    minWidth: 18,
+    height: 18,
     borderRadius: 9,
-    borderWidth: 1.5,
-    paddingHorizontal: 3,
+    backgroundColor: "#EF4444",
+    borderWidth: 2,
+    borderColor: "#14171D",
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 3,
   },
   badgeText: {
-    color: "#fff",
+    color: "#FFFFFF",
     fontSize: 9,
-    fontFamily: "Inter_700Bold",
+    fontWeight: "800",
     lineHeight: 12,
   },
 });

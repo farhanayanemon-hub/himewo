@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import {
   getFeed,
   getGetFeedQueryKey,
@@ -150,6 +151,27 @@ export default function HomeScreen() {
     return () => sub.remove();
   }, [onRefresh]);
 
+  const flatListRef = useRef<FlatList>(null);
+
+  const triggerHaptic = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+  };
+
+  useEffect(() => {
+    const subCreate = DeviceEventEmitter.addListener("himewo:open-create-sheet", () => {
+      setCreateSheetOpen(true);
+    });
+    const subScroll = DeviceEventEmitter.addListener("himewo:scroll-feed-to-top", () => {
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+    });
+    return () => {
+      subCreate.remove();
+      subScroll.remove();
+    };
+  }, []);
+
   const onEndReached = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
@@ -162,55 +184,94 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={["top"]}>
-      <View style={[styles.header, { backgroundColor: c.card, borderBottomColor: c.border }]}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+      {/* 🌟 120Hz GLOSSY TOP HEADER: [ ☰ ]   🐱 HiMewo   [ 🔔 count ] [ 🔍 ] */}
+      <View style={[styles.header, { backgroundColor: c.background }]}>
+        {/* Left: Plump Glossy Hamburger Button [ ☰ ] */}
+        <Pressable
+          style={({ pressed }) => [
+            styles.glossyCircleBtn,
+            {
+              backgroundColor: c.card,
+              borderColor: c.border,
+              transform: [{ scale: pressed ? 0.92 : 1 }],
+            },
+          ]}
+          onPress={() => {
+            triggerHaptic();
+            router.push("/menu" as never);
+          }}
+          accessibilityLabel="Open Menu"
+          hitSlop={8}
+        >
+          <Ionicons name="menu" size={24} color={c.foreground} />
+        </Pressable>
+
+        {/* Center: HiMewo Pixel Cat Logo + Brand Typography */}
+        <Pressable
+          style={({ pressed }) => [
+            styles.logoCenterCluster,
+            { transform: [{ scale: pressed ? 0.94 : 1 }] },
+          ]}
+          onPress={() => {
+            triggerHaptic();
+            flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+            onRefresh();
+          }}
+          accessibilityLabel="HiMewo Feed, Tap to scroll to top"
+        >
+          <Image
+            source={require("@/assets/images/icon.png")}
+            style={styles.headerLogo}
+            contentFit="cover"
+          />
+          <Text style={[styles.headerBrandText, { color: c.foreground }]}>
+            HiMewo
+          </Text>
+        </Pressable>
+
+        {/* Right Action Cluster: Glossy [ 🔔 count ] pill & [ 🔍 ] circle */}
+        <View style={styles.rightHeaderCluster}>
+          {/* Notification Pill */}
           <Pressable
-            style={[styles.iconBtn, { backgroundColor: c.secondary }]}
-            onPress={() => router.push("/menu" as never)}
-          >
-            <Ionicons name="menu" size={20} color={c.foreground} />
-          </Pressable>
-          <Text style={[styles.brand, { color: c.primary }]}>HiMewo</Text>
-        </View>
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <Pressable
-            style={[styles.iconBtn, { backgroundColor: c.secondary }]}
-            onPress={() => setCreateSheetOpen(true)}
-            accessibilityLabel="Create"
-          >
-            <Ionicons name="add" size={22} color={c.foreground} />
-          </Pressable>
-          <Pressable
-            style={[styles.iconBtn, { backgroundColor: c.secondary }]}
-            onPress={() => router.push("/search")}
-          >
-            <Ionicons name="search" size={20} color={c.foreground} />
-          </Pressable>
-          <Pressable
-            style={[styles.iconBtn, { backgroundColor: c.secondary, position: "relative" }]}
-            onPress={() => router.push("/notifications" as never)}
+            style={({ pressed }) => [
+              styles.glossyNotifPill,
+              {
+                backgroundColor: c.card,
+                borderColor: c.border,
+                transform: [{ scale: pressed ? 0.92 : 1 }],
+              },
+            ]}
+            onPress={() => {
+              triggerHaptic();
+              router.push("/notifications" as never);
+            }}
+            accessibilityLabel="Notifications"
+            hitSlop={8}
           >
             <Ionicons name="notifications-outline" size={20} color={c.foreground} />
-            {unreadNotificationCount > 0 ? (
-              <View
-                style={{
-                  position: "absolute",
-                  top: -2,
-                  right: -2,
-                  minWidth: 16,
-                  height: 16,
-                  borderRadius: 8,
-                  backgroundColor: c.destructive || "#ef4444",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  paddingHorizontal: 3,
-                }}
-              >
-                <Text style={{ color: "#fff", fontSize: 10, fontWeight: "bold" }}>
-                  {unreadNotificationCount > 99 ? "99+" : unreadNotificationCount}
-                </Text>
-              </View>
-            ) : null}
+            <Text style={[styles.notifCountText, { color: c.foreground }]}>
+              {unreadNotificationCount > 99 ? "99+" : unreadNotificationCount}
+            </Text>
+          </Pressable>
+
+          {/* Search Button */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.glossyCircleBtn,
+              {
+                backgroundColor: c.card,
+                borderColor: c.border,
+                transform: [{ scale: pressed ? 0.92 : 1 }],
+              },
+            ]}
+            onPress={() => {
+              triggerHaptic();
+              router.push("/search");
+            }}
+            accessibilityLabel="Search"
+            hitSlop={8}
+          >
+            <Ionicons name="search" size={20} color={c.foreground} />
           </Pressable>
         </View>
       </View>
@@ -219,6 +280,7 @@ export default function HomeScreen() {
         <ActivityIndicator color={c.primary} style={{ marginTop: 40 }} />
       ) : (
         <FlatList
+          ref={flatListRef}
           data={feedItems}
           keyExtractor={(item) =>
             item.kind === "ad"
@@ -233,6 +295,7 @@ export default function HomeScreen() {
           initialNumToRender={5}
           updateCellsBatchingPeriod={50}
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 115 }}
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={onRefresh} tintColor={c.primary} />
           }
@@ -246,33 +309,44 @@ export default function HomeScreen() {
             ) : null
           }
           ListHeaderComponent={
-            <View style={{ borderBottomWidth: StyleSheet.hairlineWidth, borderColor: c.border, marginBottom: 8 }}>
+            <View style={{ marginBottom: 8 }}>
               {/* StoryBar without bottom gap */}
               <StoryBar onCreatePress={() => setCreateSheetOpen(true)} />
 
-              {/* Clean Facebook-style divider line */}
-              <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: c.border }} />
-
-              {/* Post Composer directly attached */}
+              {/* Sleek Retained Post Composer */}
               <Pressable
-                style={[styles.composer, { backgroundColor: c.card }]}
-                onPress={() => router.push("/create-post")}
+                style={({ pressed }) => [
+                  styles.sleekComposer,
+                  {
+                    backgroundColor: c.card,
+                    borderColor: c.border,
+                    transform: [{ scale: pressed ? 0.98 : 1 }],
+                  },
+                ]}
+                onPress={() => {
+                  triggerHaptic();
+                  router.push("/create-post");
+                }}
               >
                 <Avatar
                   uri={actingPage ? actingPage.avatarUrl : user?.avatarUrl}
                   name={actingPage?.name ?? user?.displayName}
                   size={40}
                 />
-                <View style={[styles.composerInput, { backgroundColor: c.secondary }]}>
-                  <Text style={{ color: c.mutedForeground }}>
+                <View style={[styles.composerInputPill, { backgroundColor: c.secondary }]}>
+                  <Text style={{ color: c.mutedForeground, fontSize: 13, fontWeight: "500" }}>
                     {actingPage ? `What's on your mind, ${actingPage.name}?` : "What's on your mind?"}
                   </Text>
                 </View>
                 <Pressable
                   hitSlop={10}
-                  onPress={() => router.push("/create-post?media=1")}
+                  onPress={() => {
+                    triggerHaptic();
+                    router.push("/create-post?media=1");
+                  }}
+                  style={styles.composerMediaBtn}
                 >
-                  <Ionicons name="images" size={24} color="#31a24c" />
+                  <Ionicons name="images" size={22} color="#10B981" />
                 </Pressable>
               </Pressable>
 
@@ -473,28 +547,112 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  brand: { fontFamily: "Inter_700Bold", fontSize: 26 },
-  iconBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+  glossyCircleBtn: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
+    ...Platform.select({
+      web: {
+        boxShadow: "0 6px 16px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)",
+      } as object,
+      default: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 3,
+      },
+    }),
   },
-  composer: {
+  logoCenterCluster: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 18,
+  },
+  headerLogo: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+  },
+  headerBrandText: {
+    fontSize: 18,
+    fontWeight: "900",
+    letterSpacing: -0.3,
+  },
+  rightHeaderCluster: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  glossyNotifPill: {
+    height: 46,
+    paddingHorizontal: 14,
+    borderRadius: 23,
+    borderWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    ...Platform.select({
+      web: {
+        boxShadow: "0 6px 16px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)",
+      } as object,
+      default: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 3,
+      },
+    }),
+  },
+  notifCountText: {
+    fontSize: 13,
+    fontWeight: "800",
+    letterSpacing: -0.2,
+  },
+  sleekComposer: {
+    marginHorizontal: 14,
+    marginTop: 4,
+    marginBottom: 8,
+    padding: 10,
+    borderRadius: 24,
+    borderWidth: 1,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    padding: 12,
-    marginBottom: 0,
+    ...Platform.select({
+      web: {
+        boxShadow: "0 4px 14px rgba(0,0,0,0.04)",
+      } as object,
+      default: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 6,
+        elevation: 2,
+      },
+    }),
   },
-  composerInput: {
+  composerInputPill: {
     flex: 1,
-    borderRadius: 20,
+    height: 38,
+    borderRadius: 19,
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    justifyContent: "center",
+  },
+  composerMediaBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
   },
   birthday: {
     flexDirection: "row",

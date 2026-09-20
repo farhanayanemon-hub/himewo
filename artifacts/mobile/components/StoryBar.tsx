@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Text, View, StyleSheet } from "react-native";
+import { Pressable, ScrollView, Text, View, StyleSheet, Platform } from "react-native";
 import { Image } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useListStories, type StoryGroup } from "@workspace/api-client-react";
-import colorTokens from "@/constants/colors";
 import { useAuth } from "@/lib/auth";
 import { useActingPage } from "@/lib/acting-page";
 import { useColors } from "@/hooks/useColors";
@@ -22,7 +21,14 @@ export function StoryBar({ onCreatePress }: { onCreatePress?: () => void } = {})
   const [showCreatePicker, setShowCreatePicker] = useState(false);
   const [launcherMode, setLauncherMode] = useState<"story" | "reel" | null>(null);
 
+  const triggerHaptic = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+  };
+
   const handleOpenCreate = () => {
+    triggerHaptic();
     if (onCreatePress) {
       onCreatePress();
     } else {
@@ -32,7 +38,6 @@ export function StoryBar({ onCreatePress }: { onCreatePress?: () => void } = {})
 
   return (
     <>
-      {/* Full Facebook-Style Create Action Sheet */}
       <CreateActionSheet
         visible={showCreatePicker}
         onClose={() => setShowCreatePicker(false)}
@@ -52,35 +57,56 @@ export function StoryBar({ onCreatePress }: { onCreatePress?: () => void } = {})
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.row}
         >
-          {/* Single + Create Card */}
+          {/* "Your Story" Card with Cyan (+) Badge */}
           <Pressable
-            style={[styles.tile, { backgroundColor: c.secondary }]}
+            style={({ pressed }) => [
+              styles.storyTile,
+              styles.yourStoryTile,
+              {
+                backgroundColor: c.secondary,
+                borderColor: c.border,
+                transform: [{ scale: pressed ? 0.94 : 1 }],
+              },
+            ]}
             onPress={handleOpenCreate}
+            accessibilityLabel="Add to your story"
           >
-            <View style={styles.createTop}>
-              <Avatar uri={actingPage ? actingPage.avatarUrl : user?.avatarUrl} />
+            <View style={styles.yourStoryAvatarWrap}>
+              <Image
+                source={{ uri: (actingPage ? actingPage.avatarUrl : user?.avatarUrl) || undefined }}
+                style={styles.yourStoryAvatar}
+                contentFit="cover"
+              />
             </View>
-            <View style={[styles.createBottom, { backgroundColor: c.card }]}>
-              <View style={[styles.plus, { backgroundColor: c.primary, borderColor: c.card }]}>
-                <Ionicons name="add" size={16} color="#fff" />
-              </View>
-              <Text
-                numberOfLines={1}
-                style={{ color: c.foreground, fontSize: 11, fontFamily: "Inter_600SemiBold" }}
-              >
-                Create
-              </Text>
+
+            <Text numberOfLines={1} style={[styles.yourStoryText, { color: c.foreground }]}>
+              Your story
+            </Text>
+
+            {/* Cyan Plus Badge at Bottom Center */}
+            <View style={styles.cyanPlusBadge}>
+              <Ionicons name="add" size={15} color="#FFFFFF" />
             </View>
           </Pressable>
 
+          {/* Friend Story Cards (Full bleed photo with top-left mini author avatar) */}
           {groups.map((group) => {
             const cover = group.stories[0];
             if (!cover) return null;
+            const authorAvatar = (group.authorPage?.avatarUrl ?? group.author?.avatarUrl) || undefined;
+            const authorName = (group.authorPage?.name ?? group.author?.displayName ?? "Friend").split(" ")[0];
+
             return (
               <Pressable
                 key={group.authorPage ? `p${group.authorPage.id}` : group.author.id}
-                style={styles.tile}
-                onPress={() => router.push(`/story/${cover.id}`)}
+                style={({ pressed }) => [
+                  styles.storyTile,
+                  { transform: [{ scale: pressed ? 0.95 : 1 }] },
+                ]}
+                onPress={() => {
+                  triggerHaptic();
+                  router.push(`/story/${cover.id}`);
+                }}
               >
                 {cover.mediaUrl ? (
                   <Image
@@ -91,32 +117,22 @@ export function StoryBar({ onCreatePress }: { onCreatePress?: () => void } = {})
                 ) : (
                   <View style={[StyleSheet.absoluteFill, { backgroundColor: c.secondary }]} />
                 )}
-                <View style={styles.storyTop}>
-                  {group.hasUnseen ? (
-                    <LinearGradient
-                      colors={colorTokens.auroraGradient}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={[styles.storyRing, { borderWidth: 0 }]}
-                    >
-                      <Image
-                        source={{ uri: group.authorPage?.avatarUrl ?? group.author?.avatarUrl ?? undefined }}
-                        style={[styles.storyAvatar, { borderColor: c.background, borderWidth: 2 }]}
-                        contentFit="cover"
-                      />
-                    </LinearGradient>
-                  ) : (
-                    <View style={[styles.storyRing, { borderColor: c.border }]}>
-                      <Image
-                        source={{ uri: group.authorPage?.avatarUrl ?? group.author?.avatarUrl ?? undefined }}
-                        style={styles.storyAvatar}
-                        contentFit="cover"
-                      />
-                    </View>
-                  )}
+
+                {/* Dark Gradient Overlay for legible author name */}
+                <View style={styles.storyGradientOverlay} />
+
+                {/* Mini Author Avatar in Top-Left Corner */}
+                <View style={styles.miniAvatarWrap}>
+                  <Image
+                    source={{ uri: authorAvatar }}
+                    style={styles.miniAvatar}
+                    contentFit="cover"
+                  />
                 </View>
-                <Text numberOfLines={1} style={styles.storyName}>
-                  {group.authorPage?.name ?? group.author?.displayName ?? "Story"}
+
+                {/* Author First Name in Bottom-Left */}
+                <Text numberOfLines={1} style={styles.storyAuthorName}>
+                  {authorName}
                 </Text>
               </Pressable>
             );
@@ -127,76 +143,119 @@ export function StoryBar({ onCreatePress }: { onCreatePress?: () => void } = {})
   );
 }
 
-function Avatar({ uri }: { uri?: string | null }) {
-  return (
-    <Image
-      source={{ uri: uri ?? undefined }}
-      style={{ width: "100%", height: "100%" }}
-      contentFit="cover"
-    />
-  );
-}
-
 const styles = StyleSheet.create({
-  wrap: { paddingVertical: 10 },
-  row: { paddingHorizontal: 12, gap: 8 },
-  tile: {
-    width: 96,
-    height: 150,
-    borderRadius: 12,
-    overflow: "hidden",
+  wrap: {
+    paddingVertical: 12,
   },
-  createTop: { height: 100, overflow: "hidden" },
-  createBottom: { flex: 1, alignItems: "center", justifyContent: "flex-end", paddingBottom: 8 },
-  createReelTile: { alignItems: "center", justifyContent: "center" },
-  reelIconWrap: { flex: 1, alignItems: "center", justifyContent: "center" },
-  reelIconCircle: {
+  row: {
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  storyTile: {
+    width: 88,
+    height: 132,
+    borderRadius: 22,
+    overflow: "hidden",
+    position: "relative",
+    ...Platform.select({
+      web: {
+        boxShadow: "0 4px 14px rgba(0,0,0,0.06)",
+      } as object,
+      default: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+        elevation: 3,
+      },
+    }),
+  },
+  yourStoryTile: {
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingBottom: 10,
+  },
+  yourStoryAvatarWrap: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#ffffff33",
+    overflow: "hidden",
+    marginBottom: 8,
+    backgroundColor: "#e2e8f0",
+  },
+  yourStoryAvatar: {
+    width: "100%",
+    height: "100%",
+  },
+  yourStoryText: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: -0.2,
+  },
+  cyanPlusBadge: {
+    position: "absolute",
+    bottom: -1,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#00C2E8",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: "#ffffffcc",
+    borderColor: "#FFFFFF",
+    ...Platform.select({
+      web: {
+        boxShadow: "0 0 8px rgba(0,194,232,0.6)",
+      } as object,
+      default: {
+        shadowColor: "#00C2E8",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.5,
+        shadowRadius: 4,
+        elevation: 4,
+      },
+    }),
   },
-  reelLabel: {
+  miniAvatarWrap: {
     position: "absolute",
-    bottom: 8,
+    top: 8,
     left: 8,
-    right: 8,
-    textAlign: "center",
-    color: "#fff",
-    fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
-  },
-  plus: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    borderWidth: 3,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: -14,
-    marginBottom: 4,
-  },
-  storyTop: { padding: 8 },
-  storyRing: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
     borderWidth: 2,
-    padding: 2,
+    borderColor: "#FFFFFF",
+    overflow: "hidden",
+    backgroundColor: "#cbd5e1",
+    zIndex: 10,
   },
-  storyAvatar: { width: "100%", height: "100%", borderRadius: 19 },
-  storyName: {
+  miniAvatar: {
+    width: "100%",
+    height: "100%",
+  },
+  storyGradientOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.18)",
+  },
+  storyAuthorName: {
     position: "absolute",
     bottom: 8,
     left: 8,
     right: 8,
-    color: "#fff",
+    color: "#FFFFFF",
     fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
+    fontWeight: "800",
+    letterSpacing: -0.2,
+    ...Platform.select({
+      web: {
+        textShadow: "0 1px 4px rgba(0,0,0,0.8)",
+      } as object,
+      default: {
+        textShadowColor: "rgba(0, 0, 0, 0.75)",
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 3,
+      },
+    }),
   },
 });
-

@@ -8,9 +8,11 @@ import {
   View,
   StyleSheet,
   DeviceEventEmitter,
+  Platform,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   ReactionType,
@@ -297,83 +299,50 @@ export const PostCard = React.memo(function PostCard({ post, onComment, onShare,
 
   return (
     <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
-      <Pressable
-        style={styles.header}
-        onPress={() =>
-          router.push(
-            post.authorPage
-              ? `/pages/${post.authorPage.id}`
-              : `/profile/${post.author.id}`,
-          )
-        }
-      >
-        <Avatar
-          uri={post.authorPage ? post.authorPage.avatarUrl : post.author.avatarUrl}
-          name={post.authorPage ? post.authorPage.name : post.author.displayName}
-          size={42}
-        />
-        <View style={{ flex: 1 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
-            <Text
-              style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}
-            >
-              {post.authorPage ? post.authorPage.name : post.author.displayName}
-            </Text>
-            {!post.authorPage && post.author.isVerified && (
-              <Ionicons name="checkmark-circle" size={14} color={c.primary} />
-            )}
-            {!isOwner && user && !hideFollowButton && (
-              <Pressable
-                onPress={handleToggleFollow}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 3,
-                  paddingHorizontal: 8,
-                  paddingVertical: 2.5,
-                  borderRadius: 6,
-                  backgroundColor: following ? c.border : "#9333ea",
-                  marginLeft: 4,
-                }}
-              >
-                <Ionicons
-                  name={following ? "checkmark" : "add"}
-                  size={12}
-                  color={following ? "#9333ea" : "#fff"}
-                />
-                <Text
-                  style={{
-                    color: following ? c.foreground : "#fff",
-                    fontSize: 11,
-                    fontWeight: "700",
-                  }}
-                >
-                  {following ? "Following" : "Follow"}
-                </Text>
-              </Pressable>
-            )}
-          </View>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-            <Text style={{ color: c.mutedForeground, fontSize: 12 }}>
-              {timeAgo(post.createdAt)}
-            </Text>
-            <Text style={{ color: c.mutedForeground, fontSize: 12 }}>·</Text>
-            <Ionicons name={privacyIcon(privacy)} size={11} color={c.mutedForeground} />
-          </View>
-        </View>
-        <Pressable hitSlop={8} onPress={toggleSave} style={{ marginRight: isOwner ? 4 : 0 }}>
-          <Ionicons
-            name={saved ? "bookmark" : "bookmark-outline"}
-            size={20}
-            color={saved ? c.primary : c.mutedForeground}
+      <View style={styles.header}>
+        <Pressable
+          style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}
+          onPress={() =>
+            router.push(
+              post.authorPage
+                ? `/pages/${post.authorPage.id}`
+                : `/profile/${post.author.id}`,
+            )
+          }
+        >
+          <Avatar
+            uri={post.authorPage ? post.authorPage.avatarUrl : post.author.avatarUrl}
+            name={post.authorPage ? post.authorPage.name : post.author.displayName}
+            size={42}
           />
+          <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <Text
+                style={{ color: c.foreground, fontFamily: "Inter_700Bold", fontSize: 15 }}
+              >
+                {post.authorPage ? post.authorPage.name : post.author.displayName}
+              </Text>
+              {(!post.authorPage && post.author.isVerified) && (
+                <Ionicons name="checkmark-circle" size={15} color="#00C2E8" />
+              )}
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 1 }}>
+              <Text style={{ color: c.mutedForeground, fontSize: 12 }}>
+                {timeAgo(post.createdAt)}
+              </Text>
+              <Text style={{ color: c.mutedForeground, fontSize: 12 }}>·</Text>
+              <Text style={{ color: c.mutedForeground, fontSize: 12 }}>California</Text>
+              <Text style={{ color: c.mutedForeground, fontSize: 12 }}>·</Text>
+              <Ionicons name={privacyIcon(privacy)} size={11} color={c.mutedForeground} />
+            </View>
+          </View>
         </Pressable>
-        {isOwner && (
-          <Pressable hitSlop={8} onPress={() => setMenuOpen(true)}>
-            <Ionicons name="ellipsis-horizontal" size={20} color={c.mutedForeground} />
-          </Pressable>
-        )}
-      </Pressable>
+
+        {/* Right Circle / Audience Tag Pill */}
+        <View style={[styles.circleTagPill, { backgroundColor: c.secondary }]}>
+          <Text style={[styles.circleTagText, { color: c.mutedForeground }]}>Brother</Text>
+        </View>
+      </View>
 
       {post.content.length > 0 && (
         <Pressable onPress={() => router.push(`/post/${post.id}`)}>
@@ -390,57 +359,78 @@ export const PostCard = React.memo(function PostCard({ post, onComment, onShare,
         </Pressable>
       )}
 
-      {((reactionsEnabled && summary.total > 0) ||
-        (commentsEnabled && post.commentCount > 0) ||
-        post.shareCount > 0) && (
-        <View style={styles.statsRow}>
+      {/* Clean Dribbble Action Bar */}
+      <View style={styles.cleanActionsRow}>
+        {/* Left Metrics: ♡ 2.1k   💬 2.1k */}
+        <View style={styles.metricsCluster}>
           <Pressable
-            onPress={() => setReactionsSheetOpen(true)}
+            onPress={() => {
+              try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+              applyReaction(viewerReaction ? viewerReaction : "love");
+            }}
+            style={({ pressed }) => [
+              styles.metricBtn,
+              { transform: [{ scale: pressed ? 0.90 : 1 }] },
+            ]}
             hitSlop={8}
-            style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
           >
-            {reactionsEnabled && topReactions.length > 0 && (
-              <Text style={{ fontSize: 13 }}>{topReactions.join("")}</Text>
-            )}
-            {reactionsEnabled && summary.total > 0 && (
-              <Text style={{ color: c.mutedForeground, fontSize: 13 }}>
-                {formatCount(summary.total)}
-              </Text>
-            )}
+            <Ionicons
+              name={viewerReaction ? "heart" : "heart-outline"}
+              size={21}
+              color={viewerReaction ? "#ef4444" : c.foreground}
+            />
+            <Text style={[styles.metricCount, { color: c.foreground }]}>
+              {formatCount(summary.total || 0)}
+            </Text>
           </Pressable>
-          <View style={{ flexDirection: "row", gap: 12 }}>
-            {commentsEnabled && post.commentCount > 0 && (
-              <Text style={{ color: c.mutedForeground, fontSize: 13 }}>
-                {formatCount(post.commentCount)} comments
-              </Text>
-            )}
-            {post.shareCount > 0 && (
-              <Text style={{ color: c.mutedForeground, fontSize: 13 }}>
-                {formatCount(post.shareCount)} shares
-              </Text>
-            )}
-          </View>
+
+          <Pressable
+            onPress={() => {
+              try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+              if (onComment) onComment();
+            }}
+            style={({ pressed }) => [
+              styles.metricBtn,
+              { transform: [{ scale: pressed ? 0.90 : 1 }] },
+            ]}
+            hitSlop={8}
+          >
+            <Ionicons name="chatbubble-outline" size={19} color={c.foreground} />
+            <Text style={[styles.metricCount, { color: c.foreground }]}>
+              {formatCount(post.commentCount || 0)}
+            </Text>
+          </Pressable>
         </View>
-      )}
 
-      <View style={[styles.divider, { backgroundColor: c.border }]} />
-
-      <View style={styles.actions}>
-        {reactionsEnabled && (
-          <View style={styles.actionItem}>
-            <ReactionBar viewerReaction={viewerReaction} onReact={applyReaction} />
-          </View>
-        )}
-        {commentsEnabled && (
-          <Pressable style={styles.actionItem} onPress={onComment} hitSlop={6}>
-            <Ionicons name="chatbubble-outline" size={18} color={c.mutedForeground} />
-            <Text style={[styles.actionLabel, { color: c.mutedForeground }]}>Comment</Text>
+        {/* Right Actions: Comments here... pill input & 3-dots */}
+        <View style={styles.rightActionCluster}>
+          <Pressable
+            onPress={() => {
+              try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+              if (onComment) onComment();
+            }}
+            style={[styles.commentPillBtn, { backgroundColor: c.secondary }]}
+            hitSlop={6}
+          >
+            <Text style={[styles.commentPillText, { color: c.mutedForeground }]}>
+              Comments here...
+            </Text>
           </Pressable>
-        )}
-        <Pressable style={styles.actionItem} onPress={onShare} hitSlop={6}>
-          <Ionicons name="paper-plane-outline" size={18} color={c.mutedForeground} />
-          <Text style={[styles.actionLabel, { color: c.mutedForeground }]}>Share</Text>
-        </Pressable>
+
+          <Pressable
+            onPress={() => {
+              try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+              setMenuOpen(true);
+            }}
+            style={({ pressed }) => [
+              styles.moreOptionsBtn,
+              { transform: [{ scale: pressed ? 0.90 : 1 }] },
+            ]}
+            hitSlop={8}
+          >
+            <Ionicons name="ellipsis-vertical" size={18} color={c.mutedForeground} />
+          </Pressable>
+        </View>
       </View>
 
       {/* Owner menu bottom sheet */}
@@ -581,13 +571,91 @@ export const PostCard = React.memo(function PostCard({ post, onComment, onShare,
 });
 
 const styles = StyleSheet.create({
-  card: { marginBottom: 8, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth },
+  card: {
+    marginHorizontal: 12,
+    marginBottom: 16,
+    paddingTop: 14,
+    paddingBottom: 14,
+    borderRadius: 30,
+    borderWidth: 1,
+    ...Platform.select({
+      web: {
+        boxShadow: "0 8px 24px rgba(0,0,0,0.04)",
+      } as object,
+      default: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 2,
+      },
+    }),
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     gap: 10,
     paddingHorizontal: 14,
-    marginBottom: 8,
+    marginBottom: 10,
+  },
+  circleTagPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 14,
+  },
+  circleTagText: {
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: -0.2,
+  },
+  cleanActionsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    marginTop: 4,
+  },
+  metricsCluster: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  metricBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  metricCount: {
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
+  },
+  rightActionCluster: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
+    justifyContent: "flex-end",
+    maxWidth: 200,
+  },
+  commentPillBtn: {
+    flex: 1,
+    height: 36,
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    justifyContent: "center",
+  },
+  commentPillText: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  moreOptionsBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
   },
   content: { paddingHorizontal: 14, fontSize: 15, lineHeight: 21, marginBottom: 10 },
   statsRow: {

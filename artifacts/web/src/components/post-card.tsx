@@ -341,7 +341,7 @@ export function PostCard({
   const PrivacyIcon = meta.icon;
 
   return (
-    <div className="aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-border/70 p-3 sm:p-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+    <div className="aurora-glass-card rounded-2xl sm:rounded-[28px] border border-border/70 p-3.5 sm:p-4 mb-4 shadow-[0_4px_20px_rgba(0,0,0,0.03)] animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
           <Link href={getAuthorProfileUrl(post.author, post.authorPage)} className="shrink-0 group">
