@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
   StyleSheet,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
@@ -36,6 +37,38 @@ const privacyOptions = [
   { value: PostInputPrivacy.private, label: "Only me", icon: "lock-closed" as const },
 ];
 
+type FeelingItem = { verb: string; label: string; emoji: string };
+
+const FEELINGS: FeelingItem[] = [
+  { verb: "feeling", label: "happy", emoji: "😊" },
+  { verb: "feeling", label: "blessed", emoji: "😇" },
+  { verb: "feeling", label: "loved", emoji: "🥰" },
+  { verb: "feeling", label: "excited", emoji: "🤩" },
+  { verb: "feeling", label: "grateful", emoji: "🙏" },
+  { verb: "feeling", label: "relaxed", emoji: "😌" },
+  { verb: "feeling", label: "sad", emoji: "😢" },
+  { verb: "feeling", label: "tired", emoji: "😴" },
+  { verb: "feeling", label: "angry", emoji: "😠" },
+  { verb: "feeling", label: "sick", emoji: "🤒" },
+  { verb: "feeling", label: "proud", emoji: "🥲" },
+  { verb: "feeling", label: "motivated", emoji: "💪" },
+];
+
+const ACTIVITIES: FeelingItem[] = [
+  { verb: "celebrating", label: "a birthday", emoji: "🎉" },
+  { verb: "watching", label: "a movie", emoji: "🎬" },
+  { verb: "listening to", label: "music", emoji: "🎵" },
+  { verb: "eating", label: "delicious food", emoji: "🍔" },
+  { verb: "drinking", label: "coffee", emoji: "☕" },
+  { verb: "traveling to", label: "a new place", emoji: "✈️" },
+  { verb: "reading", label: "a book", emoji: "📖" },
+  { verb: "playing", label: "games", emoji: "🎮" },
+  { verb: "working out", label: "at the gym", emoji: "🏋️" },
+  { verb: "studying", label: "hard", emoji: "📚" },
+  { verb: "shopping", label: "for something nice", emoji: "🛍️" },
+  { verb: "praying", label: "", emoji: "🤲" },
+];
+
 export default function CreatePostScreen() {
   const c = useColors();
   const qc = useQueryClient();
@@ -50,6 +83,14 @@ export default function CreatePostScreen() {
   const [assets, setAssets] = useState<PickedAsset[]>([]);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+
+  // Feelings & Location state
+  const [feeling, setFeeling] = useState<FeelingItem | null>(null);
+  const [feelingOpen, setFeelingOpen] = useState(false);
+  const [feelingTab, setFeelingTab] = useState<"feelings" | "activities">("feelings");
+  const [feelingSearch, setFeelingSearch] = useState("");
+  const [location, setLocation] = useState("");
+  const [showLocation, setShowLocation] = useState(false);
 
   const pick = async () => {
     const res = await ImagePicker.launchImageLibraryAsync({
@@ -110,6 +151,10 @@ export default function CreatePostScreen() {
           content: content.trim(),
           privacy,
           media,
+          feelingVerb: feeling?.verb || undefined,
+          feeling: feeling?.label || undefined,
+          feelingEmoji: feeling?.emoji || undefined,
+          location: location.trim() || undefined,
           ...(actingPage ? { pageId: actingPage.id } : {}),
         },
       });
@@ -122,7 +167,8 @@ export default function CreatePostScreen() {
     }
   };
 
-  const canPost = (content.trim().length > 0 || assets.length > 0) && !uploading;
+  const canPost =
+    (content.trim().length > 0 || assets.length > 0 || !!feeling || !!location.trim()) && !uploading;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
@@ -167,10 +213,32 @@ export default function CreatePostScreen() {
               name={actingPage?.name ?? user?.displayName}
               size={44}
             />
-            <View>
-              <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}>
-                {actingPage?.name ?? user?.displayName}
-              </Text>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center" }}>
+                <Text style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 15 }}>
+                  {actingPage?.name ?? user?.displayName}
+                </Text>
+                {feeling && (
+                  <View style={{ flexDirection: "row", alignItems: "center", marginLeft: 4 }}>
+                    <Text style={{ color: c.mutedForeground, fontSize: 13 }}>
+                      {" "}is {feeling.emoji} {feeling.verb} {feeling.label}
+                    </Text>
+                    <Pressable onPress={() => setFeeling(null)} hitSlop={6} style={{ marginLeft: 4 }}>
+                      <Ionicons name="close-circle" size={15} color={c.mutedForeground} />
+                    </Pressable>
+                  </View>
+                )}
+                {location.trim().length > 0 && (
+                  <View style={{ flexDirection: "row", alignItems: "center", marginLeft: 4 }}>
+                    <Text style={{ color: c.mutedForeground, fontSize: 13 }}>
+                      {" "}at 📍 {location}
+                    </Text>
+                    <Pressable onPress={() => setLocation("")} hitSlop={6} style={{ marginLeft: 4 }}>
+                      <Ionicons name="close-circle" size={15} color={c.mutedForeground} />
+                    </Pressable>
+                  </View>
+                )}
+              </View>
               <View style={styles.privacyRow}>
                 {privacyOptions.map((opt) => (
                   <Pressable
@@ -214,6 +282,24 @@ export default function CreatePostScreen() {
             style={{ color: c.foreground, fontSize: 18, minHeight: 120, lineHeight: 24 }}
           />
 
+          {showLocation && (
+            <View style={[styles.locationBox, { backgroundColor: c.secondary, borderColor: c.border }]}>
+              <Ionicons name="location" size={18} color="#ef4444" />
+              <TextInput
+                value={location}
+                onChangeText={setLocation}
+                placeholder="Add your location (e.g. Dhaka, Bangladesh)"
+                placeholderTextColor={c.mutedForeground}
+                style={[styles.locationInput, { color: c.foreground }]}
+              />
+              {location.length > 0 && (
+                <Pressable onPress={() => setLocation("")} hitSlop={6}>
+                  <Ionicons name="close-circle" size={18} color={c.mutedForeground} />
+                </Pressable>
+              )}
+            </View>
+          )}
+
           {assets.length > 0 && (
             <View style={styles.mediaPreview}>
               {assets.map((a, i) => (
@@ -238,15 +324,23 @@ export default function CreatePostScreen() {
 
         <View style={[styles.toolbar, { borderTopColor: c.border }]}>
           <Pressable style={styles.tool} onPress={pick}>
-            <Ionicons name="images" size={24} color="#31a24c" />
-            <Text style={[styles.toolLabel, { color: c.foreground }]}>Gallery</Text>
+            <Ionicons name="images" size={22} color="#31a24c" />
+            <Text style={[styles.toolLabel, { color: c.foreground }]}>Photo</Text>
           </Pressable>
           <Pressable style={styles.tool} onPress={capture}>
-            <Ionicons name="camera" size={24} color="#1877f2" />
+            <Ionicons name="camera" size={22} color="#1877f2" />
             <Text style={[styles.toolLabel, { color: c.foreground }]}>Camera</Text>
           </Pressable>
+          <Pressable style={styles.tool} onPress={() => setFeelingOpen(true)}>
+            <Ionicons name="happy" size={22} color="#eab308" />
+            <Text style={[styles.toolLabel, { color: c.foreground }]}>Feeling</Text>
+          </Pressable>
+          <Pressable style={styles.tool} onPress={() => setShowLocation((v) => !v)}>
+            <Ionicons name="location" size={22} color="#ef4444" />
+            <Text style={[styles.toolLabel, { color: c.foreground }]}>Location</Text>
+          </Pressable>
           <Pressable style={styles.tool} onPress={() => setEmojiOpen(true)}>
-            <Ionicons name="happy" size={24} color="#f7b125" />
+            <Ionicons name="sparkles" size={22} color="#8b5cf6" />
             <Text style={[styles.toolLabel, { color: c.foreground }]}>Emoji</Text>
           </Pressable>
         </View>
@@ -257,6 +351,104 @@ export default function CreatePostScreen() {
         onClose={() => setEmojiOpen(false)}
         onSelect={(e) => setContent((t) => t + e)}
       />
+
+      {/* Feeling / Activity Modal */}
+      <Modal
+        visible={feelingOpen}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setFeelingOpen(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.modalSheet, { backgroundColor: c.card, borderColor: c.border }]}>
+            <View style={[styles.modalHandle, { backgroundColor: c.border }]} />
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: c.foreground }]}>How are you feeling?</Text>
+              <Pressable onPress={() => setFeelingOpen(false)} hitSlop={8}>
+                <Ionicons name="close" size={22} color={c.foreground} />
+              </Pressable>
+            </View>
+
+            {/* Tab switch */}
+            <View style={[styles.tabRow, { backgroundColor: c.secondary }]}>
+              <Pressable
+                style={[
+                  styles.tabBtn,
+                  feelingTab === "feelings" && { backgroundColor: c.card },
+                ]}
+                onPress={() => setFeelingTab("feelings")}
+              >
+                <Text
+                  style={[
+                    styles.tabBtnText,
+                    { color: feelingTab === "feelings" ? c.foreground : c.mutedForeground },
+                  ]}
+                >
+                  Feelings
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.tabBtn,
+                  feelingTab === "activities" && { backgroundColor: c.card },
+                ]}
+                onPress={() => setFeelingTab("activities")}
+              >
+                <Text
+                  style={[
+                    styles.tabBtnText,
+                    { color: feelingTab === "activities" ? c.foreground : c.mutedForeground },
+                  ]}
+                >
+                  Activities
+                </Text>
+              </Pressable>
+            </View>
+
+            {/* Search */}
+            <View style={[styles.searchBox, { backgroundColor: c.secondary }]}>
+              <Ionicons name="search" size={18} color={c.mutedForeground} />
+              <TextInput
+                value={feelingSearch}
+                onChangeText={setFeelingSearch}
+                placeholder="Search feelings or activities..."
+                placeholderTextColor={c.mutedForeground}
+                style={[styles.searchInput, { color: c.foreground }]}
+              />
+            </View>
+
+            {/* Items Grid */}
+            <ScrollView contentContainerStyle={styles.feelingList}>
+              {(feelingTab === "feelings" ? FEELINGS : ACTIVITIES)
+                .filter((item) =>
+                  feelingSearch
+                    ? item.label.toLowerCase().includes(feelingSearch.toLowerCase()) ||
+                      item.verb.toLowerCase().includes(feelingSearch.toLowerCase())
+                    : true
+                )
+                .map((item) => (
+                  <Pressable
+                    key={item.verb + item.label}
+                    style={({ pressed }) => [
+                      styles.feelingItem,
+                      { backgroundColor: pressed ? c.secondary : "transparent" },
+                    ]}
+                    onPress={() => {
+                      setFeeling(item);
+                      setFeelingOpen(false);
+                      setFeelingSearch("");
+                    }}
+                  >
+                    <Text style={styles.feelingEmoji}>{item.emoji}</Text>
+                    <Text style={[styles.feelingLabel, { color: c.foreground }]}>
+                      {item.verb} {item.label}
+                    </Text>
+                  </Pressable>
+                ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -304,8 +496,108 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: 6,
     paddingVertical: 10,
   },
-  toolLabel: { fontFamily: "Inter_500Medium", fontSize: 14 },
+  toolLabel: { fontFamily: "Inter_500Medium", fontSize: 13 },
+  locationBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginVertical: 10,
+  },
+  locationInput: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: "Inter_500Medium",
+    padding: 0,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  modalSheet: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    maxHeight: "80%",
+    paddingBottom: 32,
+  },
+  modalHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: "center",
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontFamily: "Inter_700Bold",
+  },
+  tabRow: {
+    flexDirection: "row",
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: 12,
+    padding: 3,
+  },
+  tabBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: "center",
+    borderRadius: 10,
+  },
+  tabBtnText: {
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+  },
+  searchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginHorizontal: 16,
+    marginBottom: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
+    padding: 0,
+  },
+  feelingList: {
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+  },
+  feelingItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+  },
+  feelingEmoji: {
+    fontSize: 22,
+  },
+  feelingLabel: {
+    fontSize: 15,
+    fontFamily: "Inter_500Medium",
+    textTransform: "capitalize",
+  },
 });

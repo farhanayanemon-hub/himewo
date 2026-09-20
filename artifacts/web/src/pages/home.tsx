@@ -35,12 +35,12 @@ import {
   type Post,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { Loader2, Plus, Cake, Clapperboard, BookImage, Film } from "lucide-react";
+import { Loader2, Plus, Cake, Clapperboard, BookImage, Film, PenSquare, Radio, Calendar, Flag, Users } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRealtime } from "@/lib/realtime";
 import { useAuth } from "@/lib/auth";
 import { useActingPage } from "@/lib/acting-page";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 
 // Tracks which story groups have been viewed locally
 const VIEWED_STORIES_KEY = "himewo_viewed_stories";
@@ -62,6 +62,7 @@ function StoryRow() {
   const { data: stories } = useListStories();
   const { user } = useAuth();
   const { actingPage } = useActingPage();
+  const [, navigate] = useLocation();
   const qc = useQueryClient();
   const createStory = useCreateStory();
   const createReel = useCreateReel();
@@ -208,27 +209,106 @@ function StoryRow() {
 
         {/* Popup menu */}
         {showCreateMenu && (
-          <div className="absolute left-0 top-full mt-2 z-50 min-w-[160px] bg-card border border-card-border rounded-2xl shadow-xl overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150">
+          <div className="absolute left-0 top-full mt-2 z-50 min-w-[200px] bg-card border border-card-border rounded-2xl shadow-xl overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150 py-1">
+            <button
+              onClick={() => {
+                setShowCreateMenu(false);
+                const el = document.getElementById("main-post-composer");
+                if (el) {
+                  el.scrollIntoView({ behavior: "smooth", block: "center" });
+                  const input = el.querySelector("textarea");
+                  input?.focus();
+                }
+              }}
+              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors text-left"
+            >
+              <div className="w-8 h-8 rounded-full bg-blue-500/15 flex items-center justify-center shrink-0">
+                <PenSquare className="w-4 h-4 text-blue-500" />
+              </div>
+              <div>
+                <div className="font-semibold text-sm leading-none">Create Post</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">Share to feed</div>
+              </div>
+            </button>
+            <div className="h-px bg-border/40 mx-3" />
             <button
               id="create-story-menu-btn"
               onClick={() => openLauncher("story")}
-              className="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors text-left"
             >
               <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
                 <BookImage className="w-4 h-4 text-primary" />
               </div>
-              Create Story
+              <div>
+                <div className="font-semibold text-sm leading-none">Create Story</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">Photos, videos & filters</div>
+              </div>
             </button>
-            <div className="h-px bg-border/60 mx-3" />
+            <div className="h-px bg-border/40 mx-3" />
             <button
               id="create-reel-menu-btn"
               onClick={() => openLauncher("reel")}
-              className="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors text-left"
             >
               <div className="w-8 h-8 rounded-full bg-fuchsia-500/15 flex items-center justify-center shrink-0">
                 <Film className="w-4 h-4 text-fuchsia-500" />
               </div>
-              Create Reel
+              <div>
+                <div className="font-semibold text-sm leading-none">Create Reel</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">Short videos with music</div>
+              </div>
+            </button>
+            <div className="h-px bg-border/40 mx-3" />
+            <button
+              onClick={() => { setShowCreateMenu(false); navigate("/live"); }}
+              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors text-left"
+            >
+              <div className="w-8 h-8 rounded-full bg-red-500/15 flex items-center justify-center shrink-0">
+                <Radio className="w-4 h-4 text-red-500" />
+              </div>
+              <div>
+                <div className="font-semibold text-sm leading-none">Go Live</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">Broadcast video live</div>
+              </div>
+            </button>
+            <div className="h-px bg-border/40 mx-3" />
+            <button
+              onClick={() => { setShowCreateMenu(false); navigate("/events"); }}
+              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors text-left"
+            >
+              <div className="w-8 h-8 rounded-full bg-amber-500/15 flex items-center justify-center shrink-0">
+                <Calendar className="w-4 h-4 text-amber-500" />
+              </div>
+              <div>
+                <div className="font-semibold text-sm leading-none">Create Event</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">Plan an occasion</div>
+              </div>
+            </button>
+            <div className="h-px bg-border/40 mx-3" />
+            <button
+              onClick={() => { setShowCreateMenu(false); navigate("/pages?create=1"); }}
+              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors text-left"
+            >
+              <div className="w-8 h-8 rounded-full bg-emerald-500/15 flex items-center justify-center shrink-0">
+                <Flag className="w-4 h-4 text-emerald-500" />
+              </div>
+              <div>
+                <div className="font-semibold text-sm leading-none">Create Hub</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">Brand or business page</div>
+              </div>
+            </button>
+            <div className="h-px bg-border/40 mx-3" />
+            <button
+              onClick={() => { setShowCreateMenu(false); navigate("/groups"); }}
+              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors text-left"
+            >
+              <div className="w-8 h-8 rounded-full bg-cyan-500/15 flex items-center justify-center shrink-0">
+                <Users className="w-4 h-4 text-cyan-500" />
+              </div>
+              <div>
+                <div className="font-semibold text-sm leading-none">Create Circle</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">Community group</div>
+              </div>
             </button>
           </div>
         )}
@@ -563,7 +643,9 @@ export default function HomePage() {
         <div className="aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-card-border shadow-sm space-y-3 p-3 sm:p-3.5">
           <StoryRow />
           <div className="border-t border-border/60" />
-          <PostComposer className="mb-0 shadow-none border-0 bg-transparent p-0" />
+          <div id="main-post-composer">
+            <PostComposer className="mb-0 shadow-none border-0 bg-transparent p-0" />
+          </div>
         </div>
 
         <ShopShowcaseShelf />

@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Check, ChevronDown, ArrowRightLeft, PlusCircle } from "lucide-react";
+import { Check, ChevronDown, ArrowRightLeft, PlusCircle, Plus, PenSquare, BookImage, Flag } from "lucide-react";
 import { 
   Home, 
   Users, 
@@ -264,6 +264,134 @@ function PageSwitcher() {
   );
 }
 
+function HeaderCreateMenu() {
+  const [location, navigate] = useLocation();
+
+  const handleCreatePost = () => {
+    if (location === "/") {
+      const el = document.getElementById("main-post-composer");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        const input = el.querySelector("textarea");
+        input?.focus();
+        return;
+      }
+    }
+    navigate("/");
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full aurora-glass hover:bg-muted/60 relative"
+          aria-label="Create"
+        >
+          <Plus className="w-5 h-5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64 p-2 shadow-xl rounded-2xl border border-border/60">
+        <div className="px-2 py-1.5">
+          <span className="text-sm font-bold">Create</span>
+        </div>
+        <DropdownMenuSeparator className="my-1" />
+        <DropdownMenuItem
+          onClick={handleCreatePost}
+          className="gap-3 p-2 rounded-xl cursor-pointer hover:bg-muted/60"
+        >
+          <div className="w-8 h-8 rounded-full bg-blue-500/15 flex items-center justify-center shrink-0">
+            <PenSquare className="w-4 h-4 text-blue-500" />
+          </div>
+          <div>
+            <div className="font-semibold text-sm leading-none">Post</div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">Share to feed</div>
+          </div>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={() => navigate("/stories")}
+          className="gap-3 p-2 rounded-xl cursor-pointer hover:bg-muted/60"
+        >
+          <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+            <BookImage className="w-4 h-4 text-primary" />
+          </div>
+          <div>
+            <div className="font-semibold text-sm leading-none">Story</div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">Photos, videos & filters</div>
+          </div>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={() => navigate("/reels")}
+          className="gap-3 p-2 rounded-xl cursor-pointer hover:bg-muted/60"
+        >
+          <div className="w-8 h-8 rounded-full bg-fuchsia-500/15 flex items-center justify-center shrink-0">
+            <Film className="w-4 h-4 text-fuchsia-500" />
+          </div>
+          <div>
+            <div className="font-semibold text-sm leading-none">Reel</div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">Short videos with music</div>
+          </div>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={() => navigate("/live")}
+          className="gap-3 p-2 rounded-xl cursor-pointer hover:bg-muted/60"
+        >
+          <div className="w-8 h-8 rounded-full bg-red-500/15 flex items-center justify-center shrink-0">
+            <Radio className="w-4 h-4 text-red-500" />
+          </div>
+          <div>
+            <div className="font-semibold text-sm leading-none">Live</div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">Broadcast video live</div>
+          </div>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={() => navigate("/events")}
+          className="gap-3 p-2 rounded-xl cursor-pointer hover:bg-muted/60"
+        >
+          <div className="w-8 h-8 rounded-full bg-amber-500/15 flex items-center justify-center shrink-0">
+            <CalendarDays className="w-4 h-4 text-amber-500" />
+          </div>
+          <div>
+            <div className="font-semibold text-sm leading-none">Event</div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">Plan an occasion</div>
+          </div>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={() => navigate("/pages?create=1")}
+          className="gap-3 p-2 rounded-xl cursor-pointer hover:bg-muted/60"
+        >
+          <div className="w-8 h-8 rounded-full bg-emerald-500/15 flex items-center justify-center shrink-0">
+            <Flag className="w-4 h-4 text-emerald-500" />
+          </div>
+          <div>
+            <div className="font-semibold text-sm leading-none">Hub</div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">Brand or business page</div>
+          </div>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={() => navigate("/groups")}
+          className="gap-3 p-2 rounded-xl cursor-pointer hover:bg-muted/60"
+        >
+          <div className="w-8 h-8 rounded-full bg-cyan-500/15 flex items-center justify-center shrink-0">
+            <Users className="w-4 h-4 text-cyan-500" />
+          </div>
+          <div>
+            <div className="font-semibold text-sm leading-none">Circle</div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">Community group</div>
+          </div>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function MainLayout({ children, rightSidebar }: { children: ReactNode; rightSidebar?: ReactNode }) {
   const { user, signOut } = useAuth();
   const { actingPage } = useActingPage();
@@ -412,6 +540,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
           </div>
 
           <div className="flex items-center gap-2">
+            <HeaderCreateMenu />
             <ThemeToggle />
             <Link href="/messages" className="hidden md:inline-flex">
               <Button variant="ghost" size="icon" className="hidden md:inline-flex rounded-full aurora-glass hover:bg-muted/60 relative">

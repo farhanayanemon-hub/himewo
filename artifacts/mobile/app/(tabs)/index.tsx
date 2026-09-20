@@ -36,6 +36,8 @@ import { StoryBar } from "@/components/StoryBar";
 import { ReelsShelf } from "@/components/ReelsShelf";
 import { CommentsSheet } from "@/components/CommentsSheet";
 import { ShareSheet } from "@/components/ShareSheet";
+import { CreateActionSheet } from "@/components/CreateActionSheet";
+import { CreateMediaLauncherSheet } from "@/components/CreateMediaLauncherSheet";
 import { useAuth } from "@/lib/auth";
 import { useActingPage } from "@/lib/acting-page";
 import { useColors } from "@/hooks/useColors";
@@ -56,6 +58,8 @@ export default function HomeScreen() {
   const { actingPage } = useActingPage();
   const [activePost, setActivePost] = useState<number | null>(null);
   const [sharePostId, setSharePostId] = useState<number | null>(null);
+  const [createSheetOpen, setCreateSheetOpen] = useState(false);
+  const [launcherMode, setLauncherMode] = useState<"story" | "reel" | null>(null);
 
   const { data: unreadNotifData } = useGetUnreadNotificationCount({
     query: {
@@ -171,6 +175,13 @@ export default function HomeScreen() {
         <View style={{ flexDirection: "row", gap: 8 }}>
           <Pressable
             style={[styles.iconBtn, { backgroundColor: c.secondary }]}
+            onPress={() => setCreateSheetOpen(true)}
+            accessibilityLabel="Create"
+          >
+            <Ionicons name="add" size={22} color={c.foreground} />
+          </Pressable>
+          <Pressable
+            style={[styles.iconBtn, { backgroundColor: c.secondary }]}
             onPress={() => router.push("/search")}
           >
             <Ionicons name="search" size={20} color={c.foreground} />
@@ -237,7 +248,7 @@ export default function HomeScreen() {
           ListHeaderComponent={
             <View style={{ borderBottomWidth: StyleSheet.hairlineWidth, borderColor: c.border, marginBottom: 8 }}>
               {/* StoryBar without bottom gap */}
-              <StoryBar />
+              <StoryBar onCreatePress={() => setCreateSheetOpen(true)} />
 
               {/* Clean Facebook-style divider line */}
               <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: c.border }} />
@@ -308,6 +319,19 @@ export default function HomeScreen() {
         postId={sharePostId}
         visible={sharePostId != null}
         onClose={() => setSharePostId(null)}
+      />
+
+      <CreateActionSheet
+        visible={createSheetOpen}
+        onClose={() => setCreateSheetOpen(false)}
+        onSelectStory={() => setLauncherMode("story")}
+        onSelectReel={() => setLauncherMode("reel")}
+      />
+
+      <CreateMediaLauncherSheet
+        visible={!!launcherMode}
+        mode={launcherMode ?? "story"}
+        onClose={() => setLauncherMode(null)}
       />
     </SafeAreaView>
   );
