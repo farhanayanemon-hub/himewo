@@ -13,6 +13,7 @@ import {
 import { and, desc, asc, eq, lt, inArray, sql } from "drizzle-orm";
 import { requireAdmin } from "../lib/auth";
 import { toProfile } from "../lib/serialize";
+import { realtime } from "../realtime";
 import {
   getPointConfig,
   getBalancePoints,
@@ -135,11 +136,15 @@ router.put(
 
     if (Object.keys(updates).length > 0) {
       await db
-        .update(pointConfigTable)
-        .set(updates)
-        .where(eq(pointConfigTable.id, 1));
+        .insert(pointConfigTable)
+        .values({ id: 1, enabled: true, ...updates })
+        .onConflictDoUpdate({
+          target: pointConfigTable.id,
+          set: { ...updates, updatedAt: new Date() },
+        });
     }
     const config = await getPointConfig();
+    realtime.broadcast({ type: "earnings:updated" });
     res.json(toConfig(config));
   },
 );
@@ -296,10 +301,16 @@ router.post(
     });
     const config = await getPointConfig();
     const balancePoints = await getBalancePoints(params.data.userId);
+    const balanceDollars = pointsToDollars(balancePoints, config.pointsPerDollar);
+    realtime.toUser(params.data.userId, {
+      type: "earnings:updated",
+      balancePoints,
+      balanceDollars,
+    });
     res.json(
       AdjustUserPointsResponse.parse({
         balancePoints,
-        balanceDollars: pointsToDollars(balancePoints, config.pointsPerDollar),
+        balanceDollars,
       }),
     );
   },
@@ -347,10 +358,16 @@ router.post(
     });
     const config = await getPointConfig();
     const balancePoints = await getBalancePoints(params.data.userId);
+    const balanceDollars = pointsToDollars(balancePoints, config.pointsPerDollar);
+    realtime.toUser(params.data.userId, {
+      type: "earnings:updated",
+      balancePoints,
+      balanceDollars,
+    });
     res.json(
       ResetUserPointsResponse.parse({
         balancePoints,
-        balanceDollars: pointsToDollars(balancePoints, config.pointsPerDollar),
+        balanceDollars,
       }),
     );
   },

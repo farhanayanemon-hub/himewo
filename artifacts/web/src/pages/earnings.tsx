@@ -161,7 +161,14 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 }
 
 export default function EarningsPage() {
-  const { data: summary, isLoading } = useGetEarningsSummary();
+  const { data: summary, isLoading } = useGetEarningsSummary({
+    query: {
+      queryKey: getGetEarningsSummaryQueryKey(),
+      refetchOnWindowFocus: true,
+      refetchOnMount: "always",
+      staleTime: 5000,
+    },
+  });
 
   if (isLoading) {
     return (

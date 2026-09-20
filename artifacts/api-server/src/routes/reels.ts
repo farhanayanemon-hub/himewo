@@ -15,6 +15,7 @@ import { filterVisibleReels, canViewReel } from "../lib/authz";
 import { toProfile, buildReels, buildReelById } from "../lib/serialize";
 import { shareMusicToLibrary } from "./stories";
 import { awardPoints, revokePoints } from "../lib/earnings";
+import { createNotification } from "../lib/notify";
 import {
   ListReelsQueryParams,
   ListReelsResponse,

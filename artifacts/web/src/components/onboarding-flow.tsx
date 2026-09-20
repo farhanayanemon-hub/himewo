@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   useGetFriendSuggestions,
@@ -63,16 +63,29 @@ export function OnboardingFlow() {
   const followUser = useFollowUser();
   const completeOnboarding = useCompleteOnboarding();
 
-  // Mandatory accounts query using authenticated customFetch
+  // Mandatory accounts query using authenticated customFetch (pre-fetched immediately)
   const { data: mandatoryAccounts = [], isLoading: isLoadingMandatory } = useQuery<Profile[]>({
     queryKey: ["onboarding", "mandatory-accounts"],
     queryFn: async () => {
       return customFetch<Profile[]>("/api/onboarding/mandatory-accounts").catch(() => []);
     },
-    enabled: step === "friends",
+    staleTime: 60000,
   });
   const [followedMandatory, setFollowedMandatory] = useState<Set<string>>(new Set());
   const [followingMandatory, setFollowingMandatory] = useState<string | null>(null);
+
+  // Auto-follow mandatory accounts state when fetched
+  useEffect(() => {
+    if (mandatoryAccounts && mandatoryAccounts.length > 0) {
+      setFollowedMandatory((prev) => {
+        const next = new Set(prev);
+        for (const acc of mandatoryAccounts) {
+          next.add(acc.id);
+        }
+        return next;
+      });
+    }
+  }, [mandatoryAccounts]);
 
   const suggestionsParams = { mode: "onboarding" as const, limit: 12 };
   const suggestions = useGetFriendSuggestions(suggestionsParams, {

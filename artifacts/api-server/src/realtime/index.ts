@@ -125,6 +125,11 @@ export function endLiveRoom(streamId: number): void {
 }
 
 export const realtime = {
+  broadcast(payload: unknown) {
+    for (const userId of userSockets.keys()) {
+      sendTo(userId, payload);
+    }
+  },
   toUsers(userIds: string[], payload: unknown) {
     for (const id of new Set(userIds)) sendTo(id, payload);
   },

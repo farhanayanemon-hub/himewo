@@ -6,7 +6,7 @@ import {
   dailyTasksTable,
   type PointConfig,
 } from "@workspace/db";
-import { and, eq, gte, sql } from "drizzle-orm";
+import { and, eq, gt, gte, sql } from "drizzle-orm";
 import { logger } from "./logger";
 
 const CONFIG_ID = 1;
@@ -24,7 +24,7 @@ export async function getPointConfig(): Promise<PointConfig> {
   if (existing) return existing;
   const [created] = await db
     .insert(pointConfigTable)
-    .values({ id: CONFIG_ID })
+    .values({ id: CONFIG_ID, enabled: true })
     .onConflictDoNothing()
     .returning();
   if (created) return created;

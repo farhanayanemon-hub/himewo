@@ -205,6 +205,16 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
               );
             }
           }
+        } else if (data.type === "earnings:updated" || data.type === "earnings_updated") {
+          queryClient.invalidateQueries({
+            predicate: (q) => {
+              const key = q.queryKey;
+              return (
+                Array.isArray(key) &&
+                key.some((k) => typeof k === "string" && (k.includes("earnings") || k.includes("wallet")))
+              );
+            },
+          });
         }
         for (const handler of handlersRef.current) handler(data);
       };

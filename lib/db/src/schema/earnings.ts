@@ -24,7 +24,7 @@ import { profilesTable } from "./profiles";
  */
 export const pointConfigTable = pgTable("point_config", {
   id: integer("id").primaryKey().default(1),
-  enabled: boolean("enabled").notNull().default(false),
+  enabled: boolean("enabled").notNull().default(true),
   // How many points each rewarded action grants.
   pointsPerPost: integer("points_per_post").notNull().default(10),
   pointsPerLike: integer("points_per_like").notNull().default(1),

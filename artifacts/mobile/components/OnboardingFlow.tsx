@@ -71,8 +71,21 @@ export function OnboardingFlow() {
     queryFn: async () => {
       return customFetch<Profile[]>("/api/onboarding/mandatory-accounts").catch(() => []);
     },
-    enabled: step === "friends",
+    staleTime: 60000,
   });
+
+  // Auto-follow mandatory accounts state when fetched
+  useEffect(() => {
+    if (mandatoryAccounts && mandatoryAccounts.length > 0) {
+      setFollowedMandatory((prev) => {
+        const next = new Set(prev);
+        for (const acc of mandatoryAccounts) {
+          next.add(acc.id);
+        }
+        return next;
+      });
+    }
+  }, [mandatoryAccounts]);
 
   const handleFollowMandatory = async (accId: string) => {
     if (followedMandatory.has(accId) || followingMandatory) return;

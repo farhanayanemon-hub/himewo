@@ -130,7 +130,14 @@ function formatDate(iso: string): string {
 
 export default function EarningsScreen() {
   const c = useColors();
-  const { data: summary, isLoading } = useGetEarningsSummary();
+  const { data: summary, isLoading } = useGetEarningsSummary({
+    query: {
+      queryKey: getGetEarningsSummaryQueryKey(),
+      refetchOnWindowFocus: true,
+      refetchOnMount: "always",
+      staleTime: 5000,
+    },
+  });
   const redirected = useRef(false);
 
   // When the system is OFF, the whole experience is hidden. Redirect

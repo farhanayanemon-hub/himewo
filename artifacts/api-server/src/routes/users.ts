@@ -9,6 +9,7 @@ import {
   albumPhotosTable,
   userBlocksTable,
   reelsTable,
+  followsTable,
 } from "@workspace/db";
 import {
   and,
@@ -24,7 +25,7 @@ import {
   sql,
   type SQL,
 } from "drizzle-orm";
-import { requireAuth } from "../lib/auth";
+import { requireAuth, resolveUserId as resolveTokenUserId } from "../lib/auth";
 import { getSettings } from "../lib/flags";
 import {
   USERNAME_PATTERN,
@@ -96,7 +97,35 @@ router.get("/users", requireAuth, async (req, res): Promise<void> => {
   );
 });
 
-router.get("/onboarding/mandatory-accounts", requireAuth, async (_req, res): Promise<void> => {
+function parseMandatoryUsernames(raw: string): string[] {
+  if (!raw) return [];
+  let items: string[] = [];
+  try {
+    const trimmed = raw.trim();
+    if (trimmed.startsWith("[")) {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        items = parsed.map(String);
+      }
+    }
+  } catch {
+    // fallback
+  }
+  if (items.length === 0) {
+    items = raw.split(/[\n\r,;\s]+/);
+  }
+  return items
+    .map((s) => s.trim().replace(/^@+/, ""))
+    .filter(Boolean);
+}
+
+router.get("/onboarding/mandatory-accounts", async (req, res): Promise<void> => {
+  let viewerId = req.userId;
+  if (!viewerId && req.headers.authorization?.startsWith("Bearer ")) {
+    const token = req.headers.authorization.slice(7).trim();
+    viewerId = (await resolveTokenUserId(token)) ?? undefined;
+  }
+
   const settings = await getSettings();
   let raw = (settings.mandatory_follow_accounts ?? "").trim();
   if (!raw && process.env.MANDATORY_FOLLOW_ACCOUNTS) {
@@ -106,16 +135,7 @@ router.get("/onboarding/mandatory-accounts", requireAuth, async (_req, res): Pro
     res.json([]);
     return;
   }
-  let usernames: string[] = [];
-  try {
-    if (raw.startsWith("[")) {
-      usernames = (JSON.parse(raw) as string[]).map((s) => s.trim().replace(/^@/, "")).filter(Boolean);
-    } else {
-      usernames = raw.split(/[,\s]+/).map((s) => s.trim().replace(/^@/, "")).filter(Boolean);
-    }
-  } catch {
-    usernames = raw.split(/[,\s]+/).map((s) => s.trim().replace(/^@/, "")).filter(Boolean);
-  }
+  const usernames = parseMandatoryUsernames(raw);
   if (usernames.length === 0) {
     res.json([]);
     return;
@@ -125,8 +145,26 @@ router.get("/onboarding/mandatory-accounts", requireAuth, async (_req, res): Pro
     .select()
     .from(profilesTable)
     .where(inArray(sql`lower(${profilesTable.username})`, lowerUsernames));
+
+  // Auto-follow in database for viewer if authenticated
+  if (viewerId && rows.length > 0) {
+    for (const acc of rows) {
+      if (acc.id !== viewerId) {
+        await db
+          .insert(followsTable)
+          .values({ followerId: viewerId, followingId: acc.id })
+          .onConflictDoNothing();
+      }
+    }
+  }
+
   const built = await buildListProfiles(rows);
-  res.json(built);
+  const withFollow = built.map((p) => ({
+    ...p,
+    viewerFollows: true,
+    viewerIsFollowing: true,
+  }));
+  res.json(withFollow);
 });
 
 router.get(
@@ -451,6 +489,34 @@ router.post(
           isNull(profilesTable.onboardingCompletedAt),
         ),
       );
+
+    // Ensure all mandatory accounts are followed upon completing onboarding
+    try {
+      const settings = await getSettings();
+      let raw = (settings.mandatory_follow_accounts ?? "").trim();
+      if (!raw && process.env.MANDATORY_FOLLOW_ACCOUNTS) {
+        raw = process.env.MANDATORY_FOLLOW_ACCOUNTS.trim();
+      }
+      const usernames = parseMandatoryUsernames(raw);
+      if (usernames.length > 0) {
+        const lowerUsernames = usernames.map((u) => u.toLowerCase());
+        const mandatoryRows = await db
+          .select({ id: profilesTable.id })
+          .from(profilesTable)
+          .where(inArray(sql`lower(${profilesTable.username})`, lowerUsernames));
+        for (const acc of mandatoryRows) {
+          if (acc.id !== req.userId!) {
+            await db
+              .insert(followsTable)
+              .values({ followerId: req.userId!, followingId: acc.id })
+              .onConflictDoNothing();
+          }
+        }
+      }
+    } catch {
+      // non-fatal
+    }
+
     const profile = await buildProfileDetail(req.userId!, req.userId);
     if (!profile) {
       res.status(404).json({ error: "User not found" });

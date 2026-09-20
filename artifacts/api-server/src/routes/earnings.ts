@@ -80,7 +80,7 @@ async function sumEarned(userId: string, since?: Date): Promise<number> {
     .where(
       and(
         eq(pointTransactionsTable.userId, userId),
-        sql`${pointTransactionsTable.action} in ('post','like','comment','share','reel','task_claim')`,
+        sql`(${pointTransactionsTable.action} in ('post','like','comment','share','reel','task_claim') or (${pointTransactionsTable.action} = 'admin_adjust' and ${pointTransactionsTable.points} > 0))`,
         since ? gte(pointTransactionsTable.createdAt, since) : undefined,
       ),
     );
@@ -90,6 +90,8 @@ async function sumEarned(userId: string, since?: Date): Promise<number> {
 router.get("/earnings/summary", requireAuth, async (req, res): Promise<void> => {
   const userId = req.userId!;
   const config = await getPointConfig();
+  const balancePoints = await getBalancePoints(userId);
+  const balanceDollars = pointsToDollars(balancePoints, config.pointsPerDollar);
   const rewards = {
     post: config.pointsPerPost,
     like: config.pointsPerLike,
@@ -101,14 +103,14 @@ router.get("/earnings/summary", requireAuth, async (req, res): Promise<void> => 
     res.json(
       GetEarningsSummaryResponse.parse({
         enabled: false,
-        balancePoints: 0,
-        balanceDollars: 0,
+        balancePoints,
+        balanceDollars,
         pointsPerDollar: config.pointsPerDollar,
         minWithdrawDollars: config.minWithdrawDollars,
         dailyPointCap: config.dailyPointCap,
         todayPoints: 0,
         monthPoints: 0,
-        totalEarnedPoints: 0,
+        totalEarnedPoints: balancePoints,
         pendingWithdrawalDollars: 0,
         rewards,
       }),
@@ -123,7 +125,6 @@ router.get("/earnings/summary", requireAuth, async (req, res): Promise<void> => 
   const monthStart = new Date(
     Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
   );
-  const balancePoints = await getBalancePoints(userId);
   const todayPoints = await sumEarned(userId, dayStart);
   const monthPoints = await sumEarned(userId, monthStart);
   const totalEarnedPoints = await sumEarned(userId);

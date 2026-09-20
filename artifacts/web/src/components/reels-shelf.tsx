@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useListReels, type Reel } from "@workspace/api-client-react";
+import { useListReels, useGetEarningsSummary, type Reel } from "@workspace/api-client-react";
 import { avatarSrc } from "@/lib/avatar";
 import { Clapperboard, ChevronLeft, ChevronRight, Play } from "lucide-react";
 
@@ -77,6 +77,8 @@ function ReelCard({ reel }: { reel: Reel }) {
 
 export function ReelsShelf() {
   const { data: reels, isLoading, refetch } = useListReels({ limit: 12 });
+  const { data: earnings } = useGetEarningsSummary();
+  const reelPoints = (earnings?.rewards as any)?.reel ?? 20;
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -131,7 +133,7 @@ export function ReelsShelf() {
               Reels and short videos
             </h2>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              Create reels to earn 20 points
+              Create reels to earn {reelPoints} points
             </p>
           </div>
         </div>
