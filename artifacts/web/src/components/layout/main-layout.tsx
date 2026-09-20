@@ -413,8 +413,8 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Link href="/messages">
-              <Button variant="ghost" size="icon" className="rounded-full aurora-glass hover:bg-muted/60 relative">
+            <Link href="/messages" className="hidden md:inline-flex">
+              <Button variant="ghost" size="icon" className="hidden md:inline-flex rounded-full aurora-glass hover:bg-muted/60 relative">
                 <MessageCircle className="w-5 h-5" />
                 {unreadChatCount > 0 ? (
                   <span className="absolute top-0 right-0 w-4 h-4 bg-destructive text-white text-[10px] font-bold flex items-center justify-center rounded-full">
