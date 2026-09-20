@@ -268,6 +268,43 @@ export function OnboardingFlow() {
         contentContainerStyle={styles.body}
         keyboardShouldPersistTaps="handled"
       >
+        {mandatoryAccounts.length > 0 && step !== "friends" && step !== "done" && (
+          <View
+            style={{
+              padding: 12,
+              borderRadius: 12,
+              backgroundColor: `${c.primary}12`,
+              borderWidth: 1,
+              borderColor: `${c.primary}33`,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 16,
+            }}
+          >
+            <View style={{ flex: 1, marginRight: 8 }}>
+              <Text style={{ color: c.foreground, fontSize: 13, fontWeight: "700" }}>
+                Official Account Followed
+              </Text>
+              <Text style={{ color: c.mutedForeground, fontSize: 11 }} numberOfLines={1}>
+                {mandatoryAccounts.map((a) => `@${a.username}`).join(", ")}
+              </Text>
+            </View>
+            <View
+              style={{
+                backgroundColor: "#9333ea20",
+                paddingHorizontal: 8,
+                paddingVertical: 4,
+                borderRadius: 999,
+              }}
+            >
+              <Text style={{ color: "#9333ea", fontSize: 11, fontWeight: "700" }}>
+                Following ✓
+              </Text>
+            </View>
+          </View>
+        )}
+
         {step === "photo" && (
           <View style={styles.center}>
             <Text style={[styles.stepTitle, { color: c.foreground }]}>

@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { timingSafeEqual } from "node:crypto";
-import { sql, eq } from "drizzle-orm";
-import { db, profilesTable } from "@workspace/db";
+import { sql, eq, inArray } from "drizzle-orm";
+import { db, profilesTable, followsTable } from "@workspace/db";
 import { requireAuth } from "../lib/auth";
 import { buildProfileDetail } from "../lib/serialize";
 import { normalizeUsername, isReservedUsername } from "../lib/username";
@@ -9,6 +9,7 @@ import {
   getBlockedSignupCountries,
   getOtpEvents,
   getSettings,
+  getMandatoryAccountUsernames,
 } from "../lib/flags";
 import { sendGreenWebSms } from "../lib/sms";
 import { findCountry } from "@workspace/countries";
@@ -338,6 +339,30 @@ router.post("/auth/sync", requireAuth, async (req, res): Promise<void> => {
       },
     })
     .returning();
+
+  if (isNewProfile) {
+    try {
+      const usernames = await getMandatoryAccountUsernames();
+      if (usernames.length > 0) {
+        const lowerUsernames = usernames.map((u) => u.toLowerCase());
+        const mandatoryRows = await db
+          .select({ id: profilesTable.id })
+          .from(profilesTable)
+          .where(inArray(sql`lower(${profilesTable.username})`, lowerUsernames));
+        for (const acc of mandatoryRows) {
+          if (acc.id !== userId) {
+            await db
+              .insert(followsTable)
+              .values({ followerId: userId, followingId: acc.id })
+              .onConflictDoNothing();
+          }
+        }
+      }
+    } catch {
+      // non-fatal
+    }
+  }
+
   const profile = await buildProfileDetail(row.id, userId);
   res.json(SyncProfileResponse.parse(profile));
 });

@@ -337,6 +337,23 @@ export function OnboardingFlow() {
                   Used for your profile URL and mentions.
                 </p>
               </div>
+
+              {mandatoryAccounts.length > 0 && (
+                <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/25 flex items-center justify-between gap-3 mt-1">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <ShieldCheck className="w-4 h-4 text-purple-600 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-foreground">Official Account Followed</p>
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        {mandatoryAccounts.map((a) => `@${a.username}`).join(", ")}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-950/60 px-2 py-0.5 rounded-full shrink-0">
+                    <Check className="w-3 h-3" /> Auto-following
+                  </span>
+                </div>
+              )}
             </div>
           )}
 

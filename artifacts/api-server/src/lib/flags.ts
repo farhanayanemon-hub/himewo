@@ -257,3 +257,35 @@ export function maintenanceGuard(
       .json({ error: settings.maintenance_message, maintenance: true });
   })().catch(next);
 }
+
+export function parseMandatoryUsernames(raw: string): string[] {
+  if (!raw) return [];
+  let items: string[] = [];
+  try {
+    const trimmed = raw.trim();
+    if (trimmed.startsWith("[")) {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        items = parsed.map(String);
+      }
+    }
+  } catch {
+    // fallback
+  }
+  if (items.length === 0) {
+    items = raw.split(/[\n\r,;\s]+/);
+  }
+  return items
+    .map((s) => s.trim().replace(/^@+/, ""))
+    .filter(Boolean);
+}
+
+export async function getMandatoryAccountUsernames(): Promise<string[]> {
+  const settings = await getSettings();
+  let raw = (settings.mandatory_follow_accounts ?? "").trim();
+  if (!raw && process.env.MANDATORY_FOLLOW_ACCOUNTS) {
+    raw = process.env.MANDATORY_FOLLOW_ACCOUNTS.trim();
+  }
+  return parseMandatoryUsernames(raw);
+}
+

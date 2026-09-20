@@ -26,7 +26,7 @@ import {
   type SQL,
 } from "drizzle-orm";
 import { requireAuth, resolveUserId as resolveTokenUserId } from "../lib/auth";
-import { getSettings } from "../lib/flags";
+import { getSettings, getMandatoryAccountUsernames } from "../lib/flags";
 import {
   USERNAME_PATTERN,
   isReservedUsername,
@@ -97,28 +97,6 @@ router.get("/users", requireAuth, async (req, res): Promise<void> => {
   );
 });
 
-function parseMandatoryUsernames(raw: string): string[] {
-  if (!raw) return [];
-  let items: string[] = [];
-  try {
-    const trimmed = raw.trim();
-    if (trimmed.startsWith("[")) {
-      const parsed = JSON.parse(trimmed);
-      if (Array.isArray(parsed)) {
-        items = parsed.map(String);
-      }
-    }
-  } catch {
-    // fallback
-  }
-  if (items.length === 0) {
-    items = raw.split(/[\n\r,;\s]+/);
-  }
-  return items
-    .map((s) => s.trim().replace(/^@+/, ""))
-    .filter(Boolean);
-}
-
 router.get("/onboarding/mandatory-accounts", async (req, res): Promise<void> => {
   let viewerId = req.userId;
   if (!viewerId && req.headers.authorization?.startsWith("Bearer ")) {
@@ -126,16 +104,7 @@ router.get("/onboarding/mandatory-accounts", async (req, res): Promise<void> => 
     viewerId = (await resolveTokenUserId(token)) ?? undefined;
   }
 
-  const settings = await getSettings();
-  let raw = (settings.mandatory_follow_accounts ?? "").trim();
-  if (!raw && process.env.MANDATORY_FOLLOW_ACCOUNTS) {
-    raw = process.env.MANDATORY_FOLLOW_ACCOUNTS.trim();
-  }
-  if (!raw) {
-    res.json([]);
-    return;
-  }
-  const usernames = parseMandatoryUsernames(raw);
+  const usernames = await getMandatoryAccountUsernames();
   if (usernames.length === 0) {
     res.json([]);
     return;
@@ -492,12 +461,7 @@ router.post(
 
     // Ensure all mandatory accounts are followed upon completing onboarding
     try {
-      const settings = await getSettings();
-      let raw = (settings.mandatory_follow_accounts ?? "").trim();
-      if (!raw && process.env.MANDATORY_FOLLOW_ACCOUNTS) {
-        raw = process.env.MANDATORY_FOLLOW_ACCOUNTS.trim();
-      }
-      const usernames = parseMandatoryUsernames(raw);
+      const usernames = await getMandatoryAccountUsernames();
       if (usernames.length > 0) {
         const lowerUsernames = usernames.map((u) => u.toLowerCase());
         const mandatoryRows = await db

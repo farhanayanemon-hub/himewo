@@ -67,10 +67,11 @@ function getDeploymentDomain() {
     return stripProtocol(process.env.EXPO_PUBLIC_DOMAIN);
   }
 
-  console.error(
-    "ERROR: No deployment domain found. Set REPLIT_INTERNAL_APP_DOMAIN, REPLIT_DEV_DOMAIN, or EXPO_PUBLIC_DOMAIN",
-  );
-  process.exit(1);
+  if (process.env.VITE_API_URL) {
+    return stripProtocol(process.env.VITE_API_URL);
+  }
+
+  return "workspaceapi-server-production-5e99.up.railway.app";
 }
 
 function prepareDirectories(timestamp) {
