@@ -11,4 +11,8 @@ export interface AdAccountInput {
   name: string;
   currency?: string;
   timezone?: string;
+  phone?: string;
+  businessAddress?: string;
+  tin?: string;
+  bin?: string;
 }

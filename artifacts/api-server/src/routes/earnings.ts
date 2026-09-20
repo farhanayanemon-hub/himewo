@@ -97,7 +97,7 @@ router.get("/earnings/summary", requireAuth, async (req, res): Promise<void> => 
     like: config.pointsPerLike,
     comment: config.pointsPerComment,
     share: config.pointsPerShare,
-    reel: (config as any).pointsPerReel ?? 20,
+    reel: config.pointsPerReel ?? 20,
   };
   if (!config.enabled) {
     res.json(

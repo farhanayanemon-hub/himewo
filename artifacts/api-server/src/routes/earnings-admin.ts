@@ -45,7 +45,7 @@ function toConfig(row: PointConfig) {
     pointsPerLike: row.pointsPerLike,
     pointsPerComment: row.pointsPerComment,
     pointsPerShare: row.pointsPerShare,
-    pointsPerReel: (row as any).pointsPerReel ?? 20,
+    pointsPerReel: row.pointsPerReel ?? 20,
     pointsPerDollar: row.pointsPerDollar,
     minWithdrawDollars: row.minWithdrawDollars,
     dailyPointCap: row.dailyPointCap,
@@ -145,7 +145,7 @@ router.put(
     }
     const config = await getPointConfig();
     realtime.broadcast({ type: "earnings:updated" });
-    res.json(toConfig(config));
+    res.json(GetPointConfigResponse.parse(toConfig(config)));
   },
 );
 

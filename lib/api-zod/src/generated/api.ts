@@ -6354,6 +6354,11 @@ export const ListAdAccountsResponseItem = zod.object({
   "id": zod.number(),
   "ownerId": zod.string(),
   "name": zod.string(),
+  "accountNumber": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "businessAddress": zod.string().nullish(),
+  "tin": zod.string().nullish(),
+  "bin": zod.string().nullish(),
   "currency": zod.string(),
   "timezone": zod.string(),
   "balanceCents": zod.number(),
@@ -6377,13 +6382,22 @@ export const ListAdAccountsResponse = zod.array(ListAdAccountsResponseItem)
 export const CreateAdAccountBody = zod.object({
   "name": zod.string().min(1),
   "currency": zod.string().optional(),
-  "timezone": zod.string().optional()
+  "timezone": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "businessAddress": zod.string().optional(),
+  "tin": zod.string().optional(),
+  "bin": zod.string().optional()
 })
 
 export const CreateAdAccountResponse = zod.object({
   "id": zod.number(),
   "ownerId": zod.string(),
   "name": zod.string(),
+  "accountNumber": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "businessAddress": zod.string().nullish(),
+  "tin": zod.string().nullish(),
+  "bin": zod.string().nullish(),
   "currency": zod.string(),
   "timezone": zod.string(),
   "balanceCents": zod.number(),
@@ -6408,6 +6422,11 @@ export const GetAdAccountResponse = zod.object({
   "id": zod.number(),
   "ownerId": zod.string(),
   "name": zod.string(),
+  "accountNumber": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "businessAddress": zod.string().nullish(),
+  "tin": zod.string().nullish(),
+  "bin": zod.string().nullish(),
   "currency": zod.string(),
   "timezone": zod.string(),
   "balanceCents": zod.number(),
@@ -6435,6 +6454,10 @@ export const UpdateAdAccountBody = zod.object({
   "name": zod.string().min(1).optional(),
   "currency": zod.string().optional(),
   "timezone": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "businessAddress": zod.string().optional(),
+  "tin": zod.string().optional(),
+  "bin": zod.string().optional(),
   "status": zod.enum(['active', 'suspended', 'closed']).optional()
 })
 
@@ -6442,6 +6465,11 @@ export const UpdateAdAccountResponse = zod.object({
   "id": zod.number(),
   "ownerId": zod.string(),
   "name": zod.string(),
+  "accountNumber": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "businessAddress": zod.string().nullish(),
+  "tin": zod.string().nullish(),
+  "bin": zod.string().nullish(),
   "currency": zod.string(),
   "timezone": zod.string(),
   "balanceCents": zod.number(),
@@ -6660,6 +6688,11 @@ export const TransferAdAccountResponse = zod.object({
   "id": zod.number(),
   "ownerId": zod.string(),
   "name": zod.string(),
+  "accountNumber": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "businessAddress": zod.string().nullish(),
+  "tin": zod.string().nullish(),
+  "bin": zod.string().nullish(),
   "currency": zod.string(),
   "timezone": zod.string(),
   "balanceCents": zod.number(),
@@ -10236,7 +10269,8 @@ export const GetEarningsSummaryResponse = zod.object({
   "post": zod.number(),
   "like": zod.number(),
   "comment": zod.number(),
-  "share": zod.number()
+  "share": zod.number(),
+  "reel": zod.number()
 })
 })
 
@@ -10370,6 +10404,7 @@ export const GetPointConfigResponse = zod.object({
   "pointsPerLike": zod.number(),
   "pointsPerComment": zod.number(),
   "pointsPerShare": zod.number(),
+  "pointsPerReel": zod.number(),
   "pointsPerDollar": zod.number(),
   "minWithdrawDollars": zod.number(),
   "dailyPointCap": zod.number(),
@@ -10388,6 +10423,8 @@ export const updatePointConfigBodyPointsPerCommentMin = 0;
 
 export const updatePointConfigBodyPointsPerShareMin = 0;
 
+export const updatePointConfigBodyPointsPerReelMin = 0;
+
 
 
 export const updatePointConfigBodyDailyPointCapMin = 0;
@@ -10400,6 +10437,7 @@ export const UpdatePointConfigBody = zod.object({
   "pointsPerLike": zod.number().min(updatePointConfigBodyPointsPerLikeMin).optional(),
   "pointsPerComment": zod.number().min(updatePointConfigBodyPointsPerCommentMin).optional(),
   "pointsPerShare": zod.number().min(updatePointConfigBodyPointsPerShareMin).optional(),
+  "pointsPerReel": zod.number().min(updatePointConfigBodyPointsPerReelMin).optional(),
   "pointsPerDollar": zod.number().min(1).optional(),
   "minWithdrawDollars": zod.number().min(1).optional(),
   "dailyPointCap": zod.number().min(updatePointConfigBodyDailyPointCapMin).optional()
@@ -10411,6 +10449,7 @@ export const UpdatePointConfigResponse = zod.object({
   "pointsPerLike": zod.number(),
   "pointsPerComment": zod.number(),
   "pointsPerShare": zod.number(),
+  "pointsPerReel": zod.number(),
   "pointsPerDollar": zod.number(),
   "minWithdrawDollars": zod.number(),
   "dailyPointCap": zod.number(),

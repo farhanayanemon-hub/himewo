@@ -12,6 +12,16 @@ export interface AdAccount {
   id: number;
   ownerId: string;
   name: string;
+  /** @nullable */
+  accountNumber?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  businessAddress?: string | null;
+  /** @nullable */
+  tin?: string | null;
+  /** @nullable */
+  bin?: string | null;
   currency: string;
   timezone: string;
   balanceCents: number;

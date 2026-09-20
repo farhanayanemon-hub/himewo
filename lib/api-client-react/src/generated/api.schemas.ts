@@ -1231,10 +1231,15 @@ export interface AdAccount {
   id: number;
   ownerId: string;
   name: string;
+  /** @nullable */
   accountNumber?: string | null;
+  /** @nullable */
   phone?: string | null;
+  /** @nullable */
   businessAddress?: string | null;
+  /** @nullable */
   tin?: string | null;
+  /** @nullable */
   bin?: string | null;
   currency: string;
   timezone: string;
@@ -1266,18 +1271,6 @@ export interface AdAccountInput {
   bin?: string;
 }
 
-export interface AdAccountUpdate {
-  /** @minLength 1 */
-  name?: string;
-  currency?: string;
-  timezone?: string;
-  phone?: string;
-  businessAddress?: string;
-  tin?: string;
-  bin?: string;
-  status?: AdAccountUpdateStatus;
-}
-
 export type AdAccountUpdateStatus = typeof AdAccountUpdateStatus[keyof typeof AdAccountUpdateStatus];
 
 
@@ -1292,6 +1285,10 @@ export interface AdAccountUpdate {
   name?: string;
   currency?: string;
   timezone?: string;
+  phone?: string;
+  businessAddress?: string;
+  tin?: string;
+  bin?: string;
   status?: AdAccountUpdateStatus;
 }
 
@@ -2554,6 +2551,7 @@ export interface EarningsRewards {
   like: number;
   comment: number;
   share: number;
+  reel: number;
 }
 
 export interface EarningsSummary {
@@ -2694,6 +2692,7 @@ export interface PointConfig {
   pointsPerLike: number;
   pointsPerComment: number;
   pointsPerShare: number;
+  pointsPerReel: number;
   pointsPerDollar: number;
   minWithdrawDollars: number;
   dailyPointCap: number;
@@ -2711,6 +2710,8 @@ export interface PointConfigUpdate {
   pointsPerComment?: number;
   /** @minimum 0 */
   pointsPerShare?: number;
+  /** @minimum 0 */
+  pointsPerReel?: number;
   /** @minimum 1 */
   pointsPerDollar?: number;
   /** @minimum 1 */

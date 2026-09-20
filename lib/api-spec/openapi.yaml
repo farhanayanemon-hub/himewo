@@ -6492,12 +6492,13 @@ components:
     # ---------------- Earnings ----------------
     EarningsRewards:
       type: object
-      required: [post, like, comment, share]
+      required: [post, like, comment, share, reel]
       properties:
         post: { type: integer }
         like: { type: integer }
         comment: { type: integer }
         share: { type: integer }
+        reel: { type: integer }
     EarningsSummary:
       type: object
       required:
@@ -6613,6 +6614,7 @@ components:
           pointsPerLike,
           pointsPerComment,
           pointsPerShare,
+          pointsPerReel,
           pointsPerDollar,
           minWithdrawDollars,
           dailyPointCap,
@@ -6623,6 +6625,7 @@ components:
         pointsPerLike: { type: integer }
         pointsPerComment: { type: integer }
         pointsPerShare: { type: integer }
+        pointsPerReel: { type: integer }
         pointsPerDollar: { type: integer }
         minWithdrawDollars: { type: integer }
         dailyPointCap: { type: integer }
@@ -6635,6 +6638,7 @@ components:
         pointsPerLike: { type: integer, minimum: 0 }
         pointsPerComment: { type: integer, minimum: 0 }
         pointsPerShare: { type: integer, minimum: 0 }
+        pointsPerReel: { type: integer, minimum: 0 }
         pointsPerDollar: { type: integer, minimum: 1 }
         minWithdrawDollars: { type: integer, minimum: 1 }
         dailyPointCap: { type: integer, minimum: 0 }

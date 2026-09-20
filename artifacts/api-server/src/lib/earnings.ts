@@ -15,8 +15,22 @@ const CONFIG_ID = 1;
 export type EarnAction = "post" | "like" | "comment" | "share" | "reel" | "task_claim";
 const EARN_ACTIONS: EarnAction[] = ["post", "like", "comment", "share", "reel", "task_claim"];
 
+let schemaChecked = false;
+async function ensureEarningsSchema(): Promise<void> {
+  if (schemaChecked) return;
+  schemaChecked = true;
+  try {
+    await db.execute(
+      sql`ALTER TABLE point_config ADD COLUMN IF NOT EXISTS points_per_reel integer NOT NULL DEFAULT 20;`,
+    );
+  } catch {
+    // non-fatal if table not created yet or permission
+  }
+}
+
 /** Read the single-row config, creating it with defaults on first access. */
 export async function getPointConfig(): Promise<PointConfig> {
+  await ensureEarningsSchema();
   const [existing] = await db
     .select()
     .from(pointConfigTable)
