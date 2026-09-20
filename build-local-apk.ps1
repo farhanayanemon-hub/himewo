@@ -55,8 +55,11 @@ function Build-TargetApp([string]$target) {
   $env:EXPO_PUBLIC_SUPABASE_URL = "https://rzdfgbfyhnkvqbcegguk.supabase.co"
   $env:EXPO_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6ZGZnYmZ5aG5rdnFiY2VnZ3VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MDgwODMsImV4cCI6MjA5Nzk4NDA4M30.8RlmkHFpDxDGmZ1KJg3bnswfy6my8FRT0Su_F1fu5CU"
   
-  Set-Location $appDir
-  pnpm exec expo prebuild --platform android --no-install --clean
+  if (-not (Test-Path "$appDir\android\app\build.gradle")) {
+    pnpm exec expo prebuild --platform android --no-install
+  } else {
+    Write-Host "[OK] Native Android project already configured." -ForegroundColor Green
+  }
 
   # Configure Ultra-Lite: 64-bit modern ARM only + compressed native libraries
   if (Test-Path "$appDir\android\gradle.properties") {
@@ -105,6 +108,20 @@ function Build-TargetApp([string]$target) {
     $socialCopy = "$repoRoot\downloads\himewo-social.apk"
     Copy-Item $destApk $socialCopy -Force
     Write-Host "[OK] Mirrored $destApk -> $socialCopy for backwards compatibility." -ForegroundColor Green
+  }
+
+  # Deploy directly to landing page public & dist directories
+  if (Test-Path "$repoRoot\artifacts\app-landing\public") {
+    Copy-Item $destApk "$repoRoot\artifacts\app-landing\public\$outName" -Force
+    Write-Host "[OK] Deployed $outName -> app-landing/public/$outName" -ForegroundColor Green
+  }
+  if (Test-Path "$repoRoot\artifacts\app-landing\dist") {
+    Copy-Item $destApk "$repoRoot\artifacts\app-landing\dist\$outName" -Force
+    Write-Host "[OK] Deployed $outName -> app-landing/dist/$outName" -ForegroundColor Green
+  }
+  if (Test-Path "$repoRoot\artifacts\web\dist\public") {
+    Copy-Item $destApk "$repoRoot\artifacts\web\dist\public\$outName" -Force
+    Write-Host "[OK] Deployed $outName -> web/dist/public/$outName" -ForegroundColor Green
   }
 
   if ($Publish) {
