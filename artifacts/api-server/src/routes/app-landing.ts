@@ -93,6 +93,36 @@ export const DEFAULT_APP_LANDING_CONFIG = {
 
 const router: IRouter = Router();
 
+export function mergeAppLandingConfig(
+  base: typeof DEFAULT_APP_LANDING_CONFIG,
+  parsed: any,
+): typeof DEFAULT_APP_LANDING_CONFIG {
+  if (!parsed || typeof parsed !== "object") return base;
+  return {
+    hero: { ...base.hero, ...(parsed.hero || {}) },
+    images: { ...base.images, ...(parsed.images || {}) },
+    webSection: {
+      ...base.webSection,
+      ...(parsed.webSection || {}),
+      features: parsed.webSection?.features?.length ? parsed.webSection.features : base.webSection.features,
+    },
+    mobileApp: {
+      ...base.mobileApp,
+      ...(parsed.mobileApp || {}),
+      features: parsed.mobileApp?.features?.length ? parsed.mobileApp.features : base.mobileApp.features,
+    },
+    chatApp: {
+      ...base.chatApp,
+      ...(parsed.chatApp || {}),
+      features: parsed.chatApp?.features?.length ? parsed.chatApp.features : base.chatApp.features,
+    },
+    floatingMessages: {
+      social: parsed.floatingMessages?.social?.length ? parsed.floatingMessages.social : base.floatingMessages.social,
+      chat: parsed.floatingMessages?.chat?.length ? parsed.floatingMessages.chat : base.floatingMessages.chat,
+    },
+  };
+}
+
 // Public endpoint for the app.himewo.com landing page
 router.get("/app-landing/config", async (_req, res): Promise<void> => {
   try {
@@ -103,12 +133,7 @@ router.get("/app-landing/config", async (_req, res): Promise<void> => {
     if (row && row.value) {
       try {
         const parsed = JSON.parse(row.value);
-        res.json({
-          ...DEFAULT_APP_LANDING_CONFIG,
-          ...parsed,
-          images: { ...DEFAULT_APP_LANDING_CONFIG.images, ...(parsed.images || {}) },
-          floatingMessages: { ...DEFAULT_APP_LANDING_CONFIG.floatingMessages, ...(parsed.floatingMessages || {}) }
-        });
+        res.json(mergeAppLandingConfig(DEFAULT_APP_LANDING_CONFIG, parsed));
         return;
       } catch {
         // fallback

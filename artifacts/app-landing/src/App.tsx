@@ -295,13 +295,40 @@ export default function App() {
     fetch("https://workspaceapi-server-production-5e99.up.railway.app/api/app-landing/config")
       .then((r) => r.json())
       .then((data) => {
-        if (data && data.hero) {
-          setConfig({
-            ...DEFAULT_CONFIG,
-            ...data,
-            images: { ...DEFAULT_CONFIG.images, ...(data.images || {}) },
-            floatingMessages: { ...DEFAULT_CONFIG.floatingMessages, ...(data.floatingMessages || {}) }
-          });
+        if (data && typeof data === "object") {
+          setConfig((prev) => ({
+            hero: { ...prev.hero, ...(data.hero || {}) },
+            images: { ...prev.images, ...(data.images || {}) },
+            webSection: {
+              ...prev.webSection,
+              ...(data.webSection || {}),
+              features: Array.isArray(data.webSection?.features) && data.webSection.features.length > 0
+                ? data.webSection.features
+                : prev.webSection.features,
+            },
+            mobileApp: {
+              ...prev.mobileApp,
+              ...(data.mobileApp || {}),
+              features: Array.isArray(data.mobileApp?.features) && data.mobileApp.features.length > 0
+                ? data.mobileApp.features
+                : prev.mobileApp.features,
+            },
+            chatApp: {
+              ...prev.chatApp,
+              ...(data.chatApp || {}),
+              features: Array.isArray(data.chatApp?.features) && data.chatApp.features.length > 0
+                ? data.chatApp.features
+                : prev.chatApp.features,
+            },
+            floatingMessages: {
+              social: Array.isArray(data.floatingMessages?.social) && data.floatingMessages.social.length > 0
+                ? data.floatingMessages.social
+                : prev.floatingMessages.social,
+              chat: Array.isArray(data.floatingMessages?.chat) && data.floatingMessages.chat.length > 0
+                ? data.floatingMessages.chat
+                : prev.floatingMessages.chat,
+            },
+          }));
         }
       })
       .catch(() => {
@@ -376,9 +403,15 @@ export default function App() {
         </div>
 
         <h1 className="font-['Outfit',sans-serif] text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1] max-w-4xl mx-auto text-slate-900">
-          {config.hero.headline.split("HiMewo")[0]}
-          <span className="purple-gradient-text">HiMewo</span>
-          {config.hero.headline.split("HiMewo")[1] || ""}
+          {(config.hero?.headline || DEFAULT_CONFIG.hero.headline).includes("HiMewo") ? (
+            <>
+              {(config.hero?.headline || DEFAULT_CONFIG.hero.headline).split("HiMewo")[0]}
+              <span className="purple-gradient-text">HiMewo</span>
+              {(config.hero?.headline || DEFAULT_CONFIG.hero.headline).split("HiMewo")[1] || ""}
+            </>
+          ) : (
+            config.hero?.headline || DEFAULT_CONFIG.hero.headline
+          )}
         </h1>
 
         <p className="mt-6 text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
@@ -663,7 +696,7 @@ export default function App() {
 
                 {/* Features List */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                  {config.webSection.features.map((feat, idx) => (
+                  {(config.webSection?.features || DEFAULT_CONFIG.webSection.features).map((feat, idx) => (
                     <div key={idx} className="flex items-center gap-2.5 text-sm text-slate-700 font-medium">
                       <CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" />
                       <span>{feat}</span>
@@ -932,7 +965,7 @@ export default function App() {
 
               {/* Features List */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                {config.mobileApp.features.map((feat, idx) => (
+                {(config.mobileApp?.features || DEFAULT_CONFIG.mobileApp.features).map((feat, idx) => (
                   <div key={idx} className="flex items-center gap-2.5 text-sm text-slate-700 font-medium">
                     <CheckCircle2 className="h-4 w-4 text-purple-600 shrink-0" />
                     <span>{feat}</span>
