@@ -51,7 +51,7 @@ export function StoryBar({ onCreatePress }: { onCreatePress?: () => void } = {})
         onClose={() => setLauncherMode(null)}
       />
 
-      <View style={[styles.wrap, { backgroundColor: c.card }]}>
+      <View style={styles.wrap}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -63,7 +63,7 @@ export function StoryBar({ onCreatePress }: { onCreatePress?: () => void } = {})
               styles.storyTile,
               styles.yourStoryTile,
               {
-                backgroundColor: c.secondary,
+                backgroundColor: c.card,
                 borderColor: c.border,
                 transform: [{ scale: pressed ? 0.94 : 1 }],
               },
@@ -159,14 +159,14 @@ const styles = StyleSheet.create({
     position: "relative",
     ...Platform.select({
       web: {
-        boxShadow: "0 4px 14px rgba(0,0,0,0.06)",
+        boxShadow: "0 3px 10px rgba(0,0,0,0.04)",
       } as object,
       default: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.1,
-        shadowRadius: 6,
-        elevation: 3,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04,
+        shadowRadius: 4,
+        elevation: 1,
       },
     }),
   },

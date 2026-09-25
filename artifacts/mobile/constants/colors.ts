@@ -27,14 +27,14 @@ const colors = {
     text: "#0f172a",
     tint: AURORA_PURPLE,
 
-    // Core surface (pure white, no gradient)
-    background: "#ffffff",
+    // Core surface (soft clean background so white cards pop gracefully)
+    background: "#F5F7FA",
     foreground: "#0f172a",
 
-    // Cards / elevated glass surfaces
-    card: "rgba(15,23,42,0.03)",
+    // Cards / elevated surfaces (Solid pure white - prevents Android elevation shadow bleed-through)
+    card: "#ffffff",
     cardForeground: "#0f172a",
-    cardBorder: "rgba(15,23,42,0.08)",
+    cardBorder: "#e2e8f0",
 
     // Opaque surface for modals / sheets / popovers (never translucent)
     surface: "#ffffff",
@@ -43,12 +43,12 @@ const colors = {
     primary: AURORA_PURPLE,
     primaryForeground: "#ffffff",
 
-    // Secondary / stronger glass interactive surfaces
-    secondary: "rgba(15,23,42,0.05)",
+    // Secondary / subtle interactive surfaces (composer input, search pill, comments pill)
+    secondary: "#f1f5f9",
     secondaryForeground: "#0f172a",
 
     // Muted / subdued elements (dividers, timestamps, placeholders)
-    muted: "rgba(15,23,42,0.03)",
+    muted: "#f8fafc",
     mutedForeground: "#64748b",
 
     // Accent highlights (badges, selected items, focus rings)
@@ -60,36 +60,36 @@ const colors = {
     destructiveForeground: "#ffffff",
 
     // Borders and input outlines
-    border: "rgba(15,23,42,0.08)",
-    borderStrong: "rgba(15,23,42,0.14)",
-    input: "rgba(15,23,42,0.08)",
+    border: "#e2e8f0",
+    borderStrong: "#cbd5e1",
+    input: "#e2e8f0",
 
     // Aurora extras
     secondaryAccent: AURORA_TEAL,
-    header: "rgba(255,255,255,0.72)",
+    header: "rgba(255,255,255,0.85)",
   },
 
   dark: {
     text: "#e5e7eb",
     tint: AURORA_PURPLE,
 
-    background: "#000000",
+    background: "#0D1117",
     foreground: "#e5e7eb",
 
-    card: "rgba(255,255,255,0.04)",
+    card: "#161B22",
     cardForeground: "#e5e7eb",
-    cardBorder: "rgba(255,255,255,0.10)",
+    cardBorder: "#30363D",
 
     // Opaque surface for modals / sheets / popovers (never translucent)
-    surface: "#16181c",
+    surface: "#161B22",
 
     primary: AURORA_PURPLE,
     primaryForeground: "#ffffff",
 
-    secondary: "rgba(255,255,255,0.07)",
+    secondary: "#21262D",
     secondaryForeground: "#e5e7eb",
 
-    muted: "rgba(255,255,255,0.04)",
+    muted: "#161B22",
     mutedForeground: "#94a3b8",
 
     accent: "rgba(192,132,252,0.15)",
@@ -98,13 +98,13 @@ const colors = {
     destructive: "#ef4343",
     destructiveForeground: "#ffffff",
 
-    border: "rgba(255,255,255,0.10)",
-    borderStrong: "rgba(255,255,255,0.18)",
-    input: "rgba(255,255,255,0.10)",
+    border: "#30363D",
+    borderStrong: "#484F58",
+    input: "#30363D",
 
     // Aurora extras
     secondaryAccent: AURORA_TEAL,
-    header: "rgba(10,10,12,0.65)",
+    header: "#161B22",
   },
 
   // Aurora accent gradients (theme-independent)

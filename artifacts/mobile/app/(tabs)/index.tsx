@@ -557,14 +557,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     ...Platform.select({
       web: {
-        boxShadow: "0 6px 16px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.03)",
       } as object,
       default: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-        elevation: 3,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04,
+        shadowRadius: 4,
+        elevation: 1,
       },
     }),
   },
@@ -601,14 +601,14 @@ const styles = StyleSheet.create({
     gap: 6,
     ...Platform.select({
       web: {
-        boxShadow: "0 6px 16px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.03)",
       } as object,
       default: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-        elevation: 3,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04,
+        shadowRadius: 4,
+        elevation: 1,
       },
     }),
   },
@@ -629,14 +629,14 @@ const styles = StyleSheet.create({
     gap: 10,
     ...Platform.select({
       web: {
-        boxShadow: "0 4px 14px rgba(0,0,0,0.04)",
+        boxShadow: "0 3px 10px rgba(0,0,0,0.03)",
       } as object,
       default: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 6,
-        elevation: 2,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.03,
+        shadowRadius: 4,
+        elevation: 1,
       },
     }),
   },

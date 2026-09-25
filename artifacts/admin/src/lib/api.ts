@@ -14,7 +14,7 @@ export const API_BASE = import.meta.env.DEV
   ? ""
   : (() => {
       const u = normalizeBase(import.meta.env.VITE_API_URL as string);
-      if (!u || u.includes("api.himewo.com")) return "https://workspaceapi-server-production-5e99.up.railway.app";
+      if (!u || u.includes("api.himewo.com")) return "https://api-server-production-be15.up.railway.app";
       return u;
     })();
 

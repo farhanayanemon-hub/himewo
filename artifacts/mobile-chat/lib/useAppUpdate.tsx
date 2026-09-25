@@ -38,7 +38,7 @@ export function compareSemver(current: string, latest: string): boolean {
 const CURRENT_VERSION = Constants.expoConfig?.version || "1.2.0";
 const API_ENDPOINTS = [
   "https://api.himewo.com/api/app/version",
-  "https://workspaceapi-server-production-5e99.up.railway.app/api/app/version",
+  "https://api-server-production-be15.up.railway.app/api/app/version",
 ];
 
 export function useAppUpdate(appType: "social" | "chat" = "chat") {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, X, Globe, Users, Lock } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Globe, Users, Lock, Heart, MessageCircle, Share2 } from "lucide-react";
 import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { avatarSrc } from "@/lib/avatar";
@@ -7,8 +7,6 @@ import { getAuthorProfileUrl } from "@/lib/user-link";
 import { VerifiedBadge } from "@/components/verified-badge";
 import { RenderWithMentions } from "@/components/mention";
 import { PostComments } from "@/components/post-comments";
-import { ReactionControl, reactionConfig } from "@/components/reaction-picker";
-import { PostReactionsDialog } from "@/components/post-reactions-dialog";
 import {
   Post,
   ReactionType,
@@ -53,7 +51,6 @@ export function PostViewer({
 
   // Optimistic reaction state — same pattern as PostCard.
   const [summary, setSummary] = useState(post.reactions);
-  const [showReactionsDialog, setShowReactionsDialog] = useState(false);
   useEffect(() => {
     setSummary(post.reactions);
   }, [post.reactions]);
@@ -64,35 +61,24 @@ export function PostViewer({
     queryClient.invalidateQueries({ queryKey: getGetUserPostsQueryKey(post.author.id) });
   };
 
-  const handleReaction = (type: ReactionType) => {
-    const prev = summary.viewerReaction as ReactionType | null | undefined;
-    if (prev === type) {
-      setSummary((s) => {
-        const byType = { ...s.byType };
-        if (byType[type] !== undefined) {
-          byType[type] = Math.max(0, (byType[type] ?? 1) - 1);
-          if (byType[type] === 0) delete byType[type];
-        }
-        return { ...s, total: Math.max(0, s.total - 1), byType, viewerReaction: null };
-      });
+  const viewerReaction = summary.viewerReaction as ReactionType | null | undefined;
+
+  const handleLoveToggle = () => {
+    if (viewerReaction) {
+      setSummary((s) => ({
+        ...s,
+        total: Math.max(0, s.total - 1),
+        viewerReaction: null,
+      }));
       removeReaction.mutate({ id: post.id }, { onSettled: invalidate });
     } else {
-      setSummary((s) => {
-        const byType = { ...s.byType };
-        if (prev && byType[prev] !== undefined) {
-          byType[prev] = Math.max(0, (byType[prev] ?? 1) - 1);
-          if (byType[prev] === 0) delete byType[prev];
-        }
-        byType[type] = (byType[type] ?? 0) + 1;
-        return {
-          ...s,
-          total: prev ? s.total : s.total + 1,
-          byType,
-          viewerReaction: type,
-        };
-      });
+      setSummary((s) => ({
+        ...s,
+        total: s.total + 1,
+        viewerReaction: ReactionType.love,
+      }));
       setReaction.mutate(
-        { id: post.id, data: { type, pageId: actingPage?.id } },
+        { id: post.id, data: { type: ReactionType.love, pageId: actingPage?.id } },
         { onSettled: invalidate },
       );
     }
@@ -141,7 +127,6 @@ export function PostViewer({
   const authorName = post.authorPage ? post.authorPage.name : post.author.displayName;
   const authorAvatar = avatarSrc(post.authorPage ? post.authorPage.avatarUrl : post.author.avatarUrl);
   const PrivacyIcon = privacyIcons[post.privacy] ?? Globe;
-  const viewerReaction = summary.viewerReaction as ReactionType | null | undefined;
 
   return (
     <div className="fixed inset-0 z-[100] bg-background flex flex-col md:flex-row">
@@ -219,52 +204,44 @@ export function PostViewer({
             </p>
           )}
 
-          <div className="flex justify-between items-center text-sm text-muted-foreground py-2 border-y border-border mb-2">
-            <div className="flex items-center gap-1">
-              {post.reactionsEnabled && summary.total > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setShowReactionsDialog(true)}
-                  className="flex items-center gap-1 hover:opacity-80 transition-opacity cursor-pointer group"
-                  title="See who reacted"
-                >
-                  <div className="flex -space-x-1">
-                    {Object.keys(summary.byType).slice(0, 3).map((type) => {
-                      const rType = type as ReactionType;
-                      return (
-                        <div key={type} className="w-5 h-5 rounded-full flex items-center justify-center bg-background border border-border text-[11px] leading-none">
-                          {reactionConfig[rType]?.emoji}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <span className="ml-1 group-hover:underline">{summary.total}</span>
-                </button>
+          {/* Dribbble clean Action Bar */}
+          <div className="flex items-center justify-between py-2 px-1 border-y border-border mb-3">
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={handleLoveToggle}
+                className={`flex items-center gap-1.5 transition-transform active:scale-90 cursor-pointer ${
+                  viewerReaction ? "text-red-500" : "text-muted-foreground hover:text-foreground"
+                }`}
+                title={viewerReaction ? "Unlike" : "Love"}
+              >
+                <Heart
+                  className={`w-5 h-5 transition-colors ${
+                    viewerReaction ? "fill-red-500 text-red-500" : ""
+                  }`}
+                />
+                <span className="font-bold text-xs">{summary.total || 0}</span>
+              </button>
+
+              {post.commentsEnabled && (
+                <div className="flex items-center gap-1.5 text-muted-foreground text-xs font-semibold">
+                  <MessageCircle className="w-4 h-4" />
+                  <span>{post.commentCount || 0}</span>
+                </div>
+              )}
+
+              {post.shareCount > 0 && (
+                <div className="flex items-center gap-1.5 text-muted-foreground text-xs font-semibold">
+                  <Share2 className="w-4 h-4" />
+                  <span>{post.shareCount}</span>
+                </div>
               )}
             </div>
-            <div className="flex gap-3">
-              {post.commentsEnabled && post.commentCount > 0 && <span>{post.commentCount} comments</span>}
-              {post.shareCount > 0 && <span>{post.shareCount} shares</span>}
-            </div>
           </div>
-
-          {post.reactionsEnabled && (
-            <div className="flex mb-4">
-              <div className="flex-1 flex justify-center items-center hover:bg-muted/60 rounded-lg py-2 press transition-colors">
-                <ReactionControl viewerReaction={viewerReaction} onReact={handleReaction} />
-              </div>
-            </div>
-          )}
 
           <PostComments postId={post.id} commentsEnabled={post.commentsEnabled} onChanged={invalidate} />
         </div>
       </div>
-
-      <PostReactionsDialog
-        postId={post.id}
-        open={showReactionsDialog}
-        onOpenChange={setShowReactionsDialog}
-      />
     </div>
   );
 }

@@ -13,6 +13,8 @@ import {
   Loader2,
   Bookmark,
   MoreHorizontal,
+  MoreVertical,
+  Heart,
   Pencil,
   Trash2,
   Globe,
@@ -24,6 +26,7 @@ import {
   Check,
 } from "lucide-react";
 import { BoostDialog } from "@/components/boost-dialog";
+import { PostComments } from "@/components/post-comments";
 import {
   Post,
   useSetPostReaction,
@@ -70,8 +73,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { getGetFeedQueryKey, getGetPostQueryKey, getGetUserPostsQueryKey, getListSavedItemsQueryKey } from "@workspace/api-client-react";
-import { ReactionControl, reactionConfig } from "@/components/reaction-picker";
-import { PostReactionsDialog } from "@/components/post-reactions-dialog";
 import { useAuth } from "@/lib/auth";
 import { useActingPage } from "@/lib/acting-page";
 
@@ -80,6 +81,12 @@ const privacyMeta: Record<string, { icon: typeof Globe; label: string }> = {
   friends: { icon: Users, label: "Friends" },
   private: { icon: Lock, label: "Only me" },
 };
+
+function formatCount(n: number = 0): string {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, "") + "m";
+  if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, "") + "k";
+  return String(n);
+}
 
 export function PostCard({
   post,
@@ -102,11 +109,11 @@ export function PostCard({
   const votePoll = useVotePoll();
   const removePollVote = useRemovePollVote();
   const [showShare, setShowShare] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   const [shareCaption, setShareCaption] = useState("");
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(post.content);
   const [showBoost, setShowBoost] = useState(false);
-  const [showReactionsDialog, setShowReactionsDialog] = useState(false);
   // Optimistic reaction state — updates instantly on tap, server sync follows.
   const [summary, setSummary] = useState(post.reactions);
   useEffect(() => {
@@ -241,36 +248,24 @@ export function PostCard({
 
   const savePending = saveItem.isPending || unsaveItem.isPending;
 
-  const handleReaction = (type: ReactionType) => {
-    const prev = summary.viewerReaction as ReactionType | null | undefined;
-    if (prev === type) {
-      // Optimistically remove the reaction right away.
-      setSummary((s) => {
-        const byType = { ...s.byType };
-        if (byType[type] !== undefined) {
-          byType[type] = Math.max(0, (byType[type] ?? 1) - 1);
-          if (byType[type] === 0) delete byType[type];
-        }
-        return { ...s, total: Math.max(0, s.total - 1), byType, viewerReaction: null };
-      });
+  const handleLoveToggle = () => {
+    if (viewerReaction) {
+      setSummary((s) => ({
+        ...s,
+        total: Math.max(0, s.total - 1),
+        viewerReaction: null,
+      }));
       removeReaction.mutate({ id: post.id }, { onSettled: invalidate });
     } else {
-      // Optimistically set/switch the reaction right away.
-      setSummary((s) => {
-        const byType = { ...s.byType };
-        if (prev && byType[prev] !== undefined) {
-          byType[prev] = Math.max(0, (byType[prev] ?? 1) - 1);
-          if (byType[prev] === 0) delete byType[prev];
-        }
-        byType[type] = (byType[type] ?? 0) + 1;
-        return {
-          ...s,
-          total: prev ? s.total : s.total + 1,
-          byType,
-          viewerReaction: type,
-        };
-      });
-      setReaction.mutate({ id: post.id, data: { type, pageId: actingPageId } }, { onSettled: invalidate });
+      setSummary((s) => ({
+        ...s,
+        total: s.total + 1,
+        viewerReaction: ReactionType.love,
+      }));
+      setReaction.mutate(
+        { id: post.id, data: { type: ReactionType.love, pageId: actingPageId } },
+        { onSettled: invalidate },
+      );
     }
   };
 
@@ -607,59 +602,122 @@ export function PostCard({
 
       {post.media && post.media.length > 0 && <MediaGrid media={post.media} post={post} />}
 
-      <div className="flex justify-between items-center text-sm text-muted-foreground py-2 border-b border-border mb-1">
-        <div className="flex items-center gap-1">
-          {post.reactionsEnabled && summary.total > 0 && (
+      {/* Clean Dribbble Action Bar (matching Mobile App) */}
+      <div className="flex items-center justify-between pt-3 mt-1 border-t border-border/60">
+        {/* Left Metrics: ♡ 2.1k   💬 2.1k   ↗ Share */}
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={handleLoveToggle}
+            className={`flex items-center gap-1.5 transition-transform active:scale-90 cursor-pointer ${
+              viewerReaction ? "text-red-500" : "text-muted-foreground hover:text-foreground"
+            }`}
+            title={viewerReaction ? "Unlike" : "Love"}
+          >
+            <Heart
+              className={`w-5 h-5 transition-colors ${
+                viewerReaction ? "fill-red-500 text-red-500" : ""
+              }`}
+            />
+            <span className="font-bold text-xs">{formatCount(summary.total || 0)}</span>
+          </button>
+
+          {post.commentsEnabled && (
             <button
               type="button"
-              onClick={() => setShowReactionsDialog(true)}
-              className="flex items-center gap-1 hover:opacity-80 transition-opacity cursor-pointer group"
-              title="See who reacted"
+              onClick={() => setShowComments((v) => !v)}
+              className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-transform active:scale-90 cursor-pointer"
+              title="Comments"
             >
-              <div className="flex -space-x-1">
-                {Object.keys(summary.byType).slice(0, 3).map((type) => {
-                  const rType = type as ReactionType;
-                  return (
-                    <div key={type} className="w-5 h-5 rounded-full flex items-center justify-center bg-background border border-border text-[11px] leading-none">
-                      {reactionConfig[rType]?.emoji}
-                    </div>
-                  );
-                })}
-              </div>
-              <span className="ml-1 group-hover:underline">{summary.total}</span>
+              <MessageCircle className="w-5 h-5" />
+              <span className="font-bold text-xs">{formatCount(post.commentCount || 0)}</span>
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={() => setShowShare((s) => !s)}
+            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-transform active:scale-90 cursor-pointer"
+            title="Share"
+          >
+            <Share2 className="w-4 h-4" />
+            {post.shareCount > 0 && (
+              <span className="font-bold text-xs">{formatCount(post.shareCount)}</span>
+            )}
+          </button>
         </div>
-        <div className="flex gap-3">
-          {post.commentsEnabled && post.commentCount > 0 && <Link href={`/post/${post.id}`} className="hover:underline">{post.commentCount} comments</Link>}
-          {post.shareCount > 0 && <span>{post.shareCount} shares</span>}
+
+        {/* Right Actions: Comments here... pill input & 3-dots */}
+        <div className="flex items-center gap-2">
+          {post.commentsEnabled && (
+            <button
+              type="button"
+              onClick={() => setShowComments((v) => !v)}
+              className="bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground text-xs font-medium px-3.5 py-1.5 rounded-full border border-border/60 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-xs"
+            >
+              <span>Comments here...</span>
+            </button>
+          )}
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Post options"
+                title="Post options"
+                className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
+              >
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={toggleSave}>
+                <Bookmark className="w-4 h-4 mr-2" />
+                <span>{post.viewerHasSaved ? "Unsave post" : "Save post"}</span>
+              </DropdownMenuItem>
+
+              {isOwner && (
+                <>
+                  <DropdownMenuItem onClick={() => setEditing(true)}>
+                    <Pencil className="w-4 h-4 mr-2" />
+                    <span>Edit caption</span>
+                  </DropdownMenuItem>
+                  {canBoost && (
+                    <DropdownMenuItem onClick={() => setShowBoost(true)}>
+                      <Rocket className="w-4 h-4 mr-2" />
+                      <span>Boost post</span>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (window.confirm("Delete this post? This cannot be undone.")) {
+                        deletePost.mutate({ id: post.id }, { onSuccess: invalidate });
+                      }
+                    }}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    <span>Delete post</span>
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
-      <div className="flex gap-1 relative">
-        {post.reactionsEnabled && (
-          <div className="flex-1 flex justify-center items-center hover:bg-muted/60 rounded-lg py-2 press transition-colors">
-            <ReactionControl viewerReaction={viewerReaction} onReact={handleReaction} />
-          </div>
-        )}
-
-        {post.commentsEnabled && (
-          <Link href={`/post/${post.id}`} className="flex-1">
-            <Button variant="ghost" className="w-full text-muted-foreground hover:bg-muted/60 rounded-lg flex items-center gap-2 press">
-              <MessageCircle className="w-5 h-5" />
-              <span className="font-semibold">Comment</span>
-            </Button>
-          </Link>
-        )}
-        <Button
-          variant="ghost"
-          className="flex-1 text-muted-foreground hover:bg-muted/60 rounded-lg flex items-center gap-2 press"
-          onClick={() => setShowShare((s) => !s)}
-        >
-          <Send className="w-4 h-4 -translate-y-0.5" />
-          <span className="font-semibold">Share</span>
-        </Button>
-      </div>
+      {/* Inline Comments Drawer */}
+      {showComments && post.commentsEnabled && (
+        <div className="mt-3 pt-3 border-t border-border/60 animate-in fade-in slide-in-from-top-1 duration-200">
+          <PostComments
+            postId={post.id}
+            commentsEnabled={post.commentsEnabled}
+            onChanged={invalidate}
+          />
+        </div>
+      )}
 
       {canBoost && (
         <BoostDialog type="post" id={post.id} open={showBoost} onOpenChange={setShowBoost} />
@@ -682,12 +740,6 @@ export function PostCard({
           </div>
         </div>
       )}
-
-      <PostReactionsDialog
-        postId={post.id}
-        open={showReactionsDialog}
-        onOpenChange={setShowReactionsDialog}
-      />
     </div>
   );
 }

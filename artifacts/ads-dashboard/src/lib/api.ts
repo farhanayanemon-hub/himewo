@@ -6,7 +6,7 @@ import {
 } from "./supabase";
 
 // In dev use relative /api URLs (local API server); VITE_API_URL is production.
-const PROD_API_FALLBACK = "https://workspaceapi-server-production-5e99.up.railway.app";
+const PROD_API_FALLBACK = "https://api-server-production-be15.up.railway.app";
 const rawApiBaseUrl = import.meta.env.DEV
   ? undefined
   : (() => {
