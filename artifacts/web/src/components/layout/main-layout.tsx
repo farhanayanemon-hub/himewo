@@ -58,6 +58,8 @@ import { useNavIcons } from "@/lib/nav-icons";
 import { Button } from "@/components/ui/button";
 import { MobileNav, MobileMenuButton } from "./mobile-nav";
 import { PixelCatIcon } from "@/components/logo";
+import { useCreateActions } from "@/components/create-action-sheet";
+import { CreatePostDialog } from "@/components/create-post-dialog";
 
 function ThemeToggle() {
   const [isDark, setIsDark] = useState(() =>
@@ -265,130 +267,53 @@ function PageSwitcher() {
 }
 
 function HeaderCreateMenu() {
-  const [location, navigate] = useLocation();
-
-  const handleCreatePost = () => {
-    if (location === "/") {
-      const el = document.getElementById("main-post-composer");
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        const input = el.querySelector("textarea");
-        input?.focus();
-        return;
-      }
-    }
-    navigate("/");
-  };
+  const { options, postDialogOpen, setPostDialogOpen, isPollMode } = useCreateActions();
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-full aurora-glass hover:bg-muted/60 relative"
-          aria-label="Create"
-        >
-          <Plus className="w-5 h-5" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64 p-2 shadow-xl rounded-2xl border border-border/60">
-        <div className="px-2 py-1.5">
-          <span className="text-sm font-bold">Create</span>
-        </div>
-        <DropdownMenuSeparator className="my-1" />
-        <DropdownMenuItem
-          onClick={handleCreatePost}
-          className="gap-3 p-2 rounded-xl cursor-pointer hover:bg-muted/60"
-        >
-          <div className="w-8 h-8 rounded-full bg-blue-500/15 flex items-center justify-center shrink-0">
-            <PenSquare className="w-4 h-4 text-blue-500" />
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            aria-label="Create Content"
+            className="w-10 h-10 rounded-full bg-[#00C2E8] text-[#14171D] hover:scale-105 active:scale-95 transition-all shadow-[0_0_14px_rgba(0,194,232,0.45)] flex items-center justify-center font-black text-2xl cursor-pointer mr-1.5 shrink-0"
+            title="Create"
+          >
+            +
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-64 p-2 shadow-2xl rounded-2xl border border-border/70 bg-card">
+          <div className="px-2.5 py-1.5 flex items-center justify-between">
+            <span className="text-xs font-bold text-foreground uppercase tracking-wider">Create</span>
+            <span className="text-[10px] text-muted-foreground font-semibold">New</span>
           </div>
-          <div>
-            <div className="font-semibold text-sm leading-none">Post</div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">Share to feed</div>
-          </div>
-        </DropdownMenuItem>
+          <DropdownMenuSeparator className="my-1" />
+          {options.map((opt) => {
+            const Icon = opt.icon;
+            return (
+              <DropdownMenuItem
+                key={opt.id}
+                onClick={opt.action}
+                className="gap-3 p-2 rounded-xl cursor-pointer hover:bg-muted/60 transition-colors"
+              >
+                <div className={`w-8 h-8 rounded-xl ${opt.bgColor} flex items-center justify-center shrink-0`}>
+                  <Icon className={`w-4 h-4 ${opt.color}`} />
+                </div>
+                <div>
+                  <div className="font-semibold text-sm leading-none text-foreground">{opt.title}</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">{opt.sub}</div>
+                </div>
+              </DropdownMenuItem>
+            );
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
-        <DropdownMenuItem
-          onClick={() => navigate("/stories")}
-          className="gap-3 p-2 rounded-xl cursor-pointer hover:bg-muted/60"
-        >
-          <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
-            <BookImage className="w-4 h-4 text-primary" />
-          </div>
-          <div>
-            <div className="font-semibold text-sm leading-none">Story</div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">Photos, videos & filters</div>
-          </div>
-        </DropdownMenuItem>
-
-        <DropdownMenuItem
-          onClick={() => navigate("/reels")}
-          className="gap-3 p-2 rounded-xl cursor-pointer hover:bg-muted/60"
-        >
-          <div className="w-8 h-8 rounded-full bg-fuchsia-500/15 flex items-center justify-center shrink-0">
-            <Film className="w-4 h-4 text-fuchsia-500" />
-          </div>
-          <div>
-            <div className="font-semibold text-sm leading-none">Reel</div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">Short videos with music</div>
-          </div>
-        </DropdownMenuItem>
-
-        <DropdownMenuItem
-          onClick={() => navigate("/live")}
-          className="gap-3 p-2 rounded-xl cursor-pointer hover:bg-muted/60"
-        >
-          <div className="w-8 h-8 rounded-full bg-red-500/15 flex items-center justify-center shrink-0">
-            <Radio className="w-4 h-4 text-red-500" />
-          </div>
-          <div>
-            <div className="font-semibold text-sm leading-none">Live</div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">Broadcast video live</div>
-          </div>
-        </DropdownMenuItem>
-
-        <DropdownMenuItem
-          onClick={() => navigate("/events")}
-          className="gap-3 p-2 rounded-xl cursor-pointer hover:bg-muted/60"
-        >
-          <div className="w-8 h-8 rounded-full bg-amber-500/15 flex items-center justify-center shrink-0">
-            <CalendarDays className="w-4 h-4 text-amber-500" />
-          </div>
-          <div>
-            <div className="font-semibold text-sm leading-none">Event</div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">Plan an occasion</div>
-          </div>
-        </DropdownMenuItem>
-
-        <DropdownMenuItem
-          onClick={() => navigate("/pages?create=1")}
-          className="gap-3 p-2 rounded-xl cursor-pointer hover:bg-muted/60"
-        >
-          <div className="w-8 h-8 rounded-full bg-emerald-500/15 flex items-center justify-center shrink-0">
-            <Flag className="w-4 h-4 text-emerald-500" />
-          </div>
-          <div>
-            <div className="font-semibold text-sm leading-none">Hub</div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">Brand or business page</div>
-          </div>
-        </DropdownMenuItem>
-
-        <DropdownMenuItem
-          onClick={() => navigate("/groups")}
-          className="gap-3 p-2 rounded-xl cursor-pointer hover:bg-muted/60"
-        >
-          <div className="w-8 h-8 rounded-full bg-cyan-500/15 flex items-center justify-center shrink-0">
-            <Users className="w-4 h-4 text-cyan-500" />
-          </div>
-          <div>
-            <div className="font-semibold text-sm leading-none">Circle</div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">Community group</div>
-          </div>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      <CreatePostDialog
+        open={postDialogOpen}
+        onOpenChange={setPostDialogOpen}
+        isPoll={isPollMode}
+      />
+    </>
   );
 }
 
@@ -491,52 +416,87 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
           </div>
 
           <div className="flex items-center gap-2 md:gap-6">
-            <div className="hidden md:flex items-center gap-1">
-              {navItems.map(item => {
-                const Icon = item.icon;
-                const isActive = item.href === "/"
-                  ? location === "/"
-                  : location.startsWith(item.href);
-                return (
-                  <Link key={item.href} href={item.href} className="relative pb-[3px]">
-                    <button
-                      className={`relative flex items-center justify-center w-14 h-12 rounded-xl transition-all duration-200 press ${
-                        isActive
-                          ? "bg-violet-50 dark:bg-violet-500/15"
-                          : "hover:bg-muted/60"
-                      }`}
-                    >
-                      {item.iconUrl ? (
-                        <img
-                          src={item.iconUrl}
-                          alt=""
-                          className={`w-7 h-7 object-contain transition-all ${
-                            isActive
-                              ? "scale-110"
-                              : "opacity-50 grayscale-[20%]"
-                          }`}
-                          style={isActive ? { filter: "drop-shadow(0 0 8px rgba(139,92,246,0.5)) hue-rotate(0deg)" } : {}}
-                        />
-                      ) : (
-                        <Icon
-                          className="w-7 h-7 transition-all"
-                          style={{
-                            color: isActive ? "#8b5cf6" : "#64748b",
-                            filter: isActive ? "drop-shadow(0 0 10px rgba(139,92,246,0.6))" : undefined,
-                            transform: isActive ? "scale(1.08)" : undefined,
-                          }}
-                        />
-                      )}
-                    </button>
-                    {isActive && (
-                      <span
-                        className="absolute bottom-0 left-2 right-2 h-[3px] rounded-full"
-                        style={{ background: "#8b5cf6" }}
-                      />
-                    )}
-                  </Link>
-                );
-              })}
+            <div className="hidden md:flex items-center gap-1.5">
+              {/* Electric Cyan Plus button right at the front */}
+              <HeaderCreateMenu />
+
+              {/* Home */}
+              <Link href="/" className="relative pb-[3px]">
+                <button
+                  title="Feed"
+                  className={`relative flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-200 ${
+                    location === "/"
+                      ? "bg-violet-50 dark:bg-violet-500/15 text-primary"
+                      : "hover:bg-muted/60 text-muted-foreground"
+                  }`}
+                >
+                  <NavHomeIcon
+                    className="w-6 h-6 transition-all"
+                    style={{
+                      color: location === "/" ? "#8b5cf6" : "#64748b",
+                      filter: location === "/" ? "drop-shadow(0 0 8px rgba(139,92,246,0.5))" : undefined,
+                    }}
+                  />
+                </button>
+                {location === "/" && (
+                  <span
+                    className="absolute bottom-0 left-2 right-2 h-[3px] rounded-full"
+                    style={{ background: "#8b5cf6" }}
+                  />
+                )}
+              </Link>
+
+              {/* Reels */}
+              <Link href="/reels" className="relative pb-[3px]">
+                <button
+                  title="Reels"
+                  className={`relative flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-200 ${
+                    location.startsWith("/reels")
+                      ? "bg-violet-50 dark:bg-violet-500/15 text-primary"
+                      : "hover:bg-muted/60 text-muted-foreground"
+                  }`}
+                >
+                  <NavReelsIcon
+                    className="w-6 h-6 transition-all"
+                    style={{
+                      color: location.startsWith("/reels") ? "#8b5cf6" : "#64748b",
+                      filter: location.startsWith("/reels") ? "drop-shadow(0 0 8px rgba(139,92,246,0.5))" : undefined,
+                    }}
+                  />
+                </button>
+                {location.startsWith("/reels") && (
+                  <span
+                    className="absolute bottom-0 left-2 right-2 h-[3px] rounded-full"
+                    style={{ background: "#8b5cf6" }}
+                  />
+                )}
+              </Link>
+
+              {/* Shop */}
+              <Link href="/shop" className="relative pb-[3px]">
+                <button
+                  title="Shop"
+                  className={`relative flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-200 ${
+                    location.startsWith("/shop")
+                      ? "bg-violet-50 dark:bg-violet-500/15 text-primary"
+                      : "hover:bg-muted/60 text-muted-foreground"
+                  }`}
+                >
+                  <NavShopIcon
+                    className="w-6 h-6 transition-all"
+                    style={{
+                      color: location.startsWith("/shop") ? "#8b5cf6" : "#64748b",
+                      filter: location.startsWith("/shop") ? "drop-shadow(0 0 8px rgba(139,92,246,0.5))" : undefined,
+                    }}
+                  />
+                </button>
+                {location.startsWith("/shop") && (
+                  <span
+                    className="absolute bottom-0 left-2 right-2 h-[3px] rounded-full"
+                    style={{ background: "#8b5cf6" }}
+                  />
+                )}
+              </Link>
             </div>
           </div>
 
@@ -558,7 +518,6 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
 
             {/* Desktop Action Controls */}
             <div className="hidden md:flex items-center gap-2">
-              <HeaderCreateMenu />
               <ThemeToggle />
               <Link href="/messages">
                 <Button variant="ghost" size="icon" className="rounded-full aurora-glass hover:bg-muted/60 relative">

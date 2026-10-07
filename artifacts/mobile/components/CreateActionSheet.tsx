@@ -54,21 +54,9 @@ export function CreateActionSheet({
 
   const items: ActionItem[] = [
     {
-      id: "post",
-      title: "Create Post",
-      sub: "Share a status, photos or poll on Feed",
-      icon: "create-outline",
-      color: "#3b82f6",
-      bgColor: "#3b82f618",
-      onPress: () => {
-        onClose();
-        router.push("/create-post");
-      },
-    },
-    {
       id: "story",
-      title: "Create Story",
-      sub: "Share photos, videos or text with 50+ filters",
+      title: "Story",
+      sub: "Share photos, videos or text with filters",
       icon: "book-outline",
       color: "#8b5cf6",
       bgColor: "#8b5cf618",
@@ -79,8 +67,8 @@ export function CreateActionSheet({
     },
     {
       id: "reel",
-      title: "Create Reel",
-      sub: "Share short-form video reels with music & stickers",
+      title: "Reel",
+      sub: "Share short-form videos with music & stickers",
       icon: "videocam-outline",
       color: "#ec4899",
       bgColor: "#ec489918",
@@ -90,20 +78,20 @@ export function CreateActionSheet({
       },
     },
     {
-      id: "live",
-      title: "Go Live",
-      sub: "Broadcast live video to friends & followers",
-      icon: "radio-outline",
-      color: "#ef4444",
-      bgColor: "#ef444418",
+      id: "post",
+      title: "Post",
+      sub: "Share a status, photos or updates on feed",
+      icon: "create-outline",
+      color: "#3b82f6",
+      bgColor: "#3b82f618",
       onPress: () => {
         onClose();
-        router.push("/live" as never);
+        router.push("/create-post");
       },
     },
     {
       id: "event",
-      title: "Create Event",
+      title: "Events",
       sub: "Plan and invite friends to an occasion",
       icon: "calendar-outline",
       color: "#f59e0b",
@@ -114,27 +102,27 @@ export function CreateActionSheet({
       },
     },
     {
-      id: "hub",
-      title: "Create Hub",
-      sub: "Build a brand, business or creator page",
-      icon: "flag-outline",
+      id: "poll",
+      title: "Poll",
+      sub: "Ask questions and gather votes from community",
+      icon: "stats-chart-outline",
       color: "#10b981",
       bgColor: "#10b98118",
       onPress: () => {
         onClose();
-        router.push("/pages" as never);
+        router.push("/create-post?poll=1" as never);
       },
     },
     {
-      id: "circle",
-      title: "Create Circle",
-      sub: "Create a community group for shared passions",
-      icon: "people-outline",
-      color: "#06b6d4",
-      bgColor: "#06b6d418",
+      id: "live",
+      title: "Live",
+      sub: "Broadcast live video to friends & followers",
+      icon: "radio-outline",
+      color: "#ef4444",
+      bgColor: "#ef444418",
       onPress: () => {
         onClose();
-        router.push("/groups" as never);
+        router.push("/live" as never);
       },
     },
   ];

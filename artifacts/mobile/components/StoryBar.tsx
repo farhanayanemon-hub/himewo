@@ -8,8 +8,6 @@ import { useListStories, type StoryGroup } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { useActingPage } from "@/lib/acting-page";
 import { useColors } from "@/hooks/useColors";
-import { CreateMediaLauncherSheet } from "@/components/CreateMediaLauncherSheet";
-import { CreateActionSheet } from "@/components/CreateActionSheet";
 
 export function StoryBar({ onCreatePress }: { onCreatePress?: () => void } = {}) {
   const c = useColors();
@@ -18,89 +16,48 @@ export function StoryBar({ onCreatePress }: { onCreatePress?: () => void } = {})
   const { data } = useListStories();
   const groups = (data ?? []) as StoryGroup[];
 
-  const [showCreatePicker, setShowCreatePicker] = useState(false);
-  const [launcherMode, setLauncherMode] = useState<"story" | "reel" | null>(null);
-
   const triggerHaptic = () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {}
   };
 
-  const handleOpenCreate = () => {
-    triggerHaptic();
-    if (onCreatePress) {
-      onCreatePress();
-    } else {
-      setShowCreatePicker(true);
-    }
-  };
+  const myId = actingPage ? `p${actingPage.id}` : user?.id;
+  const sortedGroups = groups
+    ? [
+        ...groups.filter((g) => (g.authorPage ? `p${g.authorPage.id}` : g.author.id) === myId),
+        ...groups.filter((g) => (g.authorPage ? `p${g.authorPage.id}` : g.author.id) !== myId),
+      ]
+    : [];
+
+  if (sortedGroups.length === 0) {
+    return null;
+  }
 
   return (
     <>
-      <CreateActionSheet
-        visible={showCreatePicker}
-        onClose={() => setShowCreatePicker(false)}
-        onSelectStory={() => setLauncherMode("story")}
-        onSelectReel={() => setLauncherMode("reel")}
-      />
-
-      <CreateMediaLauncherSheet
-        visible={!!launcherMode}
-        mode={launcherMode ?? "story"}
-        onClose={() => setLauncherMode(null)}
-      />
-
       <View style={styles.wrap}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.row}
         >
-          {/* "Your Story" Card with Cyan (+) Badge */}
-          <Pressable
-            style={({ pressed }) => [
-              styles.storyTile,
-              styles.yourStoryTile,
-              {
-                backgroundColor: c.card,
-                borderColor: c.border,
-                transform: [{ scale: pressed ? 0.94 : 1 }],
-              },
-            ]}
-            onPress={handleOpenCreate}
-            accessibilityLabel="Add to your story"
-          >
-            <View style={styles.yourStoryAvatarWrap}>
-              <Image
-                source={{ uri: (actingPage ? actingPage.avatarUrl : user?.avatarUrl) || undefined }}
-                style={styles.yourStoryAvatar}
-                contentFit="cover"
-              />
-            </View>
-
-            <Text numberOfLines={1} style={[styles.yourStoryText, { color: c.foreground }]}>
-              Your story
-            </Text>
-
-            {/* Cyan Plus Badge at Bottom Center */}
-            <View style={styles.cyanPlusBadge}>
-              <Ionicons name="add" size={15} color="#FFFFFF" />
-            </View>
-          </Pressable>
-
-          {/* Friend Story Cards (Full bleed photo with top-left mini author avatar) */}
-          {groups.map((group) => {
+          {/* Active Story Cards only (User's own active story appears first) */}
+          {sortedGroups.map((group) => {
             const cover = group.stories[0];
             if (!cover) return null;
+            const isOwn = (group.authorPage ? `p${group.authorPage.id}` : group.author.id) === myId;
             const authorAvatar = (group.authorPage?.avatarUrl ?? group.author?.avatarUrl) || undefined;
-            const authorName = (group.authorPage?.name ?? group.author?.displayName ?? "Friend").split(" ")[0];
+            const authorName = isOwn
+              ? "Your story"
+              : (group.authorPage?.name ?? group.author?.displayName ?? "Friend").split(" ")[0];
 
             return (
               <Pressable
                 key={group.authorPage ? `p${group.authorPage.id}` : group.author.id}
                 style={({ pressed }) => [
                   styles.storyTile,
+                  isOwn && styles.ownActiveStoryTile,
                   { transform: [{ scale: pressed ? 0.95 : 1 }] },
                 ]}
                 onPress={() => {
@@ -122,7 +79,7 @@ export function StoryBar({ onCreatePress }: { onCreatePress?: () => void } = {})
                 <View style={styles.storyGradientOverlay} />
 
                 {/* Mini Author Avatar in Top-Left Corner */}
-                <View style={styles.miniAvatarWrap}>
+                <View style={[styles.miniAvatarWrap, isOwn && styles.ownMiniAvatarRing]}>
                   <Image
                     source={{ uri: authorAvatar }}
                     style={styles.miniAvatar}
@@ -176,46 +133,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingBottom: 10,
   },
-  yourStoryAvatarWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    overflow: "hidden",
-    marginBottom: 8,
-    backgroundColor: "#e2e8f0",
-  },
-  yourStoryAvatar: {
-    width: "100%",
-    height: "100%",
-  },
-  yourStoryText: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: -0.2,
-  },
-  cyanPlusBadge: {
-    position: "absolute",
-    bottom: -1,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: "#00C2E8",
-    alignItems: "center",
-    justifyContent: "center",
+  ownActiveStoryTile: {
     borderWidth: 2,
-    borderColor: "#FFFFFF",
-    ...Platform.select({
-      web: {
-        boxShadow: "0 0 8px rgba(0,194,232,0.6)",
-      } as object,
-      default: {
-        shadowColor: "#00C2E8",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.5,
-        shadowRadius: 4,
-        elevation: 4,
-      },
-    }),
+    borderColor: "#8b5cf6",
+  },
+  ownMiniAvatarRing: {
+    borderColor: "#8b5cf6",
   },
   miniAvatarWrap: {
     position: "absolute",

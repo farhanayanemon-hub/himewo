@@ -1,6 +1,7 @@
 import { View, Text, Pressable, Platform, StyleSheet, DeviceEventEmitter } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { router, usePathname } from "expo-router";
 import * as Haptics from "expo-haptics";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 
@@ -10,6 +11,7 @@ export function SolidDockTabBar({
   unreadCount = 0,
 }: BottomTabBarProps & { unreadCount?: number }) {
   const insets = useSafeAreaInsets();
+  const pathname = usePathname();
   const currentRouteName = state.routes[state.index]?.name;
 
   const triggerHaptic = () => {
@@ -20,8 +22,15 @@ export function SolidDockTabBar({
 
   const navigateTo = (routeName: string) => {
     triggerHaptic();
+    if (routeName === "shop") {
+      router.push("/shop" as never);
+      return;
+    }
     const route = state.routes.find((r) => r.name === routeName);
-    if (!route) return;
+    if (!route) {
+      router.push(`/${routeName}` as never);
+      return;
+    }
 
     const focused = currentRouteName === routeName;
     const event = navigation.emit({
@@ -41,7 +50,9 @@ export function SolidDockTabBar({
     DeviceEventEmitter.emit("himewo:open-create-sheet");
   };
 
-  const isHomeFocused = currentRouteName === "index";
+  const isHomeFocused = currentRouteName === "index" && !pathname.startsWith("/shop");
+  const isReelsFocused = currentRouteName === "reels" || pathname.startsWith("/reels");
+  const isShopFocused = pathname.startsWith("/shop");
   const isChatsFocused = currentRouteName === "chats";
   const isProfileFocused = currentRouteName === "profile";
 
@@ -79,32 +90,42 @@ export function SolidDockTabBar({
           ) : null}
         </Pressable>
 
-        {/* ISLAND 2 (MIDDLE): Combined Pill [ ⌂ Home ] + [ + ] */}
+        {/* ISLAND 2 (MIDDLE): Combined Pill [ ⌂ Home ] [ 🎬 Reels ] [ ➕ ] [ 🛍️ Shop ] */}
         <View style={styles.centerIsland}>
-          {/* Active / Inactive Home Pill */}
+          {/* Home */}
           <Pressable
             onPress={() => navigateTo("index")}
             style={({ pressed }) => [
-              styles.homePill,
-              isHomeFocused && styles.homePillActive,
+              styles.iconPill,
+              isHomeFocused && styles.pillActive,
               { transform: [{ scale: pressed ? 0.94 : 1 }] },
             ]}
             accessibilityLabel="Home Feed"
-            hitSlop={6}
+            hitSlop={4}
           >
             <Ionicons
               name={isHomeFocused ? "home" : "home-outline"}
-              size={18}
+              size={20}
               color="#FFFFFF"
             />
-            <Text
-              style={[
-                styles.homeText,
-                { color: isHomeFocused ? "#FFFFFF" : "rgba(255,255,255,0.7)" },
-              ]}
-            >
-              Home
-            </Text>
+          </Pressable>
+
+          {/* Reels */}
+          <Pressable
+            onPress={() => navigateTo("reels")}
+            style={({ pressed }) => [
+              styles.iconPill,
+              isReelsFocused && styles.pillActive,
+              { transform: [{ scale: pressed ? 0.94 : 1 }] },
+            ]}
+            accessibilityLabel="Reels"
+            hitSlop={4}
+          >
+            <Ionicons
+              name={isReelsFocused ? "film" : "film-outline"}
+              size={20}
+              color="#FFFFFF"
+            />
           </Pressable>
 
           {/* Electric Cyan Plus Button */}
@@ -114,10 +135,28 @@ export function SolidDockTabBar({
               styles.cyanPlusBtn,
               { transform: [{ scale: pressed ? 0.90 : 1 }] },
             ]}
-            accessibilityLabel="Create Post or Story"
-            hitSlop={8}
+            accessibilityLabel="Create Content"
+            hitSlop={6}
           >
             <Ionicons name="add" size={26} color="#14171D" />
+          </Pressable>
+
+          {/* Shop */}
+          <Pressable
+            onPress={() => navigateTo("shop")}
+            style={({ pressed }) => [
+              styles.iconPill,
+              isShopFocused && styles.pillActive,
+              { transform: [{ scale: pressed ? 0.94 : 1 }] },
+            ]}
+            accessibilityLabel="Shop"
+            hitSlop={4}
+          >
+            <Ionicons
+              name={isShopFocused ? "bag-handle" : "bag-handle-outline"}
+              size={20}
+              color="#FFFFFF"
+            />
           </Pressable>
         </View>
 
@@ -208,21 +247,15 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  homePill: {
-    height: 40,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    flexDirection: "row",
+  iconPill: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: "center",
-    gap: 6,
+    justifyContent: "center",
   },
-  homePillActive: {
-    backgroundColor: "rgba(255,255,255,0.15)",
-  },
-  homeText: {
-    fontSize: 13,
-    fontWeight: "700",
-    letterSpacing: -0.2,
+  pillActive: {
+    backgroundColor: "rgba(255,255,255,0.18)",
   },
   cyanPlusBtn: {
     width: 40,

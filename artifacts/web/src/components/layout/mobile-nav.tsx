@@ -6,6 +6,7 @@ import {
   NavHomeIcon,
   NavFriendsIcon,
   NavReelsIcon,
+  NavShopIcon,
 } from "@/components/nav-icons";
 import {
   Bell,
@@ -22,6 +23,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { PixelCatIcon } from "@/components/logo";
+import { CreateActionSheetModal } from "@/components/create-action-sheet";
 
 type IconType = ComponentType<any>;
 export type MobileNavItem = { href: string; icon: IconType; label: string; iconUrl?: string };
@@ -153,9 +155,8 @@ export function MobileMenuButton({
 
 /**
  * 3-Island Floating Dock Navigation (mobile only):
- * Exact match to Dribbble design reference:
  * - Island 1 (Left): Separate dark circular button [ 💬 ] (Messages)
- * - Island 2 (Middle): Combined dark pill [ ⌂ Home ] + Electric Cyan [ + ] (Create)
+ * - Island 2 (Middle): Combined dark pill [ ⌂ Home ] [ 🎬 Reels ] [ ➕ ] [ 🛍️ Shop ]
  * - Island 3 (Right): Separate dark circular button [ 👤 ] (Profile)
  */
 export function MobileNav({
@@ -165,11 +166,14 @@ export function MobileNav({
   user: { displayName?: string | null; avatarUrl?: string | null; username?: string | null } | null;
   unreadCount?: number;
 }) {
-  const [location, navigate] = useLocation();
+  const [location] = useLocation();
   const { actingPage } = useActingPage();
   const profileHref = actingPage ? `/pages/${actingPage.id}` : "/me";
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const isHomeActive = location === "/";
+  const isReelsActive = location.startsWith("/reels");
+  const isShopActive = location.startsWith("/shop");
   const isChatsActive = location.startsWith("/messages");
   const isProfileActive =
     location === profileHref ||
@@ -177,77 +181,96 @@ export function MobileNav({
     location.startsWith("/profile/") ||
     Boolean(user?.username && location === `/${user.username}`);
 
-  const handleCreate = () => {
-    if (location === "/") {
-      const el = document.getElementById("main-post-composer");
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        const input = el.querySelector("textarea");
-        input?.focus();
-        return;
-      }
-    }
-    navigate("/");
-  };
-
   return (
-    <nav
-      className="md:hidden fixed bottom-3 inset-x-0 z-50 pointer-events-none flex justify-center pb-[env(safe-area-inset-bottom)]"
-    >
-      <div className="pointer-events-auto flex items-center gap-2.5">
-        {/* ISLAND 1 (LEFT): Separate Dark Circle [ 💬 ] */}
-        <Link
-          href="/messages"
-          aria-label="Chats"
-          className={`relative w-[48px] h-[48px] rounded-full bg-[#14171D] text-white flex items-center justify-center shadow-[0_12px_28px_rgba(0,0,0,0.35)] border border-white/10 active:scale-90 transition-transform ${
-            isChatsActive ? "ring-2 ring-white/30" : ""
-          }`}
-        >
-          <MessageCircle className="w-5 h-5 text-white" />
-          {unreadCount > 0 ? (
-            <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[17px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-extrabold leading-none border-2 border-[#14171D]">
-              {unreadCount > 99 ? "99+" : unreadCount}
-            </span>
-          ) : null}
-        </Link>
+    <>
+      <CreateActionSheetModal
+        open={createModalOpen}
+        onOpenChange={setCreateModalOpen}
+      />
 
-        {/* ISLAND 2 (MIDDLE): Combined Pill [ ⌂ Home ] + [ + ] */}
-        <div className="h-[48px] px-1.5 rounded-full bg-[#14171D] text-white flex items-center gap-1.5 shadow-[0_12px_28px_rgba(0,0,0,0.35)] border border-white/10">
-          {/* Active Home Pill */}
+      <nav
+        className="md:hidden fixed bottom-3 inset-x-0 z-50 pointer-events-none flex justify-center pb-[env(safe-area-inset-bottom)]"
+      >
+        <div className="pointer-events-auto flex items-center gap-2">
+          {/* ISLAND 1 (LEFT): Separate Dark Circle [ 💬 ] */}
           <Link
-            href="/"
-            aria-label="Home Feed"
-            className={`h-[38px] px-3.5 rounded-full flex items-center gap-1.5 active:scale-95 transition-all ${
-              isHomeActive
-                ? "bg-white/15 text-white font-bold"
-                : "text-white/70 hover:text-white"
+            href="/messages"
+            aria-label="Chats"
+            className={`relative w-[48px] h-[48px] rounded-full bg-[#14171D] text-white flex items-center justify-center shadow-[0_12px_28px_rgba(0,0,0,0.35)] border border-white/10 active:scale-90 transition-transform ${
+              isChatsActive ? "ring-2 ring-white/30" : ""
             }`}
           >
-            <NavHomeIcon className="w-4 h-4 text-white" fill={isHomeActive ? "currentColor" : "none"} />
-            <span className="text-xs font-bold tracking-tight">Home</span>
+            <MessageCircle className="w-5 h-5 text-white" />
+            {unreadCount > 0 ? (
+              <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[17px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-extrabold leading-none border-2 border-[#14171D]">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            ) : null}
           </Link>
 
-          {/* Cyan Plus Button */}
-          <button
-            onClick={handleCreate}
-            aria-label="Create Post"
-            className="w-[38px] h-[38px] rounded-full bg-[#00C2E8] text-[#14171D] flex items-center justify-center font-black text-xl shadow-[0_0_14px_rgba(0,194,232,0.55)] active:scale-90 transition-transform cursor-pointer"
-          >
-            +
-          </button>
-        </div>
+          {/* ISLAND 2 (MIDDLE): Combined Pill [ ⌂ Home ] [ 🎬 Reels ] [ ➕ ] [ 🛍️ Shop ] */}
+          <div className="h-[48px] px-2 rounded-full bg-[#14171D] text-white flex items-center gap-1.5 shadow-[0_12px_28px_rgba(0,0,0,0.35)] border border-white/10">
+            {/* Home */}
+            <Link
+              href="/"
+              aria-label="Home Feed"
+              className={`w-[36px] h-[36px] rounded-full flex items-center justify-center active:scale-95 transition-all ${
+                isHomeActive
+                  ? "bg-white/18 text-white"
+                  : "text-white/70 hover:text-white"
+              }`}
+            >
+              <NavHomeIcon className="w-4 h-4 text-white" fill={isHomeActive ? "currentColor" : "none"} />
+            </Link>
 
-        {/* ISLAND 3 (RIGHT): Separate Dark Circle [ 👤 ] */}
-        <Link
-          href={profileHref}
-          aria-label="Profile"
-          className={`w-[48px] h-[48px] rounded-full bg-[#14171D] text-white flex items-center justify-center shadow-[0_12px_28px_rgba(0,0,0,0.35)] border border-white/10 active:scale-90 transition-transform ${
-            isProfileActive ? "ring-2 ring-white/30" : ""
-          }`}
-        >
-          <UserCircle className="w-5 h-5 text-white" />
-        </Link>
-      </div>
-    </nav>
+            {/* Reels */}
+            <Link
+              href="/reels"
+              aria-label="Reels"
+              className={`w-[36px] h-[36px] rounded-full flex items-center justify-center active:scale-95 transition-all ${
+                isReelsActive
+                  ? "bg-white/18 text-white"
+                  : "text-white/70 hover:text-white"
+              }`}
+            >
+              <NavReelsIcon className="w-4 h-4 text-white" />
+            </Link>
+
+            {/* Cyan Plus Button */}
+            <button
+              onClick={() => setCreateModalOpen(true)}
+              aria-label="Create Content"
+              className="w-[36px] h-[36px] rounded-full bg-[#00C2E8] text-[#14171D] flex items-center justify-center font-black text-xl shadow-[0_0_14px_rgba(0,194,232,0.55)] active:scale-90 transition-transform cursor-pointer"
+            >
+              +
+            </button>
+
+            {/* Shop */}
+            <Link
+              href="/shop"
+              aria-label="Shop"
+              className={`w-[36px] h-[36px] rounded-full flex items-center justify-center active:scale-95 transition-all ${
+                isShopActive
+                  ? "bg-white/18 text-white"
+                  : "text-white/70 hover:text-white"
+              }`}
+            >
+              <NavShopIcon className="w-4 h-4 text-white" />
+            </Link>
+          </div>
+
+          {/* ISLAND 3 (RIGHT): Separate Dark Circle [ 👤 ] */}
+          <Link
+            href={profileHref}
+            aria-label="Profile"
+            className={`w-[48px] h-[48px] rounded-full bg-[#14171D] text-white flex items-center justify-center shadow-[0_12px_28px_rgba(0,0,0,0.35)] border border-white/10 active:scale-90 transition-transform ${
+              isProfileActive ? "ring-2 ring-white/30" : ""
+            }`}
+          >
+            <UserCircle className="w-5 h-5 text-white" />
+          </Link>
+        </div>
+      </nav>
+    </>
   );
 }

@@ -310,45 +310,8 @@ export default function HomeScreen() {
           }
           ListHeaderComponent={
             <View style={{ marginBottom: 8 }}>
-              {/* StoryBar without bottom gap */}
-              <StoryBar onCreatePress={() => setCreateSheetOpen(true)} />
-
-              {/* Sleek Retained Post Composer */}
-              <Pressable
-                style={({ pressed }) => [
-                  styles.sleekComposer,
-                  {
-                    backgroundColor: c.card,
-                    borderColor: c.border,
-                    transform: [{ scale: pressed ? 0.98 : 1 }],
-                  },
-                ]}
-                onPress={() => {
-                  triggerHaptic();
-                  router.push("/create-post");
-                }}
-              >
-                <Avatar
-                  uri={actingPage ? actingPage.avatarUrl : user?.avatarUrl}
-                  name={actingPage?.name ?? user?.displayName}
-                  size={40}
-                />
-                <View style={[styles.composerInputPill, { backgroundColor: c.secondary }]}>
-                  <Text style={{ color: c.mutedForeground, fontSize: 13, fontWeight: "500" }}>
-                    {actingPage ? `What's on your mind, ${actingPage.name}?` : "What's on your mind?"}
-                  </Text>
-                </View>
-                <Pressable
-                  hitSlop={10}
-                  onPress={() => {
-                    triggerHaptic();
-                    router.push("/create-post?media=1");
-                  }}
-                  style={styles.composerMediaBtn}
-                >
-                  <Ionicons name="images" size={22} color="#10B981" />
-                </Pressable>
-              </Pressable>
+              {/* StoryBar */}
+              <StoryBar />
 
               <BirthdayBanner />
               <FollowedShopsShowcase />

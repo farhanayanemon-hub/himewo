@@ -67,10 +67,6 @@ function StoryRow() {
   const createStory = useCreateStory();
   const createReel = useCreateReel();
 
-  // ── Plus menu state ────────────────────────────────────────────────────────
-  const [showCreateMenu, setShowCreateMenu] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
   // ── Launcher & editor state ───────────────────────────────────────────────
   const [launcherMode, setLauncherMode] = useState<"story" | "reel" | null>(null);
   const [editorFile, setEditorFile] = useState<{ file: File; filterCss: string; mode: "story" | "reel" } | null>(null);
@@ -79,20 +75,18 @@ function StoryRow() {
   // ── Viewed stories state ──────────────────────────────────────────────────
   const [viewedStories, setViewedStories] = useState<Set<string>>(() => getViewedStories());
 
-  // Close menu on outside click
   useEffect(() => {
-    if (!showCreateMenu) return;
-    const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setShowCreateMenu(false);
-      }
+    const handleStory = () => setLauncherMode("story");
+    const handleReel = () => setLauncherMode("reel");
+    window.addEventListener("himewo:open-create-story", handleStory);
+    window.addEventListener("himewo:open-create-reel", handleReel);
+    return () => {
+      window.removeEventListener("himewo:open-create-story", handleStory);
+      window.removeEventListener("himewo:open-create-reel", handleReel);
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [showCreateMenu]);
+  }, []);
 
   const openLauncher = (mode: "story" | "reel") => {
-    setShowCreateMenu(false);
     setLauncherMode(mode);
   };
 
@@ -184,177 +178,52 @@ function StoryRow() {
       />
     )}
 
-    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-      {/* ── Single + create button with popup menu ── */}
-      <div ref={menuRef} className="relative shrink-0">
-        <button
-          id="create-content-btn"
-          onClick={() => setShowCreateMenu((v) => !v)}
-          className="w-28 h-48 shrink-0 rounded-2xl relative overflow-hidden group cursor-pointer border border-card-border card-depth lift-on-hover bg-card"
-        >
-          <div className="h-2/3 overflow-hidden">
-            <img
-              src={avatarSrc(actingPage ? actingPage.avatarUrl : user?.avatarUrl)}
-              className="w-full h-full object-cover"
-              alt=""
-            />
-          </div>
-          <div className="absolute top-[calc(66%-16px)] left-1/2 -translate-x-1/2 w-9 h-9 rounded-full aurora-button flex items-center justify-center text-white border-4 border-card transition-transform duration-200 group-hover:scale-110">
-            <Plus className="w-5 h-5" />
-          </div>
-          <div className="absolute bottom-2 left-0 right-0 text-center text-foreground text-xs font-semibold leading-tight px-1">
-            Create
-          </div>
-        </button>
-
-        {/* Popup menu */}
-        {showCreateMenu && (
-          <div className="absolute left-0 top-full mt-2 z-50 min-w-[200px] bg-card border border-card-border rounded-2xl shadow-xl overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150 py-1">
-            <button
-              onClick={() => {
-                setShowCreateMenu(false);
-                const el = document.getElementById("main-post-composer");
-                if (el) {
-                  el.scrollIntoView({ behavior: "smooth", block: "center" });
-                  const input = el.querySelector("textarea");
-                  input?.focus();
-                }
-              }}
-              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors text-left"
-            >
-              <div className="w-8 h-8 rounded-full bg-blue-500/15 flex items-center justify-center shrink-0">
-                <PenSquare className="w-4 h-4 text-blue-500" />
-              </div>
-              <div>
-                <div className="font-semibold text-sm leading-none">Create Post</div>
-                <div className="text-[11px] text-muted-foreground mt-0.5">Share to feed</div>
-              </div>
-            </button>
-            <div className="h-px bg-border/40 mx-3" />
-            <button
-              id="create-story-menu-btn"
-              onClick={() => openLauncher("story")}
-              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors text-left"
-            >
-              <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
-                <BookImage className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <div className="font-semibold text-sm leading-none">Create Story</div>
-                <div className="text-[11px] text-muted-foreground mt-0.5">Photos, videos & filters</div>
-              </div>
-            </button>
-            <div className="h-px bg-border/40 mx-3" />
-            <button
-              id="create-reel-menu-btn"
-              onClick={() => openLauncher("reel")}
-              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors text-left"
-            >
-              <div className="w-8 h-8 rounded-full bg-fuchsia-500/15 flex items-center justify-center shrink-0">
-                <Film className="w-4 h-4 text-fuchsia-500" />
-              </div>
-              <div>
-                <div className="font-semibold text-sm leading-none">Create Reel</div>
-                <div className="text-[11px] text-muted-foreground mt-0.5">Short videos with music</div>
-              </div>
-            </button>
-            <div className="h-px bg-border/40 mx-3" />
-            <button
-              onClick={() => { setShowCreateMenu(false); navigate("/live"); }}
-              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors text-left"
-            >
-              <div className="w-8 h-8 rounded-full bg-red-500/15 flex items-center justify-center shrink-0">
-                <Radio className="w-4 h-4 text-red-500" />
-              </div>
-              <div>
-                <div className="font-semibold text-sm leading-none">Go Live</div>
-                <div className="text-[11px] text-muted-foreground mt-0.5">Broadcast video live</div>
-              </div>
-            </button>
-            <div className="h-px bg-border/40 mx-3" />
-            <button
-              onClick={() => { setShowCreateMenu(false); navigate("/events"); }}
-              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors text-left"
-            >
-              <div className="w-8 h-8 rounded-full bg-amber-500/15 flex items-center justify-center shrink-0">
-                <Calendar className="w-4 h-4 text-amber-500" />
-              </div>
-              <div>
-                <div className="font-semibold text-sm leading-none">Create Event</div>
-                <div className="text-[11px] text-muted-foreground mt-0.5">Plan an occasion</div>
-              </div>
-            </button>
-            <div className="h-px bg-border/40 mx-3" />
-            <button
-              onClick={() => { setShowCreateMenu(false); navigate("/pages?create=1"); }}
-              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors text-left"
-            >
-              <div className="w-8 h-8 rounded-full bg-emerald-500/15 flex items-center justify-center shrink-0">
-                <Flag className="w-4 h-4 text-emerald-500" />
-              </div>
-              <div>
-                <div className="font-semibold text-sm leading-none">Create Hub</div>
-                <div className="text-[11px] text-muted-foreground mt-0.5">Brand or business page</div>
-              </div>
-            </button>
-            <div className="h-px bg-border/40 mx-3" />
-            <button
-              onClick={() => { setShowCreateMenu(false); navigate("/groups"); }}
-              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors text-left"
-            >
-              <div className="w-8 h-8 rounded-full bg-cyan-500/15 flex items-center justify-center shrink-0">
-                <Users className="w-4 h-4 text-cyan-500" />
-              </div>
-              <div>
-                <div className="font-semibold text-sm leading-none">Create Circle</div>
-                <div className="text-[11px] text-muted-foreground mt-0.5">Community group</div>
-              </div>
-            </button>
-          </div>
-        )}
+    {sortedStories.length > 0 && (
+      <div className="aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-card-border shadow-sm p-3 sm:p-3.5 mb-2 sm:mb-3.5">
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+          {/* Stories — own story pinned first, viewed ones get grey ring */}
+          {sortedStories.map((group) => {
+            const groupKey = group.authorPage ? `p${group.authorPage.id}` : group.author.id;
+            const isOwn = groupKey === myId;
+            const isViewed = viewedStories.has(groupKey);
+            // unseen = server says unseen AND not locally viewed
+            const hasUnseen = group.hasUnseen && !isViewed;
+            return (
+              <Link
+                key={groupKey}
+                href="/stories"
+                onClick={() => {
+                  markStoryViewed(groupKey);
+                  setViewedStories(new Set([...viewedStories, groupKey]));
+                }}
+                className="w-28 h-48 shrink-0 rounded-2xl relative overflow-hidden group cursor-pointer border border-card-border card-depth lift-on-hover"
+              >
+                <img
+                  src={group.stories[0]?.mediaUrl || avatarSrc(group.authorPage?.avatarUrl ?? group.author.avatarUrl)}
+                  className="w-full h-full object-cover"
+                  alt=""
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                <div
+                  className={`absolute top-3 left-3 rounded-full ${
+                    isOwn
+                      ? "aurora-story-ring"
+                      : hasUnseen
+                      ? "aurora-story-ring"
+                      : "p-[2px] bg-white/30 grayscale"
+                  }`}
+                >
+                  <img src={avatarSrc(group.authorPage?.avatarUrl ?? group.author.avatarUrl)} className="w-8 h-8 rounded-full object-cover border-2 border-black/40" alt="" />
+                </div>
+                <div className="absolute bottom-2 left-2 right-2 text-white text-xs font-medium leading-tight line-clamp-2">
+                  {isOwn ? "Your Story" : (group.authorPage?.name ?? group.author.displayName)}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
       </div>
-
-      {/* Stories — own story pinned first, viewed ones get grey ring */}
-      {sortedStories.map((group) => {
-        const groupKey = group.authorPage ? `p${group.authorPage.id}` : group.author.id;
-        const isOwn = groupKey === myId;
-        const isViewed = viewedStories.has(groupKey);
-        // unseen = server says unseen AND not locally viewed
-        const hasUnseen = group.hasUnseen && !isViewed;
-        return (
-          <Link
-            key={groupKey}
-            href="/stories"
-            onClick={() => {
-              markStoryViewed(groupKey);
-              setViewedStories(new Set([...viewedStories, groupKey]));
-            }}
-            className="w-28 h-48 shrink-0 rounded-2xl relative overflow-hidden group cursor-pointer border border-card-border card-depth lift-on-hover"
-          >
-            <img
-              src={group.stories[0]?.mediaUrl || avatarSrc(group.authorPage?.avatarUrl ?? group.author.avatarUrl)}
-              className="w-full h-full object-cover"
-              alt=""
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-            <div
-              className={`absolute top-3 left-3 rounded-full ${
-                isOwn
-                  ? "aurora-story-ring"
-                  : hasUnseen
-                  ? "aurora-story-ring"
-                  : "p-[2px] bg-white/30 grayscale"
-              }`}
-            >
-              <img src={avatarSrc(group.authorPage?.avatarUrl ?? group.author.avatarUrl)} className="w-8 h-8 rounded-full object-cover border-2 border-black/40" alt="" />
-            </div>
-            <div className="absolute bottom-2 left-2 right-2 text-white text-xs font-medium leading-tight line-clamp-2">
-              {isOwn ? "Your Story" : (group.authorPage?.name ?? group.author.displayName)}
-            </div>
-          </Link>
-        );
-      })}
-    </div>
+    )}
     </>
   );
 }
@@ -639,14 +508,8 @@ export default function HomePage() {
   return (
     <MainLayout rightSidebar={<HomeRightRail />}>
       <div className="space-y-2 sm:space-y-3.5">
-        {/* Seamless Facebook-Style Unified Card for Stories + Composer */}
-        <div className="aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-card-border shadow-sm space-y-3 p-3 sm:p-3.5">
-          <StoryRow />
-          <div className="border-t border-border/60" />
-          <div id="main-post-composer">
-            <PostComposer className="mb-0 shadow-none border-0 bg-transparent p-0" />
-          </div>
-        </div>
+        {/* Stories */}
+        <StoryRow />
 
         <ShopShowcaseShelf />
 
