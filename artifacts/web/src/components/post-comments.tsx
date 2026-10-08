@@ -17,13 +17,12 @@ import { Link } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { useActingPage } from "@/lib/acting-page";
 import { VerifiedBadge } from "@/components/verified-badge";
-import { Loader2, X, MoreHorizontal } from "lucide-react";
+import { Loader2, X, MoreHorizontal, Heart } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { EmojiPickerButton } from "@/components/emoji-picker";
 import { GifPickerButton } from "@/components/gif-picker";
-import { ReactionControl } from "@/components/reaction-picker";
 import {
   RenderWithMentions,
   MentionSuggestions,
@@ -110,12 +109,12 @@ function CommentItem({
 
   const viewerReaction = comment.viewerReaction as ReactionType | null | undefined;
 
-  const handleReact = (type: ReactionType) => {
-    if (viewerReaction === type) {
+  const handleReact = () => {
+    if (viewerReaction) {
       removeReaction.mutate({ id: comment.id }, { onSuccess: invalidate });
     } else {
       setReaction.mutate(
-        { id: comment.id, data: { type, pageId: actingPage?.id } },
+        { id: comment.id, data: { type: "love", pageId: actingPage?.id } },
         { onSuccess: invalidate },
       );
     }
@@ -216,15 +215,25 @@ function CommentItem({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <div className="flex gap-3 mt-1 ml-2 text-xs text-muted-foreground font-medium items-center">
-          <ReactionControl
-            viewerReaction={viewerReaction}
-            onReact={handleReact}
-            count={comment.reactionCount}
-            size="sm"
-          />
+        <div className="flex gap-3.5 mt-1.5 ml-2 text-xs text-muted-foreground font-medium items-center">
           <button
-            className="hover:underline"
+            onClick={handleReact}
+            className={`flex items-center gap-1.5 transition-colors group/like py-0.5 ${
+              viewerReaction
+                ? "text-rose-500 font-semibold"
+                : "text-muted-foreground hover:text-rose-500"
+            }`}
+            title={viewerReaction ? "Unlike" : "Love"}
+          >
+            <Heart
+              className={`w-3.5 h-3.5 transition-transform group-active/like:scale-125 ${
+                viewerReaction ? "fill-rose-500 text-rose-500" : ""
+              }`}
+            />
+            {comment.reactionCount > 0 && <span>{comment.reactionCount}</span>}
+          </button>
+          <button
+            className="hover:underline hover:text-foreground"
             onClick={() => onReply({ parentId: replyParentId, author: comment.author })}
           >
             Reply

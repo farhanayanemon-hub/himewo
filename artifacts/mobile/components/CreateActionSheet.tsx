@@ -3,13 +3,15 @@ import {
   Animated,
   Modal,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableWithoutFeedback,
   View,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 
@@ -20,13 +22,11 @@ interface CreateActionSheetProps {
   onSelectReel: () => void;
 }
 
-interface ActionItem {
+interface ActionTile {
   id: string;
   title: string;
-  sub: string;
   icon: keyof typeof Ionicons.glyphMap;
-  color: string;
-  bgColor: string;
+  gradient: [string, string];
   onPress: () => void;
 }
 
@@ -37,30 +37,47 @@ export function CreateActionSheet({
   onSelectReel,
 }: CreateActionSheetProps) {
   const c = useColors();
-  const slideAnim = useRef(new Animated.Value(400)).current;
+  const slideAnim = useRef(new Animated.Value(300)).current;
+
+  const triggerHaptic = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+  };
 
   useEffect(() => {
     if (visible) {
       Animated.spring(slideAnim, {
         toValue: 0,
         useNativeDriver: true,
-        damping: 24,
-        stiffness: 280,
+        damping: 26,
+        stiffness: 300,
       }).start();
     } else {
-      slideAnim.setValue(400);
+      slideAnim.setValue(300);
     }
   }, [visible, slideAnim]);
 
-  const items: ActionItem[] = [
+  const tiles: ActionTile[] = [
+    {
+      id: "post",
+      title: "Post",
+      icon: "images",
+      gradient: ["#2563EB", "#06B6D4"],
+      onPress: () => {
+        triggerHaptic();
+        onClose();
+        router.push("/create-post");
+      },
+    },
     {
       id: "story",
       title: "Story",
-      sub: "Share photos, videos or text with filters",
-      icon: "book-outline",
-      color: "#8b5cf6",
-      bgColor: "#8b5cf618",
+      icon: "camera",
+      // Instagram classic sunset gradient
+      gradient: ["#833AB4", "#FD1D1D"],
       onPress: () => {
+        triggerHaptic();
         onClose();
         onSelectStory();
       },
@@ -68,35 +85,32 @@ export function CreateActionSheet({
     {
       id: "reel",
       title: "Reel",
-      sub: "Share short-form videos with music & stickers",
-      icon: "videocam-outline",
-      color: "#ec4899",
-      bgColor: "#ec489918",
+      icon: "videocam",
+      gradient: ["#EC4899", "#8B5CF6"],
       onPress: () => {
+        triggerHaptic();
         onClose();
         onSelectReel();
       },
     },
     {
-      id: "post",
-      title: "Post",
-      sub: "Share a status, photos or updates on feed",
-      icon: "create-outline",
-      color: "#3b82f6",
-      bgColor: "#3b82f618",
+      id: "live",
+      title: "Live",
+      icon: "radio",
+      gradient: ["#EF4444", "#F97316"],
       onPress: () => {
+        triggerHaptic();
         onClose();
-        router.push("/create-post");
+        router.push("/live" as never);
       },
     },
     {
       id: "event",
-      title: "Events",
-      sub: "Plan and invite friends to an occasion",
-      icon: "calendar-outline",
-      color: "#f59e0b",
-      bgColor: "#f59e0b18",
+      title: "Event",
+      icon: "calendar",
+      gradient: ["#F59E0B", "#EA580C"],
       onPress: () => {
+        triggerHaptic();
         onClose();
         router.push("/events" as never);
       },
@@ -104,25 +118,12 @@ export function CreateActionSheet({
     {
       id: "poll",
       title: "Poll",
-      sub: "Ask questions and gather votes from community",
-      icon: "stats-chart-outline",
-      color: "#10b981",
-      bgColor: "#10b98118",
+      icon: "bar-chart",
+      gradient: ["#10B981", "#059669"],
       onPress: () => {
+        triggerHaptic();
         onClose();
         router.push("/create-post?poll=1" as never);
-      },
-    },
-    {
-      id: "live",
-      title: "Live",
-      sub: "Broadcast live video to friends & followers",
-      icon: "radio-outline",
-      color: "#ef4444",
-      bgColor: "#ef444418",
-      onPress: () => {
-        onClose();
-        router.push("/live" as never);
       },
     },
   ];
@@ -141,57 +142,60 @@ export function CreateActionSheet({
             <Animated.View
               style={[
                 styles.sheet,
-                { backgroundColor: c.card, borderColor: c.border, transform: [{ translateY: slideAnim }] },
+                {
+                  backgroundColor: c.card,
+                  borderColor: c.border,
+                  transform: [{ translateY: slideAnim }],
+                },
               ]}
             >
-              {/* Drag handle */}
+              {/* Instagram Pill Drag Handle */}
               <View style={[styles.handle, { backgroundColor: c.border }]} />
 
-              {/* Header */}
+              {/* Minimalist Top Header */}
               <View style={styles.header}>
                 <Text style={[styles.title, { color: c.foreground }]}>Create</Text>
                 <Pressable
                   onPress={onClose}
-                  hitSlop={8}
-                  style={[styles.closeBtn, { backgroundColor: c.secondary }]}
+                  hitSlop={10}
+                  style={({ pressed }) => [
+                    styles.closeBtn,
+                    {
+                      backgroundColor: c.secondary,
+                      transform: [{ scale: pressed ? 0.9 : 1 }],
+                    },
+                  ]}
+                  accessibilityLabel="Close"
                 >
                   <Ionicons name="close" size={18} color={c.foreground} />
                 </Pressable>
               </View>
 
-              {/* Action List */}
-              <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}
-              >
-                {items.map((item, idx) => (
-                  <View key={item.id}>
-                    <Pressable
-                      style={({ pressed }) => [
-                        styles.optionRow,
-                        { backgroundColor: pressed ? c.secondary : "transparent" },
-                      ]}
-                      onPress={item.onPress}
+              {/* Instagram-Style 3x2 Grid */}
+              <View style={styles.gridContainer}>
+                {tiles.map((tile) => (
+                  <Pressable
+                    key={tile.id}
+                    onPress={tile.onPress}
+                    style={({ pressed }) => [
+                      styles.gridTile,
+                      { transform: [{ scale: pressed ? 0.92 : 1 }] },
+                    ]}
+                  >
+                    <LinearGradient
+                      colors={tile.gradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.iconCircle}
                     >
-                      <View style={[styles.iconWrap, { backgroundColor: item.bgColor }]}>
-                        <Ionicons name={item.icon} size={22} color={item.color} />
-                      </View>
-                      <View style={styles.textWrap}>
-                        <Text style={[styles.optionTitle, { color: c.foreground }]}>
-                          {item.title}
-                        </Text>
-                        <Text style={[styles.optionSub, { color: c.mutedForeground }]} numberOfLines={1}>
-                          {item.sub}
-                        </Text>
-                      </View>
-                      <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
-                    </Pressable>
-                    {idx < items.length - 1 && (
-                      <View style={[styles.divider, { backgroundColor: c.border }]} />
-                    )}
-                  </View>
+                      <Ionicons name={tile.icon} size={28} color="#FFFFFF" />
+                    </LinearGradient>
+                    <Text style={[styles.tileLabel, { color: c.foreground }]}>
+                      {tile.title}
+                    </Text>
+                  </Pressable>
                 ))}
-              </ScrollView>
+              </View>
             </Animated.View>
           </TouchableWithoutFeedback>
         </View>
@@ -203,77 +207,92 @@ export function CreateActionSheet({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.65)",
     justifyContent: "flex-end",
   },
   sheet: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    maxHeight: "82%",
-    paddingBottom: 34,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    borderTopWidth: 1,
+    paddingBottom: Platform.OS === "ios" ? 40 : 28,
+    paddingTop: 8,
+    ...Platform.select({
+      web: {
+        boxShadow: "0 -12px 40px rgba(0,0,0,0.45)",
+      } as object,
+      default: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: -6 },
+        shadowOpacity: 0.35,
+        shadowRadius: 16,
+        elevation: 16,
+      },
+    }),
   },
   handle: {
-    width: 38,
-    height: 4,
-    borderRadius: 2,
+    width: 44,
+    height: 4.5,
+    borderRadius: 3,
     alignSelf: "center",
-    marginTop: 10,
-    marginBottom: 8,
+    marginTop: 6,
+    marginBottom: 6,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
+    paddingHorizontal: 22,
     paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(255,255,255,0.06)",
+    marginBottom: 6,
   },
   title: {
     fontSize: 18,
     fontFamily: "Inter_700Bold",
+    letterSpacing: -0.3,
   },
   closeBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 16,
-  },
-  optionRow: {
+  gridContainer: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRadius: 14,
+    flexWrap: "wrap",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    justifyContent: "space-around",
+    rowGap: 20,
   },
-  iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  gridTile: {
+    width: "30%",
     alignItems: "center",
     justifyContent: "center",
   },
-  textWrap: {
-    flex: 1,
+  iconCircle: {
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+    ...Platform.select({
+      web: {
+        boxShadow: "0 8px 18px rgba(0,0,0,0.22)",
+      } as object,
+      default: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.22,
+        shadowRadius: 6,
+        elevation: 4,
+      },
+    }),
   },
-  optionTitle: {
-    fontSize: 15,
+  tileLabel: {
+    fontSize: 13,
     fontFamily: "Inter_600SemiBold",
-  },
-  optionSub: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    marginLeft: 66,
+    textAlign: "center",
   },
 });

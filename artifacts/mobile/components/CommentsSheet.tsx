@@ -154,18 +154,19 @@ export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) 
     return { topLevel, repliesByParent };
   }, [comments]);
 
-  const reactToComment = (item: Comment, type: ReactionType) => {
+  const toggleCommentLove = (item: Comment) => {
     const invalidate = () => {
       if (postId != null) {
         qc.invalidateQueries({ queryKey: getListCommentsQueryKey(postId) });
       }
     };
-    if (item.viewerReaction === type) {
+    if (item.viewerReaction) {
       removeReaction.mutate({ id: item.id }, { onSuccess: invalidate });
     } else {
-      setReaction.mutate({ id: item.id, data: { type, pageId: actingPage?.id } }, { onSuccess: invalidate });
+      setReaction.mutate({ id: item.id, data: { type: "love", pageId: actingPage?.id } }, { onSuccess: invalidate });
     }
   };
+
 
   const startReply = (item: Comment) => {
     const wasEditing = editing != null;
@@ -230,11 +231,6 @@ export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) 
           <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
             {timeAgo(item.createdAt)}
           </Text>
-          <ReactionBar
-            size="sm"
-            viewerReaction={item.viewerReaction ?? null}
-            onReact={(t) => reactToComment(item, t)}
-          />
           <Pressable onPress={() => startReply(item)} hitSlop={6}>
             <Text
               style={{ color: c.mutedForeground, fontSize: 11, fontFamily: "Inter_600SemiBold" }}
@@ -242,14 +238,28 @@ export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) 
               Reply
             </Text>
           </Pressable>
-          {item.reactionCount > 0 && (
-            <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
-              {item.viewerReaction
-                ? reactionConfig[item.viewerReaction].emoji
-                : "👍"}{" "}
-              {item.reactionCount}
-            </Text>
-          )}
+          <Pressable
+            onPress={() => toggleCommentLove(item)}
+            hitSlop={8}
+            style={{ flexDirection: "row", alignItems: "center", gap: 4, marginLeft: 4 }}
+          >
+            <Ionicons
+              name={item.viewerReaction ? "heart" : "heart-outline"}
+              size={14}
+              color={item.viewerReaction ? "#f43f5e" : c.mutedForeground}
+            />
+            {item.reactionCount > 0 && (
+              <Text
+                style={{
+                  color: item.viewerReaction ? "#f43f5e" : c.mutedForeground,
+                  fontSize: 11,
+                  fontFamily: "Inter_600SemiBold",
+                }}
+              >
+                {item.reactionCount}
+              </Text>
+            )}
+          </Pressable>
         </View>
       </View>
     </View>

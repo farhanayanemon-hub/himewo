@@ -78,7 +78,7 @@ export function SolidDockTabBar({
         >
           <Ionicons
             name={isChatsFocused ? "chatbubbles" : "chatbubbles-outline"}
-            size={22}
+            size={24}
             color="#FFFFFF"
           />
           {unreadCount > 0 ? (
@@ -101,11 +101,11 @@ export function SolidDockTabBar({
               { transform: [{ scale: pressed ? 0.94 : 1 }] },
             ]}
             accessibilityLabel="Home Feed"
-            hitSlop={4}
+            hitSlop={6}
           >
             <Ionicons
               name={isHomeFocused ? "home" : "home-outline"}
-              size={20}
+              size={23}
               color="#FFFFFF"
             />
           </Pressable>
@@ -119,11 +119,11 @@ export function SolidDockTabBar({
               { transform: [{ scale: pressed ? 0.94 : 1 }] },
             ]}
             accessibilityLabel="Reels"
-            hitSlop={4}
+            hitSlop={6}
           >
             <Ionicons
               name={isReelsFocused ? "film" : "film-outline"}
-              size={20}
+              size={23}
               color="#FFFFFF"
             />
           </Pressable>
@@ -136,9 +136,9 @@ export function SolidDockTabBar({
               { transform: [{ scale: pressed ? 0.90 : 1 }] },
             ]}
             accessibilityLabel="Create Content"
-            hitSlop={6}
+            hitSlop={8}
           >
-            <Ionicons name="add" size={26} color="#14171D" />
+            <Ionicons name="add" size={27} color="#0E1117" />
           </Pressable>
 
           {/* Shop */}
@@ -150,11 +150,11 @@ export function SolidDockTabBar({
               { transform: [{ scale: pressed ? 0.94 : 1 }] },
             ]}
             accessibilityLabel="Shop"
-            hitSlop={4}
+            hitSlop={6}
           >
             <Ionicons
               name={isShopFocused ? "bag-handle" : "bag-handle-outline"}
-              size={20}
+              size={23}
               color="#FFFFFF"
             />
           </Pressable>
@@ -173,7 +173,7 @@ export function SolidDockTabBar({
         >
           <Ionicons
             name={isProfileFocused ? "person" : "person-outline"}
-            size={22}
+            size={24}
             color="#FFFFFF"
           />
         </Pressable>
@@ -198,59 +198,59 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   circleIsland: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#14171D",
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#11141A",
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.10)",
     ...Platform.select({
       web: {
-        boxShadow: "0 14px 34px -4px rgba(0,0,0,0.38), 0 4px 14px rgba(0,0,0,0.22)",
+        boxShadow: "0 16px 36px -4px rgba(0,0,0,0.45), 0 6px 16px rgba(0,0,0,0.25)",
       } as object,
       default: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 4,
+        shadowOffset: { width: 0, height: 5 },
+        shadowOpacity: 0.28,
+        shadowRadius: 10,
+        elevation: 6,
       },
     }),
   },
   islandActive: {
-    borderColor: "rgba(255,255,255,0.25)",
+    borderColor: "rgba(0,194,232,0.55)",
+    backgroundColor: "#161B22",
   },
   centerIsland: {
-    height: 52,
-    paddingLeft: 6,
-    paddingRight: 6,
-    borderRadius: 26,
-    backgroundColor: "#14171D",
+    height: 56,
+    paddingHorizontal: 8,
+    borderRadius: 28,
+    backgroundColor: "#11141A",
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.10)",
     ...Platform.select({
       web: {
-        boxShadow: "0 14px 34px -4px rgba(0,0,0,0.38), 0 4px 14px rgba(0,0,0,0.22)",
+        boxShadow: "0 16px 36px -4px rgba(0,0,0,0.45), 0 6px 16px rgba(0,0,0,0.25)",
       } as object,
       default: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 4,
+        shadowOffset: { width: 0, height: 5 },
+        shadowOpacity: 0.28,
+        shadowRadius: 10,
+        elevation: 6,
       },
     }),
   },
   iconPill: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -258,35 +258,35 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.18)",
   },
   cyanPlusBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: "#00C2E8",
     alignItems: "center",
     justifyContent: "center",
     ...Platform.select({
       web: {
-        boxShadow: "0 0 16px rgba(0, 194, 232, 0.55)",
+        boxShadow: "0 0 20px rgba(0, 194, 232, 0.6)",
       } as object,
       default: {
         shadowColor: "#00C2E8",
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.6,
-        shadowRadius: 8,
-        elevation: 6,
+        shadowOpacity: 0.65,
+        shadowRadius: 10,
+        elevation: 8,
       },
     }),
   },
   badge: {
     position: "absolute",
-    top: -2,
-    right: -2,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
+    top: -3,
+    right: -3,
+    minWidth: 19,
+    height: 19,
+    borderRadius: 9.5,
     backgroundColor: "#EF4444",
     borderWidth: 2,
-    borderColor: "#14171D",
+    borderColor: "#11141A",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 3,

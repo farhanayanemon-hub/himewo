@@ -30,12 +30,12 @@ import {
   type Profile,
   type ReactionType,
 } from "@workspace/api-client-react";
+import * as Haptics from "expo-haptics";
 import { Avatar } from "@/components/Avatar";
 import { CommentActionsSheet } from "@/components/CommentActions";
 import { PostCard } from "@/components/PostCard";
 import { ShareSheet } from "@/components/ShareSheet";
 import { EmojiPickerSheet } from "@/components/EmojiPickerSheet";
-import { ReactionBar } from "@/components/ReactionBar";
 import {
   MentionText,
   MentionSuggestions,
@@ -43,7 +43,6 @@ import {
   insertMention,
   mentionToken,
 } from "@/components/Mention";
-import { reactionConfig } from "@/constants/reactions";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/lib/auth";
 import { useActingPage } from "@/lib/acting-page";
@@ -164,15 +163,16 @@ export default function PostDetailScreen() {
     });
   };
 
-  const reactToComment = (item: Comment, type: ReactionType) => {
+  const toggleCommentLove = (item: Comment) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     const invalidate = () => {
       qc.invalidateQueries({ queryKey: getListCommentsQueryKey(postId) });
     };
-    if (item.viewerReaction === type) {
+    if (item.viewerReaction) {
       removeCommentReaction.mutate({ id: item.id }, { onSuccess: invalidate });
     } else {
       setCommentReaction.mutate(
-        { id: item.id, data: { type, pageId: actingPage?.id } },
+        { id: item.id, data: { type: "love", pageId: actingPage?.id } },
         { onSuccess: invalidate },
       );
     }
@@ -315,11 +315,6 @@ export default function PostDetailScreen() {
                         <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
                           {timeAgo(item.createdAt)}
                         </Text>
-                        <ReactionBar
-                          size="sm"
-                          viewerReaction={item.viewerReaction ?? null}
-                          onReact={(t) => reactToComment(item, t)}
-                        />
                         <Pressable onPress={() => startReply(item)} hitSlop={6}>
                           <Text
                             style={{
@@ -331,14 +326,33 @@ export default function PostDetailScreen() {
                             Reply
                           </Text>
                         </Pressable>
-                        {item.reactionCount > 0 && (
-                          <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
-                            {item.viewerReaction
-                              ? reactionConfig[item.viewerReaction].emoji
-                              : "👍"}{" "}
-                            {item.reactionCount}
-                          </Text>
-                        )}
+                        <Pressable
+                          onPress={() => toggleCommentLove(item)}
+                          hitSlop={8}
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 4,
+                            marginLeft: 4,
+                          }}
+                        >
+                          <Ionicons
+                            name={item.viewerReaction ? "heart" : "heart-outline"}
+                            size={14}
+                            color={item.viewerReaction ? "#f43f5e" : c.mutedForeground}
+                          />
+                          {item.reactionCount > 0 && (
+                            <Text
+                              style={{
+                                color: item.viewerReaction ? "#f43f5e" : c.mutedForeground,
+                                fontSize: 11,
+                                fontFamily: "Inter_600SemiBold",
+                              }}
+                            >
+                              {item.reactionCount}
+                            </Text>
+                          )}
+                        </Pressable>
                       </View>
                       {replies.length > 0 && !expanded && (
                         <Pressable
@@ -394,11 +408,6 @@ export default function PostDetailScreen() {
                                   <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
                                     {timeAgo(r.createdAt)}
                                   </Text>
-                                  <ReactionBar
-                                    size="sm"
-                                    viewerReaction={r.viewerReaction ?? null}
-                                    onReact={(t) => reactToComment(r, t)}
-                                  />
                                   <Pressable onPress={() => startReply(r)} hitSlop={6}>
                                     <Text
                                       style={{
@@ -410,14 +419,33 @@ export default function PostDetailScreen() {
                                       Reply
                                     </Text>
                                   </Pressable>
-                                  {r.reactionCount > 0 && (
-                                    <Text style={{ color: c.mutedForeground, fontSize: 11 }}>
-                                      {r.viewerReaction
-                                        ? reactionConfig[r.viewerReaction].emoji
-                                        : "👍"}{" "}
-                                      {r.reactionCount}
-                                    </Text>
-                                  )}
+                                  <Pressable
+                                    onPress={() => toggleCommentLove(r)}
+                                    hitSlop={8}
+                                    style={{
+                                      flexDirection: "row",
+                                      alignItems: "center",
+                                      gap: 4,
+                                      marginLeft: 4,
+                                    }}
+                                  >
+                                    <Ionicons
+                                      name={r.viewerReaction ? "heart" : "heart-outline"}
+                                      size={14}
+                                      color={r.viewerReaction ? "#f43f5e" : c.mutedForeground}
+                                    />
+                                    {r.reactionCount > 0 && (
+                                      <Text
+                                        style={{
+                                          color: r.viewerReaction ? "#f43f5e" : c.mutedForeground,
+                                          fontSize: 11,
+                                          fontFamily: "Inter_600SemiBold",
+                                        }}
+                                      >
+                                        {r.reactionCount}
+                                      </Text>
+                                    )}
+                                  </Pressable>
                                 </View>
                               </View>
                             </View>

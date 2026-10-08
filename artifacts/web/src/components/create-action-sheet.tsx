@@ -23,6 +23,7 @@ export interface CreateOption {
   icon: any;
   color: string;
   bgColor: string;
+  gradient: string;
   action: () => void;
 }
 
@@ -33,12 +34,27 @@ export function useCreateActions(onClose?: () => void) {
 
   const options: CreateOption[] = [
     {
+      id: "post",
+      title: "Post",
+      sub: "Share updates & photos to feed",
+      icon: PenSquare,
+      color: "text-sky-500",
+      bgColor: "bg-sky-500/15",
+      gradient: "from-sky-500 to-blue-600",
+      action: () => {
+        onClose?.();
+        setIsPollMode(false);
+        setPostDialogOpen(true);
+      },
+    },
+    {
       id: "story",
       title: "Story",
-      sub: "Share photos, videos or text with filters",
+      sub: "Share photos, videos or text",
       icon: BookImage,
       color: "text-purple-500",
       bgColor: "bg-purple-500/15",
+      gradient: "from-[#833AB4] via-[#FD1D1D] to-[#F77737]",
       action: () => {
         onClose?.();
         window.dispatchEvent(new CustomEvent("himewo:open-create-story"));
@@ -48,10 +64,11 @@ export function useCreateActions(onClose?: () => void) {
     {
       id: "reel",
       title: "Reel",
-      sub: "Share short-form videos with music",
+      sub: "Share short videos with audio",
       icon: Film,
       color: "text-pink-500",
       bgColor: "bg-pink-500/15",
+      gradient: "from-pink-500 to-purple-600",
       action: () => {
         onClose?.();
         window.dispatchEvent(new CustomEvent("himewo:open-create-reel"));
@@ -59,25 +76,26 @@ export function useCreateActions(onClose?: () => void) {
       },
     },
     {
-      id: "post",
-      title: "Post",
-      sub: "Share updates & photos to feed",
-      icon: PenSquare,
-      color: "text-blue-500",
-      bgColor: "bg-blue-500/15",
+      id: "live",
+      title: "Live",
+      sub: "Broadcast live to followers",
+      icon: Radio,
+      color: "text-rose-500",
+      bgColor: "bg-rose-500/15",
+      gradient: "from-rose-500 to-red-600",
       action: () => {
         onClose?.();
-        setIsPollMode(false);
-        setPostDialogOpen(true);
+        navigate("/live");
       },
     },
     {
       id: "event",
-      title: "Events",
+      title: "Event",
       sub: "Plan and host an occasion",
       icon: CalendarDays,
       color: "text-amber-500",
       bgColor: "bg-amber-500/15",
+      gradient: "from-amber-500 to-orange-500",
       action: () => {
         onClose?.();
         navigate("/events");
@@ -90,22 +108,11 @@ export function useCreateActions(onClose?: () => void) {
       icon: BarChart3,
       color: "text-emerald-500",
       bgColor: "bg-emerald-500/15",
+      gradient: "from-emerald-500 to-teal-600",
       action: () => {
         onClose?.();
         setIsPollMode(true);
         setPostDialogOpen(true);
-      },
-    },
-    {
-      id: "live",
-      title: "Live",
-      sub: "Broadcast live video to friends",
-      icon: Radio,
-      color: "text-rose-500",
-      bgColor: "bg-rose-500/15",
-      action: () => {
-        onClose?.();
-        navigate("/live");
       },
     },
   ];
@@ -130,28 +137,29 @@ export function CreateActionSheetModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md p-0 overflow-hidden border border-border/80 rounded-3xl shadow-2xl bg-card">
-          <DialogHeader className="p-4 border-b border-border/60">
-            <DialogTitle className="text-base font-bold text-center">
-              Create Content
+        <DialogContent className="max-w-sm p-0 overflow-hidden border border-border/70 rounded-3xl shadow-2xl bg-card">
+          <DialogHeader className="py-4 px-6 border-b border-border/50">
+            <DialogTitle className="text-base font-bold text-center tracking-tight">
+              Create
             </DialogTitle>
           </DialogHeader>
-          <div className="p-3 grid grid-cols-2 gap-2.5">
+          <div className="p-6 grid grid-cols-3 gap-y-6 gap-x-3">
             {options.map((opt) => {
               const Icon = opt.icon;
               return (
                 <button
                   key={opt.id}
                   onClick={opt.action}
-                  className="flex items-center gap-3 p-3 rounded-2xl border border-border/50 hover:border-primary/40 hover:bg-muted/60 transition-all text-left group active:scale-95"
+                  className="flex flex-col items-center justify-center gap-2.5 group transition-all cursor-pointer focus:outline-none"
                 >
-                  <div className={`w-10 h-10 rounded-xl ${opt.bgColor} flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform`}>
-                    <Icon className={`w-5 h-5 ${opt.color}`} />
+                  <div
+                    className={`w-14 h-14 rounded-full bg-gradient-to-tr ${opt.gradient} flex items-center justify-center text-white shadow-md transition-all duration-200 group-hover:scale-110 group-active:scale-95 group-hover:shadow-lg`}
+                  >
+                    <Icon className="w-6 h-6 stroke-[2.2]" />
                   </div>
-                  <div className="min-w-0">
-                    <div className="font-bold text-sm text-foreground truncate">{opt.title}</div>
-                    <div className="text-[11px] text-muted-foreground truncate">{opt.sub}</div>
-                  </div>
+                  <span className="text-xs font-semibold text-foreground/90 group-hover:text-foreground transition-colors text-center">
+                    {opt.title}
+                  </span>
                 </button>
               );
             })}
