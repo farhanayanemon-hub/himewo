@@ -6,6 +6,8 @@ import {
   useListMessages, 
   useSendMessage,
   useCreateConversation,
+  useClearConversation,
+  useBlockUser,
   useListFriends,
   getListMessagesQueryKey,
   getListConversationsQueryKey,
@@ -115,9 +117,12 @@ export default function MessagesPage() {
     activeStatus,
     readReceipts,
     lockedChatIds,
+    deletedChatIds,
     chatLockPin,
     lockChat,
     unlockChat,
+    deleteChat,
+    restoreChat,
     toggleMarkUnread,
     isCustomUnread,
     toggleMuteChat,
@@ -127,6 +132,9 @@ export default function MessagesPage() {
     setActiveStatus,
     setReadReceipts,
   } = useChatPreferences();
+
+  const clearConversation = useClearConversation();
+  const blockUser = useBlockUser();
 
   const [showNewChat, setShowNewChat] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -251,6 +259,9 @@ export default function MessagesPage() {
           });
         }
         if (e.message) {
+          if (e.conversationId) {
+            restoreChat(e.conversationId);
+          }
           queryClient.setQueryData<Conversation[]>(getListConversationsQueryKey(), (old = []) => {
             if (!Array.isArray(old)) return old;
             const exists = old.some((c) => c.id === e.conversationId);
@@ -482,7 +493,9 @@ export default function MessagesPage() {
   };
 
   const normalConversations = useMemo(() => {
-    const list = (conversations ?? []).filter((c) => !lockedChatIds.includes(c.id));
+    const list = (conversations ?? []).filter(
+      (c) => !lockedChatIds.includes(c.id) && !deletedChatIds.includes(c.id),
+    );
     if (!searchFilter.trim()) return list;
     const q = searchFilter.toLowerCase();
     return list.filter((c) => {
@@ -490,11 +503,13 @@ export default function MessagesPage() {
       const title = c.title || other?.displayName || "";
       return title.toLowerCase().includes(q);
     });
-  }, [conversations, lockedChatIds, searchFilter, user?.id]);
+  }, [conversations, lockedChatIds, deletedChatIds, searchFilter, user?.id]);
 
   const lockedConversations = useMemo(() => {
-    return (conversations ?? []).filter((c) => lockedChatIds.includes(c.id));
-  }, [conversations, lockedChatIds]);
+    return (conversations ?? []).filter(
+      (c) => lockedChatIds.includes(c.id) && !deletedChatIds.includes(c.id),
+    );
+  }, [conversations, lockedChatIds, deletedChatIds]);
 
   const activeConv = conversations?.find((c) => c.id === conversationId);
 
@@ -756,7 +771,18 @@ export default function MessagesPage() {
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                          onClick={() => lockChat(conv.id)}
+                          onClick={() => {
+                            if (!window.confirm("Are you sure you want to delete this chat?")) return;
+                            deleteChat(conv.id);
+                            clearConversation.mutate(
+                              { id: conv.id },
+                              {
+                                onSettled: () => {
+                                  queryClient.invalidateQueries({ queryKey: getListConversationsQueryKey() });
+                                },
+                              },
+                            );
+                          }}
                           className="gap-2.5 cursor-pointer py-2 text-sm text-destructive focus:text-destructive"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -764,7 +790,22 @@ export default function MessagesPage() {
                         </DropdownMenuItem>
                         {!isGroupConv && (
                           <DropdownMenuItem
-                            onClick={() => lockChat(conv.id)}
+                            onClick={() => {
+                              const peer = conv.members.find((m) => m.user.id !== user?.id)?.user;
+                              if (!window.confirm(`Block ${peer?.displayName || "user"}?`)) return;
+                              if (peer) {
+                                blockUser.mutate({ id: peer.id });
+                              }
+                              deleteChat(conv.id);
+                              clearConversation.mutate(
+                                { id: conv.id },
+                                {
+                                  onSettled: () => {
+                                    queryClient.invalidateQueries({ queryKey: getListConversationsQueryKey() });
+                                  },
+                                },
+                              );
+                            }}
                             className="gap-2.5 cursor-pointer py-2 text-sm text-destructive focus:text-destructive"
                           >
                             <Ban className="w-4 h-4" />
@@ -1238,14 +1279,36 @@ export default function MessagesPage() {
                           </div>
                         </div>
                       </button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="rounded-full text-xs font-semibold ml-2 shrink-0"
-                        onClick={() => unlockChat(conv.id)}
-                      >
-                        Unlock
-                      </Button>
+                      <div className="flex items-center gap-1.5 ml-2 shrink-0">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="rounded-full text-xs font-semibold"
+                          onClick={() => unlockChat(conv.id)}
+                        >
+                          Unlock
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="rounded-full text-xs text-destructive hover:bg-destructive/10 p-2 h-8 w-8"
+                          onClick={() => {
+                            if (!window.confirm("Delete this chat permanently?")) return;
+                            deleteChat(conv.id);
+                            clearConversation.mutate(
+                              { id: conv.id },
+                              {
+                                onSettled: () => {
+                                  queryClient.invalidateQueries({ queryKey: getListConversationsQueryKey() });
+                                },
+                              },
+                            );
+                          }}
+                          title="Delete chat"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   );
                 })

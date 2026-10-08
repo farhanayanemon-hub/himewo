@@ -20,6 +20,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   useListConversations,
   useCreateConversation,
+  useClearConversation,
+  useBlockUser,
   useSearchUsers,
   getSearchUsersQueryKey,
   getListConversationsQueryKey,
@@ -55,9 +57,12 @@ export function ConversationsView({ isTab = false }: ConversationsViewProps) {
     activeStatus,
     readReceipts,
     lockedChatIds,
+    deletedChatIds,
     chatLockPin,
     lockChat,
     unlockChat,
+    deleteChat,
+    restoreChat,
     toggleMarkUnread,
     isCustomUnread,
     toggleMuteChat,
@@ -67,6 +72,9 @@ export function ConversationsView({ isTab = false }: ConversationsViewProps) {
     setActiveStatus,
     setReadReceipts,
   } = useChatPreferences();
+
+  const clearConversation = useClearConversation();
+  const blockUser = useBlockUser();
 
   const [newOpen, setNewOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -96,21 +104,28 @@ export function ConversationsView({ isTab = false }: ConversationsViewProps) {
         event.type === "message_deleted" ||
         event.type === "seen"
       ) {
+        if (event.type === "message" && typeof event.conversationId === "number") {
+          void restoreChat(event.conversationId);
+        }
         qc.invalidateQueries({ queryKey: getListConversationsQueryKey() });
       }
     });
     return unsub;
-  }, [subscribe, qc]);
+  }, [subscribe, qc, restoreChat]);
 
-  // Normal conversations (excluding locked chats)
+  // Normal conversations (excluding locked chats and deleted chats)
   const normalConversations = useMemo(() => {
-    return conversations.filter((conv) => !lockedChatIds.includes(conv.id));
-  }, [conversations, lockedChatIds]);
+    return conversations.filter(
+      (conv) => !lockedChatIds.includes(conv.id) && !deletedChatIds.includes(conv.id),
+    );
+  }, [conversations, lockedChatIds, deletedChatIds]);
 
-  // Locked conversations
+  // Locked conversations (excluding deleted chats)
   const lockedConversations = useMemo(() => {
-    return conversations.filter((conv) => lockedChatIds.includes(conv.id));
-  }, [conversations, lockedChatIds]);
+    return conversations.filter(
+      (conv) => lockedChatIds.includes(conv.id) && !deletedChatIds.includes(conv.id),
+    );
+  }, [conversations, lockedChatIds, deletedChatIds]);
 
   // Start PIN flow
   const requirePin = (mode: "enter" | "set_new", onSuccess: () => void) => {
@@ -348,16 +363,22 @@ export function ConversationsView({ isTab = false }: ConversationsViewProps) {
           if (convToDelete) {
             Alert.alert(
               "Delete Chat",
-              "Are you sure you want to delete this chat history? This action cannot be undone.",
+              "Are you sure you want to delete this chat? This conversation will be removed.",
               [
                 { text: "Cancel", style: "cancel" },
                 {
                   text: "Delete",
                   style: "destructive",
                   onPress: () => {
-                    // Chat is removed or locked
-                    void lockChat(convToDelete.id);
-                    Alert.alert("Chat Deleted", "Conversation removed from your chats list.");
+                    void deleteChat(convToDelete.id);
+                    clearConversation.mutate(
+                      { id: convToDelete.id },
+                      {
+                        onSettled: () => {
+                          qc.invalidateQueries({ queryKey: getListConversationsQueryKey() });
+                        },
+                      },
+                    );
                   },
                 },
               ],
@@ -378,7 +399,18 @@ export function ConversationsView({ isTab = false }: ConversationsViewProps) {
                   text: "Block",
                   style: "destructive",
                   onPress: () => {
-                    void lockChat(convToBlock.id);
+                    if (peer) {
+                      blockUser.mutate({ id: peer.id });
+                    }
+                    void deleteChat(convToBlock.id);
+                    clearConversation.mutate(
+                      { id: convToBlock.id },
+                      {
+                        onSettled: () => {
+                          qc.invalidateQueries({ queryKey: getListConversationsQueryKey() });
+                        },
+                      },
+                    );
                     Alert.alert("Blocked", `${peer?.displayName || "User"} has been blocked.`);
                   },
                 },
@@ -423,6 +455,17 @@ export function ConversationsView({ isTab = false }: ConversationsViewProps) {
         }}
         onUnlock={(convId) => {
           void unlockChat(convId);
+        }}
+        onDeleteChat={(convId) => {
+          void deleteChat(convId);
+          clearConversation.mutate(
+            { id: convId },
+            {
+              onSettled: () => {
+                qc.invalidateQueries({ queryKey: getListConversationsQueryKey() });
+              },
+            },
+          );
         }}
       />
     </SafeAreaView>
@@ -904,6 +947,7 @@ function LockedChatsModal({
   onClose,
   onOpenChat,
   onUnlock,
+  onDeleteChat,
 }: {
   visible: boolean;
   conversations: Conversation[];
@@ -912,6 +956,7 @@ function LockedChatsModal({
   onClose: () => void;
   onOpenChat: (convId: number) => void;
   onUnlock: (convId: number) => void;
+  onDeleteChat?: (convId: number) => void;
 }) {
   const c = useColors();
 
@@ -952,12 +997,42 @@ function LockedChatsModal({
                     {item.lastMessage?.content || "No messages yet"}
                   </Text>
                 </View>
-                <Pressable
-                  style={[styles.pillBtn, { backgroundColor: c.secondary }]}
-                  onPress={() => onUnlock(item.id)}
-                >
-                  <Text style={[styles.pillBtnText, { color: c.foreground }]}>Unlock</Text>
-                </Pressable>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <Pressable
+                    style={[styles.pillBtn, { backgroundColor: c.secondary }]}
+                    onPress={() => onUnlock(item.id)}
+                  >
+                    <Text style={[styles.pillBtnText, { color: c.foreground }]}>Unlock</Text>
+                  </Pressable>
+                  {onDeleteChat && (
+                    <Pressable
+                      style={[
+                        styles.pillBtn,
+                        {
+                          backgroundColor: "rgba(239, 68, 68, 0.12)",
+                          paddingHorizontal: 10,
+                        },
+                      ]}
+                      onPress={() => {
+                        Alert.alert(
+                          "Delete Chat",
+                          "Delete this conversation permanently?",
+                          [
+                            { text: "Cancel", style: "cancel" },
+                            {
+                              text: "Delete",
+                              style: "destructive",
+                              onPress: () => onDeleteChat(item.id),
+                            },
+                          ],
+                        );
+                      }}
+                      accessibilityLabel="Delete chat"
+                    >
+                      <Ionicons name="trash-outline" size={16} color="#ef4444" />
+                    </Pressable>
+                  )}
+                </View>
               </Pressable>
             );
           }}

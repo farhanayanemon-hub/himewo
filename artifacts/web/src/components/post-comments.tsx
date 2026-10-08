@@ -110,12 +110,43 @@ function CommentItem({
   const viewerReaction = comment.viewerReaction as ReactionType | null | undefined;
 
   const handleReact = () => {
-    if (viewerReaction) {
-      removeReaction.mutate({ id: comment.id }, { onSuccess: invalidate });
+    const wasLiked = Boolean(viewerReaction);
+    const queryKey = getListCommentsQueryKey(postId);
+
+    // Instant optimistic update (0ms)
+    queryClient.setQueryData<Comment[]>(queryKey, (old) => {
+      if (!old) return old;
+      return old.map((c) => {
+        if (c.id === comment.id) {
+          const currentCount = c.reactionCount ?? 0;
+          const newCount = wasLiked ? Math.max(0, currentCount - 1) : currentCount + 1;
+          return {
+            ...c,
+            viewerReaction: wasLiked ? null : "love",
+            reactionCount: newCount,
+          };
+        }
+        return c;
+      });
+    });
+
+    if (wasLiked) {
+      removeReaction.mutate(
+        { id: comment.id },
+        {
+          onError: () => {
+            queryClient.invalidateQueries({ queryKey });
+          },
+        },
+      );
     } else {
       setReaction.mutate(
         { id: comment.id, data: { type: "love", pageId: actingPage?.id } },
-        { onSuccess: invalidate },
+        {
+          onError: () => {
+            queryClient.invalidateQueries({ queryKey });
+          },
+        },
       );
     }
   };

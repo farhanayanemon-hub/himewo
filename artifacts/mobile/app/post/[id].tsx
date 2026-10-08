@@ -165,15 +165,44 @@ export default function PostDetailScreen() {
 
   const toggleCommentLove = (item: Comment) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    const invalidate = () => {
-      qc.invalidateQueries({ queryKey: getListCommentsQueryKey(postId) });
-    };
-    if (item.viewerReaction) {
-      removeCommentReaction.mutate({ id: item.id }, { onSuccess: invalidate });
+    if (!Number.isFinite(postId)) return;
+    const queryKey = getListCommentsQueryKey(postId);
+    const wasLiked = Boolean(item.viewerReaction);
+
+    // Instant optimistic update in React Query cache (0ms)
+    qc.setQueryData<Comment[]>(queryKey, (old) => {
+      if (!old) return old;
+      return old.map((c) => {
+        if (c.id === item.id) {
+          const currentCount = c.reactionCount ?? 0;
+          const newCount = wasLiked ? Math.max(0, currentCount - 1) : currentCount + 1;
+          return {
+            ...c,
+            viewerReaction: wasLiked ? null : "love",
+            reactionCount: newCount,
+          };
+        }
+        return c;
+      });
+    });
+
+    if (wasLiked) {
+      removeCommentReaction.mutate(
+        { id: item.id },
+        {
+          onError: () => {
+            qc.invalidateQueries({ queryKey });
+          },
+        },
+      );
     } else {
       setCommentReaction.mutate(
         { id: item.id, data: { type: "love", pageId: actingPage?.id } },
-        { onSuccess: invalidate },
+        {
+          onError: () => {
+            qc.invalidateQueries({ queryKey });
+          },
+        },
       );
     }
   };

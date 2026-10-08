@@ -14,11 +14,13 @@ const LOCKED_CHATS_KEY = "himewo_chat_locked_ids";
 const CHAT_LOCK_PIN_KEY = "himewo_chat_lock_pin";
 const CUSTOM_UNREAD_KEY = "himewo_chat_custom_unread_ids";
 const MUTED_CHATS_KEY = "himewo_chat_muted_ids";
+const DELETED_CHATS_KEY = "himewo_chat_deleted_ids";
 
 interface ChatPreferencesValue {
   activeStatus: boolean;
   readReceipts: boolean;
   lockedChatIds: number[];
+  deletedChatIds: number[];
   chatLockPin: string | null;
   customUnreadChatIds: number[];
   mutedChatIds: number[];
@@ -28,6 +30,9 @@ interface ChatPreferencesValue {
   setChatLockPin: (pin: string | null) => Promise<void>;
   lockChat: (convId: number) => Promise<void>;
   unlockChat: (convId: number) => Promise<void>;
+  deleteChat: (convId: number) => Promise<void>;
+  restoreChat: (convId: number) => Promise<void>;
+  isDeleted: (convId: number) => boolean;
   toggleMarkUnread: (convId: number) => Promise<void>;
   isCustomUnread: (convId: number) => boolean;
   toggleMuteChat: (convId: number) => Promise<void>;
@@ -41,6 +46,7 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
   const [activeStatus, setActiveStatusState] = useState(true);
   const [readReceipts, setReadReceiptsState] = useState(true);
   const [lockedChatIds, setLockedChatIds] = useState<number[]>([]);
+  const [deletedChatIds, setDeletedChatIds] = useState<number[]>([]);
   const [chatLockPin, setChatLockPinState] = useState<string | null>(null);
   const [customUnreadChatIds, setCustomUnreadChatIds] = useState<number[]>([]);
   const [mutedChatIds, setMutedChatIds] = useState<number[]>([]);
@@ -57,6 +63,7 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
           storedPin,
           storedUnread,
           storedMuted,
+          storedDeleted,
         ] = await Promise.all([
           AsyncStorage.getItem(ACTIVE_STATUS_KEY),
           AsyncStorage.getItem(READ_RECEIPTS_KEY),
@@ -64,6 +71,7 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
           AsyncStorage.getItem(CHAT_LOCK_PIN_KEY),
           AsyncStorage.getItem(CUSTOM_UNREAD_KEY),
           AsyncStorage.getItem(MUTED_CHATS_KEY),
+          AsyncStorage.getItem(DELETED_CHATS_KEY),
         ]);
 
         if (!mounted) return;
@@ -74,6 +82,11 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
         if (storedLocked) {
           try {
             setLockedChatIds(JSON.parse(storedLocked));
+          } catch {}
+        }
+        if (storedDeleted) {
+          try {
+            setDeletedChatIds(JSON.parse(storedDeleted));
           } catch {}
         }
         if (storedUnread) {
@@ -115,6 +128,13 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
   };
 
   const lockChat = async (convId: number) => {
+    // If it was marked deleted, un-delete it when explicitly locking
+    setDeletedChatIds((prev) => {
+      if (!prev.includes(convId)) return prev;
+      const next = prev.filter((id) => id !== convId);
+      void AsyncStorage.setItem(DELETED_CHATS_KEY, JSON.stringify(next));
+      return next;
+    });
     setLockedChatIds((prev) => {
       if (prev.includes(convId)) return prev;
       const next = [...prev, convId];
@@ -127,6 +147,39 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
     setLockedChatIds((prev) => {
       const next = prev.filter((id) => id !== convId);
       void AsyncStorage.setItem(LOCKED_CHATS_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const deleteChat = async (convId: number) => {
+    // 1. Never keep in locked chats when deleted
+    setLockedChatIds((prev) => {
+      const next = prev.filter((id) => id !== convId);
+      void AsyncStorage.setItem(LOCKED_CHATS_KEY, JSON.stringify(next));
+      return next;
+    });
+    // 2. Remove unread
+    setCustomUnreadChatIds((prev) => {
+      const next = prev.filter((id) => id !== convId);
+      void AsyncStorage.setItem(CUSTOM_UNREAD_KEY, JSON.stringify(next));
+      return next;
+    });
+    // 3. Mark deleted in local storage
+    setDeletedChatIds((prev) => {
+      if (prev.includes(convId)) return prev;
+      const next = [...prev, convId];
+      void AsyncStorage.setItem(DELETED_CHATS_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const isDeleted = (convId: number) => deletedChatIds.includes(convId);
+
+  const restoreChat = async (convId: number) => {
+    setDeletedChatIds((prev) => {
+      if (!prev.includes(convId)) return prev;
+      const next = prev.filter((id) => id !== convId);
+      void AsyncStorage.setItem(DELETED_CHATS_KEY, JSON.stringify(next));
       return next;
     });
   };
@@ -164,6 +217,7 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
       activeStatus,
       readReceipts,
       lockedChatIds,
+      deletedChatIds,
       chatLockPin,
       customUnreadChatIds,
       mutedChatIds,
@@ -173,6 +227,9 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
       setChatLockPin,
       lockChat,
       unlockChat,
+      deleteChat,
+      restoreChat,
+      isDeleted,
       toggleMarkUnread,
       isCustomUnread,
       toggleMuteChat,
@@ -183,6 +240,7 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
       activeStatus,
       readReceipts,
       lockedChatIds,
+      deletedChatIds,
       chatLockPin,
       customUnreadChatIds,
       mutedChatIds,

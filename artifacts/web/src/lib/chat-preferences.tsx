@@ -13,11 +13,13 @@ const LOCKED_CHATS_KEY = "himewo_chat_locked_ids";
 const CHAT_LOCK_PIN_KEY = "himewo_chat_lock_pin";
 const CUSTOM_UNREAD_KEY = "himewo_chat_custom_unread_ids";
 const MUTED_CHATS_KEY = "himewo_chat_muted_ids";
+const DELETED_CHATS_KEY = "himewo_chat_deleted_ids";
 
 interface ChatPreferencesValue {
   activeStatus: boolean;
   readReceipts: boolean;
   lockedChatIds: number[];
+  deletedChatIds: number[];
   chatLockPin: string | null;
   customUnreadChatIds: number[];
   mutedChatIds: number[];
@@ -26,6 +28,9 @@ interface ChatPreferencesValue {
   setChatLockPin: (pin: string | null) => void;
   lockChat: (convId: number) => void;
   unlockChat: (convId: number) => void;
+  deleteChat: (convId: number) => void;
+  restoreChat: (convId: number) => void;
+  isDeleted: (convId: number) => boolean;
   toggleMarkUnread: (convId: number) => void;
   isCustomUnread: (convId: number) => boolean;
   toggleMuteChat: (convId: number) => void;
@@ -57,6 +62,15 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
   const [lockedChatIds, setLockedChatIds] = useState<number[]>(() => {
     try {
       const v = localStorage.getItem(LOCKED_CHATS_KEY);
+      return v ? JSON.parse(v) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [deletedChatIds, setDeletedChatIds] = useState<number[]>(() => {
+    try {
+      const v = localStorage.getItem(DELETED_CHATS_KEY);
       return v ? JSON.parse(v) : [];
     } catch {
       return [];
@@ -115,6 +129,14 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
   };
 
   const lockChat = (convId: number) => {
+    setDeletedChatIds((prev) => {
+      if (!prev.includes(convId)) return prev;
+      const next = prev.filter((id) => id !== convId);
+      try {
+        localStorage.setItem(DELETED_CHATS_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
     setLockedChatIds((prev) => {
       if (prev.includes(convId)) return prev;
       const next = [...prev, convId];
@@ -130,6 +152,47 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
       const next = prev.filter((id) => id !== convId);
       try {
         localStorage.setItem(LOCKED_CHATS_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const deleteChat = (convId: number) => {
+    // 1. Remove from lockedChatIds so it never enters locked chats
+    setLockedChatIds((prev) => {
+      const next = prev.filter((id) => id !== convId);
+      try {
+        localStorage.setItem(LOCKED_CHATS_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+    // 2. Remove from custom unread
+    setCustomUnreadChatIds((prev) => {
+      const next = prev.filter((id) => id !== convId);
+      try {
+        localStorage.setItem(CUSTOM_UNREAD_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+    // 3. Mark in deletedChatIds
+    setDeletedChatIds((prev) => {
+      if (prev.includes(convId)) return prev;
+      const next = [...prev, convId];
+      try {
+        localStorage.setItem(DELETED_CHATS_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const isDeleted = (convId: number) => deletedChatIds.includes(convId);
+
+  const restoreChat = (convId: number) => {
+    setDeletedChatIds((prev) => {
+      if (!prev.includes(convId)) return prev;
+      const next = prev.filter((id) => id !== convId);
+      try {
+        localStorage.setItem(DELETED_CHATS_KEY, JSON.stringify(next));
       } catch {}
       return next;
     });
@@ -172,6 +235,7 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
       activeStatus,
       readReceipts,
       lockedChatIds,
+      deletedChatIds,
       chatLockPin,
       customUnreadChatIds,
       mutedChatIds,
@@ -180,6 +244,9 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
       setChatLockPin,
       lockChat,
       unlockChat,
+      deleteChat,
+      restoreChat,
+      isDeleted,
       toggleMarkUnread,
       isCustomUnread,
       toggleMuteChat,
@@ -190,6 +257,7 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
       activeStatus,
       readReceipts,
       lockedChatIds,
+      deletedChatIds,
       chatLockPin,
       customUnreadChatIds,
       mutedChatIds,

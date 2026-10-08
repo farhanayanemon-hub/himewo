@@ -29,10 +29,10 @@ import {
   type Profile,
   type ReactionType,
 } from "@workspace/api-client-react";
+import * as Haptics from "expo-haptics";
 import { Avatar } from "@/components/Avatar";
 import { CommentActionsSheet } from "@/components/CommentActions";
 import { EmojiPickerSheet } from "@/components/EmojiPickerSheet";
-import { ReactionBar } from "@/components/ReactionBar";
 import {
   MentionText,
   MentionSuggestions,
@@ -40,7 +40,6 @@ import {
   insertMention,
   mentionToken,
 } from "@/components/Mention";
-import { reactionConfig } from "@/constants/reactions";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/lib/auth";
 import { useActingPage } from "@/lib/acting-page";
@@ -155,15 +154,46 @@ export function CommentsSheet({ postId, visible, onClose }: CommentsSheetProps) 
   }, [comments]);
 
   const toggleCommentLove = (item: Comment) => {
-    const invalidate = () => {
-      if (postId != null) {
-        qc.invalidateQueries({ queryKey: getListCommentsQueryKey(postId) });
-      }
-    };
-    if (item.viewerReaction) {
-      removeReaction.mutate({ id: item.id }, { onSuccess: invalidate });
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    if (postId == null) return;
+    const queryKey = getListCommentsQueryKey(postId);
+    const wasLiked = Boolean(item.viewerReaction);
+
+    // Instant optimistic update in React Query cache (0ms)
+    qc.setQueryData<Comment[]>(queryKey, (old) => {
+      if (!old) return old;
+      return old.map((c) => {
+        if (c.id === item.id) {
+          const currentCount = c.reactionCount ?? 0;
+          const newCount = wasLiked ? Math.max(0, currentCount - 1) : currentCount + 1;
+          return {
+            ...c,
+            viewerReaction: wasLiked ? null : "love",
+            reactionCount: newCount,
+          };
+        }
+        return c;
+      });
+    });
+
+    if (wasLiked) {
+      removeReaction.mutate(
+        { id: item.id },
+        {
+          onError: () => {
+            qc.invalidateQueries({ queryKey });
+          },
+        },
+      );
     } else {
-      setReaction.mutate({ id: item.id, data: { type: "love", pageId: actingPage?.id } }, { onSuccess: invalidate });
+      setReaction.mutate(
+        { id: item.id, data: { type: "love", pageId: actingPage?.id } },
+        {
+          onError: () => {
+            qc.invalidateQueries({ queryKey });
+          },
+        },
+      );
     }
   };
 
