@@ -118,6 +118,7 @@ export default function MessagesPage() {
     readReceipts,
     lockedChatIds,
     deletedChatIds,
+    hideLockedChats,
     chatLockPin,
     lockChat,
     unlockChat,
@@ -131,6 +132,7 @@ export default function MessagesPage() {
     setChatLockPin,
     setActiveStatus,
     setReadReceipts,
+    setHideLockedChats,
   } = useChatPreferences();
 
   const clearConversation = useClearConversation();
@@ -140,6 +142,19 @@ export default function MessagesPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [showLockedModal, setShowLockedModal] = useState(false);
   const [searchFilter, setSearchFilter] = useState("");
+  const [pinRevealed, setPinRevealed] = useState(false);
+
+  const handleSearchFilterChange = (val: string) => {
+    setSearchFilter(val);
+    const trimmed = val.trim();
+    if (chatLockPin && trimmed === chatLockPin) {
+      setPinRevealed(true);
+    } else {
+      if (pinRevealed) {
+        setPinRevealed(false);
+      }
+    }
+  };
 
   // PIN modal state
   const [pinModalOpen, setPinModalOpen] = useState(false);
@@ -511,6 +526,13 @@ export default function MessagesPage() {
     );
   }, [conversations, lockedChatIds, deletedChatIds]);
 
+  const displayedConversations = useMemo(() => {
+    if (pinRevealed) {
+      return lockedConversations;
+    }
+    return normalConversations;
+  }, [pinRevealed, lockedConversations, normalConversations]);
+
   const activeConv = conversations?.find((c) => c.id === conversationId);
 
   return (
@@ -596,17 +618,54 @@ export default function MessagesPage() {
           </div>
 
           {/* Search Box */}
-          <div className="p-2.5">
+          <div className="p-2.5 relative">
             <Input
               value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
-              placeholder="Search conversations..."
-              className="bg-muted/50 border-none rounded-full text-sm h-9"
+              onChange={(e) => handleSearchFilterChange(e.target.value)}
+              placeholder="Search conversations or enter PIN..."
+              className="bg-muted/50 border-none rounded-full text-sm h-9 pr-8"
             />
+            {searchFilter.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchFilter("");
+                  setPinRevealed(false);
+                }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
-          {/* WhatsApp-style Locked Chats Bar */}
-          {lockedChatIds.length > 0 && (
+          {/* Secret Unlocked Banner if PIN revealed */}
+          {pinRevealed && (
+            <div className="mx-2 mb-2 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between gap-2 text-emerald-600 dark:text-emerald-400">
+              <div className="flex items-center gap-2 min-w-0">
+                <Unlock className="w-4 h-4 shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-xs font-bold leading-tight">Secret Locked Chats</div>
+                  <div className="text-[11px] text-muted-foreground leading-tight">
+                    {lockedConversations.length} secret {lockedConversations.length === 1 ? "chat" : "chats"} revealed
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchFilter("");
+                  setPinRevealed(false);
+                }}
+                className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500 text-white shrink-0 hover:bg-emerald-600"
+              >
+                Hide
+              </button>
+            </div>
+          )}
+
+          {/* WhatsApp-style Locked Chats Bar (hidden if hideLockedChats is true or PIN revealed) */}
+          {!hideLockedChats && lockedChatIds.length > 0 && !pinRevealed && (
             <div className="px-2 pb-1">
               <button
                 onClick={handleOpenLocked}
@@ -634,12 +693,16 @@ export default function MessagesPage() {
               <div className="flex justify-center p-4">
                 <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
               </div>
-            ) : normalConversations.length === 0 ? (
+            ) : displayedConversations.length === 0 ? (
               <div className="text-center text-sm text-muted-foreground py-10 px-4">
-                {searchFilter.trim() ? "No conversations match your search." : "No conversations yet. Start a new chat!"}
+                {pinRevealed
+                  ? "No locked chats found. To lock a chat, click the options menu and choose 'Lock chat'."
+                  : searchFilter.trim()
+                    ? "No conversations match your search."
+                    : "No conversations yet. Start a new chat!"}
               </div>
             ) : (
-              normalConversations.map((conv) => {
+              displayedConversations.map((conv) => {
                 const other = conv.members.find((m) => m.user.id !== user?.id)?.user;
                 const displayTitle = conv.title || other?.displayName || "Unknown Chat";
                 const avatar = conv.avatarUrl || other?.avatarUrl;
@@ -1072,6 +1135,30 @@ export default function MessagesPage() {
                     >
                       {chatLockPin ? "Change PIN" : "Set PIN"}
                     </Button>
+                  </div>
+
+                  {/* Hide Locked Chats */}
+                  <div className="border-t border-border/60" />
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="font-semibold text-sm">Hide Locked Chats</div>
+                      <div className="text-xs text-muted-foreground">
+                        Completely hide locked chats from your list. Reveal anytime by typing your secret PIN into the search box.
+                      </div>
+                    </div>
+                    <Switch
+                      checked={hideLockedChats}
+                      onCheckedChange={(val) => {
+                        if (val && !chatLockPin) {
+                          setShowSettings(false);
+                          requirePin("set_new", () => {
+                            setHideLockedChats(true);
+                          });
+                          return;
+                        }
+                        setHideLockedChats(val);
+                      }}
+                    />
                   </div>
 
                   {chatLockPin && (

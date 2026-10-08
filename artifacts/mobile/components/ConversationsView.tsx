@@ -16,6 +16,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListConversations,
@@ -58,6 +59,7 @@ export function ConversationsView({ isTab = false }: ConversationsViewProps) {
     readReceipts,
     lockedChatIds,
     deletedChatIds,
+    hideLockedChats,
     chatLockPin,
     lockChat,
     unlockChat,
@@ -71,6 +73,7 @@ export function ConversationsView({ isTab = false }: ConversationsViewProps) {
     setChatLockPin,
     setActiveStatus,
     setReadReceipts,
+    setHideLockedChats,
   } = useChatPreferences();
 
   const clearConversation = useClearConversation();
@@ -80,6 +83,8 @@ export function ConversationsView({ isTab = false }: ConversationsViewProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedConv, setSelectedConv] = useState<Conversation | null>(null);
   const [lockedChatsOpen, setLockedChatsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [pinRevealed, setPinRevealed] = useState(false);
 
   // PIN modal state
   const [pinModalVisible, setPinModalVisible] = useState(false);
@@ -126,6 +131,42 @@ export function ConversationsView({ isTab = false }: ConversationsViewProps) {
       (conv) => lockedChatIds.includes(conv.id) && !deletedChatIds.includes(conv.id),
     );
   }, [conversations, lockedChatIds, deletedChatIds]);
+
+  const handleSearchChange = (text: string) => {
+    setSearchQuery(text);
+    const trimmed = text.trim();
+    if (chatLockPin && trimmed === chatLockPin) {
+      if (!pinRevealed) {
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setPinRevealed(true);
+      }
+    } else {
+      if (pinRevealed) {
+        setPinRevealed(false);
+      }
+    }
+  };
+
+  const displayedConversations = useMemo(() => {
+    if (pinRevealed) {
+      return lockedConversations;
+    }
+    if (!searchQuery.trim()) {
+      return normalConversations;
+    }
+    const q = searchQuery.toLowerCase().trim();
+    return normalConversations.filter((conv) => {
+      const peer = otherMember(conv, user?.id);
+      const name = conv.type === "group" ? conv.title || "Group" : peer?.displayName || "";
+      const username = peer?.username || "";
+      const last = conv.lastMessage?.content || "";
+      return (
+        name.toLowerCase().includes(q) ||
+        username.toLowerCase().includes(q) ||
+        last.toLowerCase().includes(q)
+      );
+    });
+  }, [pinRevealed, lockedConversations, normalConversations, searchQuery, user?.id]);
 
   // Start PIN flow
   const requirePin = (mode: "enter" | "set_new", onSuccess: () => void) => {
@@ -249,19 +290,86 @@ export function ConversationsView({ isTab = false }: ConversationsViewProps) {
         </View>
       </View>
 
+      {/* Search Input Bar */}
+      <View style={{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: 6, backgroundColor: c.background }}>
+        <View style={[styles.searchBox, { backgroundColor: c.secondary }]}>
+          <Ionicons name="search" size={18} color={c.mutedForeground} />
+          <TextInput
+            value={searchQuery}
+            onChangeText={handleSearchChange}
+            placeholder="Search chats or enter secret PIN"
+            placeholderTextColor={c.mutedForeground}
+            underlineColorAndroid="transparent"
+            style={{ flex: 1, color: c.foreground, fontSize: 15, paddingVertical: 0 }}
+          />
+          {searchQuery.length > 0 && (
+            <Pressable
+              onPress={() => {
+                setSearchQuery("");
+                setPinRevealed(false);
+              }}
+              hitSlop={8}
+            >
+              <Ionicons name="close-circle" size={18} color={c.mutedForeground} />
+            </Pressable>
+          )}
+        </View>
+      </View>
+
       {isLoading ? (
         <ActivityIndicator color={c.primary} style={{ marginTop: 40 }} />
       ) : (
         <FlatList
-          data={normalConversations}
+          data={displayedConversations}
           keyExtractor={(item) => String(item.id)}
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={onRefresh} tintColor={c.primary} />
           }
           ListHeaderComponent={
             <View>
-              {/* WhatsApp-style Locked Chats bar */}
-              {lockedChatIds.length > 0 && (
+              {/* Secret Unlocked Banner if PIN is revealed */}
+              {pinRevealed && (
+                <View
+                  style={[
+                    styles.secretUnlockedBanner,
+                    {
+                      backgroundColor: "rgba(16, 185, 129, 0.12)",
+                      borderColor: "rgba(16, 185, 129, 0.3)",
+                    },
+                  ]}
+                >
+                  <Ionicons name="lock-open" size={20} color="#10b981" />
+                  <View style={{ flex: 1, marginLeft: 10 }}>
+                    <Text style={{ color: "#10b981", fontFamily: "Inter_600SemiBold", fontSize: 14 }}>
+                      Secret Locked Chats Revealed
+                    </Text>
+                    <Text style={{ color: c.mutedForeground, fontSize: 12, marginTop: 1 }}>
+                      {lockedConversations.length}{" "}
+                      {lockedConversations.length === 1 ? "secret chat" : "secret chats"}. Clear search
+                      box to hide.
+                    </Text>
+                  </View>
+                  <Pressable
+                    onPress={() => {
+                      setSearchQuery("");
+                      setPinRevealed(false);
+                    }}
+                    style={{
+                      paddingHorizontal: 12,
+                      paddingVertical: 5,
+                      borderRadius: 12,
+                      backgroundColor: "#10b981",
+                    }}
+                  >
+                    <Text style={{ color: "#fff", fontSize: 12, fontFamily: "Inter_600SemiBold" }}>
+                      Hide
+                    </Text>
+                  </Pressable>
+                </View>
+              )}
+
+              {/* WhatsApp-style Locked Chats bar (hidden if hideLockedChats is true or PIN revealed) */}
+              {!hideLockedChats && lockedChatIds.length > 0 && !pinRevealed && (
                 <Pressable
                   style={[styles.lockedBanner, { backgroundColor: c.card, borderBottomColor: c.border }]}
                   onPress={handleOpenLockedChats}
@@ -279,8 +387,8 @@ export function ConversationsView({ isTab = false }: ConversationsViewProps) {
                 </Pressable>
               )}
 
-              {/* Active & Online Friends Row */}
-              <ActiveRow />
+              {/* Active & Online Friends Row (only when not in secret reveal mode) */}
+              {!pinRevealed && <ActiveRow />}
             </View>
           }
           renderItem={({ item }) => (
@@ -296,9 +404,17 @@ export function ConversationsView({ isTab = false }: ConversationsViewProps) {
           )}
           ListEmptyComponent={
             <View style={{ alignItems: "center", marginTop: 60, paddingHorizontal: 20 }}>
-              <Ionicons name="chatbubbles-outline" size={48} color={c.mutedForeground} />
+              <Ionicons
+                name={pinRevealed ? "lock-closed-outline" : "chatbubbles-outline"}
+                size={48}
+                color={c.mutedForeground}
+              />
               <Text style={{ color: c.mutedForeground, marginTop: 12, textAlign: "center" }}>
-                No conversations yet. Tap the compose button to start chatting!
+                {pinRevealed
+                  ? "No locked chats found. Long press any chat to lock it."
+                  : searchQuery.trim().length > 0
+                    ? "No conversations match your search."
+                    : "No conversations yet. Tap the compose button to start chatting!"}
               </Text>
             </View>
           }
@@ -314,10 +430,12 @@ export function ConversationsView({ isTab = false }: ConversationsViewProps) {
         onClose={() => setSettingsOpen(false)}
         activeStatus={activeStatus}
         readReceipts={readReceipts}
+        hideLockedChats={hideLockedChats}
         chatLockPin={chatLockPin}
         lockedChatCount={lockedChatIds.length}
         onToggleActive={setActiveStatus}
         onToggleReceipts={setReadReceipts}
+        onToggleHideLocked={setHideLockedChats}
         onManagePin={() => {
           setSettingsOpen(false);
           requirePin("set_new", () => {});
@@ -729,10 +847,12 @@ function ChatSettingsModal({
   onClose,
   activeStatus,
   readReceipts,
+  hideLockedChats,
   chatLockPin,
   lockedChatCount,
   onToggleActive,
   onToggleReceipts,
+  onToggleHideLocked,
   onManagePin,
   onRemovePin,
   onOpenLockedChats,
@@ -741,10 +861,12 @@ function ChatSettingsModal({
   onClose: () => void;
   activeStatus: boolean;
   readReceipts: boolean;
+  hideLockedChats: boolean;
   chatLockPin: string | null;
   lockedChatCount: number;
   onToggleActive: (v: boolean) => void;
   onToggleReceipts: (v: boolean) => void;
+  onToggleHideLocked: (v: boolean) => void;
   onManagePin: () => void;
   onRemovePin: () => void;
   onOpenLockedChats: () => void;
@@ -829,6 +951,38 @@ function ChatSettingsModal({
                 </Pressable>
               </>
             )}
+
+            {/* Hide Locked Chats Toggle */}
+            <View style={[styles.divider, { backgroundColor: c.border }]} />
+            <View style={styles.settingRow}>
+              <View style={{ flex: 1, marginRight: 12 }}>
+                <Text style={[styles.settingLabel, { color: c.foreground }]}>Hide Locked Chats</Text>
+                <Text style={{ color: c.mutedForeground, fontSize: 13, marginTop: 2 }}>
+                  Completely hide locked chats from your list. Reveal anytime by typing your PIN in the search box.
+                </Text>
+              </View>
+              <Switch
+                value={hideLockedChats}
+                onValueChange={(val) => {
+                  if (val && !chatLockPin) {
+                    Alert.alert(
+                      "Set PIN First",
+                      "Please create a 4-digit PIN first to hide locked chats.",
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                          text: "Set PIN",
+                          onPress: () => onManagePin(),
+                        },
+                      ],
+                    );
+                    return;
+                  }
+                  onToggleHideLocked(val);
+                }}
+                trackColor={{ false: "#767577", true: c.primary }}
+              />
+            </View>
 
             {lockedChatCount > 0 && (
               <>
@@ -1349,5 +1503,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  secretUnlockedBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1,
+    marginHorizontal: 12,
+    marginTop: 8,
+    marginBottom: 6,
+    borderRadius: 16,
   },
 });

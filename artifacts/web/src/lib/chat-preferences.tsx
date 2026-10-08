@@ -14,17 +14,20 @@ const CHAT_LOCK_PIN_KEY = "himewo_chat_lock_pin";
 const CUSTOM_UNREAD_KEY = "himewo_chat_custom_unread_ids";
 const MUTED_CHATS_KEY = "himewo_chat_muted_ids";
 const DELETED_CHATS_KEY = "himewo_chat_deleted_ids";
+const HIDE_LOCKED_CHATS_KEY = "himewo_chat_hide_locked";
 
 interface ChatPreferencesValue {
   activeStatus: boolean;
   readReceipts: boolean;
   lockedChatIds: number[];
   deletedChatIds: number[];
+  hideLockedChats: boolean;
   chatLockPin: string | null;
   customUnreadChatIds: number[];
   mutedChatIds: number[];
   setActiveStatus: (val: boolean) => void;
   setReadReceipts: (val: boolean) => void;
+  setHideLockedChats: (val: boolean) => void;
   setChatLockPin: (pin: string | null) => void;
   lockChat: (convId: number) => void;
   unlockChat: (convId: number) => void;
@@ -76,6 +79,22 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
       return [];
     }
   });
+
+  const [hideLockedChats, setHideLockedChatsState] = useState<boolean>(() => {
+    try {
+      const v = localStorage.getItem(HIDE_LOCKED_CHATS_KEY);
+      return v === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const setHideLockedChats = (val: boolean) => {
+    setHideLockedChatsState(val);
+    try {
+      localStorage.setItem(HIDE_LOCKED_CHATS_KEY, val ? "true" : "false");
+    } catch {}
+  };
 
   const [chatLockPin, setChatLockPinState] = useState<string | null>(() => {
     try {
@@ -236,11 +255,13 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
       readReceipts,
       lockedChatIds,
       deletedChatIds,
+      hideLockedChats,
       chatLockPin,
       customUnreadChatIds,
       mutedChatIds,
       setActiveStatus,
       setReadReceipts,
+      setHideLockedChats,
       setChatLockPin,
       lockChat,
       unlockChat,
@@ -258,6 +279,7 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
       readReceipts,
       lockedChatIds,
       deletedChatIds,
+      hideLockedChats,
       chatLockPin,
       customUnreadChatIds,
       mutedChatIds,

@@ -15,18 +15,21 @@ const CHAT_LOCK_PIN_KEY = "himewo_chat_lock_pin";
 const CUSTOM_UNREAD_KEY = "himewo_chat_custom_unread_ids";
 const MUTED_CHATS_KEY = "himewo_chat_muted_ids";
 const DELETED_CHATS_KEY = "himewo_chat_deleted_ids";
+const HIDE_LOCKED_CHATS_KEY = "himewo_chat_hide_locked";
 
 interface ChatPreferencesValue {
   activeStatus: boolean;
   readReceipts: boolean;
   lockedChatIds: number[];
   deletedChatIds: number[];
+  hideLockedChats: boolean;
   chatLockPin: string | null;
   customUnreadChatIds: number[];
   mutedChatIds: number[];
   ready: boolean;
   setActiveStatus: (val: boolean) => void;
   setReadReceipts: (val: boolean) => void;
+  setHideLockedChats: (val: boolean) => void;
   setChatLockPin: (pin: string | null) => Promise<void>;
   lockChat: (convId: number) => Promise<void>;
   unlockChat: (convId: number) => Promise<void>;
@@ -47,6 +50,7 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
   const [readReceipts, setReadReceiptsState] = useState(true);
   const [lockedChatIds, setLockedChatIds] = useState<number[]>([]);
   const [deletedChatIds, setDeletedChatIds] = useState<number[]>([]);
+  const [hideLockedChats, setHideLockedChatsState] = useState(false);
   const [chatLockPin, setChatLockPinState] = useState<string | null>(null);
   const [customUnreadChatIds, setCustomUnreadChatIds] = useState<number[]>([]);
   const [mutedChatIds, setMutedChatIds] = useState<number[]>([]);
@@ -64,6 +68,7 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
           storedUnread,
           storedMuted,
           storedDeleted,
+          storedHideLocked,
         ] = await Promise.all([
           AsyncStorage.getItem(ACTIVE_STATUS_KEY),
           AsyncStorage.getItem(READ_RECEIPTS_KEY),
@@ -72,6 +77,7 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
           AsyncStorage.getItem(CUSTOM_UNREAD_KEY),
           AsyncStorage.getItem(MUTED_CHATS_KEY),
           AsyncStorage.getItem(DELETED_CHATS_KEY),
+          AsyncStorage.getItem(HIDE_LOCKED_CHATS_KEY),
         ]);
 
         if (!mounted) return;
@@ -79,6 +85,7 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
         if (storedActive != null) setActiveStatusState(storedActive !== "false");
         if (storedReceipts != null) setReadReceiptsState(storedReceipts !== "false");
         if (storedPin != null) setChatLockPinState(storedPin);
+        if (storedHideLocked != null) setHideLockedChatsState(storedHideLocked === "true");
         if (storedLocked) {
           try {
             setLockedChatIds(JSON.parse(storedLocked));
@@ -107,6 +114,11 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
       mounted = false;
     };
   }, []);
+
+  const setHideLockedChats = (val: boolean) => {
+    setHideLockedChatsState(val);
+    void AsyncStorage.setItem(HIDE_LOCKED_CHATS_KEY, val ? "true" : "false");
+  };
 
   const setActiveStatus = (val: boolean) => {
     setActiveStatusState(val);
@@ -218,12 +230,14 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
       readReceipts,
       lockedChatIds,
       deletedChatIds,
+      hideLockedChats,
       chatLockPin,
       customUnreadChatIds,
       mutedChatIds,
       ready,
       setActiveStatus,
       setReadReceipts,
+      setHideLockedChats,
       setChatLockPin,
       lockChat,
       unlockChat,
@@ -241,6 +255,7 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
       readReceipts,
       lockedChatIds,
       deletedChatIds,
+      hideLockedChats,
       chatLockPin,
       customUnreadChatIds,
       mutedChatIds,
