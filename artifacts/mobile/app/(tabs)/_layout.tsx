@@ -4,7 +4,7 @@ import {
   getListConversationsQueryKey,
   type Conversation,
 } from "@workspace/api-client-react";
-import { SolidDockTabBar } from "@/components/SolidDockTabBar";
+import { SolidDockTabBar } from "../../components/SolidDockTabBar";
 
 export default function TabsLayout() {
   const { data: convData } = useListConversations({

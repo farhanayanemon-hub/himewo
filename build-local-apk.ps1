@@ -4,23 +4,21 @@ param(
   [switch]$Publish
 )
 
-$ErrorActionPreference = "Stop"
-$repoRoot = $PSScriptRoot
+$repoRoot = "C:\himewo"
 
-Write-Host "=============================================" -ForegroundColor Cyan
-Write-Host "       HiMewo Local Android APK Builder       " -ForegroundColor Cyan
-Write-Host "=============================================" -ForegroundColor Cyan
+# 1. Environment verification - ensure space-free junction paths
+if (-not (Test-Path "C:\android-sdk")) {
+  $defaultSdk = if ($env:ANDROID_HOME) { $env:ANDROID_HOME } else { "$env:LOCALAPPDATA\Android\Sdk" }
+  cmd.exe /c "mklink /J C:\android-sdk `"$defaultSdk`""
+}
+$env:ANDROID_HOME = "C:\android-sdk"
+$env:ANDROID_SDK_ROOT = "C:\android-sdk"
+Write-Host "[OK] Detected Android SDK: $env:ANDROID_HOME" -ForegroundColor Green
 
-# 1. Environment verification
-if (-not $env:ANDROID_HOME) {
-  $defaultSdk = "$env:LOCALAPPDATA\Android\Sdk"
-  if (Test-Path $defaultSdk) {
-    $env:ANDROID_HOME = $defaultSdk
-    Write-Host "[OK] Detected Android SDK: $env:ANDROID_HOME" -ForegroundColor Green
-  } else {
-    Write-Error "ANDROID_HOME environment variable is not set and SDK not found at $defaultSdk."
-    exit 1
-  }
+if (Test-Path "C:\jdk17") {
+  $env:JAVA_HOME = "C:\jdk17"
+  $env:PATH = "C:\jdk17\bin;$env:PATH"
+  Write-Host "[OK] Using JAVA_HOME: $env:JAVA_HOME" -ForegroundColor Green
 }
 
 $buildTools = Get-ChildItem "$env:ANDROID_HOME\build-tools" | Sort-Object Name -Descending | Select-Object -First 1
@@ -69,9 +67,16 @@ function Build-TargetApp([string]$target) {
       Set-Content "$appDir\android\gradle.properties"
   }
 
+  $sdkDirFormatted = ($env:ANDROID_HOME -replace '\\', '/')
+  "sdk.dir=$sdkDirFormatted" | Set-Content "$appDir\android\local.properties"
+
   Write-Host "`n>>> [2/4] Compiling release APK with Gradle..." -ForegroundColor Yellow
   Set-Location "$appDir\android"
   cmd.exe /c "gradlew.bat assembleRelease --no-daemon -Dorg.gradle.jvmargs=""-Xmx4096m -XX:MaxMetaspaceSize=1024m"""
+  if ($LASTEXITCODE -ne 0) {
+    Write-Error "Gradle build failed with exit code $LASTEXITCODE"
+    exit 1
+  }
 
   $unsigned = Get-ChildItem "$appDir\android\app\build\outputs\apk\release\*.apk" | Select-Object -First 1
   if (-not $unsigned) {
