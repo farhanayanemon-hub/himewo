@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { timeAgo } from "@/lib/format";
+import { useChatPreferences } from "@/lib/chat-preferences";
 
 function notificationText(n: Notification): string {
   const actor = n.actor?.displayName ?? "Someone";
@@ -111,7 +112,20 @@ function NotificationIcon({ type }: { type: NotificationType }) {
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export default function NotificationsPage() {
-  const { data: notifications, isLoading } = useListNotifications();
+  const { data: rawNotifications, isLoading } = useListNotifications();
+  const { lockedChatIds, mutedChatIds, deletedChatIds } = useChatPreferences();
+  const notifications = (rawNotifications ?? []).filter((n) => {
+    if (n.type === NotificationType.message && n.entityId != null) {
+      if (
+        lockedChatIds.includes(n.entityId) ||
+        mutedChatIds.includes(n.entityId) ||
+        deletedChatIds.includes(n.entityId)
+      ) {
+        return false;
+      }
+    }
+    return true;
+  });
   const markAllRead = useMarkAllNotificationsRead();
   const markRead = useMarkNotificationRead();
   const queryClient = useQueryClient();

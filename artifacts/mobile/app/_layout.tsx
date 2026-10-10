@@ -24,6 +24,7 @@ import { ActingPageProvider } from "@/lib/acting-page";
 import { useColors } from "@/hooks/useColors";
 import { useAppUpdate, UpdatePromptModal } from "@/lib/useAppUpdate";
 import { ChatPreferencesProvider } from "@/lib/chatPreferences";
+import { SoundProvider } from "@/lib/sounds";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -165,7 +166,8 @@ function ThemedRoot() {
         <ChatPreferencesProvider>
           <RealtimeProvider>
             <ActingPageProvider>
-              <CallProvider>
+              <SoundProvider>
+                <CallProvider>
                 <RootNavigator />
                 <UpdatePromptModal
                   visible={update.modalVisible}
@@ -174,7 +176,8 @@ function ThemedRoot() {
                   onUpdate={update.downloadAndInstall}
                   onDismiss={update.dismiss}
                 />
-              </CallProvider>
+                </CallProvider>
+              </SoundProvider>
             </ActingPageProvider>
           </RealtimeProvider>
         </ChatPreferencesProvider>

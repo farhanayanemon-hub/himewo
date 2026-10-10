@@ -122,6 +122,7 @@ export default function MessagesPage() {
     chatLockPin,
     lockChat,
     unlockChat,
+    unlockAllChats,
     deleteChat,
     restoreChat,
     toggleMarkUnread,
@@ -158,7 +159,9 @@ export default function MessagesPage() {
 
   // PIN modal state
   const [pinModalOpen, setPinModalOpen] = useState(false);
-  const [pinMode, setPinMode] = useState<"enter" | "set_new" | "confirm_new">("enter");
+  const [pinMode, setPinMode] = useState<
+    "enter" | "verify_old" | "remove_pin" | "set_new" | "confirm_new"
+  >("enter");
   const [pinInput, setPinInput] = useState("");
   const [tempPin, setTempPin] = useState("");
   const [pinError, setPinError] = useState<string | null>(null);
@@ -433,7 +436,10 @@ export default function MessagesPage() {
   };
 
   // PIN verification flow helpers
-  const requirePin = (mode: "enter" | "set_new", onSuccess: () => void) => {
+  const requirePin = (
+    mode: "enter" | "verify_old" | "remove_pin" | "set_new",
+    onSuccess: () => void,
+  ) => {
     setPinMode(mode);
     setPinInput("");
     setTempPin("");
@@ -444,7 +450,7 @@ export default function MessagesPage() {
 
   const handlePinSubmit = (val: string) => {
     if (val.length !== 4) return;
-    if (pinMode === "enter") {
+    if (pinMode === "enter" || pinMode === "remove_pin") {
       if (verifyPin(val)) {
         setPinModalOpen(false);
         setPinInput("");
@@ -455,6 +461,15 @@ export default function MessagesPage() {
         }
       } else {
         setPinError("Incorrect PIN. Please try again.");
+        setPinInput("");
+      }
+    } else if (pinMode === "verify_old") {
+      if (verifyPin(val)) {
+        setPinInput("");
+        setPinError(null);
+        setPinMode("set_new");
+      } else {
+        setPinError("Incorrect current PIN. Please try again.");
         setPinInput("");
       }
     } else if (pinMode === "set_new") {
@@ -1130,7 +1145,11 @@ export default function MessagesPage() {
                       className="rounded-full text-xs font-semibold"
                       onClick={() => {
                         setShowSettings(false);
-                        requirePin("set_new", () => {});
+                        if (chatLockPin) {
+                          requirePin("verify_old", () => {});
+                        } else {
+                          requirePin("set_new", () => {});
+                        }
                       }}
                     >
                       {chatLockPin ? "Change PIN" : "Set PIN"}
@@ -1156,6 +1175,13 @@ export default function MessagesPage() {
                           });
                           return;
                         }
+                        if (!val && chatLockPin) {
+                          setShowSettings(false);
+                          requirePin("enter", () => {
+                            setHideLockedChats(false);
+                          });
+                          return;
+                        }
                         setHideLockedChats(val);
                       }}
                     />
@@ -1167,8 +1193,11 @@ export default function MessagesPage() {
                       <button
                         onClick={() => {
                           setShowSettings(false);
-                          requirePin("enter", () => {
+                          requirePin("remove_pin", () => {
                             setChatLockPin(null);
+                            setHideLockedChats(false);
+                            unlockAllChats();
+                            setPinRevealed(false);
                           });
                         }}
                         className="text-xs font-semibold text-destructive hover:underline flex items-center gap-1.5"
@@ -1214,23 +1243,41 @@ export default function MessagesPage() {
               <X className="w-5 h-5" />
             </Button>
 
-            <div className="w-14 h-14 rounded-full bg-primary/15 text-primary flex items-center justify-center mx-auto mb-3">
-              <Lock className="w-7 h-7" />
+            <div
+              className={`w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3 ${
+                pinMode === "remove_pin"
+                  ? "bg-destructive/15 text-destructive"
+                  : "bg-primary/15 text-primary"
+              }`}
+            >
+              {pinMode === "remove_pin" ? (
+                <Trash2 className="w-7 h-7" />
+              ) : (
+                <Lock className="w-7 h-7" />
+              )}
             </div>
 
             <h3 className="font-bold text-lg text-foreground">
               {pinMode === "enter"
                 ? "Enter Chat PIN"
-                : pinMode === "set_new"
-                  ? "Create 4-Digit PIN"
-                  : "Confirm 4-Digit PIN"}
+                : pinMode === "verify_old"
+                  ? "Enter Current PIN"
+                  : pinMode === "remove_pin"
+                    ? "Remove PIN Protection"
+                    : pinMode === "set_new"
+                      ? "Create New 4-Digit PIN"
+                      : "Confirm New 4-Digit PIN"}
             </h3>
             <p className="text-xs text-muted-foreground mt-1 mb-6 px-4">
               {pinMode === "enter"
                 ? "Enter your 4-digit PIN to access locked conversations"
-                : pinMode === "set_new"
-                  ? "Choose a 4-digit PIN for locking private chats"
-                  : "Re-enter your 4-digit PIN to confirm"}
+                : pinMode === "verify_old"
+                  ? "Enter your current 4-digit PIN before setting a new PIN"
+                  : pinMode === "remove_pin"
+                    ? "Enter your current 4-digit PIN to remove PIN protection"
+                    : pinMode === "set_new"
+                      ? "Choose a new 4-digit PIN for locking private chats"
+                      : "Re-enter your new 4-digit PIN to confirm"}
             </p>
 
             {/* 4 Pin Dots */}

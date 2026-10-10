@@ -24,6 +24,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Avatar } from "@/components/Avatar";
 import { useColors } from "@/hooks/useColors";
 import { timeAgo } from "@/lib/format";
+import { useChatPreferences } from "@/lib/chatPreferences";
 
 function notificationText(n: Notification): string {
   const actor = n.actor?.displayName ?? "Someone";
@@ -102,9 +103,21 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 export default function NotificationsScreen() {
   const c = useColors();
   const qc = useQueryClient();
+  const { lockedChatIds, mutedChatIds, deletedChatIds } = useChatPreferences();
 
   const { data, isLoading, isRefetching, refetch } = useListNotifications();
-  const notifications = (data ?? []) as Notification[];
+  const notifications = ((data ?? []) as Notification[]).filter((n) => {
+    if (n.type === NotificationType.message && n.entityId != null) {
+      if (
+        lockedChatIds.includes(n.entityId) ||
+        mutedChatIds.includes(n.entityId) ||
+        deletedChatIds.includes(n.entityId)
+      ) {
+        return false;
+      }
+    }
+    return true;
+  });
 
   const markAll = useMarkAllNotificationsRead();
   const markRead = useMarkNotificationRead();

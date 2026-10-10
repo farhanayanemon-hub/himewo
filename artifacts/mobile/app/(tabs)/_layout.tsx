@@ -5,8 +5,10 @@ import {
   type Conversation,
 } from "@workspace/api-client-react";
 import { SolidDockTabBar } from "../../components/SolidDockTabBar";
+import { useChatPreferences } from "@/lib/chatPreferences";
 
 export default function TabsLayout() {
+  const { lockedChatIds, mutedChatIds, deletedChatIds } = useChatPreferences();
   const { data: convData } = useListConversations({
     query: {
       refetchInterval: 15_000,
@@ -14,7 +16,16 @@ export default function TabsLayout() {
     },
   });
   const conversations = (convData ?? []) as Conversation[];
-  const unreadChatCount = conversations.reduce((acc, c) => acc + (c.unreadCount || 0), 0);
+  const unreadChatCount = conversations.reduce((acc, c) => {
+    if (
+      lockedChatIds.includes(c.id) ||
+      mutedChatIds.includes(c.id) ||
+      deletedChatIds.includes(c.id)
+    ) {
+      return acc;
+    }
+    return acc + (c.unreadCount || 0);
+  }, 0);
 
   return (
     <Tabs

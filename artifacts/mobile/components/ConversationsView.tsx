@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  DeviceEventEmitter,
   FlatList,
   Modal,
   Pressable,
@@ -43,6 +44,8 @@ function otherMember(conv: Conversation, myId?: string): Profile | undefined {
   return others[0]?.user;
 }
 
+type PinModalMode = "enter" | "verify_old" | "remove_pin" | "set_new" | "confirm_new";
+
 interface ConversationsViewProps {
   isTab?: boolean;
 }
@@ -63,6 +66,7 @@ export function ConversationsView({ isTab = false }: ConversationsViewProps) {
     chatLockPin,
     lockChat,
     unlockChat,
+    unlockAllChats,
     deleteChat,
     restoreChat,
     toggleMarkUnread,
@@ -88,7 +92,7 @@ export function ConversationsView({ isTab = false }: ConversationsViewProps) {
 
   // PIN modal state
   const [pinModalVisible, setPinModalVisible] = useState(false);
-  const [pinModalMode, setPinModalMode] = useState<"enter" | "set_new" | "confirm_new">("enter");
+  const [pinModalMode, setPinModalMode] = useState<PinModalMode>("enter");
   const [tempPin, setTempPin] = useState("");
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState<string | null>(null);
@@ -101,6 +105,18 @@ export function ConversationsView({ isTab = false }: ConversationsViewProps) {
     qc.invalidateQueries({ queryKey: getListConversationsQueryKey() });
     refetch();
   }, [qc, refetch]);
+
+  // Dismiss any open chat modals immediately when a direct call arrives
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener("himewo:incoming-call", () => {
+      setSettingsOpen(false);
+      setLockedChatsOpen(false);
+      setPinModalVisible(false);
+      setSelectedConv(null);
+      setNewOpen(false);
+    });
+    return () => sub.remove();
+  }, []);
 
   useEffect(() => {
     const unsub = subscribe((event) => {
@@ -169,7 +185,7 @@ export function ConversationsView({ isTab = false }: ConversationsViewProps) {
   }, [pinRevealed, lockedConversations, normalConversations, searchQuery, user?.id]);
 
   // Start PIN flow
-  const requirePin = (mode: "enter" | "set_new", onSuccess: () => void) => {
+  const requirePin = (mode: PinModalMode, onSuccess: () => void) => {
     setPinModalMode(mode);
     setPinInput("");
     setTempPin("");
@@ -194,8 +210,9 @@ export function ConversationsView({ isTab = false }: ConversationsViewProps) {
   const handlePinSubmit = async (entered: string) => {
     if (entered.length !== 4) return;
 
-    if (pinModalMode === "enter") {
+    if (pinModalMode === "enter" || pinModalMode === "remove_pin") {
       if (verifyPin(entered)) {
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setPinModalVisible(false);
         setPinInput("");
         setPinError(null);
@@ -204,10 +221,23 @@ export function ConversationsView({ isTab = false }: ConversationsViewProps) {
           setOnPinSuccessCallback(null);
         }
       } else {
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         setPinError("Incorrect PIN. Please try again.");
         setPinInput("");
       }
+    } else if (pinModalMode === "verify_old") {
+      if (verifyPin(entered)) {
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setPinInput("");
+        setPinError(null);
+        setPinModalMode("set_new");
+      } else {
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        setPinError("Incorrect current PIN. Please try again.");
+        setPinInput("");
+      }
     } else if (pinModalMode === "set_new") {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setTempPin(entered);
       setPinInput("");
       setPinError(null);
@@ -215,17 +245,19 @@ export function ConversationsView({ isTab = false }: ConversationsViewProps) {
     } else if (pinModalMode === "confirm_new") {
       if (entered === tempPin) {
         await setChatLockPin(entered);
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setPinModalVisible(false);
         setPinInput("");
         setTempPin("");
         setPinError(null);
-        Alert.alert("Success", "Chat lock PIN has been saved.");
+        Alert.alert("Success", "Your 4-digit Chat Lock PIN has been saved.");
         if (onPinSuccessCallback) {
           onPinSuccessCallback();
           setOnPinSuccessCallback(null);
         }
       } else {
-        setPinError("PINs do not match. Please start over.");
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        setPinError("PINs do not match. Please enter your new PIN again.");
         setPinInput("");
         setTempPin("");
         setPinModalMode("set_new");
@@ -435,16 +467,36 @@ export function ConversationsView({ isTab = false }: ConversationsViewProps) {
         lockedChatCount={lockedChatIds.length}
         onToggleActive={setActiveStatus}
         onToggleReceipts={setReadReceipts}
-        onToggleHideLocked={setHideLockedChats}
+        onToggleHideLocked={(val) => {
+          if (!val && chatLockPin) {
+            setSettingsOpen(false);
+            requirePin("enter", () => {
+              void setHideLockedChats(false);
+            });
+            return;
+          }
+          void setHideLockedChats(val);
+        }}
         onManagePin={() => {
           setSettingsOpen(false);
-          requirePin("set_new", () => {});
-        }}
-        onRemovePin={async () => {
           if (chatLockPin) {
-            requirePin("enter", async () => {
+            requirePin("verify_old", () => {});
+          } else {
+            requirePin("set_new", () => {});
+          }
+        }}
+        onRemovePin={() => {
+          if (chatLockPin) {
+            setSettingsOpen(false);
+            requirePin("remove_pin", async () => {
               await setChatLockPin(null);
-              Alert.alert("Success", "Chat lock PIN has been removed.");
+              await setHideLockedChats(false);
+              await unlockAllChats();
+              setPinRevealed(false);
+              Alert.alert(
+                "PIN Protection Removed",
+                "Chat lock PIN has been removed and locked chats have been unlocked.",
+              );
             });
           }
         }}
@@ -946,7 +998,14 @@ function ChatSettingsModal({
               <>
                 <View style={[styles.divider, { backgroundColor: c.border }]} />
                 <Pressable style={styles.settingRow} onPress={onRemovePin}>
-                  <Text style={[styles.settingLabel, { color: "#ef4444" }]}>Remove PIN</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.settingLabel, { color: "#ef4444" }]}>
+                      Remove PIN Protection
+                    </Text>
+                    <Text style={{ color: c.mutedForeground, fontSize: 12, marginTop: 2 }}>
+                      Requires current PIN verification
+                    </Text>
+                  </View>
                   <Ionicons name="trash-outline" size={18} color="#ef4444" />
                 </Pressable>
               </>
@@ -1017,7 +1076,7 @@ function PinEntryModal({
   onClose,
 }: {
   visible: boolean;
-  mode: "enter" | "set_new" | "confirm_new";
+  mode: PinModalMode;
   input: string;
   error: string | null;
   onChange: (val: string) => void;
@@ -1028,16 +1087,45 @@ function PinEntryModal({
   const title =
     mode === "enter"
       ? "Enter Chat PIN"
-      : mode === "set_new"
-        ? "Create 4-digit PIN"
-        : "Confirm 4-digit PIN";
+      : mode === "verify_old"
+        ? "Enter Current PIN"
+        : mode === "remove_pin"
+          ? "Remove PIN Protection"
+          : mode === "set_new"
+            ? "Create New 4-Digit PIN"
+            : "Confirm New 4-Digit PIN";
 
   const subtitle =
     mode === "enter"
       ? "Enter your 4-digit PIN to access locked chats"
-      : mode === "set_new"
-        ? "Choose a 4-digit PIN for locking private conversations"
-        : "Re-enter your 4-digit PIN to confirm";
+      : mode === "verify_old"
+        ? "Enter your current 4-digit PIN before setting a new PIN"
+        : mode === "remove_pin"
+          ? "Enter your current 4-digit PIN to remove PIN protection"
+          : mode === "set_new"
+            ? "Choose a new 4-digit PIN for locking private conversations"
+            : "Re-enter your new 4-digit PIN to confirm";
+
+  const handleDigitPress = (digit: string) => {
+    if (input.length < 4) {
+      void Haptics.selectionAsync();
+      onChange(input + digit);
+    }
+  };
+
+  const handleBackspace = () => {
+    if (input.length > 0) {
+      void Haptics.selectionAsync();
+      onChange(input.slice(0, -1));
+    }
+  };
+
+  const handleClear = () => {
+    if (input.length > 0) {
+      void Haptics.selectionAsync();
+      onChange("");
+    }
+  };
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -1047,8 +1135,20 @@ function PinEntryModal({
             <Ionicons name="close" size={22} color={c.mutedForeground} />
           </Pressable>
 
-          <View style={[styles.pinIconWrap, { backgroundColor: c.primary + "18" }]}>
-            <Ionicons name="lock-closed" size={28} color={c.primary} />
+          <View
+            style={[
+              styles.pinIconWrap,
+              {
+                backgroundColor:
+                  mode === "remove_pin" ? "rgba(239, 68, 68, 0.14)" : c.primary + "18",
+              },
+            ]}
+          >
+            <Ionicons
+              name={mode === "remove_pin" ? "trash-outline" : "lock-closed"}
+              size={26}
+              color={mode === "remove_pin" ? "#ef4444" : c.primary}
+            />
           </View>
 
           <Text style={[styles.pinTitle, { color: c.foreground }]}>{title}</Text>
@@ -1075,17 +1175,69 @@ function PinEntryModal({
 
           {error ? <Text style={styles.pinErrorText}>{error}</Text> : null}
 
-          {/* Hidden/Active Numeric Input */}
-          <TextInput
-            value={input}
-            onChangeText={onChange}
-            keyboardType="number-pad"
-            maxLength={4}
-            secureTextEntry
-            autoFocus
-            caretHidden
-            style={styles.hiddenPinInput}
-          />
+          {/* On-Screen Numeric Keypad */}
+          <View style={styles.keypadGrid}>
+            {[
+              ["1", "2", "3"],
+              ["4", "5", "6"],
+              ["7", "8", "9"],
+            ].map((row, rIdx) => (
+              <View key={rIdx} style={styles.keypadRow}>
+                {row.map((num) => (
+                  <Pressable
+                    key={num}
+                    onPress={() => handleDigitPress(num)}
+                    style={({ pressed }) => [
+                      styles.keypadBtn,
+                      {
+                        backgroundColor: pressed ? c.primary + "22" : c.secondary,
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.keypadDigit, { color: c.foreground }]}>{num}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            ))}
+
+            <View style={styles.keypadRow}>
+              <Pressable
+                onPress={handleClear}
+                style={({ pressed }) => [
+                  styles.keypadBtn,
+                  {
+                    backgroundColor: pressed ? c.secondary : "transparent",
+                  },
+                ]}
+              >
+                <Text style={[styles.keypadAuxText, { color: c.mutedForeground }]}>Clear</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => handleDigitPress("0")}
+                style={({ pressed }) => [
+                  styles.keypadBtn,
+                  {
+                    backgroundColor: pressed ? c.primary + "22" : c.secondary,
+                  },
+                ]}
+              >
+                <Text style={[styles.keypadDigit, { color: c.foreground }]}>0</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={handleBackspace}
+                style={({ pressed }) => [
+                  styles.keypadBtn,
+                  {
+                    backgroundColor: pressed ? c.secondary : "transparent",
+                  },
+                ]}
+              >
+                <Ionicons name="backspace-outline" size={22} color={c.foreground} />
+              </Pressable>
+            </View>
+          </View>
         </View>
       </View>
     </Modal>
@@ -1468,7 +1620,7 @@ const styles = StyleSheet.create({
   dotsRow: {
     flexDirection: "row",
     gap: 16,
-    marginVertical: 24,
+    marginVertical: 20,
   },
   pinDot: {
     width: 18,
@@ -1480,14 +1632,34 @@ const styles = StyleSheet.create({
     color: "#ef4444",
     fontSize: 13,
     fontFamily: "Inter_500Medium",
-    marginBottom: 10,
+    marginBottom: 12,
     textAlign: "center",
   },
-  hiddenPinInput: {
-    position: "absolute",
-    width: 1,
-    height: 1,
-    opacity: 0.01,
+  keypadGrid: {
+    width: "100%",
+    maxWidth: 260,
+    gap: 10,
+    marginTop: 4,
+  },
+  keypadRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  keypadBtn: {
+    flex: 1,
+    height: 52,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  keypadDigit: {
+    fontSize: 20,
+    fontFamily: "Inter_700Bold",
+  },
+  keypadAuxText: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
   },
   searchBox: {
     flexDirection: "row",

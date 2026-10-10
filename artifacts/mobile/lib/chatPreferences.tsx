@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { updateConversationPrefs } from "@workspace/api-client-react";
 
 const ACTIVE_STATUS_KEY = "himewo_chat_active_status";
 const READ_RECEIPTS_KEY = "himewo_chat_read_receipts";
@@ -33,6 +34,8 @@ interface ChatPreferencesValue {
   setChatLockPin: (pin: string | null) => Promise<void>;
   lockChat: (convId: number) => Promise<void>;
   unlockChat: (convId: number) => Promise<void>;
+  unlockAllChats: () => Promise<void>;
+  isLocked: (convId: number) => boolean;
   deleteChat: (convId: number) => Promise<void>;
   restoreChat: (convId: number) => Promise<void>;
   isDeleted: (convId: number) => boolean;
@@ -86,9 +89,11 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
         if (storedReceipts != null) setReadReceiptsState(storedReceipts !== "false");
         if (storedPin != null) setChatLockPinState(storedPin);
         if (storedHideLocked != null) setHideLockedChatsState(storedHideLocked === "true");
+        let parsedLocked: number[] = [];
         if (storedLocked) {
           try {
-            setLockedChatIds(JSON.parse(storedLocked));
+            parsedLocked = JSON.parse(storedLocked);
+            setLockedChatIds(parsedLocked);
           } catch {}
         }
         if (storedDeleted) {
@@ -101,10 +106,17 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
             setCustomUnreadChatIds(JSON.parse(storedUnread));
           } catch {}
         }
+        let parsedMuted: number[] = [];
         if (storedMuted) {
           try {
-            setMutedChatIds(JSON.parse(storedMuted));
+            parsedMuted = JSON.parse(storedMuted);
+            setMutedChatIds(parsedMuted);
           } catch {}
+        }
+        // Ensure all locked & muted conversations have notifications silenced on the server
+        const toSilence = Array.from(new Set([...parsedLocked, ...parsedMuted]));
+        for (const cid of toSilence) {
+          updateConversationPrefs(cid, { isMuted: true }).catch(() => {});
         }
       } finally {
         if (mounted) setReady(true);
@@ -153,6 +165,8 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
       void AsyncStorage.setItem(LOCKED_CHATS_KEY, JSON.stringify(next));
       return next;
     });
+    // Silence server-side message notifications while chat is locked
+    updateConversationPrefs(convId, { isMuted: true }).catch(() => {});
   };
 
   const unlockChat = async (convId: number) => {
@@ -161,7 +175,23 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
       void AsyncStorage.setItem(LOCKED_CHATS_KEY, JSON.stringify(next));
       return next;
     });
+    if (!mutedChatIds.includes(convId)) {
+      updateConversationPrefs(convId, { isMuted: false }).catch(() => {});
+    }
   };
+
+  const unlockAllChats = async () => {
+    const currentLocked = [...lockedChatIds];
+    setLockedChatIds([]);
+    await AsyncStorage.setItem(LOCKED_CHATS_KEY, JSON.stringify([]));
+    for (const cid of currentLocked) {
+      if (!mutedChatIds.includes(cid)) {
+        updateConversationPrefs(cid, { isMuted: false }).catch(() => {});
+      }
+    }
+  };
+
+  const isLocked = (convId: number) => lockedChatIds.includes(convId);
 
   const deleteChat = async (convId: number) => {
     // 1. Never keep in locked chats when deleted
@@ -210,10 +240,13 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
 
   const toggleMuteChat = async (convId: number) => {
     setMutedChatIds((prev) => {
-      const next = prev.includes(convId)
-        ? prev.filter((id) => id !== convId)
-        : [...prev, convId];
+      const willMute = !prev.includes(convId);
+      const next = willMute
+        ? [...prev, convId]
+        : prev.filter((id) => id !== convId);
       void AsyncStorage.setItem(MUTED_CHATS_KEY, JSON.stringify(next));
+      const effectiveMuted = willMute || lockedChatIds.includes(convId);
+      updateConversationPrefs(convId, { isMuted: effectiveMuted }).catch(() => {});
       return next;
     });
   };
@@ -241,6 +274,8 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
       setChatLockPin,
       lockChat,
       unlockChat,
+      unlockAllChats,
+      isLocked,
       deleteChat,
       restoreChat,
       isDeleted,

@@ -60,6 +60,7 @@ import { MobileNav, MobileMenuButton } from "./mobile-nav";
 import { PixelCatIcon } from "@/components/logo";
 import { useCreateActions } from "@/components/create-action-sheet";
 import { CreatePostDialog } from "@/components/create-post-dialog";
+import { useChatPreferences } from "@/lib/chat-preferences";
 
 function ThemeToggle() {
   const [isDark, setIsDark] = useState(() =>
@@ -323,7 +324,17 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
   const [location, navigate] = useLocation();
   const { data: unreadCount } = useGetUnreadNotificationCount();
   const { data: convData } = useListConversations();
-  const unreadChatCount = (convData ?? []).reduce((acc, c) => acc + (c.unreadCount || 0), 0);
+  const { lockedChatIds, mutedChatIds, deletedChatIds } = useChatPreferences();
+  const unreadChatCount = (convData ?? []).reduce((acc, c) => {
+    if (
+      lockedChatIds.includes(c.id) ||
+      mutedChatIds.includes(c.id) ||
+      deletedChatIds.includes(c.id)
+    ) {
+      return acc;
+    }
+    return acc + (c.unreadCount || 0);
+  }, 0);
   const { data: earnings } = useGetEarningsSummary();
   const [searchQuery, setSearchQuery] = useState("");
 

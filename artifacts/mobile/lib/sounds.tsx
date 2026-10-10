@@ -9,6 +9,7 @@ import {
 import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from "expo-audio";
 import { useRealtime, type RealtimeEvent } from "./realtime";
 import { useAuth } from "./auth";
+import { useChatPreferences } from "./chatPreferences";
 
 export type SoundName =
   | "notification"
@@ -45,9 +46,14 @@ function senderOf(msg: unknown): string | undefined {
 export function SoundProvider({ children }: { children: ReactNode }) {
   const { subscribe } = useRealtime();
   const { user } = useAuth();
+  const { lockedChatIds, mutedChatIds } = useChatPreferences();
   const playersRef = useRef<Partial<Record<SoundName, AudioPlayer>>>({});
   const userIdRef = useRef<string | undefined>(user?.id);
   userIdRef.current = user?.id;
+  const lockedRef = useRef<number[]>(lockedChatIds);
+  lockedRef.current = lockedChatIds;
+  const mutedRef = useRef<number[]>(mutedChatIds);
+  mutedRef.current = mutedChatIds;
   const ringTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Preload all players once.
@@ -112,13 +118,18 @@ export function SoundProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Global incoming-event sounds: new message (from others), notifications,
-  // and an incoming-call ringtone.
+  // Global incoming-event sounds: new message (from others, unless chat is locked/muted),
+  // notifications, and an incoming-call ringtone (always rings, even for locked chats).
   useEffect(() => {
     const unsub = subscribe((event: RealtimeEvent) => {
       if (event.type === "message") {
         const sender = senderOf((event as { message?: unknown }).message);
         if (sender && userIdRef.current && sender === userIdRef.current) return;
+        const convId = Number((event as { conversationId?: number }).conversationId);
+        // Never play message notification sound if the chat is locked or muted
+        if (convId && (lockedRef.current.includes(convId) || mutedRef.current.includes(convId))) {
+          return;
+        }
         play("message");
       } else if (event.type === "notification") {
         play("notification");

@@ -130,16 +130,16 @@ function App() {
       <AuthProvider>
         <RealtimeProvider>
           <ActingPageProvider>
-            <CallProvider>
-              <ChatPreferencesProvider>
+            <ChatPreferencesProvider>
+              <CallProvider>
                 <TooltipProvider>
                   <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
                     <AppRoutes />
                   </WouterRouter>
                   <Toaster />
                 </TooltipProvider>
-              </ChatPreferencesProvider>
-            </CallProvider>
+              </CallProvider>
+            </ChatPreferencesProvider>
           </ActingPageProvider>
         </RealtimeProvider>
       </AuthProvider>

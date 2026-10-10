@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { updateConversationPrefs } from "@workspace/api-client-react";
 
 const ACTIVE_STATUS_KEY = "himewo_chat_active_status";
 const READ_RECEIPTS_KEY = "himewo_chat_read_receipts";
@@ -31,6 +32,8 @@ interface ChatPreferencesValue {
   setChatLockPin: (pin: string | null) => void;
   lockChat: (convId: number) => void;
   unlockChat: (convId: number) => void;
+  unlockAllChats: () => void;
+  isLocked: (convId: number) => boolean;
   deleteChat: (convId: number) => void;
   restoreChat: (convId: number) => void;
   isDeleted: (convId: number) => boolean;
@@ -122,6 +125,14 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
     }
   });
 
+  useEffect(() => {
+    const toSilence = Array.from(new Set([...lockedChatIds, ...mutedChatIds]));
+    for (const cid of toSilence) {
+      updateConversationPrefs(cid, { isMuted: true }).catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const setActiveStatus = (val: boolean) => {
     setActiveStatusState(val);
     try {
@@ -164,6 +175,7 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
       } catch {}
       return next;
     });
+    updateConversationPrefs(convId, { isMuted: true }).catch(() => {});
   };
 
   const unlockChat = (convId: number) => {
@@ -174,7 +186,25 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
       } catch {}
       return next;
     });
+    if (!mutedChatIds.includes(convId)) {
+      updateConversationPrefs(convId, { isMuted: false }).catch(() => {});
+    }
   };
+
+  const unlockAllChats = () => {
+    const currentLocked = [...lockedChatIds];
+    setLockedChatIds([]);
+    try {
+      localStorage.setItem(LOCKED_CHATS_KEY, JSON.stringify([]));
+    } catch {}
+    for (const cid of currentLocked) {
+      if (!mutedChatIds.includes(cid)) {
+        updateConversationPrefs(cid, { isMuted: false }).catch(() => {});
+      }
+    }
+  };
+
+  const isLocked = (convId: number) => lockedChatIds.includes(convId);
 
   const deleteChat = (convId: number) => {
     // 1. Remove from lockedChatIds so it never enters locked chats
@@ -233,12 +263,15 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
 
   const toggleMuteChat = (convId: number) => {
     setMutedChatIds((prev) => {
-      const next = prev.includes(convId)
-        ? prev.filter((id) => id !== convId)
-        : [...prev, convId];
+      const willMute = !prev.includes(convId);
+      const next = willMute
+        ? [...prev, convId]
+        : prev.filter((id) => id !== convId);
       try {
         localStorage.setItem(MUTED_CHATS_KEY, JSON.stringify(next));
       } catch {}
+      const effectiveMuted = willMute || lockedChatIds.includes(convId);
+      updateConversationPrefs(convId, { isMuted: effectiveMuted }).catch(() => {});
       return next;
     });
   };
@@ -265,6 +298,8 @@ export function ChatPreferencesProvider({ children }: { children: ReactNode }) {
       setChatLockPin,
       lockChat,
       unlockChat,
+      unlockAllChats,
+      isLocked,
       deleteChat,
       restoreChat,
       isDeleted,
