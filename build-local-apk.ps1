@@ -137,7 +137,7 @@ function Build-TargetApp([string]$target) {
         if ($_ -match "^GITHUB_TOKEN=(.*)$") { $env:GITHUB_TOKEN = $matches[1].Trim() }
       }
     }
-    node scripts/update-landing-apk.mjs "v1.2.2"
+    node scripts/update-landing-apk.mjs "v1.2.3"
   }
 }
 

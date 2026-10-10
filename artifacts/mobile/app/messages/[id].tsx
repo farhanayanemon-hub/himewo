@@ -4,8 +4,10 @@ import {
   Alert,
   FlatList,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
+  Switch,
   Text,
   TextInput,
   View,
@@ -22,6 +24,8 @@ import {
   useListMessages,
   useSendMessage,
   useMarkConversationRead,
+  useClearConversation,
+  useBlockUser,
   getListMessagesQueryKey,
   getListConversationsQueryKey,
   MessageInputType,
@@ -53,7 +57,15 @@ export default function ChatThreadScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const convId = Number(id);
   const insets = useSafeAreaInsets();
-  const { readReceipts } = useChatPreferences();
+  const {
+    readReceipts,
+    isMuted,
+    toggleMuteChat,
+    lockedChatIds,
+    lockChat,
+    unlockChat,
+    deleteChat,
+  } = useChatPreferences();
   const { isOnline, subscribe, sendTyping, sendSeen } = useRealtime();
   const { startCall } = useCall();
 
@@ -77,9 +89,12 @@ export default function ChatThreadScreen() {
 
   const sendMessage = useSendMessage();
   const markRead = useMarkConversationRead();
+  const clearConversation = useClearConversation();
+  const blockUser = useBlockUser();
 
   const [text, setText] = useState("");
   const [emojiOpen, setEmojiOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [peerTyping, setPeerTyping] = useState(false);
 
@@ -255,24 +270,33 @@ export default function ChatThreadScreen() {
             </Text>
           </View>
         </Pressable>
-        {!isGroup && peer && (
-          <View style={{ flexDirection: "row", gap: 6 }}>
-            <Pressable
-              style={styles.callBtn}
-              onPress={() => startCall(peer.id, false)}
-              hitSlop={6}
-            >
-              <Ionicons name="call" size={22} color={c.primary} />
-            </Pressable>
-            <Pressable
-              style={styles.callBtn}
-              onPress={() => startCall(peer.id, true)}
-              hitSlop={6}
-            >
-              <Ionicons name="videocam" size={24} color={c.primary} />
-            </Pressable>
-          </View>
-        )}
+        <View style={{ flexDirection: "row", gap: 4 }}>
+          {!isGroup && peer && (
+            <>
+              <Pressable
+                style={styles.callBtn}
+                onPress={() => startCall(peer.id, false)}
+                hitSlop={6}
+              >
+                <Ionicons name="call" size={22} color={c.primary} />
+              </Pressable>
+              <Pressable
+                style={styles.callBtn}
+                onPress={() => startCall(peer.id, true)}
+                hitSlop={6}
+              >
+                <Ionicons name="videocam" size={24} color={c.primary} />
+              </Pressable>
+            </>
+          )}
+          <Pressable
+            style={styles.callBtn}
+            onPress={() => setInfoOpen(true)}
+            hitSlop={6}
+          >
+            <Ionicons name="information-circle-outline" size={24} color={c.primary} />
+          </Pressable>
+        </View>
       </View>
 
       <KeyboardAvoidingView
@@ -351,6 +375,252 @@ export default function ChatThreadScreen() {
         onClose={() => setEmojiOpen(false)}
         onSelect={(e) => setText((t) => t + e)}
       />
+
+      {/* Conversation Info Sheet ((i) button) */}
+      <Modal
+        visible={infoOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setInfoOpen(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}
+          onPress={() => setInfoOpen(false)}
+        >
+          <Pressable
+            onPress={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: c.card,
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+              paddingTop: 12,
+              paddingHorizontal: 20,
+              paddingBottom: Math.max(insets.bottom, 24),
+            }}
+          >
+            <View
+              style={{
+                width: 40,
+                height: 4,
+                borderRadius: 2,
+                backgroundColor: c.border,
+                alignSelf: "center",
+                marginBottom: 16,
+              }}
+            />
+            <View style={{ alignItems: "center", paddingBottom: 18, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }}>
+              <Avatar uri={headerAvatar} name={headerName} size={76} online={online} />
+              <Text style={{ fontFamily: "Inter_700Bold", fontSize: 19, color: c.foreground, marginTop: 10 }}>
+                {headerName}
+              </Text>
+              {peer?.username && (
+                <Text style={{ color: c.mutedForeground, fontSize: 13, marginTop: 2 }}>
+                  @{peer.username}
+                </Text>
+              )}
+              <View style={{ flexDirection: "row", gap: 14, marginTop: 16 }}>
+                {!isGroup && peer && (
+                  <>
+                    <Pressable
+                      onPress={() => {
+                        setInfoOpen(false);
+                        router.push(`/profile/${peer.id}`);
+                      }}
+                      style={{
+                        alignItems: "center",
+                        paddingVertical: 10,
+                        paddingHorizontal: 18,
+                        borderRadius: 16,
+                        backgroundColor: c.secondary,
+                        gap: 4,
+                      }}
+                    >
+                      <Ionicons name="person-outline" size={20} color={c.primary} />
+                      <Text style={{ fontSize: 12, fontFamily: "Inter_600SemiBold", color: c.foreground }}>Profile</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => {
+                        setInfoOpen(false);
+                        startCall(peer.id, false);
+                      }}
+                      style={{
+                        alignItems: "center",
+                        paddingVertical: 10,
+                        paddingHorizontal: 18,
+                        borderRadius: 16,
+                        backgroundColor: c.secondary,
+                        gap: 4,
+                      }}
+                    >
+                      <Ionicons name="call-outline" size={20} color={c.primary} />
+                      <Text style={{ fontSize: 12, fontFamily: "Inter_600SemiBold", color: c.foreground }}>Audio</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => {
+                        setInfoOpen(false);
+                        startCall(peer.id, true);
+                      }}
+                      style={{
+                        alignItems: "center",
+                        paddingVertical: 10,
+                        paddingHorizontal: 18,
+                        borderRadius: 16,
+                        backgroundColor: c.secondary,
+                        gap: 4,
+                      }}
+                    >
+                      <Ionicons name="videocam-outline" size={20} color={c.primary} />
+                      <Text style={{ fontSize: 12, fontFamily: "Inter_600SemiBold", color: c.foreground }}>Video</Text>
+                    </Pressable>
+                  </>
+                )}
+              </View>
+            </View>
+
+            <View style={{ marginTop: 14, gap: 8 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  paddingVertical: 12,
+                  paddingHorizontal: 14,
+                  borderRadius: 16,
+                  backgroundColor: c.secondary,
+                }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                  <Ionicons
+                    name={isMuted(convId) ? "volume-mute-outline" : "volume-high-outline"}
+                    size={22}
+                    color={c.primary}
+                  />
+                  <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 15, color: c.foreground }}>
+                    Mute Notifications
+                  </Text>
+                </View>
+                <Switch
+                  value={isMuted(convId)}
+                  onValueChange={() => toggleMuteChat(convId)}
+                  trackColor={{ false: c.border, true: c.primary }}
+                />
+              </View>
+
+              <Pressable
+                onPress={() => {
+                  if (lockedChatIds.includes(convId)) {
+                    unlockChat(convId);
+                  } else {
+                    lockChat(convId);
+                  }
+                }}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  paddingVertical: 14,
+                  paddingHorizontal: 14,
+                  borderRadius: 16,
+                  backgroundColor: c.secondary,
+                }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                  <Ionicons
+                    name={lockedChatIds.includes(convId) ? "lock-open-outline" : "lock-closed-outline"}
+                    size={22}
+                    color={c.primary}
+                  />
+                  <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 15, color: c.foreground }}>
+                    {lockedChatIds.includes(convId) ? "Unlock Chat" : "Lock Chat"}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
+              </Pressable>
+
+              <Pressable
+                onPress={() => {
+                  Alert.alert("Delete Chat", "Are you sure you want to delete this conversation?", [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Delete",
+                      style: "destructive",
+                      onPress: () => {
+                        setInfoOpen(false);
+                        deleteChat(convId);
+                        clearConversation.mutate(
+                          { id: convId },
+                          {
+                            onSettled: () => {
+                              qc.invalidateQueries({ queryKey: getListConversationsQueryKey() });
+                              router.back();
+                            },
+                          },
+                        );
+                      },
+                    },
+                  ]);
+                }}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 12,
+                  paddingVertical: 14,
+                  paddingHorizontal: 14,
+                  borderRadius: 16,
+                  backgroundColor: c.secondary,
+                }}
+              >
+                <Ionicons name="trash-outline" size={22} color={c.destructive} />
+                <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 15, color: c.destructive }}>
+                  Delete Conversation
+                </Text>
+              </Pressable>
+
+              {!isGroup && peer && (
+                <Pressable
+                  onPress={() => {
+                    Alert.alert(`Block ${peer.displayName}?`, "They won't be able to message or call you.", [
+                      { text: "Cancel", style: "cancel" },
+                      {
+                        text: "Block",
+                        style: "destructive",
+                        onPress: () => {
+                          setInfoOpen(false);
+                          blockUser.mutate({ id: peer.id });
+                          deleteChat(convId);
+                          clearConversation.mutate(
+                            { id: convId },
+                            {
+                              onSettled: () => {
+                                qc.invalidateQueries({ queryKey: getListConversationsQueryKey() });
+                                router.back();
+                              },
+                            },
+                          );
+                        },
+                      },
+                    ]);
+                  }}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 12,
+                    paddingVertical: 14,
+                    paddingHorizontal: 14,
+                    borderRadius: 16,
+                    backgroundColor: c.secondary,
+                  }}
+                >
+                  <Ionicons name="ban-outline" size={22} color={c.destructive} />
+                  <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 15, color: c.destructive }}>
+                    Block {peer.displayName}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }

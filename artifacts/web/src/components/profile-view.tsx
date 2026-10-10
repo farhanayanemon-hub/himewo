@@ -799,7 +799,7 @@ export function ProfileView({
   return (
     <>
       {/* Cover + header */}
-      <div className="aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-border/70 overflow-hidden mb-3 sm:mb-4">
+      <div className="aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-border/70 overflow-hidden mb-3 sm:mb-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <PhotoActionMenu
           photoUrl={profile.coverUrl}
           kind="cover"
@@ -808,18 +808,18 @@ export function ProfileView({
           onPickFile={coverEditor.onPickFile}
           onDelete={() => handleDeletePhoto("cover")}
         >
-          <div className="h-48 md:h-64 lg:h-72 bg-muted relative">
+          <div className="h-48 md:h-64 lg:h-72 bg-muted relative overflow-hidden">
             {profile.coverUrl ? (
-              <img src={profile.coverUrl} className="w-full h-full object-cover" alt="Cover" />
+              <img src={profile.coverUrl} className="w-full h-full object-cover animate-in zoom-in-105 duration-700" alt="Cover" />
             ) : (
-              <div className="w-full h-full bg-gradient-to-r from-purple-600/30 via-indigo-500/30 to-pink-500/30" />
+              <div className="w-full h-full bg-gradient-to-r from-purple-600/30 via-indigo-500/30 to-pink-500/30 animate-in fade-in duration-700" />
             )}
           </div>
         </PhotoActionMenu>
         <div className="px-6 pb-6 pt-2 relative">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div className="flex flex-col sm:flex-row sm:items-end gap-5">
-              <div className="-mt-16 sm:-mt-20 relative z-10 w-32 sm:w-36 shrink-0 mx-auto sm:mx-0">
+              <div className="-mt-16 sm:-mt-20 relative z-10 w-32 sm:w-36 shrink-0 mx-auto sm:mx-0 animate-in zoom-in-75 duration-300">
                 <PhotoActionMenu
                   photoUrl={profile.avatarUrl}
                   kind="avatar"
@@ -830,12 +830,12 @@ export function ProfileView({
                 >
                   <img
                     src={avatarSrc(profile.avatarUrl)}
-                    className="w-32 h-32 sm:w-36 sm:h-36 rounded-full border-4 border-card object-cover bg-muted shadow-md"
+                    className="w-32 h-32 sm:w-36 sm:h-36 rounded-full border-4 border-card object-cover bg-muted shadow-md hover:scale-105 transition-transform duration-300"
                     alt="Avatar"
                   />
                 </PhotoActionMenu>
               </div>
-              <div className="text-center sm:text-left pt-1 sm:pt-0 sm:pb-1">
+              <div className="text-center sm:text-left pt-1 sm:pt-0 sm:pb-1 animate-in fade-in slide-in-from-bottom-2 duration-500">
                 <h1 className="text-2xl sm:text-3xl font-bold flex items-center justify-center sm:justify-start gap-2">
                   <span className="text-foreground tracking-tight">{profile.displayName}</span>
                   {profile.isVerified && <VerifiedBadge className="w-6 h-6" />}

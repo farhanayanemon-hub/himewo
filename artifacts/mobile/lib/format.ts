@@ -44,3 +44,13 @@ export function lastActiveLabel(iso?: string | null): string {
   if (diff < 86400_000) return `Active ${Math.floor(diff / 3600_000)}h ago`;
   return `Active ${Math.floor(diff / 86400_000)}d ago`;
 }
+
+const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+export function formatChatDate(iso?: string | null): string {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  return `${date.getDate()} ${SHORT_MONTHS[date.getMonth()]}`;
+}
+

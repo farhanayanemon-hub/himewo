@@ -315,6 +315,7 @@ export function PostComments({
   const { data: comments, isLoading: commentsLoading } = useListComments(postId, {}, { query: { enabled: !!postId, queryKey: getListCommentsQueryKey(postId) } });
 
   const createComment = useCreateComment();
+  const { user } = useAuth();
   const { actingPage } = useActingPage();
   const queryClient = useQueryClient();
   const [content, setContent] = useState("");
@@ -337,8 +338,17 @@ export function PostComments({
         repliesByParent.set(c.parentId, list);
       }
     }
+    topLevel.sort((a, b) => {
+      const aOwn = Boolean(user && a.author.id === user.id && !a.authorPage);
+      const bOwn = Boolean(user && b.author.id === user.id && !b.authorPage);
+      if (aOwn !== bOwn) return aOwn ? -1 : 1;
+      const aReact = a.reactionCount ?? 0;
+      const bReact = b.reactionCount ?? 0;
+      if (bReact !== aReact) return bReact - aReact;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
     return { topLevel, repliesByParent };
-  }, [comments]);
+  }, [comments, user]);
 
   const startReply = (target: ReplyTarget) => {
     setReplyTo(target);

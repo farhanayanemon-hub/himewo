@@ -61,8 +61,10 @@ import {
   KeyRound,
   Plus,
   ChevronRight,
+  User,
 } from "lucide-react";
 import { EmojiPickerButton } from "@/components/emoji-picker";
+import { formatChatDate } from "@/lib/format";
 
 function StoryEmbedInline({ story, isMe }: { story: StoryEmbed; isMe: boolean }) {
   return (
@@ -142,6 +144,7 @@ export default function MessagesPage() {
   const [showNewChat, setShowNewChat] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showLockedModal, setShowLockedModal] = useState(false);
+  const [showChatInfo, setShowChatInfo] = useState(false);
   const [searchFilter, setSearchFilter] = useState("");
   const [pinRevealed, setPinRevealed] = useState(false);
 
@@ -777,7 +780,7 @@ export default function MessagesPage() {
                             {muted && <VolumeX className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
                           </div>
                           <div className="text-[11px] text-muted-foreground whitespace-nowrap ml-2">
-                            {conv.lastMessageAt ? new Date(conv.lastMessageAt).toLocaleDateString() : ""}
+                            {formatChatDate(conv.lastMessageAt)}
                           </div>
                         </div>
                         <div className="text-sm truncate text-muted-foreground flex items-center gap-1">
@@ -909,24 +912,57 @@ export default function MessagesPage() {
                   <Link href="/messages" className="md:hidden -ml-2 p-1.5 rounded-full hover:bg-muted text-primary shrink-0">
                     <ArrowLeft className="w-6 h-6" />
                   </Link>
-                  <img 
-                    src={avatarSrc(activeConv?.avatarUrl || activeConv?.members.find(m => m.user.id !== user?.id)?.user.avatarUrl)} 
-                    className="w-10 h-10 rounded-full object-cover bg-muted" 
-                    alt="" 
-                  />
-                  <div>
-                    <div className="font-bold">{activeConv?.title || activeConv?.members.find(m => m.user.id !== user?.id)?.user.displayName}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {activeConv?.members.some(m => m.user.id !== user?.id && realtime.isOnline(m.user.id)) 
-                        ? "Active now" 
-                        : "Offline"}
+                  {otherMember?.username ? (
+                    <Link
+                      href={`/profile/${otherMember.username}`}
+                      className="flex items-center gap-3 group/header cursor-pointer"
+                    >
+                      <img 
+                        src={avatarSrc(activeConv?.avatarUrl || otherMember.avatarUrl)} 
+                        className="w-10 h-10 rounded-full object-cover bg-muted ring-2 ring-transparent group-hover/header:ring-primary/40 transition-all duration-200 group-hover/header:scale-105" 
+                        alt="" 
+                      />
+                      <div>
+                        <div className="font-bold group-hover/header:text-primary transition-colors">
+                          {activeConv?.title || otherMember.displayName}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {activeConv?.members.some(m => m.user.id !== user?.id && realtime.isOnline(m.user.id)) 
+                            ? "Active now" 
+                            : "Offline"}
+                        </div>
+                      </div>
+                    </Link>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <img 
+                        src={avatarSrc(activeConv?.avatarUrl || activeConv?.members.find(m => m.user.id !== user?.id)?.user.avatarUrl)} 
+                        className="w-10 h-10 rounded-full object-cover bg-muted" 
+                        alt="" 
+                      />
+                      <div>
+                        <div className="font-bold">{activeConv?.title || activeConv?.members.find(m => m.user.id !== user?.id)?.user.displayName}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {activeConv?.members.some(m => m.user.id !== user?.id && realtime.isOnline(m.user.id)) 
+                            ? "Active now" 
+                            : "Offline"}
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-1 text-primary">
                   <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10" onClick={() => handleStartCall(false)} disabled={!otherMember} title="Voice call"><Phone className="w-5 h-5" /></Button>
                   <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10" onClick={() => handleStartCall(true)} disabled={!otherMember} title="Video call"><Video className="w-5 h-5" /></Button>
-                  <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 text-muted-foreground"><Info className="w-5 h-5" /></Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`rounded-full hover:bg-primary/10 transition-colors ${showChatInfo ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-primary"}`}
+                    onClick={() => setShowChatInfo((v) => !v)}
+                    title="Conversation info"
+                  >
+                    <Info className="w-5 h-5" />
+                  </Button>
                 </div>
               </div>
 
@@ -1447,6 +1483,203 @@ export default function MessagesPage() {
                   );
                 })
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Conversation Info Drawer / Modal ((i) button) */}
+      {showChatInfo && activeConv && (
+        <div
+          className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={() => setShowChatInfo(false)}
+        >
+          <div
+            className="bg-card border-l border-border shadow-2xl w-full max-w-sm h-full flex flex-col animate-in slide-in-from-right duration-300 overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-border sticky top-0 bg-card/90 backdrop-blur-md z-10">
+              <div className="flex items-center gap-2">
+                <Info className="w-5 h-5 text-primary" />
+                <h3 className="font-bold text-lg">Conversation Info</h3>
+              </div>
+              <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setShowChatInfo(false)}>
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+
+            {/* Profile Hero */}
+            <div className="p-6 flex flex-col items-center text-center border-b border-border/60 bg-gradient-to-b from-primary/5 to-transparent">
+              <div className="relative mb-3">
+                <img
+                  src={avatarSrc(activeConv.avatarUrl || otherMember?.avatarUrl)}
+                  className="w-24 h-24 rounded-full object-cover bg-muted ring-4 ring-primary/15 shadow-lg"
+                  alt=""
+                />
+                {otherMember && realtime.isOnline(otherMember.id) && (
+                  <span className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-green-500 border-2 border-card" />
+                )}
+              </div>
+              <h4 className="font-bold text-xl text-foreground">
+                {activeConv.title || otherMember?.displayName || "Conversation"}
+              </h4>
+              {otherMember?.username && (
+                <p className="text-sm text-muted-foreground mt-0.5">@{otherMember.username}</p>
+              )}
+              <span
+                className={`mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+                  otherMember && realtime.isOnline(otherMember.id)
+                    ? "bg-green-500/15 text-green-600 dark:text-green-400"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    otherMember && realtime.isOnline(otherMember.id) ? "bg-green-500" : "bg-muted-foreground/50"
+                  }`}
+                />
+                {otherMember && realtime.isOnline(otherMember.id) ? "Active now" : "Offline"}
+              </span>
+
+              {/* Quick action pills */}
+              <div className="flex items-center justify-center gap-3 mt-5 w-full">
+                {otherMember?.username && (
+                  <Link
+                    href={`/profile/${otherMember.username}`}
+                    onClick={() => setShowChatInfo(false)}
+                    className="flex flex-col items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-muted/60 hover:bg-primary/10 hover:text-primary transition-all text-xs font-semibold"
+                  >
+                    <User className="w-5 h-5" />
+                    <span>Profile</span>
+                  </Link>
+                )}
+                {otherMember && (
+                  <>
+                    <button
+                      onClick={() => {
+                        setShowChatInfo(false);
+                        handleStartCall(false);
+                      }}
+                      className="flex flex-col items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-muted/60 hover:bg-primary/10 hover:text-primary transition-all text-xs font-semibold"
+                    >
+                      <Phone className="w-5 h-5" />
+                      <span>Audio</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowChatInfo(false);
+                        handleStartCall(true);
+                      }}
+                      className="flex flex-col items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-muted/60 hover:bg-primary/10 hover:text-primary transition-all text-xs font-semibold"
+                    >
+                      <Video className="w-5 h-5" />
+                      <span>Video</span>
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Settings & Controls */}
+            <div className="p-4 space-y-2 flex-1">
+              <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">
+                Chat Controls & Privacy
+              </h5>
+
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-colors">
+                <div className="flex items-center gap-3">
+                  {isMuted(activeConv.id) ? (
+                    <VolumeX className="w-5 h-5 text-muted-foreground" />
+                  ) : (
+                    <Volume2 className="w-5 h-5 text-primary" />
+                  )}
+                  <div>
+                    <div className="text-sm font-semibold">Mute Notifications</div>
+                    <div className="text-xs text-muted-foreground">
+                      {isMuted(activeConv.id) ? "Notifications are muted" : "Receive message alerts"}
+                    </div>
+                  </div>
+                </div>
+                <Switch
+                  checked={isMuted(activeConv.id)}
+                  onCheckedChange={() => toggleMuteChat(activeConv.id)}
+                />
+              </div>
+
+              <button
+                onClick={() => {
+                  setShowChatInfo(false);
+                  handleLockToggle(activeConv);
+                }}
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-colors text-left"
+              >
+                <div className="flex items-center gap-3">
+                  {lockedChatIds.includes(activeConv.id) ? (
+                    <Unlock className="w-5 h-5 text-primary" />
+                  ) : (
+                    <Lock className="w-5 h-5 text-primary" />
+                  )}
+                  <div>
+                    <div className="text-sm font-semibold">
+                      {lockedChatIds.includes(activeConv.id) ? "Unlock Chat" : "Lock Chat with PIN"}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {lockedChatIds.includes(activeConv.id)
+                        ? "Remove PIN protection from this chat"
+                        : "Hide and protect this chat with your 4-digit PIN"}
+                    </div>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              </button>
+
+              <div className="pt-3 border-t border-border/60 mt-3 space-y-1.5">
+                <button
+                  onClick={() => {
+                    if (!window.confirm("Are you sure you want to clear and delete this conversation?")) return;
+                    setShowChatInfo(false);
+                    deleteChat(activeConv.id);
+                    clearConversation.mutate(
+                      { id: activeConv.id },
+                      {
+                        onSettled: () => {
+                          queryClient.invalidateQueries({ queryKey: getListConversationsQueryKey() });
+                          navigate("/messages");
+                        },
+                      },
+                    );
+                  }}
+                  className="w-full flex items-center gap-3 p-3.5 rounded-2xl text-destructive hover:bg-destructive/10 transition-colors text-sm font-semibold"
+                >
+                  <Trash2 className="w-5 h-5" />
+                  <span>Delete Conversation</span>
+                </button>
+
+                {!isGroup && otherMember && (
+                  <button
+                    onClick={() => {
+                      if (!window.confirm(`Block ${otherMember.displayName}?`)) return;
+                      setShowChatInfo(false);
+                      blockUser.mutate({ id: otherMember.id });
+                      deleteChat(activeConv.id);
+                      clearConversation.mutate(
+                        { id: activeConv.id },
+                        {
+                          onSettled: () => {
+                            queryClient.invalidateQueries({ queryKey: getListConversationsQueryKey() });
+                            navigate("/messages");
+                          },
+                        },
+                      );
+                    }}
+                    className="w-full flex items-center gap-3 p-3.5 rounded-2xl text-destructive hover:bg-destructive/10 transition-colors text-sm font-semibold"
+                  >
+                    <Ban className="w-5 h-5" />
+                    <span>Block {otherMember.displayName}</span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Modal,
   Pressable,
@@ -18,6 +19,7 @@ import {
   ReactionType,
   useSetPostReaction,
   useRemovePostReaction,
+  useCreateComment,
   useSaveItem,
   useUnsaveItem,
   useUpdatePost,
@@ -25,6 +27,7 @@ import {
   getGetFeedQueryKey,
   getGetPostQueryKey,
   getGetUserPostsQueryKey,
+  getListCommentsQueryKey,
   getListSavedItemsQueryKey,
   useFollowUser,
   useUnfollowUser,
@@ -179,9 +182,13 @@ export const PostCard = React.memo(function PostCard({ post, onComment, onShare,
   const [boostOpen, setBoostOpen] = useState(false);
   const [reactionsSheetOpen, setReactionsSheetOpen] = useState(false);
   const [draft, setDraft] = useState(post.content);
+  const [quickCommentOpen, setQuickCommentOpen] = useState(false);
+  const [quickCommentText, setQuickCommentText] = useState("");
+  const [localAddedComments, setLocalAddedComments] = useState(0);
 
   const setReaction = useSetPostReaction();
   const removeReaction = useRemovePostReaction();
+  const createQuickComment = useCreateComment();
   const saveItem = useSaveItem();
   const unsaveItem = useUnsaveItem();
   const updatePost = useUpdatePost();
@@ -194,6 +201,30 @@ export const PostCard = React.memo(function PostCard({ post, onComment, onShare,
     qc.invalidateQueries({ queryKey: getGetFeedQueryKey() });
     qc.invalidateQueries({ queryKey: getGetPostQueryKey(post.id) });
     qc.invalidateQueries({ queryKey: getGetUserPostsQueryKey(post.author.id) });
+  };
+
+  const submitQuickComment = () => {
+    const content = quickCommentText.trim();
+    if (!content || createQuickComment.isPending) return;
+    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+    createQuickComment.mutate(
+      {
+        id: post.id,
+        data: {
+          content,
+          ...(actingPage ? { pageId: actingPage.id } : {}),
+        },
+      },
+      {
+        onSuccess: () => {
+          setQuickCommentText("");
+          setQuickCommentOpen(false);
+          setLocalAddedComments((n) => n + 1);
+          qc.invalidateQueries({ queryKey: getListCommentsQueryKey(post.id) });
+          syncServer();
+        },
+      },
+    );
   };
 
   const toggleSave = () => {
@@ -361,7 +392,7 @@ export const PostCard = React.memo(function PostCard({ post, onComment, onShare,
 
       {/* Clean Dribbble Action Bar */}
       <View style={styles.cleanActionsRow}>
-        {/* Left Metrics: ♡ 2.1k   💬 2.1k */}
+        {/* Left Metrics: ♡ 2.1k   💬 2.1k   ✈️ Share */}
         <View style={styles.metricsCluster}>
           <Pressable
             onPress={() => {
@@ -388,6 +419,7 @@ export const PostCard = React.memo(function PostCard({ post, onComment, onShare,
             onPress={() => {
               try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
               if (onComment) onComment();
+              else router.push(`/post/${post.id}`);
             }}
             style={({ pressed }) => [
               styles.metricBtn,
@@ -397,9 +429,30 @@ export const PostCard = React.memo(function PostCard({ post, onComment, onShare,
           >
             <Ionicons name="chatbubble-outline" size={19} color={c.foreground} />
             <Text style={[styles.metricCount, { color: c.foreground }]}>
-              {formatCount(post.commentCount || 0)}
+              {formatCount((post.commentCount || 0) + localAddedComments)}
             </Text>
           </Pressable>
+
+          {onShare && (
+            <Pressable
+              onPress={() => {
+                try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                onShare();
+              }}
+              style={({ pressed }) => [
+                styles.metricBtn,
+                { transform: [{ scale: pressed ? 0.90 : 1 }] },
+              ]}
+              hitSlop={8}
+            >
+              <Ionicons name="paper-plane-outline" size={19} color={c.foreground} />
+              {(post.shareCount || 0) > 0 && (
+                <Text style={[styles.metricCount, { color: c.foreground }]}>
+                  {formatCount(post.shareCount || 0)}
+                </Text>
+              )}
+            </Pressable>
+          )}
         </View>
 
         {/* Right Actions: Comments here... pill input & 3-dots */}
@@ -407,12 +460,24 @@ export const PostCard = React.memo(function PostCard({ post, onComment, onShare,
           <Pressable
             onPress={() => {
               try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
-              if (onComment) onComment();
+              setQuickCommentOpen((v) => !v);
             }}
-            style={[styles.commentPillBtn, { backgroundColor: c.secondary }]}
+            style={[
+              styles.commentPillBtn,
+              {
+                backgroundColor: quickCommentOpen ? c.primary + "18" : c.secondary,
+                borderWidth: quickCommentOpen ? 1 : 0,
+                borderColor: c.primary + "40",
+              },
+            ]}
             hitSlop={6}
           >
-            <Text style={[styles.commentPillText, { color: c.mutedForeground }]}>
+            <Text
+              style={[
+                styles.commentPillText,
+                { color: quickCommentOpen ? c.primary : c.mutedForeground },
+              ]}
+            >
               Comments here...
             </Text>
           </Pressable>
@@ -432,6 +497,71 @@ export const PostCard = React.memo(function PostCard({ post, onComment, onShare,
           </Pressable>
         </View>
       </View>
+
+      {/* Inline Quick Comment Typing Box (opens ONLY typing box, no comments list) */}
+      {quickCommentOpen && (
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+            marginTop: 10,
+            paddingHorizontal: 14,
+          }}
+        >
+          <Avatar
+            uri={actingPage ? actingPage.avatarUrl : user?.avatarUrl}
+            name={actingPage ? actingPage.name : user?.displayName || "You"}
+            size={30}
+          />
+          <View
+            style={{
+              flex: 1,
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: c.secondary,
+              borderRadius: 20,
+              paddingHorizontal: 14,
+              paddingVertical: 6,
+              borderWidth: 1,
+              borderColor: c.primary + "40",
+            }}
+          >
+            <TextInput
+              autoFocus
+              value={quickCommentText}
+              onChangeText={setQuickCommentText}
+              placeholder="Write a comment..."
+              placeholderTextColor={c.mutedForeground}
+              underlineColorAndroid="transparent"
+              style={{
+                flex: 1,
+                color: c.foreground,
+                fontSize: 14,
+                paddingVertical: 2,
+              }}
+              returnKeyType="send"
+              onSubmitEditing={submitQuickComment}
+            />
+            <Pressable
+              onPress={submitQuickComment}
+              disabled={!quickCommentText.trim() || createQuickComment.isPending}
+              hitSlop={8}
+              style={{ marginLeft: 6 }}
+            >
+              {createQuickComment.isPending ? (
+                <ActivityIndicator size="small" color={c.primary} />
+              ) : (
+                <Ionicons
+                  name="send"
+                  size={18}
+                  color={quickCommentText.trim() ? c.primary : c.mutedForeground}
+                />
+              )}
+            </Pressable>
+          </View>
+        </View>
+      )}
 
       {/* Owner menu bottom sheet */}
       <Modal visible={menuOpen} transparent animationType="slide" onRequestClose={() => setMenuOpen(false)}>

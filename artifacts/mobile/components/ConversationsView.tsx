@@ -36,7 +36,7 @@ import { ActiveRow } from "@/components/ActiveRow";
 import { useAuth } from "@/lib/auth";
 import { useRealtime } from "@/lib/realtime";
 import { useColors } from "@/hooks/useColors";
-import { timeAgo } from "@/lib/format";
+import { timeAgo, formatChatDate } from "@/lib/format";
 import { useChatPreferences } from "@/lib/chatPreferences";
 
 function otherMember(conv: Conversation, myId?: string): Profile | undefined {
@@ -724,7 +724,7 @@ function ConversationItem({
             )}
           </View>
           <Text style={[styles.time, { color: unread ? c.primary : c.mutedForeground }]}>
-            {timeAgo(item.lastMessageAt)}
+            {formatChatDate(item.lastMessageAt)}
           </Text>
         </View>
 

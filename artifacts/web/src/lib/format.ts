@@ -20,3 +20,13 @@ export function timeAgo(iso: string): string {
     ...(sameYear ? {} : { year: "numeric" }),
   });
 }
+
+const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+export function formatChatDate(iso?: string | null): string {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  return `${date.getDate()} ${SHORT_MONTHS[date.getMonth()]}`;
+}
+
