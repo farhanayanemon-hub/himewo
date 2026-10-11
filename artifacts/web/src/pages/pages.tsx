@@ -1802,11 +1802,8 @@ function PageDetail({ id }: { id: number }) {
               )}
               {canManageHub && (
                 <Button
-                  onClick={() => {
-                    setTab("monetization");
-                    setMonetizationOpen(true);
-                  }}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold gap-1.5"
+                  onClick={() => setTab("monetization")}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-1.5"
                   data-testid="hub-monetization-button"
                 >
                   <DollarSign className="w-4 h-4" />
@@ -1831,8 +1828,8 @@ function PageDetail({ id }: { id: number }) {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   {canManageHub && (
-                    <DropdownMenuItem onClick={() => setMonetizationOpen(true)}>
-                      <DollarSign className="w-4 h-4 mr-2 text-emerald-600" />
+                    <DropdownMenuItem onClick={() => setTab("monetization")}>
+                      <DollarSign className="w-4 h-4 mr-2 text-primary" />
                       Monetization Studio
                     </DropdownMenuItem>
                   )}
@@ -1892,20 +1889,6 @@ function PageDetail({ id }: { id: number }) {
             <Images className="w-3.5 h-3.5" />
             <span>Photos & Videos</span>
           </button>
-          {canManageHub && (
-            <button
-              type="button"
-              onClick={() => setTab("monetization")}
-              className={`px-4 py-3 font-semibold text-sm transition-all border-b-2 flex items-center gap-1.5 cursor-pointer ${
-                tab === "monetization"
-                  ? "border-emerald-600 text-emerald-600"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <DollarSign className="w-3.5 h-3.5" />
-              <span>Monetization Studio</span>
-            </button>
-          )}
         </div>
       </div>
 
@@ -2021,19 +2004,6 @@ function PageDetail({ id }: { id: number }) {
       )}
       {user?.id === page.ownerId && (
         <PageAccessDialog page={page} open={accessOpen} onOpenChange={setAccessOpen} />
-      )}
-      {canManageHub && (
-        <Dialog open={monetizationOpen} onOpenChange={setMonetizationOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-xl">
-                <DollarSign className="w-5 h-5 text-emerald-600" />
-                Hub Monetization Studio — {page.name}
-              </DialogTitle>
-            </DialogHeader>
-            <HubMonetizationStudioView pageId={id} />
-          </DialogContent>
-        </Dialog>
       )}
       <PageFollowersDialog pageId={id} open={followersOpen} onOpenChange={setFollowersOpen} />
       <PageFollowingDialog pageId={id} open={followingOpen} onOpenChange={setFollowingOpen} />
@@ -2197,7 +2167,7 @@ function HubMonetizationStudioView({ pageId }: { pageId: number }) {
               <span
                 className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase ${
                   data.status === "approved"
-                    ? "bg-emerald-500/15 text-emerald-600"
+                    ? "bg-primary/15 text-primary"
                     : data.status === "pending"
                       ? "bg-amber-500/15 text-amber-600"
                       : data.status === "rejected" || data.status === "suspended"
@@ -2209,7 +2179,7 @@ function HubMonetizationStudioView({ pageId }: { pageId: number }) {
               </span>
             </div>
             <p className="text-sm text-muted-foreground mt-1">
-              Earn USD automatically when people view, like, comment on, or share your Hub's{" "}
+              Earn USD automatically from your Hub's{" "}
               <b>Posts, Reels, Videos, and Live streams</b>.
             </p>
             {data.monetizationNote && (
@@ -2223,7 +2193,7 @@ function HubMonetizationStudioView({ pageId }: { pageId: number }) {
             <Button
               onClick={() => applyMutation.mutate()}
               disabled={applyMutation.isPending}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shrink-0"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shrink-0"
               data-testid="apply-hub-monetization-btn"
             >
               {applyMutation.isPending ? (
@@ -2247,7 +2217,7 @@ function HubMonetizationStudioView({ pageId }: { pageId: number }) {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div className="aurora-glass-card rounded-2xl border border-border p-4">
           <div className="text-xs text-muted-foreground font-medium">Available Balance</div>
-          <div className="text-2xl font-extrabold text-emerald-600 mt-1">
+          <div className="text-2xl font-extrabold text-primary mt-1">
             ${data.balance.balanceDollars.toFixed(4)}
           </div>
           <div className="text-[11px] text-muted-foreground mt-1">
@@ -2284,10 +2254,10 @@ function HubMonetizationStudioView({ pageId }: { pageId: number }) {
           <div className="rounded-xl border border-border bg-muted/30 p-4">
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold flex items-center gap-1.5">
-                <FileText className="w-4 h-4 text-blue-500" /> Posts
+                <FileText className="w-4 h-4 text-primary" /> Posts
               </span>
             </div>
-            <div className="text-xl font-extrabold mt-2 text-emerald-600">
+            <div className="text-xl font-extrabold mt-2 text-primary">
               ${data.byFormat.post.earnedDollars.toFixed(4)}
             </div>
             <div className="text-xs text-muted-foreground mt-1">
@@ -2298,10 +2268,10 @@ function HubMonetizationStudioView({ pageId }: { pageId: number }) {
           <div className="rounded-xl border border-border bg-muted/30 p-4">
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold flex items-center gap-1.5">
-                <Play className="w-4 h-4 text-pink-500" /> Reels
+                <Play className="w-4 h-4 text-primary" /> Reels
               </span>
             </div>
-            <div className="text-xl font-extrabold mt-2 text-emerald-600">
+            <div className="text-xl font-extrabold mt-2 text-primary">
               ${data.byFormat.reel.earnedDollars.toFixed(4)}
             </div>
             <div className="text-xs text-muted-foreground mt-1">
@@ -2312,10 +2282,10 @@ function HubMonetizationStudioView({ pageId }: { pageId: number }) {
           <div className="rounded-xl border border-border bg-muted/30 p-4">
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold flex items-center gap-1.5">
-                <Video className="w-4 h-4 text-purple-500" /> Videos
+                <Video className="w-4 h-4 text-primary" /> Videos
               </span>
             </div>
-            <div className="text-xl font-extrabold mt-2 text-emerald-600">
+            <div className="text-xl font-extrabold mt-2 text-primary">
               ${data.byFormat.video.earnedDollars.toFixed(4)}
             </div>
             <div className="text-xs text-muted-foreground mt-1">
@@ -2326,10 +2296,10 @@ function HubMonetizationStudioView({ pageId }: { pageId: number }) {
           <div className="rounded-xl border border-border bg-muted/30 p-4">
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold flex items-center gap-1.5">
-                <Radio className="w-4 h-4 text-rose-500" /> Live
+                <Radio className="w-4 h-4 text-primary" /> Live
               </span>
             </div>
-            <div className="text-xl font-extrabold mt-2 text-emerald-600">
+            <div className="text-xl font-extrabold mt-2 text-primary">
               ${data.byFormat.live.earnedDollars.toFixed(4)}
             </div>
             <div className="text-xs text-muted-foreground mt-1">
@@ -2420,7 +2390,7 @@ function HubMonetizationStudioView({ pageId }: { pageId: number }) {
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <div className="text-base font-extrabold text-emerald-600">
+                  <div className="text-base font-extrabold text-primary">
                     +${item.earnedDollars.toFixed(4)}
                   </div>
                   <div className="text-[11px] text-muted-foreground">Earned</div>
@@ -2434,7 +2404,7 @@ function HubMonetizationStudioView({ pageId }: { pageId: number }) {
       {/* Payout / Withdraw Section */}
       <div className="aurora-glass-card rounded-2xl border border-border p-5">
         <h3 className="font-bold text-base mb-1 flex items-center gap-2">
-          <Wallet className="w-4 h-4 text-emerald-600" />
+          <Wallet className="w-4 h-4 text-primary" />
           Withdraw Hub Earnings
         </h3>
         <p className="text-xs text-muted-foreground mb-4">
@@ -2484,7 +2454,7 @@ function HubMonetizationStudioView({ pageId }: { pageId: number }) {
             <Button
               type="submit"
               disabled={withdrawMutation.isPending}
-              className="mt-auto bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="mt-auto bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {withdrawMutation.isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

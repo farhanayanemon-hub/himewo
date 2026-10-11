@@ -1125,6 +1125,15 @@ export default function PageDetailScreen() {
                   <Ionicons name="create-outline" size={18} color="#fff" />
                   <Text style={[styles.primaryLabel, { color: "#fff" }]}>Write Post</Text>
                 </Pressable>
+                {canManageHub ? (
+                  <Pressable
+                    style={[styles.actionBtn, { backgroundColor: c.primary }]}
+                    onPress={() => setTab("monetization")}
+                  >
+                    <Ionicons name="cash-outline" size={18} color="#fff" />
+                    <Text style={[styles.actionLabel, { color: "#fff" }]}>Monetization</Text>
+                  </Pressable>
+                ) : null}
                 {isManager ? (
                   <Pressable
                     style={[styles.actionBtn, { backgroundColor: c.secondary }]}
@@ -1179,6 +1188,15 @@ export default function PageDetailScreen() {
                     </>
                   )}
                 </Pressable>
+                {canManageHub ? (
+                  <Pressable
+                    style={[styles.actionBtn, { backgroundColor: c.primary }]}
+                    onPress={() => setTab("monetization")}
+                  >
+                    <Ionicons name="cash-outline" size={18} color="#fff" />
+                    <Text style={[styles.actionLabel, { color: "#fff" }]}>Monetization</Text>
+                  </Pressable>
+                ) : null}
                 <Pressable
                   style={[styles.actionBtn, { backgroundColor: c.secondary }]}
                   onPress={() => setEditOpen(true)}
@@ -1266,32 +1284,6 @@ export default function PageDetailScreen() {
               </>
             )}
           </View>
-
-          {/* Hub Monetization Studio Button for Hub Owner / Managers */}
-          {canManageHub ? (
-            <Pressable
-              onPress={() => {
-                setTab("monetization");
-                setMonetizationOpen(true);
-              }}
-              style={{
-                marginTop: 10,
-                backgroundColor: "#059669",
-                borderRadius: 12,
-                paddingVertical: 11,
-                paddingHorizontal: 14,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-              }}
-            >
-              <Ionicons name="cash-outline" size={18} color="#fff" />
-              <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: 14 }}>
-                Monetization Studio (Post, Reels, Videos & Live)
-              </Text>
-            </Pressable>
-          ) : null}
         </View>
 
         {/* Facebook-style Tabs */}
@@ -1319,14 +1311,6 @@ export default function PageDetailScreen() {
             <Text style={[styles.tabLabel, { color: tab === "about" ? c.primary : c.mutedForeground }]}>About</Text>
             {tab === "about" ? <View style={[styles.tabUnderline, { backgroundColor: c.primary }]} /> : null}
           </Pressable>
-          {canManageHub ? (
-            <Pressable onPress={() => setTab("monetization")} style={styles.tabBtn}>
-              <Text style={[styles.tabLabel, { color: tab === "monetization" ? "#059669" : c.mutedForeground }]}>
-                💰 Monetization
-              </Text>
-              {tab === "monetization" ? <View style={[styles.tabUnderline, { backgroundColor: "#059669" }]} /> : null}
-            </Pressable>
-          ) : null}
         </ScrollView>
 
         {/* Tab Panels */}
@@ -1441,30 +1425,6 @@ export default function PageDetailScreen() {
 
       {isManager ? <EditPageModal page={page} visible={editOpen} onClose={() => setEditOpen(false)} /> : null}
       {isOwner ? <PageAccessModal page={page} visible={accessOpen} onClose={() => setAccessOpen(false)} /> : null}
-      {canManageHub ? (
-        <Modal
-          visible={monetizationOpen}
-          transparent
-          animationType="slide"
-          onRequestClose={() => setMonetizationOpen(false)}
-        >
-          <View style={styles.modalBackdrop}>
-            <View style={[styles.modalCard, { backgroundColor: c.surface, maxHeight: "90%" }]}>
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                <Text style={[styles.modalTitle, { color: c.foreground, marginBottom: 0 }]}>
-                  💰 Hub Monetization Studio
-                </Text>
-                <Pressable onPress={() => setMonetizationOpen(false)} hitSlop={8}>
-                  <Ionicons name="close-circle" size={26} color={c.mutedForeground} />
-                </Pressable>
-              </View>
-              <ScrollView showsVerticalScrollIndicator={false}>
-                <HubMonetizationStudioBlock pageId={id} />
-              </ScrollView>
-            </View>
-          </View>
-        </Modal>
-      ) : null}
 
       <PageMenuModal
         visible={menuOpen}
@@ -1698,7 +1658,7 @@ function HubMonetizationStudioBlock({ pageId }: { pageId: number }) {
                 fontFamily: "Inter_700Bold",
                 color:
                   data.status === "approved"
-                    ? "#059669"
+                    ? c.primary
                     : data.status === "pending"
                       ? "#d97706"
                       : c.foreground,
@@ -1717,7 +1677,7 @@ function HubMonetizationStudioBlock({ pageId }: { pageId: number }) {
             disabled={applyMutation.isPending}
             style={{
               marginTop: 12,
-              backgroundColor: "#059669",
+              backgroundColor: c.primary,
               borderRadius: 10,
               paddingVertical: 11,
               alignItems: "center",
@@ -1745,7 +1705,7 @@ function HubMonetizationStudioBlock({ pageId }: { pageId: number }) {
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
         <View style={[styles.card, { flex: 1, minWidth: "46%", backgroundColor: c.card, borderColor: c.border }]}>
           <Text style={{ fontSize: 11, color: c.mutedForeground }}>Available Balance</Text>
-          <Text style={{ fontSize: 20, fontFamily: "Inter_700Bold", color: "#059669", marginTop: 4 }}>
+          <Text style={{ fontSize: 20, fontFamily: "Inter_700Bold", color: c.primary, marginTop: 4 }}>
             ${data.balance.balanceDollars.toFixed(4)}
           </Text>
         </View>
@@ -1813,7 +1773,7 @@ function HubMonetizationStudioBlock({ pageId }: { pageId: number }) {
               <Text style={{ color: c.foreground, fontFamily: "Inter_700Bold", fontSize: 14 }}>
                 {fmt.label}
               </Text>
-              <Text style={{ color: "#059669", fontFamily: "Inter_700Bold", fontSize: 15 }}>
+              <Text style={{ color: c.primary, fontFamily: "Inter_700Bold", fontSize: 15 }}>
                 ${fmt.earned.toFixed(4)}
               </Text>
             </View>
@@ -1910,7 +1870,7 @@ function HubMonetizationStudioBlock({ pageId }: { pageId: number }) {
                     Published {new Date(item.createdAt).toLocaleDateString()}
                   </Text>
                 </View>
-                <Text style={{ color: "#059669", fontFamily: "Inter_700Bold", fontSize: 14 }}>
+                <Text style={{ color: c.primary, fontFamily: "Inter_700Bold", fontSize: 14 }}>
                   +${item.earnedDollars.toFixed(4)}
                 </Text>
               </View>
@@ -1981,7 +1941,7 @@ function HubMonetizationStudioBlock({ pageId }: { pageId: number }) {
             onPress={submitWithdraw}
             disabled={withdrawMutation.isPending}
             style={{
-              backgroundColor: "#059669",
+              backgroundColor: c.primary,
               borderRadius: 10,
               paddingHorizontal: 18,
               alignItems: "center",
