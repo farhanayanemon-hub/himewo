@@ -92,6 +92,18 @@ export const pagesTable = pgTable("pages", {
   // Admin curation/governance flags.
   featured: boolean("featured").notNull().default(false),
   isApproved: boolean("is_approved").notNull().default(true),
+  // Hub monetization status and lifecycle fields.
+  monetizationStatus: text("monetization_status")
+    .$type<"none" | "pending" | "approved" | "rejected" | "suspended">()
+    .notNull()
+    .default("none"),
+  monetizationAppliedAt: timestamp("monetization_applied_at", {
+    withTimezone: true,
+  }),
+  monetizationApprovedAt: timestamp("monetization_approved_at", {
+    withTimezone: true,
+  }),
+  monetizationNote: text("monetization_note"),
   createdBy: uuid("created_by")
     .notNull()
     .references(() => profilesTable.id, { onDelete: "cascade" }),
@@ -226,6 +238,13 @@ export type Group = typeof groupsTable.$inferSelect;
 export type GroupMember = typeof groupMembersTable.$inferSelect;
 export type GroupInvite = typeof groupInvitesTable.$inferSelect;
 export type Page = typeof pagesTable.$inferSelect;
+export type InsertPage = typeof pagesTable.$inferInsert;
+export type HubMonetizationStatus =
+  | "none"
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "suspended";
 export type PageFollower = typeof pageFollowersTable.$inferSelect;
 export type PageFollowing = typeof pageFollowingTable.$inferSelect;
 export type PageInvite = typeof pageInvitesTable.$inferSelect;

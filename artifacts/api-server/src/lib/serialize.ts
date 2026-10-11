@@ -67,6 +67,7 @@ import {
   canViewStory,
   canViewReel,
 } from "./authz";
+import { awardHubContentEvent } from "./hub-monetization";
 
 // ---------------- Profiles ----------------
 /**
@@ -487,6 +488,24 @@ export async function buildPosts(rows: PostRow[], viewerId?: string) {
   const followedPageSet = new Set(
     (followedPageRows as { pageId: number }[]).map((r) => r.pageId),
   );
+
+  if (viewerId) {
+    for (const row of rows) {
+      if (row.pageId != null && row.authorId !== viewerId) {
+        const hasVideo = (mediaByPost.get(row.id) ?? []).some(
+          (m) => m.type === "video",
+        );
+        void awardHubContentEvent({
+          pageId: row.pageId,
+          contentType: hasVideo ? "video" : "post",
+          contentId: row.id,
+          actorId: viewerId,
+          action: "view",
+          entityId: 0,
+        }).catch(() => {});
+      }
+    }
+  }
 
   return rows.map((row) => {
     const summary = reactByPost.get(row.id) ?? { total: 0, byType: {} };

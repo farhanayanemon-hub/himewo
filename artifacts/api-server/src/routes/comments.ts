@@ -1,10 +1,18 @@
 import { Router, type IRouter } from "express";
-import { db, commentsTable, commentReactionsTable } from "@workspace/db";
+import {
+  db,
+  commentsTable,
+  commentReactionsTable,
+  postsTable,
+  postMediaTable,
+} from "@workspace/db";
 import { and, eq } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import { buildCommentById } from "../lib/serialize";
 import { createNotification } from "../lib/notify";
 import { canViewComment, canManagePage } from "../lib/authz";
+import { awardHubContentEvent } from "../lib/hub-monetization";
+import { logger } from "../lib/logger";
 import {
   UpdateCommentParams,
   UpdateCommentBody,
@@ -123,6 +131,37 @@ router.put(
       entityType: "comment",
       entityId: comment.id,
     });
+    // Wire engagement bonus if comment belongs to a Hub post
+    if (comment.postId != null) {
+      const [commentPost] = await db
+        .select({ id: postsTable.id, pageId: postsTable.pageId })
+        .from(postsTable)
+        .where(eq(postsTable.id, comment.postId));
+
+      if (commentPost?.pageId != null) {
+        const [videoMedia] = await db
+          .select({ id: postMediaTable.id })
+          .from(postMediaTable)
+          .where(
+            and(
+              eq(postMediaTable.postId, commentPost.id),
+              eq(postMediaTable.type, "video"),
+            ),
+          )
+          .limit(1);
+        const contentType = videoMedia ? "video" : "post";
+        await awardHubContentEvent({
+          pageId: commentPost.pageId,
+          contentType,
+          contentId: commentPost.id,
+          actorId: req.userId!,
+          action: "like",
+          entityId: comment.id,
+        }).catch((err) => {
+          logger.error({ err }, "awardHubContentEvent failed for comment reaction");
+        });
+      }
+    }
     const built = await buildCommentById(params.data.id, req.userId);
     res.json(SetCommentReactionResponse.parse(built));
   },

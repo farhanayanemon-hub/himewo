@@ -17,7 +17,7 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { Stack, useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import {
   useGetPage,
   useGetPagePosts,
@@ -45,6 +45,7 @@ import {
   getListPageFollowersQueryKey,
   getListPageFollowingQueryKey,
   getListFriendsQueryKey,
+  customFetch,
   type Page,
   type PageReview,
   type Profile,
@@ -816,9 +817,10 @@ export default function PageDetailScreen() {
   const updatePage = useUpdatePage();
   const createConversation = useCreateConversation();
 
-  const [tab, setTab] = useState<"posts" | "reels" | "media" | "about">("posts");
+  const [tab, setTab] = useState<"posts" | "reels" | "media" | "about" | "monetization">("posts");
   const [editOpen, setEditOpen] = useState(false);
   const [accessOpen, setAccessOpen] = useState(false);
+  const [monetizationOpen, setMonetizationOpen] = useState(false);
   const [photoBusy, setPhotoBusy] = useState<null | "avatar" | "cover">(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -927,6 +929,7 @@ export default function PageDetailScreen() {
   const busy = followPage.isPending || unfollowPage.isPending;
   const isManager = !!page.viewerCanPost;
   const isOwner = user?.id === page.ownerId;
+  const canManageHub = isManager || isOwner;
   const hasAbout =
     !!page.contactPhone ||
     !!page.contactEmail ||
@@ -1263,10 +1266,41 @@ export default function PageDetailScreen() {
               </>
             )}
           </View>
+
+          {/* Hub Monetization Studio Button for Hub Owner / Managers */}
+          {canManageHub ? (
+            <Pressable
+              onPress={() => {
+                setTab("monetization");
+                setMonetizationOpen(true);
+              }}
+              style={{
+                marginTop: 10,
+                backgroundColor: "#059669",
+                borderRadius: 12,
+                paddingVertical: 11,
+                paddingHorizontal: 14,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+              }}
+            >
+              <Ionicons name="cash-outline" size={18} color="#fff" />
+              <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: 14 }}>
+                Monetization Studio (Post, Reels, Videos & Live)
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
 
         {/* Facebook-style Tabs */}
-        <View style={[styles.tabBar, { borderBottomColor: c.border, backgroundColor: c.background }]}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={[styles.tabBar, { borderBottomColor: c.border, backgroundColor: c.background }]}
+          contentContainerStyle={{ flexDirection: "row", gap: 4 }}
+        >
           <Pressable onPress={() => setTab("posts")} style={styles.tabBtn}>
             <Text style={[styles.tabLabel, { color: tab === "posts" ? c.primary : c.mutedForeground }]}>Posts</Text>
             {tab === "posts" ? <View style={[styles.tabUnderline, { backgroundColor: c.primary }]} /> : null}
@@ -1285,7 +1319,15 @@ export default function PageDetailScreen() {
             <Text style={[styles.tabLabel, { color: tab === "about" ? c.primary : c.mutedForeground }]}>About</Text>
             {tab === "about" ? <View style={[styles.tabUnderline, { backgroundColor: c.primary }]} /> : null}
           </Pressable>
-        </View>
+          {canManageHub ? (
+            <Pressable onPress={() => setTab("monetization")} style={styles.tabBtn}>
+              <Text style={[styles.tabLabel, { color: tab === "monetization" ? "#059669" : c.mutedForeground }]}>
+                💰 Monetization
+              </Text>
+              {tab === "monetization" ? <View style={[styles.tabUnderline, { backgroundColor: "#059669" }]} /> : null}
+            </Pressable>
+          ) : null}
+        </ScrollView>
 
         {/* Tab Panels */}
         {tab === "posts" && (
@@ -1389,10 +1431,40 @@ export default function PageDetailScreen() {
             ) : null}
           </View>
         )}
+
+        {tab === "monetization" && canManageHub ? (
+          <View style={{ paddingHorizontal: 16, marginTop: 12 }}>
+            <HubMonetizationStudioBlock pageId={id} />
+          </View>
+        ) : null}
       </ScrollView>
 
       {isManager ? <EditPageModal page={page} visible={editOpen} onClose={() => setEditOpen(false)} /> : null}
       {isOwner ? <PageAccessModal page={page} visible={accessOpen} onClose={() => setAccessOpen(false)} /> : null}
+      {canManageHub ? (
+        <Modal
+          visible={monetizationOpen}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setMonetizationOpen(false)}
+        >
+          <View style={styles.modalBackdrop}>
+            <View style={[styles.modalCard, { backgroundColor: c.surface, maxHeight: "90%" }]}>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                <Text style={[styles.modalTitle, { color: c.foreground, marginBottom: 0 }]}>
+                  💰 Hub Monetization Studio
+                </Text>
+                <Pressable onPress={() => setMonetizationOpen(false)} hitSlop={8}>
+                  <Ionicons name="close-circle" size={26} color={c.mutedForeground} />
+                </Pressable>
+              </View>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <HubMonetizationStudioBlock pageId={id} />
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+      ) : null}
 
       <PageMenuModal
         visible={menuOpen}
@@ -1451,6 +1523,499 @@ export default function PageDetailScreen() {
         }))}
       />
     </SafeAreaView>
+  );
+}
+
+/* ======================== Hub Monetization Studio (Mobile) ======================== */
+
+interface MobileHubStudioDto {
+  pageId: number;
+  pageName: string;
+  status: "none" | "pending" | "approved" | "rejected" | "suspended";
+  appliedAt: string | null;
+  approvedAt: string | null;
+  monetizationNote: string | null;
+  rates: {
+    postRpmDollars: number;
+    reelRpmDollars: number;
+    videoRpmDollars: number;
+    liveRpmDollars: number;
+    likeBonusDollars: number;
+    commentBonusDollars: number;
+    shareBonusDollars: number;
+    minWithdrawDollars: number;
+  };
+  balance: {
+    balanceDollars: number;
+    todayDollars: number;
+    last7DaysDollars: number;
+    last28DaysDollars: number;
+    lifetimeDollars: number;
+    pendingWithdrawDollars: number;
+    totalWithdrawnDollars: number;
+  };
+  byFormat: {
+    post: { earnedDollars: number; views: number; engagements: number };
+    reel: { earnedDollars: number; views: number; engagements: number };
+    video: { earnedDollars: number; views: number; engagements: number };
+    live: { earnedDollars: number; views: number; engagements: number };
+  };
+  items: Array<{
+    id: number;
+    contentType: "post" | "video" | "reel" | "live";
+    title: string;
+    thumbnailUrl: string | null;
+    createdAt: string;
+    viewsCount: number;
+    likesCount: number;
+    commentsCount: number;
+    sharesCount: number;
+    earnedDollars: number;
+  }>;
+  withdrawals: Array<{
+    id: number;
+    amountDollars: number;
+    method: string;
+    accountDetails: Record<string, unknown>;
+    status: string;
+    adminNote: string | null;
+    createdAt: string;
+    processedAt: string | null;
+  }>;
+}
+
+const PAYOUT_METHODS = [
+  { id: "bkash", label: "bKash" },
+  { id: "nagad", label: "Nagad" },
+  { id: "binance", label: "Binance" },
+  { id: "paypal", label: "PayPal" },
+  { id: "wise", label: "Wise" },
+  { id: "bybit", label: "Bybit" },
+];
+
+function HubMonetizationStudioBlock({ pageId }: { pageId: number }) {
+  const c = useColors();
+  const qc = useQueryClient();
+  const [itemFilter, setItemFilter] = useState<"all" | "post" | "reel" | "video" | "live">("all");
+  const [withdrawMethod, setWithdrawMethod] = useState<string>("bkash");
+  const [withdrawAccount, setWithdrawAccount] = useState<string>("");
+  const [withdrawAmount, setWithdrawAmount] = useState<string>("");
+
+  const studioQuery = useQuery({
+    queryKey: ["hub-monetization-studio", pageId],
+    queryFn: () => customFetch<MobileHubStudioDto>(`/api/pages/${pageId}/monetization`),
+  });
+
+  const applyMutation = useMutation({
+    mutationFn: () =>
+      customFetch<{ success: boolean; status: string }>(`/api/pages/${pageId}/monetization/apply`, {
+        method: "POST",
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["hub-monetization-studio", pageId] });
+      Alert.alert("Application Submitted", "Your Hub monetization application has been sent for Admin approval.");
+    },
+    onError: (err: any) => {
+      Alert.alert("Error", err?.message || "Could not submit application.");
+    },
+  });
+
+  const withdrawMutation = useMutation({
+    mutationFn: (body: { amountDollars: number; method: string; accountDetails: Record<string, string> }) =>
+      customFetch(`/api/pages/${pageId}/monetization/withdraw`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }),
+    onSuccess: () => {
+      setWithdrawAmount("");
+      setWithdrawAccount("");
+      void qc.invalidateQueries({ queryKey: ["hub-monetization-studio", pageId] });
+      Alert.alert("Withdrawal Requested", "Your Hub payout request has been submitted.");
+    },
+    onError: (err: any) => {
+      Alert.alert("Withdrawal Failed", err?.data?.error || err?.message || "Please check your balance.");
+    },
+  });
+
+  if (studioQuery.isLoading) {
+    return <ActivityIndicator color={c.primary} style={{ marginVertical: 24 }} />;
+  }
+
+  const data = studioQuery.data;
+  if (!data) {
+    return (
+      <View style={[styles.emptyBox, { backgroundColor: c.card, borderColor: c.border }]}>
+        <Text style={{ color: c.mutedForeground }}>Unable to load Hub Monetization Studio.</Text>
+      </View>
+    );
+  }
+
+  const filteredItems =
+    itemFilter === "all"
+      ? data.items
+      : data.items.filter((item) => item.contentType === itemFilter);
+
+  const submitWithdraw = () => {
+    const amt = Math.floor(Number(withdrawAmount));
+    if (!amt || amt < data.rates.minWithdrawDollars) {
+      Alert.alert("Minimum Withdrawal", `Minimum payout amount is $${data.rates.minWithdrawDollars} USD.`);
+      return;
+    }
+    if (!withdrawAccount.trim()) {
+      Alert.alert("Missing Account", "Please enter your wallet number, email, or Pay ID.");
+      return;
+    }
+    withdrawMutation.mutate({
+      amountDollars: amt,
+      method: withdrawMethod,
+      accountDetails: { account: withdrawAccount.trim() },
+    });
+  };
+
+  return (
+    <View style={{ gap: 14, paddingBottom: 20 }}>
+      {/* 1. Status & Apply Card */}
+      <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <Text style={[styles.cardTitle, { color: c.foreground }]}>Creator Monetization</Text>
+          <View
+            style={{
+              backgroundColor:
+                data.status === "approved"
+                  ? "#05966920"
+                  : data.status === "pending"
+                    ? "#d9770620"
+                    : c.secondary,
+              paddingHorizontal: 10,
+              paddingVertical: 4,
+              borderRadius: 999,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 11,
+                fontFamily: "Inter_700Bold",
+                color:
+                  data.status === "approved"
+                    ? "#059669"
+                    : data.status === "pending"
+                      ? "#d97706"
+                      : c.foreground,
+              }}
+            >
+              {data.status === "none" ? "NOT APPLIED" : data.status.toUpperCase()}
+            </Text>
+          </View>
+        </View>
+        <Text style={{ color: c.mutedForeground, fontSize: 13, marginTop: 6 }}>
+          Earn USD from views, likes, comments & shares across your Hub's Posts, Reels, Videos, and Live streams.
+        </Text>
+        {(data.status === "none" || data.status === "rejected") ? (
+          <Pressable
+            onPress={() => applyMutation.mutate()}
+            disabled={applyMutation.isPending}
+            style={{
+              marginTop: 12,
+              backgroundColor: "#059669",
+              borderRadius: 10,
+              paddingVertical: 11,
+              alignItems: "center",
+            }}
+          >
+            {applyMutation.isPending ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: 14 }}>
+                Apply for Hub Monetization
+              </Text>
+            )}
+          </Pressable>
+        ) : null}
+        {data.status === "pending" ? (
+          <View style={{ marginTop: 10, padding: 10, borderRadius: 10, backgroundColor: "#d9770615" }}>
+            <Text style={{ color: "#d97706", fontFamily: "Inter_600SemiBold", fontSize: 12 }}>
+              ⏳ Your Hub monetization application is currently under Admin review.
+            </Text>
+          </View>
+        ) : null}
+      </View>
+
+      {/* 2. Balance Summary Grid */}
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+        <View style={[styles.card, { flex: 1, minWidth: "46%", backgroundColor: c.card, borderColor: c.border }]}>
+          <Text style={{ fontSize: 11, color: c.mutedForeground }}>Available Balance</Text>
+          <Text style={{ fontSize: 20, fontFamily: "Inter_700Bold", color: "#059669", marginTop: 4 }}>
+            ${data.balance.balanceDollars.toFixed(4)}
+          </Text>
+        </View>
+        <View style={[styles.card, { flex: 1, minWidth: "46%", backgroundColor: c.card, borderColor: c.border }]}>
+          <Text style={{ fontSize: 11, color: c.mutedForeground }}>Today's Earnings</Text>
+          <Text style={{ fontSize: 20, fontFamily: "Inter_700Bold", color: c.foreground, marginTop: 4 }}>
+            ${data.balance.todayDollars.toFixed(4)}
+          </Text>
+        </View>
+        <View style={[styles.card, { flex: 1, minWidth: "46%", backgroundColor: c.card, borderColor: c.border }]}>
+          <Text style={{ fontSize: 11, color: c.mutedForeground }}>Last 28 Days</Text>
+          <Text style={{ fontSize: 18, fontFamily: "Inter_700Bold", color: c.foreground, marginTop: 4 }}>
+            ${data.balance.last28DaysDollars.toFixed(4)}
+          </Text>
+        </View>
+        <View style={[styles.card, { flex: 1, minWidth: "46%", backgroundColor: c.card, borderColor: c.border }]}>
+          <Text style={{ fontSize: 11, color: c.mutedForeground }}>Lifetime Earned</Text>
+          <Text style={{ fontSize: 18, fontFamily: "Inter_700Bold", color: c.foreground, marginTop: 4 }}>
+            ${data.balance.lifetimeDollars.toFixed(4)}
+          </Text>
+        </View>
+      </View>
+
+      {/* 3. Earnings by Format: Post, Reels, Videos, Live */}
+      <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+        <Text style={[styles.cardTitle, { color: c.foreground, marginBottom: 10 }]}>
+          Earnings by Format (Post, Reels, Videos & Live)
+        </Text>
+        <View style={{ gap: 8 }}>
+          {(
+            [
+              {
+                key: "post",
+                label: "📝 Posts",
+                earned: data.byFormat.post.earnedDollars,
+                views: data.byFormat.post.views,
+                eng: data.byFormat.post.engagements,
+                rate: data.rates.postRpmDollars,
+              },
+              {
+                key: "reel",
+                label: "🎬 Reels",
+                earned: data.byFormat.reel.earnedDollars,
+                views: data.byFormat.reel.views,
+                eng: data.byFormat.reel.engagements,
+                rate: data.rates.reelRpmDollars,
+              },
+              {
+                key: "video",
+                label: "📹 Videos",
+                earned: data.byFormat.video.earnedDollars,
+                views: data.byFormat.video.views,
+                eng: data.byFormat.video.engagements,
+                rate: data.rates.videoRpmDollars,
+              },
+              {
+                key: "live",
+                label: "🔴 Live",
+                earned: data.byFormat.live.earnedDollars,
+                views: data.byFormat.live.views,
+                eng: data.byFormat.live.engagements,
+                rate: data.rates.liveRpmDollars,
+              },
+            ] as const
+          ).map((fmt) => (
+            <View
+              key={fmt.key}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: 10,
+                borderRadius: 10,
+                backgroundColor: c.secondary,
+              }}
+            >
+              <View>
+                <Text style={{ color: c.foreground, fontFamily: "Inter_700Bold", fontSize: 14 }}>
+                  {fmt.label}
+                </Text>
+                <Text style={{ color: c.mutedForeground, fontSize: 11, marginTop: 2 }}>
+                  {fmt.views} views · {fmt.eng} engagements (${fmt.rate.toFixed(2)}/1K)
+                </Text>
+              </View>
+              <Text style={{ color: "#059669", fontFamily: "Inter_700Bold", fontSize: 15 }}>
+                ${fmt.earned.toFixed(4)}
+              </Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {/* 4. Per-Item Content Earnings Breakdown */}
+      <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+        <Text style={[styles.cardTitle, { color: c.foreground }]}>
+          Per-Content Earnings Breakdown
+        </Text>
+        <Text style={{ color: c.mutedForeground, fontSize: 12, marginTop: 2, marginBottom: 10 }}>
+          Exact earnings for each Post, Reel, Video & Live stream.
+        </Text>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 6, marginBottom: 12 }}
+        >
+          {(
+            [
+              { id: "all", label: "All" },
+              { id: "post", label: "Posts" },
+              { id: "reel", label: "Reels" },
+              { id: "video", label: "Videos" },
+              { id: "live", label: "Live" },
+            ] as const
+          ).map((t) => (
+            <Pressable
+              key={t.id}
+              onPress={() => setItemFilter(t.id)}
+              style={{
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 999,
+                backgroundColor: itemFilter === t.id ? c.primary : c.secondary,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontFamily: "Inter_600SemiBold",
+                  color: itemFilter === t.id ? "#fff" : c.foreground,
+                }}
+              >
+                {t.label}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+
+        {filteredItems.length === 0 ? (
+          <Text style={{ color: c.mutedForeground, fontSize: 13, paddingVertical: 14, textAlign: "center" }}>
+            No {itemFilter === "all" ? "content" : itemFilter} items found.
+          </Text>
+        ) : (
+          <View style={{ gap: 10 }}>
+            {filteredItems.map((item) => (
+              <View
+                key={`${item.contentType}-${item.id}`}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: 10,
+                  borderRadius: 10,
+                  borderWidth: 1,
+                  borderColor: c.border,
+                  gap: 10,
+                }}
+              >
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                    <Text
+                      style={{
+                        fontSize: 10,
+                        fontFamily: "Inter_700Bold",
+                        color: c.primary,
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      [{item.contentType}]
+                    </Text>
+                    <Text
+                      style={{ color: c.foreground, fontFamily: "Inter_600SemiBold", fontSize: 13, flex: 1 }}
+                      numberOfLines={1}
+                    >
+                      {item.title}
+                    </Text>
+                  </View>
+                  <Text style={{ color: c.mutedForeground, fontSize: 11, marginTop: 4 }}>
+                    👁 {item.viewsCount} · ❤️ {item.likesCount} · 💬 {item.commentsCount} · 🔁 {item.sharesCount}
+                  </Text>
+                </View>
+                <Text style={{ color: "#059669", fontFamily: "Inter_700Bold", fontSize: 14 }}>
+                  +${item.earnedDollars.toFixed(4)}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+
+      {/* 5. Withdraw / Payout Section */}
+      <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+        <Text style={[styles.cardTitle, { color: c.foreground }]}>Withdraw Hub Earnings</Text>
+        <Text style={{ color: c.mutedForeground, fontSize: 12, marginTop: 2, marginBottom: 10 }}>
+          Minimum withdrawal: ${data.rates.minWithdrawDollars} USD
+        </Text>
+
+        <View style={styles.chipWrap}>
+          {PAYOUT_METHODS.map((m) => (
+            <Pressable
+              key={m.id}
+              onPress={() => setWithdrawMethod(m.id)}
+              style={[
+                styles.chip,
+                {
+                  backgroundColor: withdrawMethod === m.id ? c.primary : c.secondary,
+                  borderColor: withdrawMethod === m.id ? c.primary : c.border,
+                },
+              ]}
+            >
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontFamily: "Inter_600SemiBold",
+                  color: withdrawMethod === m.id ? "#fff" : c.foreground,
+                }}
+              >
+                {m.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
+        <TextInput
+          value={withdrawAccount}
+          onChangeText={setWithdrawAccount}
+          placeholder="Account Number / Wallet / Email"
+          placeholderTextColor={c.mutedForeground}
+          underlineColorAndroid="transparent"
+          style={[
+            styles.input,
+            { marginTop: 10, color: c.foreground, borderColor: c.border, backgroundColor: c.secondary },
+          ]}
+        />
+
+        <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
+          <TextInput
+            value={withdrawAmount}
+            onChangeText={setWithdrawAmount}
+            placeholder={`Amount ($ min ${data.rates.minWithdrawDollars})`}
+            placeholderTextColor={c.mutedForeground}
+            keyboardType="numeric"
+            underlineColorAndroid="transparent"
+            style={[
+              styles.input,
+              { flex: 1, color: c.foreground, borderColor: c.border, backgroundColor: c.secondary },
+            ]}
+          />
+          <Pressable
+            onPress={submitWithdraw}
+            disabled={withdrawMutation.isPending}
+            style={{
+              backgroundColor: "#059669",
+              borderRadius: 10,
+              paddingHorizontal: 18,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {withdrawMutation.isPending ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: 13 }}>
+                Withdraw
+              </Text>
+            )}
+          </Pressable>
+        </View>
+      </View>
+    </View>
   );
 }
 

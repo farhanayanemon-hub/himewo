@@ -30,8 +30,10 @@ import {
   getListPageFollowersQueryKey,
   getListPageFollowingQueryKey,
   getListFriendsQueryKey,
+  customFetch,
 } from "@workspace/api-client-react";
 import type { Page, PageReview, Profile } from "@workspace/api-client-react";
+import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { useActingPage } from "@/lib/acting-page";
 import { Switch } from "@/components/ui/switch";
@@ -74,9 +76,18 @@ import {
   ShieldCheck,
   Play,
   Images,
+  DollarSign,
+  Wallet,
+  Video,
+  Radio,
+  Eye,
+  Heart,
+  Share2,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import {
   Select,
   SelectContent,
@@ -1598,7 +1609,8 @@ function PageDetail({ id }: { id: number }) {
   const { user } = useAuth();
   const [editOpen, setEditOpen] = useState(false);
   const [accessOpen, setAccessOpen] = useState(false);
-  const [tab, setTab] = useState<"posts" | "reels" | "media">("posts");
+  const [monetizationOpen, setMonetizationOpen] = useState(false);
+  const [tab, setTab] = useState<"posts" | "reels" | "media" | "monetization">("posts");
   const [followersOpen, setFollowersOpen] = useState(false);
   const [followingOpen, setFollowingOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -1657,6 +1669,7 @@ function PageDetail({ id }: { id: number }) {
   };
 
   const videoReels = (media ?? []).filter((m) => m.type === "video");
+  const canManageHub = Boolean(page.viewerCanPost || user?.id === page.ownerId);
 
   return (
     <MainLayout>
@@ -1787,6 +1800,19 @@ function PageDetail({ id }: { id: number }) {
               {actingPage?.id !== page.id && user?.id !== page.ownerId && (
                 <PageCTA page={page} />
               )}
+              {canManageHub && (
+                <Button
+                  onClick={() => {
+                    setTab("monetization");
+                    setMonetizationOpen(true);
+                  }}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold gap-1.5"
+                  data-testid="hub-monetization-button"
+                >
+                  <DollarSign className="w-4 h-4" />
+                  Monetization Studio
+                </Button>
+              )}
               {page.viewerCanPost && (
                 <Button variant="secondary" size="icon" onClick={() => setEditOpen(true)} aria-label="Edit hub">
                   <Pencil className="w-4 h-4" />
@@ -1804,6 +1830,12 @@ function PageDetail({ id }: { id: number }) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  {canManageHub && (
+                    <DropdownMenuItem onClick={() => setMonetizationOpen(true)}>
+                      <DollarSign className="w-4 h-4 mr-2 text-emerald-600" />
+                      Monetization Studio
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={() => setInviteOpen(true)}>
                     <UserPlus className="w-4 h-4 mr-2" />
                     Invite friends
@@ -1860,106 +1892,124 @@ function PageDetail({ id }: { id: number }) {
             <Images className="w-3.5 h-3.5" />
             <span>Photos & Videos</span>
           </button>
+          {canManageHub && (
+            <button
+              type="button"
+              onClick={() => setTab("monetization")}
+              className={`px-4 py-3 font-semibold text-sm transition-all border-b-2 flex items-center gap-1.5 cursor-pointer ${
+                tab === "monetization"
+                  ? "border-emerald-600 text-emerald-600"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <DollarSign className="w-3.5 h-3.5" />
+              <span>Monetization Studio</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Two-Column Facebook-Style Layout: Main Timeline (Left: 3 cols) | Sidebar Widgets (Right: 2 cols) */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-start">
-        {/* Main Content Column (Left/Center) */}
-        <div className="lg:col-span-3 space-y-4">
-          {tab === "posts" && (
-            <>
-              {page.viewerCanPost && <PostComposer pageId={id} />}
-              <div className="flex items-center justify-between px-2">
-                <h2 className="font-bold text-lg">Timeline</h2>
-                {posts && posts.length > 0 && (
-                  <span className="text-xs text-muted-foreground font-medium">
-                    {posts.length} {posts.length === 1 ? "post" : "posts"}
-                  </span>
+      {tab === "monetization" && canManageHub ? (
+        <HubMonetizationStudioView pageId={id} />
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-start">
+          {/* Main Content Column (Left/Center) */}
+          <div className="lg:col-span-3 space-y-4">
+            {tab === "posts" && (
+              <>
+                {page.viewerCanPost && <PostComposer pageId={id} />}
+                <div className="flex items-center justify-between px-2">
+                  <h2 className="font-bold text-lg">Timeline</h2>
+                  {posts && posts.length > 0 && (
+                    <span className="text-xs text-muted-foreground font-medium">
+                      {posts.length} {posts.length === 1 ? "post" : "posts"}
+                    </span>
+                  )}
+                </div>
+                {postsLoading ? (
+                  <div className="py-8 text-center">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
+                  </div>
+                ) : !posts || posts.length === 0 ? (
+                  <div className="text-center py-10 aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-border/70 text-muted-foreground">
+                    {page.viewerCanPost ? "You haven't posted anything to this Hub yet." : "No posts yet"}
+                  </div>
+                ) : (
+                  posts.map((post) => <PostCard key={post.id} post={post} />)
+                )}
+              </>
+            )}
+
+            {tab === "reels" && (
+              <div className="aurora-glass-card rounded-2xl p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-bold text-xl flex items-center gap-2">
+                    <Play className="w-5 h-5 text-primary fill-primary" />
+                    <span>Reels & Videos</span>
+                    {videoReels.length > 0 && (
+                      <span className="text-sm font-normal text-muted-foreground">({videoReels.length})</span>
+                    )}
+                  </h2>
+                </div>
+
+                {mediaLoading ? (
+                  <div className="py-12 text-center">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+                    <p className="text-sm text-muted-foreground mt-2">Loading videos...</p>
+                  </div>
+                ) : videoReels.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Play className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
+                    <p className="font-medium text-foreground">No reels or videos uploaded yet</p>
+                    <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                      {page.viewerCanPost
+                        ? "Share short videos and reels with your followers."
+                        : "This Hub hasn't uploaded any reels or videos yet."}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
+                    {videoReels.map((reel) => (
+                      <div
+                        key={reel.id}
+                        className="group relative aspect-[9/16] rounded-2xl overflow-hidden bg-black shadow-md hover:shadow-xl transition-all duration-300"
+                      >
+                        <video
+                          src={reel.url}
+                          poster={reel.thumbnailUrl ?? undefined}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          controls
+                          playsInline
+                        />
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
-              {postsLoading ? (
-                <div className="py-8 text-center">
-                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
-                </div>
-              ) : !posts || posts.length === 0 ? (
-                <div className="text-center py-10 aurora-glass-card rounded-none sm:rounded-2xl border-x-0 sm:border-x border-y sm:border border-border/70 text-muted-foreground">
-                  {page.viewerCanPost ? "You haven't posted anything to this Hub yet." : "No posts yet"}
-                </div>
-              ) : (
-                posts.map((post) => <PostCard key={post.id} post={post} />)
-              )}
-            </>
-          )}
+            )}
 
-          {tab === "reels" && (
-            <div className="aurora-glass-card rounded-2xl p-5 space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="font-bold text-xl flex items-center gap-2">
-                  <Play className="w-5 h-5 text-primary fill-primary" />
-                  <span>Reels & Videos</span>
-                  {videoReels.length > 0 && (
-                    <span className="text-sm font-normal text-muted-foreground">({videoReels.length})</span>
-                  )}
-                </h2>
-              </div>
+            {tab === "media" && (
+              <PageMediaGrid pageId={id} />
+            )}
+          </div>
 
-              {mediaLoading ? (
-                <div className="py-12 text-center">
-                  <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
-                  <p className="text-sm text-muted-foreground mt-2">Loading videos...</p>
-                </div>
-              ) : videoReels.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Play className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
-                  <p className="font-medium text-foreground">No reels or videos uploaded yet</p>
-                  <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-                    {page.viewerCanPost
-                      ? "Share short videos and reels with your followers."
-                      : "This Hub hasn't uploaded any reels or videos yet."}
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
-                  {videoReels.map((reel) => (
-                    <div
-                      key={reel.id}
-                      className="group relative aspect-[9/16] rounded-2xl overflow-hidden bg-black shadow-md hover:shadow-xl transition-all duration-300"
-                    >
-                      <video
-                        src={reel.url}
-                        poster={reel.thumbnailUrl ?? undefined}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        controls
-                        playsInline
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {tab === "media" && (
-            <PageMediaGrid pageId={id} />
-          )}
+          {/* Secondary Sidebar Column (Right) */}
+          <div className="lg:col-span-2 space-y-4">
+            <AboutCard page={page} />
+            {page.reviewsEnabled && <ReviewsSection page={page} />}
+            <PageFollowersPreviewCard
+              pageId={id}
+              followerCount={page.followerCount}
+              onOpenDialog={() => setFollowersOpen(true)}
+            />
+            <PagePhotosPreviewCard
+              pageId={id}
+              onSelectTab={() => setTab("media")}
+            />
+          </div>
         </div>
-
-        {/* Secondary Sidebar Column (Right) */}
-        <div className="lg:col-span-2 space-y-4">
-          <AboutCard page={page} />
-          {page.reviewsEnabled && <ReviewsSection page={page} />}
-          <PageFollowersPreviewCard
-            pageId={id}
-            followerCount={page.followerCount}
-            onOpenDialog={() => setFollowersOpen(true)}
-          />
-          <PagePhotosPreviewCard
-            pageId={id}
-            onSelectTab={() => setTab("media")}
-          />
-        </div>
-      </div>
+      )}
 
       {page.viewerCanPost && (
         <EditPageDialog
@@ -1972,6 +2022,19 @@ function PageDetail({ id }: { id: number }) {
       {user?.id === page.ownerId && (
         <PageAccessDialog page={page} open={accessOpen} onOpenChange={setAccessOpen} />
       )}
+      {canManageHub && (
+        <Dialog open={monetizationOpen} onOpenChange={setMonetizationOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <DollarSign className="w-5 h-5 text-emerald-600" />
+                Hub Monetization Studio — {page.name}
+              </DialogTitle>
+            </DialogHeader>
+            <HubMonetizationStudioView pageId={id} />
+          </DialogContent>
+        </Dialog>
+      )}
       <PageFollowersDialog pageId={id} open={followersOpen} onOpenChange={setFollowersOpen} />
       <PageFollowingDialog pageId={id} open={followingOpen} onOpenChange={setFollowingOpen} />
       <InvitePageFriendsDialog pageId={id} open={inviteOpen} onOpenChange={setInviteOpen} />
@@ -1980,3 +2043,518 @@ function PageDetail({ id }: { id: number }) {
     </MainLayout>
   );
 }
+
+/* =================== Hub Monetization Studio (Web) =================== */
+
+interface HubMonetizationStudioDto {
+  pageId: number;
+  pageName: string;
+  status: "none" | "pending" | "approved" | "rejected" | "suspended";
+  appliedAt: string | null;
+  approvedAt: string | null;
+  monetizationNote: string | null;
+  rates: {
+    postRpmDollars: number;
+    reelRpmDollars: number;
+    videoRpmDollars: number;
+    liveRpmDollars: number;
+    likeBonusDollars: number;
+    commentBonusDollars: number;
+    shareBonusDollars: number;
+    minWithdrawDollars: number;
+  };
+  balance: {
+    balanceDollars: number;
+    todayDollars: number;
+    last7DaysDollars: number;
+    last28DaysDollars: number;
+    lifetimeDollars: number;
+    pendingWithdrawDollars: number;
+    totalWithdrawnDollars: number;
+  };
+  byFormat: {
+    post: { earnedDollars: number; views: number; engagements: number };
+    reel: { earnedDollars: number; views: number; engagements: number };
+    video: { earnedDollars: number; views: number; engagements: number };
+    live: { earnedDollars: number; views: number; engagements: number };
+  };
+  items: Array<{
+    id: number;
+    contentType: "post" | "video" | "reel" | "live";
+    title: string;
+    thumbnailUrl: string | null;
+    createdAt: string;
+    viewsCount: number;
+    likesCount: number;
+    commentsCount: number;
+    sharesCount: number;
+    earnedDollars: number;
+  }>;
+  withdrawals: Array<{
+    id: number;
+    amountDollars: number;
+    method: string;
+    accountDetails: Record<string, unknown>;
+    status: string;
+    adminNote: string | null;
+    createdAt: string;
+    processedAt: string | null;
+  }>;
+}
+
+function HubMonetizationStudioView({ pageId }: { pageId: number }) {
+  const qc = useQueryClient();
+  const [itemFilter, setItemFilter] = useState<"all" | "post" | "reel" | "video" | "live">("all");
+  const [withdrawMethod, setWithdrawMethod] = useState<string>("bkash");
+  const [withdrawAccount, setWithdrawAccount] = useState<string>("");
+  const [withdrawAmount, setWithdrawAmount] = useState<string>("");
+
+  const studioQuery = useQuery({
+    queryKey: ["hub-monetization-studio", pageId],
+    queryFn: () => customFetch<HubMonetizationStudioDto>(`/api/pages/${pageId}/monetization`),
+  });
+
+  const applyMutation = useMutation({
+    mutationFn: () =>
+      customFetch<{ success: boolean; status: string }>(`/api/pages/${pageId}/monetization/apply`, {
+        method: "POST",
+      }),
+    onSuccess: () => {
+      toast.success("Monetization application submitted for Admin review!");
+      void qc.invalidateQueries({ queryKey: ["hub-monetization-studio", pageId] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || "Failed to submit application");
+    },
+  });
+
+  const withdrawMutation = useMutation({
+    mutationFn: (body: { amountDollars: number; method: string; accountDetails: Record<string, string> }) =>
+      customFetch(`/api/pages/${pageId}/monetization/withdraw`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }),
+    onSuccess: () => {
+      toast.success("Withdrawal request submitted!");
+      setWithdrawAmount("");
+      setWithdrawAccount("");
+      void qc.invalidateQueries({ queryKey: ["hub-monetization-studio", pageId] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.data?.error || err?.message || "Withdrawal failed");
+    },
+  });
+
+  if (studioQuery.isLoading) {
+    return (
+      <div className="py-12 flex justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const data = studioQuery.data;
+  if (!data) {
+    return (
+      <div className="p-6 text-center text-muted-foreground">
+        Unable to load Hub Monetization Studio.
+      </div>
+    );
+  }
+
+  const filteredItems =
+    itemFilter === "all"
+      ? data.items
+      : data.items.filter((item) => item.contentType === itemFilter);
+
+  const handleWithdraw = (e: React.FormEvent) => {
+    e.preventDefault();
+    const amt = Math.floor(Number(withdrawAmount));
+    if (!amt || amt < data.rates.minWithdrawDollars) {
+      toast.error(`Minimum withdrawal is $${data.rates.minWithdrawDollars}`);
+      return;
+    }
+    if (!withdrawAccount.trim()) {
+      toast.error("Please enter your payout account details");
+      return;
+    }
+    withdrawMutation.mutate({
+      amountDollars: amt,
+      method: withdrawMethod,
+      accountDetails: { account: withdrawAccount.trim() },
+    });
+  };
+
+  return (
+    <div className="space-y-6 pb-8">
+      {/* Status Banner & Application Card */}
+      <div className="aurora-glass-card rounded-2xl border border-border p-5 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-xl font-bold">Hub Creator Monetization</h2>
+              <span
+                className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase ${
+                  data.status === "approved"
+                    ? "bg-emerald-500/15 text-emerald-600"
+                    : data.status === "pending"
+                      ? "bg-amber-500/15 text-amber-600"
+                      : data.status === "rejected" || data.status === "suspended"
+                        ? "bg-rose-500/15 text-rose-600"
+                        : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {data.status === "none" ? "Not Applied" : data.status}
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">
+              Earn USD automatically when people view, like, comment on, or share your Hub's{" "}
+              <b>Posts, Reels, Videos, and Live streams</b>.
+            </p>
+            {data.monetizationNote && (
+              <p className="text-xs text-amber-600 mt-1.5 font-medium">
+                Admin Note: {data.monetizationNote}
+              </p>
+            )}
+          </div>
+
+          {(data.status === "none" || data.status === "rejected") && (
+            <Button
+              onClick={() => applyMutation.mutate()}
+              disabled={applyMutation.isPending}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shrink-0"
+              data-testid="apply-hub-monetization-btn"
+            >
+              {applyMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+              )}
+              Apply for Monetization
+            </Button>
+          )}
+          {data.status === "pending" && (
+            <div className="flex items-center gap-2 text-amber-600 text-sm font-semibold bg-amber-500/10 px-4 py-2 rounded-xl">
+              <AlertCircle className="w-4 h-4" />
+              Application Pending Admin Approval
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Top Balance Summary Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="aurora-glass-card rounded-2xl border border-border p-4">
+          <div className="text-xs text-muted-foreground font-medium">Available Balance</div>
+          <div className="text-2xl font-extrabold text-emerald-600 mt-1">
+            ${data.balance.balanceDollars.toFixed(4)}
+          </div>
+          <div className="text-[11px] text-muted-foreground mt-1">
+            Min payout: ${data.rates.minWithdrawDollars}
+          </div>
+        </div>
+        <div className="aurora-glass-card rounded-2xl border border-border p-4">
+          <div className="text-xs text-muted-foreground font-medium">Today's Earnings</div>
+          <div className="text-2xl font-bold mt-1">${data.balance.todayDollars.toFixed(4)}</div>
+          <div className="text-[11px] text-muted-foreground mt-1">Last 24 hours</div>
+        </div>
+        <div className="aurora-glass-card rounded-2xl border border-border p-4">
+          <div className="text-xs text-muted-foreground font-medium">Last 28 Days</div>
+          <div className="text-2xl font-bold mt-1">${data.balance.last28DaysDollars.toFixed(4)}</div>
+          <div className="text-[11px] text-muted-foreground mt-1">
+            7d: ${data.balance.last7DaysDollars.toFixed(4)}
+          </div>
+        </div>
+        <div className="aurora-glass-card rounded-2xl border border-border p-4">
+          <div className="text-xs text-muted-foreground font-medium">Lifetime Earnings</div>
+          <div className="text-2xl font-bold mt-1">${data.balance.lifetimeDollars.toFixed(4)}</div>
+          <div className="text-[11px] text-muted-foreground mt-1">
+            Paid out: ${data.balance.totalWithdrawnDollars.toFixed(2)}
+          </div>
+        </div>
+      </div>
+
+      {/* 4 Format Earnings Breakdown Cards: Post, Reels, Videos, Live */}
+      <div className="aurora-glass-card rounded-2xl border border-border p-5">
+        <h3 className="font-bold text-base mb-3">
+          Earnings by Format (Post, Reels, Videos & Live)
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <div className="rounded-xl border border-border bg-muted/30 p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-bold flex items-center gap-1.5">
+                <FileText className="w-4 h-4 text-blue-500" /> Posts
+              </span>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 font-semibold">
+                ${data.rates.postRpmDollars.toFixed(2)} / 1K views
+              </span>
+            </div>
+            <div className="text-xl font-extrabold mt-2 text-foreground">
+              ${data.byFormat.post.earnedDollars.toFixed(4)}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {data.byFormat.post.views} views · {data.byFormat.post.engagements} engagements
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border bg-muted/30 p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-bold flex items-center gap-1.5">
+                <Play className="w-4 h-4 text-pink-500" /> Reels
+              </span>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-600 font-semibold">
+                ${data.rates.reelRpmDollars.toFixed(2)} / 1K plays
+              </span>
+            </div>
+            <div className="text-xl font-extrabold mt-2 text-foreground">
+              ${data.byFormat.reel.earnedDollars.toFixed(4)}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {data.byFormat.reel.views} plays · {data.byFormat.reel.engagements} engagements
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border bg-muted/30 p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-bold flex items-center gap-1.5">
+                <Video className="w-4 h-4 text-purple-500" /> Videos
+              </span>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 font-semibold">
+                ${data.rates.videoRpmDollars.toFixed(2)} / 1K views
+              </span>
+            </div>
+            <div className="text-xl font-extrabold mt-2 text-foreground">
+              ${data.byFormat.video.earnedDollars.toFixed(4)}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {data.byFormat.video.views} views · {data.byFormat.video.engagements} engagements
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border bg-muted/30 p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-bold flex items-center gap-1.5">
+                <Radio className="w-4 h-4 text-rose-500" /> Live
+              </span>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 font-semibold">
+                ${data.rates.liveRpmDollars.toFixed(2)} / 1K viewers
+              </span>
+            </div>
+            <div className="text-xl font-extrabold mt-2 text-foreground">
+              ${data.byFormat.live.earnedDollars.toFixed(4)}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {data.byFormat.live.views} viewers · {data.byFormat.live.engagements} engagements
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Item-by-Item Content Earnings Breakdown */}
+      <div className="aurora-glass-card rounded-2xl border border-border p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div>
+            <h3 className="font-bold text-base">
+              Content Earnings Breakdown (Per Post, Reel, Video & Live)
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              See exactly how much USD each individual Post, Reel, Video, and Live stream earned.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {(
+              [
+                { id: "all", label: "All Content" },
+                { id: "post", label: "Posts" },
+                { id: "reel", label: "Reels" },
+                { id: "video", label: "Videos" },
+                { id: "live", label: "Live" },
+              ] as const
+            ).map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setItemFilter(t.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                  itemFilter === t.id
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {filteredItems.length === 0 ? (
+          <div className="py-8 text-center text-sm text-muted-foreground">
+            No {itemFilter === "all" ? "content" : itemFilter} items published on this Hub yet.
+          </div>
+        ) : (
+          <div className="divide-y divide-border">
+            {filteredItems.map((item) => (
+              <div
+                key={`${item.contentType}-${item.id}`}
+                className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  {item.thumbnailUrl ? (
+                    <img
+                      src={item.thumbnailUrl}
+                      alt=""
+                      className="w-12 h-12 rounded-lg object-cover bg-muted shrink-0"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      {item.contentType === "reel" ? (
+                        <Play className="w-5 h-5" />
+                      ) : item.contentType === "video" ? (
+                        <Video className="w-5 h-5" />
+                      ) : item.contentType === "live" ? (
+                        <Radio className="w-5 h-5" />
+                      ) : (
+                        <FileText className="w-5 h-5" />
+                      )}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-muted text-foreground">
+                        {item.contentType}
+                      </span>
+                      <span className="font-semibold text-sm truncate">{item.title}</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-1">
+                      <span className="flex items-center gap-1">
+                        <Eye className="w-3.5 h-3.5" /> {item.viewsCount} views
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Heart className="w-3.5 h-3.5" /> {item.likesCount} likes
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <MessageCircle className="w-3.5 h-3.5" /> {item.commentsCount} comments
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Share2 className="w-3.5 h-3.5" /> {item.sharesCount} shares
+                      </span>
+                      <span>• {new Date(item.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="sm:text-right shrink-0">
+                  <div className="text-base font-extrabold text-emerald-600">
+                    +${item.earnedDollars.toFixed(4)}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">Earned</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Payout / Withdraw Section */}
+      <div className="aurora-glass-card rounded-2xl border border-border p-5">
+        <h3 className="font-bold text-base mb-1 flex items-center gap-2">
+          <Wallet className="w-4 h-4 text-emerald-600" />
+          Withdraw Hub Earnings
+        </h3>
+        <p className="text-xs text-muted-foreground mb-4">
+          Minimum withdrawal: <b>${data.rates.minWithdrawDollars} USD</b>. Available balance:{" "}
+          <b>${data.balance.balanceDollars.toFixed(2)} USD</b>.
+        </p>
+
+        <form onSubmit={handleWithdraw} className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+          <div>
+            <Label className="text-xs">Payout Method</Label>
+            <Select value={withdrawMethod} onValueChange={setWithdrawMethod}>
+              <SelectTrigger className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="bkash">bKash</SelectItem>
+                <SelectItem value="nagad">Nagad</SelectItem>
+                <SelectItem value="binance">Binance</SelectItem>
+                <SelectItem value="paypal">PayPal</SelectItem>
+                <SelectItem value="wise">Wise</SelectItem>
+                <SelectItem value="bybit">Bybit</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="sm:col-span-2">
+            <Label className="text-xs">Account Number / Wallet / Email</Label>
+            <Input
+              className="mt-1"
+              placeholder="e.g. 017XXXXXXXX or Binance Pay ID / Email"
+              value={withdrawAccount}
+              onChange={(e) => setWithdrawAccount(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <Label className="text-xs">Amount ($ USD)</Label>
+              <Input
+                type="number"
+                min={data.rates.minWithdrawDollars}
+                step="1"
+                className="mt-1"
+                placeholder={`${data.rates.minWithdrawDollars}`}
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(e.target.value)}
+              />
+            </div>
+            <Button
+              type="submit"
+              disabled={withdrawMutation.isPending}
+              className="mt-auto bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              {withdrawMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "Withdraw"
+              )}
+            </Button>
+          </div>
+        </form>
+
+        {data.withdrawals.length > 0 && (
+          <div className="mt-5 pt-4 border-t border-border">
+            <h4 className="text-xs font-bold uppercase text-muted-foreground mb-2">
+              Withdrawal History
+            </h4>
+            <div className="space-y-2">
+              {data.withdrawals.map((w) => (
+                <div
+                  key={w.id}
+                  className="flex items-center justify-between text-xs p-2.5 rounded-lg bg-muted/40"
+                >
+                  <div>
+                    <span className="font-bold text-foreground">${w.amountDollars}</span> via{" "}
+                    <span className="uppercase font-semibold">{w.method}</span>
+                    <span className="text-muted-foreground ml-2">
+                      ({new Date(w.createdAt).toLocaleDateString()})
+                    </span>
+                  </div>
+                  <span
+                    className={`px-2 py-0.5 rounded-full font-bold uppercase ${
+                      w.status === "paid"
+                        ? "bg-emerald-500/15 text-emerald-600"
+                        : w.status === "rejected"
+                          ? "bg-rose-500/15 text-rose-600"
+                          : "bg-amber-500/15 text-amber-600"
+                    }`}
+                  >
+                    {w.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+

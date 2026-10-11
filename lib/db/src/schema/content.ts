@@ -99,6 +99,8 @@ export const reelsTable = pgTable("reels", {
   authorId: uuid("author_id")
     .notNull()
     .references(() => profilesTable.id, { onDelete: "cascade" }),
+  // When set, the reel is posted AS this page (Facebook-style "acting as page").
+  pageId: integer("page_id"),
   videoUrl: text("video_url").notNull(),
   thumbnailUrl: text("thumbnail_url"),
   caption: text("caption"),

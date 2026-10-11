@@ -70,20 +70,50 @@ function methodLabel(m: string): string {
 export function Earnings() {
   const { can } = useAuth();
   const canManage = can("earnings.manage");
+  const [activeTab, setActiveTab] = useState<"hub" | "points">("hub");
 
   return (
     <div>
       <PageHeader
-        title="Earnings"
-        description="Control the points system, economics and payouts."
+        title="Earnings & Hub Monetization"
+        description="Configure Hub monetization rates for Post, Reels, Videos & Live, approve Hubs, and manage user earnings."
       />
-      <div className="space-y-6">
-        <StatsSection />
-        <ConfigSection canManage={canManage} />
-        <DailyTasksAdminSection canManage={canManage} />
-        <WithdrawalsSection canManage={canManage} />
-        <AdjustSection canManage={canManage} />
+      <div className="mb-6 flex flex-wrap gap-2 border-b border-slate-200 pb-3">
+        <button
+          type="button"
+          onClick={() => setActiveTab("hub")}
+          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+            activeTab === "hub"
+              ? "bg-slate-900 text-white shadow-sm"
+              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+          }`}
+        >
+          Hub Monetization (Post / Reels / Videos / Live)
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("points")}
+          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+            activeTab === "points"
+              ? "bg-slate-900 text-white shadow-sm"
+              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+          }`}
+        >
+          User Points & Daily Tasks
+        </button>
       </div>
+
+      {activeTab === "hub" ? (
+        <HubMonetizationAdminSection canManage={canManage} />
+      ) : (
+        <div className="space-y-6">
+          <StatsSection />
+          <ConfigSection canManage={canManage} />
+          <DailyTasksAdminSection canManage={canManage} />
+          <WithdrawalsSection canManage={canManage} />
+          <AdjustSection canManage={canManage} />
+        </div>
+      )}
     </div>
   );
 }
@@ -1092,3 +1122,818 @@ function AdjustSection({ canManage }: { canManage: boolean }) {
     </Card>
   );
 }
+
+/* ======================== Hub Monetization Admin ======================== */
+
+interface HubMonetizationSummary {
+  monetizedHubsCount: number;
+  pendingApplicationsCount: number;
+  totalEarningsDollars: number;
+  pendingPayoutDollars: number;
+  pendingPayoutCount: number;
+  totalPaidDollars: number;
+}
+
+interface HubMonetizationConfigDto {
+  id: number;
+  enabled: boolean;
+  postRpmCents: number;
+  reelRpmCents: number;
+  videoRpmCents: number;
+  liveRpmCents: number;
+  likeMicroDollars: number;
+  commentMicroDollars: number;
+  shareMicroDollars: number;
+  minWithdrawDollars: number;
+  dailyHubCapMicroDollars: number;
+  updatedAt?: string;
+}
+
+interface HubApplicationRow {
+  id: number;
+  name: string;
+  category: string;
+  description: string | null;
+  avatarUrl: string | null;
+  coverUrl: string | null;
+  owner: {
+    id: string;
+    displayName: string;
+    username: string;
+    avatarUrl: string | null;
+  } | null;
+  followersCount: number;
+  totalContentCount: number;
+  monetizationStatus: "none" | "pending" | "approved" | "rejected" | "suspended";
+  monetizationAppliedAt: string | null;
+  monetizationApprovedAt: string | null;
+  monetizationNote: string | null;
+  earnedBalanceDollars: number;
+}
+
+interface HubWithdrawalRow {
+  id: number;
+  pageId: number;
+  page: {
+    id: number;
+    name: string;
+    avatarUrl: string | null;
+    category: string;
+  } | null;
+  ownerId: string;
+  owner: {
+    id: string;
+    displayName: string;
+    username: string;
+    avatarUrl: string | null;
+  } | null;
+  amountDollars: number;
+  microDollars: number;
+  method: string;
+  accountDetails: Record<string, unknown>;
+  status: WithdrawalStatus;
+  adminNote: string | null;
+  createdAt: string;
+  processedAt: string | null;
+}
+
+const HUB_STATUS_TONE: Record<string, "amber" | "blue" | "green" | "red" | "neutral"> = {
+  pending: "amber",
+  approved: "green",
+  rejected: "red",
+  suspended: "red",
+  none: "neutral",
+};
+
+function HubMonetizationAdminSection({ canManage }: { canManage: boolean }) {
+  const qc = useQueryClient();
+
+  const summaryQuery = useQuery({
+    queryKey: ["hub-monetization-summary"],
+    queryFn: () => api.get<HubMonetizationSummary>("/admin/hub-monetization/summary"),
+  });
+
+  const configQuery = useQuery({
+    queryKey: ["hub-monetization-config"],
+    queryFn: () => api.get<HubMonetizationConfigDto>("/admin/hub-monetization/config"),
+  });
+
+  const [appStatusFilter, setAppStatusFilter] = useState<string>("all");
+  const applicationsQuery = useQuery({
+    queryKey: ["hub-monetization-applications", appStatusFilter],
+    queryFn: () =>
+      api.get<HubApplicationRow[]>("/admin/hub-monetization/applications", {
+        status: appStatusFilter,
+      }),
+  });
+
+  const [withdrawalStatusFilter, setWithdrawalStatusFilter] = useState<string>("pending");
+  const withdrawalsQuery = useQuery({
+    queryKey: ["hub-monetization-withdrawals", withdrawalStatusFilter],
+    queryFn: () =>
+      api.get<HubWithdrawalRow[]>("/admin/hub-monetization/withdrawals", {
+        status: withdrawalStatusFilter,
+      }),
+  });
+
+  // Rate inputs in user-friendly USD
+  const [rateForm, setRateForm] = useState({
+    postRpmDollars: "1.00",
+    reelRpmDollars: "2.00",
+    videoRpmDollars: "3.00",
+    liveRpmDollars: "4.00",
+    likeBonusDollars: "0.001",
+    commentBonusDollars: "0.002",
+    shareBonusDollars: "0.005",
+    minWithdrawDollars: "20",
+    dailyCapDollars: "50",
+  });
+  const [rateSaved, setRateSaved] = useState(false);
+
+  useEffect(() => {
+    if (configQuery.data) {
+      const c = configQuery.data;
+      setRateForm({
+        postRpmDollars: (c.postRpmCents / 100).toFixed(2),
+        reelRpmDollars: (c.reelRpmCents / 100).toFixed(2),
+        videoRpmDollars: (c.videoRpmCents / 100).toFixed(2),
+        liveRpmDollars: (c.liveRpmCents / 100).toFixed(2),
+        likeBonusDollars: String(c.likeMicroDollars / 1_000_000),
+        commentBonusDollars: String(c.commentMicroDollars / 1_000_000),
+        shareBonusDollars: String(c.shareMicroDollars / 1_000_000),
+        minWithdrawDollars: String(c.minWithdrawDollars),
+        dailyCapDollars: String(Math.round(c.dailyHubCapMicroDollars / 1_000_000)),
+      });
+    }
+  }, [configQuery.data]);
+
+  const updateConfigMut = useMutation({
+    mutationFn: (body: Partial<HubMonetizationConfigDto>) =>
+      api.put<HubMonetizationConfigDto>("/admin/hub-monetization/config", body),
+    onSuccess: (data) => {
+      qc.setQueryData(["hub-monetization-config"], data);
+      setRateSaved(true);
+      window.setTimeout(() => setRateSaved(false), 2500);
+    },
+  });
+
+  const handleSaveRates = () => {
+    updateConfigMut.mutate({
+      postRpmCents: Math.max(0, Math.round(Number(rateForm.postRpmDollars || 0) * 100)),
+      reelRpmCents: Math.max(0, Math.round(Number(rateForm.reelRpmDollars || 0) * 100)),
+      videoRpmCents: Math.max(0, Math.round(Number(rateForm.videoRpmDollars || 0) * 100)),
+      liveRpmCents: Math.max(0, Math.round(Number(rateForm.liveRpmDollars || 0) * 100)),
+      likeMicroDollars: Math.max(0, Math.round(Number(rateForm.likeBonusDollars || 0) * 1_000_000)),
+      commentMicroDollars: Math.max(0, Math.round(Number(rateForm.commentBonusDollars || 0) * 1_000_000)),
+      shareMicroDollars: Math.max(0, Math.round(Number(rateForm.shareBonusDollars || 0) * 1_000_000)),
+      minWithdrawDollars: Math.max(1, Math.round(Number(rateForm.minWithdrawDollars || 1))),
+      dailyHubCapMicroDollars: Math.max(0, Math.round(Number(rateForm.dailyCapDollars || 0) * 1_000_000)),
+    });
+  };
+
+  // Hub status update mutation
+  const updateHubStatusMut = useMutation({
+    mutationFn: (v: { pageId: number; status: string; note?: string }) =>
+      api.post(`/admin/hub-monetization/pages/${v.pageId}/status`, {
+        status: v.status,
+        note: v.note,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["hub-monetization-applications"] });
+      void qc.invalidateQueries({ queryKey: ["hub-monetization-summary"] });
+    },
+  });
+
+  // Hub withdrawal processing modal
+  const [activeWithdrawal, setActiveWithdrawal] = useState<HubWithdrawalRow | null>(null);
+  const [withdrawalAction, setWithdrawalAction] = useState<WithdrawalStatus | null>(null);
+  const [withdrawalNote, setWithdrawalNote] = useState("");
+
+  const processWithdrawalMut = useMutation({
+    mutationFn: (v: { id: number; status: WithdrawalStatus; adminNote?: string }) =>
+      api.post(`/admin/hub-monetization/withdrawals/${v.id}/process`, {
+        status: v.status,
+        ...(v.adminNote ? { adminNote: v.adminNote } : {}),
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["hub-monetization-withdrawals"] });
+      void qc.invalidateQueries({ queryKey: ["hub-monetization-summary"] });
+      void qc.invalidateQueries({ queryKey: ["hub-monetization-applications"] });
+      setActiveWithdrawal(null);
+      setWithdrawalAction(null);
+      setWithdrawalNote("");
+    },
+  });
+
+  const enabled = configQuery.data?.enabled ?? true;
+
+  return (
+    <div className="space-y-6">
+      {/* 1. KPI Summary */}
+      <Card>
+        <CardHeader
+          title="Hub Monetization Overview"
+          subtitle="Active monetized Hubs, pending applications, and total creator revenue across Post, Reels, Videos & Live."
+        />
+        {summaryQuery.isLoading && <Loading />}
+        <ErrorNote error={summaryQuery.error} />
+        {summaryQuery.data && (
+          <div className="grid grid-cols-1 divide-y divide-slate-100 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+            <StatTile
+              tone="emerald"
+              icon={<BadgeDollarSign className="h-5 w-5" />}
+              label="Monetized Hubs"
+              value={fmtNumber(summaryQuery.data.monetizedHubsCount)}
+              sub={`${fmtNumber(summaryQuery.data.pendingApplicationsCount)} pending application(s)`}
+            />
+            <StatTile
+              tone="violet"
+              icon={<Coins className="h-5 w-5" />}
+              label="Total Hub Earnings"
+              value={`$${summaryQuery.data.totalEarningsDollars.toFixed(2)}`}
+              sub={`Paid out: $${summaryQuery.data.totalPaidDollars.toFixed(2)}`}
+            />
+            <StatTile
+              tone="amber"
+              icon={<Clock className="h-5 w-5" />}
+              label="Pending Hub Payouts"
+              value={usd(summaryQuery.data.pendingPayoutDollars)}
+              sub={`${fmtNumber(summaryQuery.data.pendingPayoutCount)} Hub withdrawal request(s)`}
+            />
+          </div>
+        )}
+      </Card>
+
+      {/* 2. Master Switch & Format Earning Rates (Post, Reels, Videos, Live) */}
+      <Card>
+        <CardHeader
+          title="Format Earning Rates (Post, Reels, Videos & Live)"
+          subtitle="Set how much USD Hubs earn for Posts, Reels, Videos, and Live streams."
+          action={
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-slate-600">
+                  {enabled ? "Monetization Active" : "Paused"}
+                </span>
+                <Toggle
+                  checked={enabled}
+                  disabled={!canManage || updateConfigMut.isPending}
+                  onChange={(v) => updateConfigMut.mutate({ enabled: v })}
+                />
+              </div>
+              {rateSaved && (
+                <span className="text-xs font-semibold text-emerald-600">Rates Saved!</span>
+              )}
+              <Button
+                size="sm"
+                disabled={!canManage}
+                loading={updateConfigMut.isPending}
+                onClick={handleSaveRates}
+              >
+                <Save className="h-4 w-4" />
+                Save Rates
+              </Button>
+            </div>
+          }
+        />
+        {configQuery.isLoading && <Loading />}
+        <ErrorNote error={configQuery.error || updateConfigMut.error} />
+        {configQuery.data && (
+          <div className="space-y-6 px-5 py-4">
+            <div>
+              <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">
+                Content Format Earning Rates (USD per 1,000 Views / Plays)
+              </h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    📝 Post Earning Rate ($ / 1K views)
+                  </label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    className="mt-1.5 bg-white"
+                    value={rateForm.postRpmDollars}
+                    disabled={!canManage}
+                    onChange={(e) =>
+                      setRateForm((p) => ({ ...p, postRpmDollars: e.target.value }))
+                    }
+                  />
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    ${(Number(rateForm.postRpmDollars || 0) / 1000).toFixed(4)} per Post view
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    🎬 Reels Earning Rate ($ / 1K plays)
+                  </label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    className="mt-1.5 bg-white"
+                    value={rateForm.reelRpmDollars}
+                    disabled={!canManage}
+                    onChange={(e) =>
+                      setRateForm((p) => ({ ...p, reelRpmDollars: e.target.value }))
+                    }
+                  />
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    ${(Number(rateForm.reelRpmDollars || 0) / 1000).toFixed(4)} per Reel play
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    📹 Videos Earning Rate ($ / 1K views)
+                  </label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    className="mt-1.5 bg-white"
+                    value={rateForm.videoRpmDollars}
+                    disabled={!canManage}
+                    onChange={(e) =>
+                      setRateForm((p) => ({ ...p, videoRpmDollars: e.target.value }))
+                    }
+                  />
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    ${(Number(rateForm.videoRpmDollars || 0) / 1000).toFixed(4)} per Video view
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    🔴 Live Earning Rate ($ / 1K viewers)
+                  </label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    className="mt-1.5 bg-white"
+                    value={rateForm.liveRpmDollars}
+                    disabled={!canManage}
+                    onChange={(e) =>
+                      setRateForm((p) => ({ ...p, liveRpmDollars: e.target.value }))
+                    }
+                  />
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    ${(Number(rateForm.liveRpmDollars || 0) / 1000).toFixed(4)} per Live viewer
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">
+                Engagement Bonuses & Payout Thresholds (USD)
+              </h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+                <div>
+                  <label className="block text-xs font-medium text-slate-600">
+                    Like Bonus ($ per like)
+                  </label>
+                  <Input
+                    type="number"
+                    step="0.0001"
+                    min="0"
+                    className="mt-1"
+                    value={rateForm.likeBonusDollars}
+                    disabled={!canManage}
+                    onChange={(e) =>
+                      setRateForm((p) => ({ ...p, likeBonusDollars: e.target.value }))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600">
+                    Comment Bonus ($ per comment)
+                  </label>
+                  <Input
+                    type="number"
+                    step="0.0001"
+                    min="0"
+                    className="mt-1"
+                    value={rateForm.commentBonusDollars}
+                    disabled={!canManage}
+                    onChange={(e) =>
+                      setRateForm((p) => ({ ...p, commentBonusDollars: e.target.value }))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600">
+                    Share Bonus ($ per share)
+                  </label>
+                  <Input
+                    type="number"
+                    step="0.0001"
+                    min="0"
+                    className="mt-1"
+                    value={rateForm.shareBonusDollars}
+                    disabled={!canManage}
+                    onChange={(e) =>
+                      setRateForm((p) => ({ ...p, shareBonusDollars: e.target.value }))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600">
+                    Min Withdrawal ($ USD)
+                  </label>
+                  <Input
+                    type="number"
+                    step="1"
+                    min="1"
+                    className="mt-1"
+                    value={rateForm.minWithdrawDollars}
+                    disabled={!canManage}
+                    onChange={(e) =>
+                      setRateForm((p) => ({ ...p, minWithdrawDollars: e.target.value }))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600">
+                    Daily Cap per Hub ($ USD)
+                  </label>
+                  <Input
+                    type="number"
+                    step="1"
+                    min="1"
+                    className="mt-1"
+                    value={rateForm.dailyCapDollars}
+                    disabled={!canManage}
+                    onChange={(e) =>
+                      setRateForm((p) => ({ ...p, dailyCapDollars: e.target.value }))
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {/* 3. Hub Monetization Applications & Status Management */}
+      <Card>
+        <CardHeader
+          title="Hub Monetization Applications & Active Hubs"
+          subtitle="Approve, reject, or suspend Hub monetization for any Hub on HiMewo."
+          action={
+            <Select
+              value={appStatusFilter}
+              onChange={(e) => setAppStatusFilter(e.target.value)}
+            >
+              <option value="all">All Hubs</option>
+              <option value="pending">Pending Applications</option>
+              <option value="approved">Approved (Monetized)</option>
+              <option value="rejected">Rejected</option>
+              <option value="suspended">Suspended</option>
+              <option value="none">Not Applied</option>
+            </Select>
+          }
+        />
+        {applicationsQuery.isLoading && <Loading />}
+        <ErrorNote error={applicationsQuery.error || updateHubStatusMut.error} />
+        {applicationsQuery.data && applicationsQuery.data.length === 0 && (
+          <EmptyState
+            title="No Hubs found"
+            description="No Hubs match the selected status filter."
+          />
+        )}
+        {applicationsQuery.data && applicationsQuery.data.length > 0 && (
+          <Table>
+            <thead>
+              <tr>
+                <Th>Hub (Page)</Th>
+                <Th>Owner</Th>
+                <Th>Followers & Content</Th>
+                <Th>Available Balance</Th>
+                <Th>Status</Th>
+                {canManage && <Th>Actions</Th>}
+              </tr>
+            </thead>
+            <tbody>
+              {applicationsQuery.data.map((hub) => (
+                <tr key={hub.id} className="hover:bg-slate-50">
+                  <Td>
+                    <div className="flex items-center gap-3">
+                      <Avatar src={hub.avatarUrl} name={hub.name} size={36} />
+                      <div>
+                        <div className="font-semibold text-slate-900">{hub.name}</div>
+                        <div className="text-xs text-slate-500">{hub.category}</div>
+                      </div>
+                    </div>
+                  </Td>
+                  <Td>
+                    {hub.owner ? (
+                      <div>
+                        <div className="text-sm font-medium text-slate-800">
+                          {hub.owner.displayName}
+                        </div>
+                        <div className="text-xs text-slate-500">@{hub.owner.username}</div>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-slate-400">—</span>
+                    )}
+                  </Td>
+                  <Td>
+                    <div className="text-sm font-medium text-slate-800">
+                      {fmtNumber(hub.followersCount)} followers
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {fmtNumber(hub.totalContentCount)} content items
+                    </div>
+                  </Td>
+                  <Td>
+                    <span className="font-semibold text-emerald-600">
+                      ${hub.earnedBalanceDollars.toFixed(4)}
+                    </span>
+                  </Td>
+                  <Td>
+                    <Badge tone={HUB_STATUS_TONE[hub.monetizationStatus] ?? "neutral"}>
+                      {hub.monetizationStatus.toUpperCase()}
+                    </Badge>
+                    {hub.monetizationAppliedAt && (
+                      <div className="mt-0.5 text-[11px] text-slate-400">
+                        Applied {fmtDateTime(hub.monetizationAppliedAt)}
+                      </div>
+                    )}
+                  </Td>
+                  {canManage && (
+                    <Td>
+                      <div className="flex flex-wrap gap-1.5">
+                        {hub.monetizationStatus !== "approved" && (
+                          <Button
+                            size="sm"
+                            variant="primary"
+                            loading={updateHubStatusMut.isPending}
+                            onClick={() =>
+                              updateHubStatusMut.mutate({
+                                pageId: hub.id,
+                                status: "approved",
+                              })
+                            }
+                          >
+                            Approve
+                          </Button>
+                        )}
+                        {hub.monetizationStatus === "approved" && (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            loading={updateHubStatusMut.isPending}
+                            onClick={() =>
+                              updateHubStatusMut.mutate({
+                                pageId: hub.id,
+                                status: "suspended",
+                              })
+                            }
+                          >
+                            Suspend
+                          </Button>
+                        )}
+                        {hub.monetizationStatus !== "rejected" && (
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            loading={updateHubStatusMut.isPending}
+                            onClick={() =>
+                              updateHubStatusMut.mutate({
+                                pageId: hub.id,
+                                status: "rejected",
+                              })
+                            }
+                          >
+                            Reject
+                          </Button>
+                        )}
+                      </div>
+                    </Td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
+      </Card>
+
+      {/* 4. Hub Withdrawal Requests */}
+      <Card>
+        <CardHeader
+          title="Hub Withdrawal Requests"
+          subtitle="Process Hub creator payouts (bKash, Nagad, Binance, PayPal, Wise, Bybit)."
+          action={
+            <Select
+              value={withdrawalStatusFilter}
+              onChange={(e) => setWithdrawalStatusFilter(e.target.value)}
+            >
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="paid">Paid</option>
+              <option value="rejected">Rejected</option>
+              <option value="all">All Statuses</option>
+            </Select>
+          }
+        />
+        {withdrawalsQuery.isLoading && <Loading />}
+        <ErrorNote error={withdrawalsQuery.error} />
+        {withdrawalsQuery.data && withdrawalsQuery.data.length === 0 && (
+          <EmptyState
+            title="No Hub withdrawal requests"
+            description="No Hub payout requests match this filter."
+          />
+        )}
+        {withdrawalsQuery.data && withdrawalsQuery.data.length > 0 && (
+          <Table>
+            <thead>
+              <tr>
+                <Th>Hub</Th>
+                <Th>Owner</Th>
+                <Th>Amount</Th>
+                <Th>Method & Details</Th>
+                <Th>Requested</Th>
+                <Th>Status</Th>
+                {canManage && <Th>Actions</Th>}
+              </tr>
+            </thead>
+            <tbody>
+              {withdrawalsQuery.data.map((w) => (
+                <tr key={w.id} className="hover:bg-slate-50">
+                  <Td>
+                    <div className="font-semibold text-slate-900">
+                      {w.page?.name ?? `Hub #${w.pageId}`}
+                    </div>
+                    <div className="text-xs text-slate-500">{w.page?.category ?? ""}</div>
+                  </Td>
+                  <Td>
+                    {w.owner ? (
+                      <div className="text-xs text-slate-700">
+                        {w.owner.displayName} (@{w.owner.username})
+                      </div>
+                    ) : (
+                      <span className="text-xs text-slate-400">—</span>
+                    )}
+                  </Td>
+                  <Td className="font-semibold text-slate-900">{usd(w.amountDollars)}</Td>
+                  <Td>
+                    <div className="text-xs font-semibold text-slate-800">
+                      {methodLabel(w.method)}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {Object.entries(w.accountDetails ?? {})
+                        .map(([k, v]) => `${k}: ${String(v)}`)
+                        .join(", ") || "—"}
+                    </div>
+                  </Td>
+                  <Td className="text-xs text-slate-500">{fmtDateTime(w.createdAt)}</Td>
+                  <Td>
+                    <Badge tone={STATUS_TONE[w.status] ?? "amber"}>{w.status}</Badge>
+                    {w.adminNote && (
+                      <div className="mt-1 text-xs text-slate-400">{w.adminNote}</div>
+                    )}
+                  </Td>
+                  {canManage && (
+                    <Td>
+                      {w.status === "pending" || w.status === "approved" ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {w.status === "pending" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setActiveWithdrawal(w);
+                                setWithdrawalAction("approved");
+                                setWithdrawalNote("");
+                              }}
+                            >
+                              Approve
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => {
+                              setActiveWithdrawal(w);
+                              setWithdrawalAction("paid");
+                              setWithdrawalNote("");
+                            }}
+                          >
+                            Mark Paid
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            onClick={() => {
+                              setActiveWithdrawal(w);
+                              setWithdrawalAction("rejected");
+                              setWithdrawalNote("");
+                            }}
+                          >
+                            Reject
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-400">—</span>
+                      )}
+                    </Td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
+
+        <Modal
+          open={!!activeWithdrawal && !!withdrawalAction}
+          onClose={() => {
+            setActiveWithdrawal(null);
+            setWithdrawalAction(null);
+            setWithdrawalNote("");
+          }}
+          title={
+            withdrawalAction === "approved"
+              ? "Approve Hub Withdrawal"
+              : withdrawalAction === "paid"
+                ? "Mark Hub Withdrawal Paid"
+                : "Reject Hub Withdrawal"
+          }
+          footer={
+            <>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setActiveWithdrawal(null);
+                  setWithdrawalAction(null);
+                  setWithdrawalNote("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant={withdrawalAction === "rejected" ? "danger" : "primary"}
+                loading={processWithdrawalMut.isPending}
+                onClick={() =>
+                  activeWithdrawal &&
+                  withdrawalAction &&
+                  processWithdrawalMut.mutate({
+                    id: activeWithdrawal.id,
+                    status: withdrawalAction,
+                    adminNote: withdrawalNote.trim() || undefined,
+                  })
+                }
+              >
+                Confirm
+              </Button>
+            </>
+          }
+        >
+          {activeWithdrawal && withdrawalAction && (
+            <div className="space-y-4">
+              <ErrorNote error={processWithdrawalMut.error} />
+              <div className="rounded-lg bg-slate-50 px-4 py-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Hub</span>
+                  <span className="font-semibold text-slate-800">
+                    {activeWithdrawal.page?.name ?? `Hub #${activeWithdrawal.pageId}`}
+                  </span>
+                </div>
+                <div className="mt-1 flex justify-between">
+                  <span className="text-slate-500">Amount</span>
+                  <span className="font-semibold text-slate-800">
+                    {usd(activeWithdrawal.amountDollars)}
+                  </span>
+                </div>
+                <div className="mt-1 flex justify-between">
+                  <span className="text-slate-500">Method</span>
+                  <span className="font-semibold text-slate-800">
+                    {methodLabel(activeWithdrawal.method)}
+                  </span>
+                </div>
+              </div>
+              {withdrawalAction === "rejected" && (
+                <p className="text-xs text-amber-600">
+                  Rejecting automatically refunds {usd(activeWithdrawal.amountDollars)} back to the Hub's available balance.
+                </p>
+              )}
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-600">Admin Note (optional)</label>
+                <Textarea
+                  rows={3}
+                  value={withdrawalNote}
+                  onChange={(e) => setWithdrawalNote(e.target.value)}
+                  placeholder="Optional note or transaction reference..."
+                />
+              </div>
+            </div>
+          )}
+        </Modal>
+      </Card>
+    </div>
+  );
+}
+

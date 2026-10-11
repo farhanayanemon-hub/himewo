@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { db, liveStreamsTable, profilesTable } from "@workspace/db";
 import { and, eq, inArray, isNull, desc } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
+import { canManagePage } from "../lib/authz";
 import { buildListProfiles } from "../lib/serialize";
 import { endLiveRoom } from "../realtime";
 import {
@@ -60,6 +61,25 @@ router.post("/live", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: "Stream title is required" });
     return;
   }
+
+  const rawPageId = req.body.pageId;
+  const pageId =
+    typeof rawPageId === "number"
+      ? rawPageId
+      : typeof rawPageId === "string" && rawPageId.trim()
+        ? parseInt(rawPageId, 10)
+        : null;
+
+  if (pageId != null && !isNaN(pageId)) {
+    const authorized = await canManagePage(req.userId!, pageId);
+    if (!authorized) {
+      res.status(403).json({
+        error: "You don't have permission to start a live stream as this hub",
+      });
+      return;
+    }
+  }
+
   // A host can only run one live stream at a time: end any leftovers first.
   const stale = await db
     .select({ id: liveStreamsTable.id })
@@ -84,7 +104,11 @@ router.post("/live", requireAuth, async (req, res): Promise<void> => {
   }
   const [row] = await db
     .insert(liveStreamsTable)
-    .values({ hostId: req.userId!, title })
+    .values({
+      hostId: req.userId!,
+      pageId: pageId && !isNaN(pageId) ? pageId : null,
+      title,
+    })
     .returning();
   const [built] = await buildStreams([row]);
   res.status(201).json(StartLiveStreamResponse.parse(built));

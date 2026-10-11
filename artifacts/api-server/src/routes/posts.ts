@@ -44,6 +44,8 @@ import {
 import { createNotification, notifyGroupNewPost } from "../lib/notify";
 import { awardPoints, revokePoints } from "../lib/earnings";
 import { canViewPost, filterVisiblePosts, canManagePage } from "../lib/authz";
+import { awardHubContentEvent } from "../lib/hub-monetization";
+import { logger } from "../lib/logger";
 import {
   GetFeedQueryParams,
   GetFeedResponse,
@@ -643,6 +645,29 @@ router.put(
       contentOwnerId: post.authorId,
       ip: req.ip,
     });
+    if (post.pageId != null) {
+      const [videoMedia] = await db
+        .select({ id: postMediaTable.id })
+        .from(postMediaTable)
+        .where(
+          and(
+            eq(postMediaTable.postId, post.id),
+            eq(postMediaTable.type, "video"),
+          ),
+        )
+        .limit(1);
+      const contentType = videoMedia ? "video" : "post";
+      await awardHubContentEvent({
+        pageId: post.pageId,
+        contentType,
+        contentId: post.id,
+        actorId: req.userId!,
+        action: "like",
+        entityId: 0,
+      }).catch((err) => {
+        logger.error({ err }, "awardHubContentEvent failed for post reaction");
+      });
+    }
     const summary = await buildReactionSummary(params.data.id, req.userId);
     res.json(SetPostReactionResponse.parse(summary));
   },
@@ -854,6 +879,29 @@ router.post("/posts/:id/share", requireAuth, async (req, res): Promise<void> => 
     contentOwnerId: post.authorId,
     ip: req.ip,
   });
+  if (post.pageId != null) {
+    const [videoMedia] = await db
+      .select({ id: postMediaTable.id })
+      .from(postMediaTable)
+      .where(
+        and(
+          eq(postMediaTable.postId, post.id),
+          eq(postMediaTable.type, "video"),
+        ),
+      )
+      .limit(1);
+    const contentType = videoMedia ? "video" : "post";
+    await awardHubContentEvent({
+      pageId: post.pageId,
+      contentType,
+      contentId: post.id,
+      actorId: req.userId!,
+      action: "share",
+      entityId: share.id,
+    }).catch((err) => {
+      logger.error({ err }, "awardHubContentEvent failed for post share");
+    });
+  }
   const built = await buildPostById(params.data.id, req.userId);
   res.status(201).json(SharePostResponse.parse(built));
 });
@@ -1034,6 +1082,29 @@ router.post(
         entityId: comment.id,
         contentOwnerId: post.authorId,
         ip: req.ip,
+      });
+    }
+    if (post.pageId != null) {
+      const [videoMedia] = await db
+        .select({ id: postMediaTable.id })
+        .from(postMediaTable)
+        .where(
+          and(
+            eq(postMediaTable.postId, post.id),
+            eq(postMediaTable.type, "video"),
+          ),
+        )
+        .limit(1);
+      const contentType = videoMedia ? "video" : "post";
+      await awardHubContentEvent({
+        pageId: post.pageId,
+        contentType,
+        contentId: post.id,
+        actorId: req.userId!,
+        action: "comment",
+        entityId: comment.id,
+      }).catch((err) => {
+        logger.error({ err }, "awardHubContentEvent failed for post comment");
       });
     }
     const built = await buildCommentById(comment.id, req.userId);

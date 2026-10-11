@@ -2,6 +2,7 @@ import http from "http";
 import app from "./app";
 import { initRealtime } from "./realtime";
 import { logger } from "./lib/logger";
+import { ensureHubMonetizationSchema } from "./lib/hub-monetization";
 
 const rawPort = process.env["PORT"];
 
@@ -20,6 +21,14 @@ if (Number.isNaN(port) || port <= 0) {
 const server = http.createServer(app);
 initRealtime(server);
 
-server.listen(port, () => {
-  logger.info({ port }, "Server listening");
-});
+ensureHubMonetizationSchema()
+  .catch((err) => {
+    logger.error({ err }, "Failed to ensure hub monetization schema on boot");
+  })
+  .finally(() => {
+    server.listen(port, () => {
+      logger.info({ port }, "Server listening");
+    });
+  });
+
+

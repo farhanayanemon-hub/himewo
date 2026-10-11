@@ -13,6 +13,7 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { profilesTable } from "./profiles";
+import { pagesTable } from "./communities";
 
 /**
  * Global configuration for the marketing Points -> Dollars earning system.
@@ -241,3 +242,170 @@ export const dailyUserActivitiesTable = pgTable(
 );
 
 export type DailyUserActivity = typeof dailyUserActivitiesTable.$inferSelect;
+
+/**
+ * ============================================================================
+ * HUB-ONLY CONTENT MONETIZATION SYSTEM (Milestone 1)
+ * ============================================================================
+ * Exclusively for Hubs (pages). Stores global monetization rates, append-only
+ * micro-dollar earnings ledger, and payout withdrawal requests.
+ */
+
+/**
+ * Global configuration for the Hub-Only Content Monetization system.
+ * Single-row table (always id = 1).
+ */
+export const hubMonetizationConfigTable = pgTable("hub_monetization_config", {
+  id: integer("id").primaryKey().default(1),
+  enabled: boolean("enabled").notNull().default(true),
+  // Per-format RPM rates in cents per 1,000 qualified views
+  postRpmCents: integer("post_rpm_cents").notNull().default(100),
+  reelRpmCents: integer("reel_rpm_cents").notNull().default(200),
+  videoRpmCents: integer("video_rpm_cents").notNull().default(300),
+  liveRpmCents: integer("live_rpm_cents").notNull().default(400),
+  // Engagement bonuses in micro-dollars ($0.001 = 1,000 micro-dollars)
+  likeMicroDollars: integer("like_micro_dollars").notNull().default(1000),
+  commentMicroDollars: integer("comment_micro_dollars").notNull().default(2000),
+  shareMicroDollars: integer("share_micro_dollars").notNull().default(5000),
+  // Minimum withdrawal threshold in whole US dollars
+  minWithdrawDollars: integer("min_withdraw_dollars").notNull().default(20),
+  // Daily cap in micro-dollars per Hub ($50.00 = 50,000,000 micro-dollars)
+  dailyHubCapMicroDollars: integer("daily_hub_cap_micro_dollars")
+    .notNull()
+    .default(50000000),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+export type HubMonetizationConfig =
+  typeof hubMonetizationConfigTable.$inferSelect;
+export type InsertHubMonetizationConfig =
+  typeof hubMonetizationConfigTable.$inferInsert;
+
+/**
+ * Append-only ledger tracking micro-dollar credits/debits per Hub.
+ * 1 USD = 1,000,000 micro-dollars.
+ * Idempotency enforced on (pageId, contentType, contentId, actorId, action, entityId).
+ */
+export const hubEarningsLedgerTable = pgTable(
+  "hub_earnings_ledger",
+  {
+    id: serial("id").primaryKey(),
+    pageId: integer("page_id")
+      .notNull()
+      .references(() => pagesTable.id, { onDelete: "cascade" }),
+    contentType: text("content_type")
+      .$type<"post" | "reel" | "video" | "live" | "payout">()
+      .notNull(),
+    contentId: integer("content_id").notNull().default(0),
+    actorId: uuid("actor_id").references(() => profilesTable.id, {
+      onDelete: "set null",
+    }),
+    action: text("action")
+      .$type<
+        | "view"
+        | "like"
+        | "comment"
+        | "share"
+        | "withdraw"
+        | "withdraw_refund"
+        | "admin_adjust"
+      >()
+      .notNull(),
+    microDollars: integer("micro_dollars").notNull(),
+    entityId: integer("entity_id").notNull().default(0),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("hub_earnings_page_created_idx").on(t.pageId, t.createdAt),
+    uniqueIndex("hub_earnings_idem_idx").on(
+      t.pageId,
+      t.contentType,
+      t.contentId,
+      t.actorId,
+      t.action,
+      t.entityId,
+    ),
+  ],
+);
+
+export type HubEarningsLedger = typeof hubEarningsLedgerTable.$inferSelect;
+export type InsertHubEarningsLedger =
+  typeof hubEarningsLedgerTable.$inferInsert;
+export type HubContentType = "post" | "reel" | "video" | "live" | "payout";
+export type HubMonetizationContentType = HubContentType;
+export type HubMonetizationAction =
+  | "view"
+  | "like"
+  | "comment"
+  | "share"
+  | "withdraw"
+  | "withdraw_refund"
+  | "admin_adjust";
+
+/**
+ * Hub withdrawal requests tracking real payout conversion for Hub owners.
+ */
+export const hubWithdrawalRequestsTable = pgTable(
+  "hub_withdrawal_requests",
+  {
+    id: serial("id").primaryKey(),
+    pageId: integer("page_id")
+      .notNull()
+      .references(() => pagesTable.id, { onDelete: "cascade" }),
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => profilesTable.id, { onDelete: "cascade" }),
+    amountDollars: integer("amount_dollars").notNull(),
+    microDollars: integer("micro_dollars").notNull(),
+    method: text("method")
+      .$type<"bkash" | "nagad" | "binance" | "paypal" | "wise" | "bybit">()
+      .notNull(),
+    accountDetails: jsonb("account_details")
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default({}),
+    status: text("status")
+      .$type<"pending" | "approved" | "paid" | "rejected">()
+      .notNull()
+      .default("pending"),
+    adminNote: text("admin_note"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    processedAt: timestamp("processed_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("hub_withdrawals_page_created_idx").on(t.pageId, t.createdAt),
+    index("hub_withdrawals_status_idx").on(t.status),
+  ],
+);
+
+export type HubWithdrawalRequest =
+  typeof hubWithdrawalRequestsTable.$inferSelect;
+export type InsertHubWithdrawalRequest =
+  typeof hubWithdrawalRequestsTable.$inferInsert;
+export type HubWithdrawalMethod =
+  | "bkash"
+  | "nagad"
+  | "binance"
+  | "paypal"
+  | "wise"
+  | "bybit";
+export type HubWithdrawalStatus =
+  | "pending"
+  | "approved"
+  | "paid"
+  | "rejected";
+
+export const insertHubWithdrawalRequestSchema = createInsertSchema(
+  hubWithdrawalRequestsTable,
+).omit({ id: true, createdAt: true, processedAt: true });
+export type InsertHubWithdrawalRequestSchema = z.infer<
+  typeof insertHubWithdrawalRequestSchema
+>;

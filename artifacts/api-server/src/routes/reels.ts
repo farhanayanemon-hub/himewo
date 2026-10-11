@@ -11,11 +11,13 @@ import { and, eq, ne, lt, asc, desc, inArray, isNull, isNotNull, sql } from "dri
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 import { requireAuth } from "../lib/auth";
 import { resolveUserId } from "../lib/resolve-user";
-import { filterVisibleReels, canViewReel } from "../lib/authz";
+import { filterVisibleReels, canViewReel, canManagePage } from "../lib/authz";
 import { toProfile, buildReels, buildReelById } from "../lib/serialize";
 import { shareMusicToLibrary } from "./stories";
 import { awardPoints, revokePoints } from "../lib/earnings";
 import { createNotification } from "../lib/notify";
+import { awardHubContentEvent } from "../lib/hub-monetization";
+import { logger } from "../lib/logger";
 import {
   ListReelsQueryParams,
   ListReelsResponse,
@@ -130,10 +132,29 @@ router.post("/reels", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
+  const rawPageId = req.body.pageId;
+  const pageId =
+    typeof rawPageId === "number"
+      ? rawPageId
+      : typeof rawPageId === "string" && rawPageId.trim()
+        ? parseInt(rawPageId, 10)
+        : null;
+
+  if (pageId != null && !isNaN(pageId)) {
+    const authorized = await canManagePage(req.userId!, pageId);
+    if (!authorized) {
+      res
+        .status(403)
+        .json({ error: "You don't have permission to post reels as this hub" });
+      return;
+    }
+  }
+
   const [reel] = await db
     .insert(reelsTable)
     .values({
       authorId: req.userId!,
+      pageId: pageId && !isNaN(pageId) ? pageId : null,
       videoUrl: parsed.data.videoUrl,
       thumbnailUrl: parsed.data.thumbnailUrl ?? null,
       caption: parsed.data.caption ?? null,
@@ -286,6 +307,18 @@ const likeReelHandler = async (
     contentOwnerId: reel.authorId,
     ip: req.ip,
   });
+  if (reel.pageId != null) {
+    await awardHubContentEvent({
+      pageId: reel.pageId,
+      contentType: "reel",
+      contentId: reel.id,
+      actorId: req.userId!,
+      action: "like",
+      entityId: 0,
+    }).catch((err) => {
+      logger.error({ err }, "awardHubContentEvent failed for reel like");
+    });
+  }
   const built = await buildReelById(params.data.id, req.userId);
   res.json(LikeReelResponse.parse(built));
 };
@@ -363,6 +396,18 @@ router.put(
       contentOwnerId: reel.authorId,
       ip: req.ip,
     });
+    if (reel.pageId != null) {
+      await awardHubContentEvent({
+        pageId: reel.pageId,
+        contentType: "reel",
+        contentId: reel.id,
+        actorId: req.userId!,
+        action: "like",
+        entityId: 0,
+      }).catch((err) => {
+        logger.error({ err }, "awardHubContentEvent failed for reel reaction");
+      });
+    }
     const built = await buildReelById(params.data.id, req.userId);
     res.json(SetReelReactionResponse.parse(built));
   },
@@ -493,6 +538,19 @@ router.post(
       });
     }
 
+    if (reel.pageId != null) {
+      await awardHubContentEvent({
+        pageId: reel.pageId,
+        contentType: "reel",
+        contentId: reel.id,
+        actorId: req.userId!,
+        action: "comment",
+        entityId: comment.id,
+      }).catch((err) => {
+        logger.error({ err }, "awardHubContentEvent failed for reel comment");
+      });
+    }
+
     const [author] = await db
       .select()
       .from(profilesTable)
@@ -541,6 +599,18 @@ router.post(
       contentOwnerId: reel.authorId,
       ip: req.ip,
     });
+    if (reel.pageId != null) {
+      await awardHubContentEvent({
+        pageId: reel.pageId,
+        contentType: "reel",
+        contentId: reel.id,
+        actorId: req.userId!,
+        action: "share",
+        entityId: 0,
+      }).catch((err) => {
+        logger.error({ err }, "awardHubContentEvent failed for reel share");
+      });
+    }
     const built = await buildReelById(reel.id, req.userId);
     res.json(built);
   },

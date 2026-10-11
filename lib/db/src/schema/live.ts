@@ -3,6 +3,7 @@ import {
   serial,
   uuid,
   text,
+  integer,
   timestamp,
   index,
 } from "drizzle-orm/pg-core";
@@ -15,6 +16,8 @@ export const liveStreamsTable = pgTable(
     hostId: uuid("host_id")
       .notNull()
       .references(() => profilesTable.id, { onDelete: "cascade" }),
+    // When set, the live stream is hosted AS this page.
+    pageId: integer("page_id"),
     title: text("title").notNull(),
     startedAt: timestamp("started_at", { withTimezone: true })
       .notNull()
@@ -25,3 +28,4 @@ export const liveStreamsTable = pgTable(
 );
 
 export type LiveStreamRow = typeof liveStreamsTable.$inferSelect;
+export type InsertLiveStreamRow = typeof liveStreamsTable.$inferInsert;
