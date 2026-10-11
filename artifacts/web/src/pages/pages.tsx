@@ -2286,15 +2286,12 @@ function HubMonetizationStudioView({ pageId }: { pageId: number }) {
               <span className="text-sm font-bold flex items-center gap-1.5">
                 <FileText className="w-4 h-4 text-blue-500" /> Posts
               </span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 font-semibold">
-                ${data.rates.postRpmDollars.toFixed(2)} / 1K views
-              </span>
             </div>
-            <div className="text-xl font-extrabold mt-2 text-foreground">
+            <div className="text-xl font-extrabold mt-2 text-emerald-600">
               ${data.byFormat.post.earnedDollars.toFixed(4)}
             </div>
             <div className="text-xs text-muted-foreground mt-1">
-              {data.byFormat.post.views} views · {data.byFormat.post.engagements} engagements
+              Total Posts Earnings
             </div>
           </div>
 
@@ -2303,15 +2300,12 @@ function HubMonetizationStudioView({ pageId }: { pageId: number }) {
               <span className="text-sm font-bold flex items-center gap-1.5">
                 <Play className="w-4 h-4 text-pink-500" /> Reels
               </span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-600 font-semibold">
-                ${data.rates.reelRpmDollars.toFixed(2)} / 1K plays
-              </span>
             </div>
-            <div className="text-xl font-extrabold mt-2 text-foreground">
+            <div className="text-xl font-extrabold mt-2 text-emerald-600">
               ${data.byFormat.reel.earnedDollars.toFixed(4)}
             </div>
             <div className="text-xs text-muted-foreground mt-1">
-              {data.byFormat.reel.views} plays · {data.byFormat.reel.engagements} engagements
+              Total Reels Earnings
             </div>
           </div>
 
@@ -2320,15 +2314,12 @@ function HubMonetizationStudioView({ pageId }: { pageId: number }) {
               <span className="text-sm font-bold flex items-center gap-1.5">
                 <Video className="w-4 h-4 text-purple-500" /> Videos
               </span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 font-semibold">
-                ${data.rates.videoRpmDollars.toFixed(2)} / 1K views
-              </span>
             </div>
-            <div className="text-xl font-extrabold mt-2 text-foreground">
+            <div className="text-xl font-extrabold mt-2 text-emerald-600">
               ${data.byFormat.video.earnedDollars.toFixed(4)}
             </div>
             <div className="text-xs text-muted-foreground mt-1">
-              {data.byFormat.video.views} views · {data.byFormat.video.engagements} engagements
+              Total Videos Earnings
             </div>
           </div>
 
@@ -2337,15 +2328,12 @@ function HubMonetizationStudioView({ pageId }: { pageId: number }) {
               <span className="text-sm font-bold flex items-center gap-1.5">
                 <Radio className="w-4 h-4 text-rose-500" /> Live
               </span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 font-semibold">
-                ${data.rates.liveRpmDollars.toFixed(2)} / 1K viewers
-              </span>
             </div>
-            <div className="text-xl font-extrabold mt-2 text-foreground">
+            <div className="text-xl font-extrabold mt-2 text-emerald-600">
               ${data.byFormat.live.earnedDollars.toFixed(4)}
             </div>
             <div className="text-xs text-muted-foreground mt-1">
-              {data.byFormat.live.views} viewers · {data.byFormat.live.engagements} engagements
+              Total Live Earnings
             </div>
           </div>
         </div>
@@ -2359,7 +2347,7 @@ function HubMonetizationStudioView({ pageId }: { pageId: number }) {
               Content Earnings Breakdown (Per Post, Reel, Video & Live)
             </h3>
             <p className="text-xs text-muted-foreground">
-              See exactly how much USD each individual Post, Reel, Video, and Live stream earned.
+              See how much USD each individual Post, Reel, Video, and Live stream earned.
             </p>
           </div>
           <div className="flex flex-wrap gap-1.5">
@@ -2397,7 +2385,7 @@ function HubMonetizationStudioView({ pageId }: { pageId: number }) {
             {filteredItems.map((item) => (
               <div
                 key={`${item.contentType}-${item.id}`}
-                className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                className="py-3.5 flex items-center justify-between gap-3"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   {item.thumbnailUrl ? (
@@ -2426,24 +2414,12 @@ function HubMonetizationStudioView({ pageId }: { pageId: number }) {
                       </span>
                       <span className="font-semibold text-sm truncate">{item.title}</span>
                     </div>
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-1">
-                      <span className="flex items-center gap-1">
-                        <Eye className="w-3.5 h-3.5" /> {item.viewsCount} views
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Heart className="w-3.5 h-3.5" /> {item.likesCount} likes
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MessageCircle className="w-3.5 h-3.5" /> {item.commentsCount} comments
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Share2 className="w-3.5 h-3.5" /> {item.sharesCount} shares
-                      </span>
-                      <span>• {new Date(item.createdAt).toLocaleDateString()}</span>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Published {new Date(item.createdAt).toLocaleDateString()}
                     </div>
                   </div>
                 </div>
-                <div className="sm:text-right shrink-0">
+                <div className="text-right shrink-0">
                   <div className="text-base font-extrabold text-emerald-600">
                     +${item.earnedDollars.toFixed(4)}
                   </div>

@@ -1781,33 +1781,21 @@ function HubMonetizationStudioBlock({ pageId }: { pageId: number }) {
                 key: "post",
                 label: "📝 Posts",
                 earned: data.byFormat.post.earnedDollars,
-                views: data.byFormat.post.views,
-                eng: data.byFormat.post.engagements,
-                rate: data.rates.postRpmDollars,
               },
               {
                 key: "reel",
                 label: "🎬 Reels",
                 earned: data.byFormat.reel.earnedDollars,
-                views: data.byFormat.reel.views,
-                eng: data.byFormat.reel.engagements,
-                rate: data.rates.reelRpmDollars,
               },
               {
                 key: "video",
                 label: "📹 Videos",
                 earned: data.byFormat.video.earnedDollars,
-                views: data.byFormat.video.views,
-                eng: data.byFormat.video.engagements,
-                rate: data.rates.videoRpmDollars,
               },
               {
                 key: "live",
                 label: "🔴 Live",
                 earned: data.byFormat.live.earnedDollars,
-                views: data.byFormat.live.views,
-                eng: data.byFormat.live.engagements,
-                rate: data.rates.liveRpmDollars,
               },
             ] as const
           ).map((fmt) => (
@@ -1822,14 +1810,9 @@ function HubMonetizationStudioBlock({ pageId }: { pageId: number }) {
                 backgroundColor: c.secondary,
               }}
             >
-              <View>
-                <Text style={{ color: c.foreground, fontFamily: "Inter_700Bold", fontSize: 14 }}>
-                  {fmt.label}
-                </Text>
-                <Text style={{ color: c.mutedForeground, fontSize: 11, marginTop: 2 }}>
-                  {fmt.views} views · {fmt.eng} engagements (${fmt.rate.toFixed(2)}/1K)
-                </Text>
-              </View>
+              <Text style={{ color: c.foreground, fontFamily: "Inter_700Bold", fontSize: 14 }}>
+                {fmt.label}
+              </Text>
               <Text style={{ color: "#059669", fontFamily: "Inter_700Bold", fontSize: 15 }}>
                 ${fmt.earned.toFixed(4)}
               </Text>
@@ -1844,7 +1827,7 @@ function HubMonetizationStudioBlock({ pageId }: { pageId: number }) {
           Per-Content Earnings Breakdown
         </Text>
         <Text style={{ color: c.mutedForeground, fontSize: 12, marginTop: 2, marginBottom: 10 }}>
-          Exact earnings for each Post, Reel, Video & Live stream.
+          Earnings for each Post, Reel, Video & Live stream.
         </Text>
 
         <ScrollView
@@ -1924,7 +1907,7 @@ function HubMonetizationStudioBlock({ pageId }: { pageId: number }) {
                     </Text>
                   </View>
                   <Text style={{ color: c.mutedForeground, fontSize: 11, marginTop: 4 }}>
-                    👁 {item.viewsCount} · ❤️ {item.likesCount} · 💬 {item.commentsCount} · 🔁 {item.sharesCount}
+                    Published {new Date(item.createdAt).toLocaleDateString()}
                   </Text>
                 </View>
                 <Text style={{ color: "#059669", fontFamily: "Inter_700Bold", fontSize: 14 }}>
