@@ -453,9 +453,9 @@ export async function getHubMonetizationStudioData(
     .select({
       netMicroDollars: sql<number>`COALESCE(SUM(${hubEarningsLedgerTable.microDollars}), 0)::bigint`,
       lifetimeMicroDollars: sql<number>`COALESCE(SUM(CASE WHEN ${hubEarningsLedgerTable.microDollars} > 0 THEN ${hubEarningsLedgerTable.microDollars} ELSE 0 END), 0)::bigint`,
-      todayMicroDollars: sql<number>`COALESCE(SUM(CASE WHEN ${hubEarningsLedgerTable.microDollars} > 0 AND ${hubEarningsLedgerTable.createdAt} >= ${startOfToday} THEN ${hubEarningsLedgerTable.microDollars} ELSE 0 END), 0)::bigint`,
-      last7DaysMicroDollars: sql<number>`COALESCE(SUM(CASE WHEN ${hubEarningsLedgerTable.microDollars} > 0 AND ${hubEarningsLedgerTable.createdAt} >= ${sevenDaysAgo} THEN ${hubEarningsLedgerTable.microDollars} ELSE 0 END), 0)::bigint`,
-      last28DaysMicroDollars: sql<number>`COALESCE(SUM(CASE WHEN ${hubEarningsLedgerTable.microDollars} > 0 AND ${hubEarningsLedgerTable.createdAt} >= ${twentyEightDaysAgo} THEN ${hubEarningsLedgerTable.microDollars} ELSE 0 END), 0)::bigint`,
+      todayMicroDollars: sql<number>`COALESCE(SUM(CASE WHEN ${hubEarningsLedgerTable.microDollars} > 0 AND ${hubEarningsLedgerTable.createdAt} >= ${startOfToday.toISOString()} THEN ${hubEarningsLedgerTable.microDollars} ELSE 0 END), 0)::bigint`,
+      last7DaysMicroDollars: sql<number>`COALESCE(SUM(CASE WHEN ${hubEarningsLedgerTable.microDollars} > 0 AND ${hubEarningsLedgerTable.createdAt} >= ${sevenDaysAgo.toISOString()} THEN ${hubEarningsLedgerTable.microDollars} ELSE 0 END), 0)::bigint`,
+      last28DaysMicroDollars: sql<number>`COALESCE(SUM(CASE WHEN ${hubEarningsLedgerTable.microDollars} > 0 AND ${hubEarningsLedgerTable.createdAt} >= ${twentyEightDaysAgo.toISOString()} THEN ${hubEarningsLedgerTable.microDollars} ELSE 0 END), 0)::bigint`,
     })
     .from(hubEarningsLedgerTable)
     .where(eq(hubEarningsLedgerTable.pageId, pageId));

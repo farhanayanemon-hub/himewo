@@ -49,7 +49,7 @@ function Build-TargetApp([string]$target) {
   }
 
   Write-Host "`n>>> [1/4] Prebuilding $target native project..." -ForegroundColor Yellow
-  $env:EXPO_PUBLIC_DOMAIN = "workspaceapi-server-production-5e99.up.railway.app"
+  $env:EXPO_PUBLIC_DOMAIN = "api-server-production-be15.up.railway.app"
   $env:EXPO_PUBLIC_SUPABASE_URL = "https://rzdfgbfyhnkvqbcegguk.supabase.co"
   $env:EXPO_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6ZGZnYmZ5aG5rdnFiY2VnZ3VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MDgwODMsImV4cCI6MjA5Nzk4NDA4M30.8RlmkHFpDxDGmZ1KJg3bnswfy6my8FRT0Su_F1fu5CU"
   
