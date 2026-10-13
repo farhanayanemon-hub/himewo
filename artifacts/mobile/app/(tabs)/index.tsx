@@ -37,8 +37,7 @@ import { StoryBar } from "@/components/StoryBar";
 import { ReelsShelf } from "@/components/ReelsShelf";
 import { CommentsSheet } from "@/components/CommentsSheet";
 import { ShareSheet } from "@/components/ShareSheet";
-import { CreateActionSheet } from "@/components/CreateActionSheet";
-import { CreateMediaLauncherSheet } from "@/components/CreateMediaLauncherSheet";
+
 import { useAuth } from "@/lib/auth";
 import { useActingPage } from "@/lib/acting-page";
 import { useColors } from "@/hooks/useColors";
@@ -59,8 +58,7 @@ export default function HomeScreen() {
   const { actingPage } = useActingPage();
   const [activePost, setActivePost] = useState<number | null>(null);
   const [sharePostId, setSharePostId] = useState<number | null>(null);
-  const [createSheetOpen, setCreateSheetOpen] = useState(false);
-  const [launcherMode, setLauncherMode] = useState<"story" | "reel" | null>(null);
+
 
   const { data: unreadNotifData } = useGetUnreadNotificationCount({
     query: {
@@ -160,14 +158,10 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    const subCreate = DeviceEventEmitter.addListener("himewo:open-create-sheet", () => {
-      setCreateSheetOpen(true);
-    });
     const subScroll = DeviceEventEmitter.addListener("himewo:scroll-feed-to-top", () => {
       flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
     });
     return () => {
-      subCreate.remove();
       subScroll.remove();
     };
   }, []);
@@ -358,18 +352,7 @@ export default function HomeScreen() {
         onClose={() => setSharePostId(null)}
       />
 
-      <CreateActionSheet
-        visible={createSheetOpen}
-        onClose={() => setCreateSheetOpen(false)}
-        onSelectStory={() => setLauncherMode("story")}
-        onSelectReel={() => setLauncherMode("reel")}
-      />
 
-      <CreateMediaLauncherSheet
-        visible={!!launcherMode}
-        mode={launcherMode ?? "story"}
-        onClose={() => setLauncherMode(null)}
-      />
     </SafeAreaView>
   );
 }

@@ -12,7 +12,7 @@ export default function ShopLayout() {
         contentStyle: { backgroundColor: c.background },
       }}
     >
-      <Stack.Screen name="index" options={{ title: "Shop" }} />
+      <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="stall/[id]" options={{ title: "Stall" }} />
       <Stack.Screen name="product/[id]" options={{ title: "Product" }} />
       <Stack.Screen name="orders" options={{ title: "My orders" }} />

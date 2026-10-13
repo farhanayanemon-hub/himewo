@@ -555,7 +555,7 @@ export default function MessagesPage() {
 
   return (
     <MainLayout>
-      <div className="bg-card md:border border-border md:rounded-xl overflow-hidden shadow-sm flex -mx-4 md:mx-0 h-[calc(100dvh-9.5rem-env(safe-area-inset-bottom))] md:h-[calc(100vh-100px)] animate-in fade-in">
+      <div className="bg-card md:border border-border md:rounded-xl overflow-hidden shadow-sm flex mx-0 h-[calc(100dvh-9.5rem-env(safe-area-inset-bottom))] md:h-[calc(100vh-100px)] animate-in fade-in">
         {/* Sidebar / Conversation List */}
         <div className={`${conversationId ? "hidden md:flex" : "flex"} w-full md:w-[320px] lg:w-[360px] border-r border-border flex-col bg-card/50`}>
           {/* Header */}

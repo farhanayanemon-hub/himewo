@@ -22,10 +22,6 @@ export function SolidDockTabBar({
 
   const navigateTo = (routeName: string) => {
     triggerHaptic();
-    if (routeName === "shop") {
-      router.push("/shop" as never);
-      return;
-    }
     const route = state.routes.find((r) => r.name === routeName);
     if (!route) {
       router.push(`/${routeName}` as never);
@@ -50,9 +46,9 @@ export function SolidDockTabBar({
     DeviceEventEmitter.emit("himewo:open-create-sheet");
   };
 
-  const isHomeFocused = currentRouteName === "index" && !pathname.startsWith("/shop");
-  const isReelsFocused = currentRouteName === "reels" || pathname.startsWith("/reels");
-  const isShopFocused = pathname.startsWith("/shop");
+  const isHomeFocused = currentRouteName === "index";
+  const isReelsFocused = currentRouteName === "reels";
+  const isShopFocused = currentRouteName === "shop" || pathname.startsWith("/shop");
   const isChatsFocused = currentRouteName === "chats";
   const isProfileFocused = currentRouteName === "profile";
 
@@ -61,11 +57,11 @@ export function SolidDockTabBar({
       pointerEvents="box-none"
       style={[
         styles.container,
-        { bottom: Math.max(insets.bottom, 12) + 6 },
+        { bottom: Math.max(insets.bottom, 10) + 4 },
       ]}
     >
       <View pointerEvents="box-none" style={styles.dockRow}>
-        {/* ISLAND 1 (LEFT): Separate Dark Circle [ 💬 ] */}
+        {/* ISLAND 1 (FAR LEFT): Separate Dark Circle [ 💬 ] */}
         <Pressable
           onPress={() => navigateTo("chats")}
           style={({ pressed }) => [
@@ -78,7 +74,7 @@ export function SolidDockTabBar({
         >
           <Ionicons
             name={isChatsFocused ? "chatbubbles" : "chatbubbles-outline"}
-            size={24}
+            size={23}
             color="#FFFFFF"
           />
           {unreadCount > 0 ? (
@@ -90,9 +86,22 @@ export function SolidDockTabBar({
           ) : null}
         </Pressable>
 
-        {/* ISLAND 2 (MIDDLE): Combined Pill [ ⌂ Home ] [ 🎬 Reels ] [ ➕ ] [ 🛍️ Shop ] */}
+        {/* ISLAND 2 (MIDDLE PILL): [ ➕ Plus ] [ ⌂ Feed ] [ 🎬 Reels ] [ 🛍️ Shop ] */}
         <View style={styles.centerIsland}>
-          {/* Home */}
+          {/* 1. Electric Cyan Plus Button FIRST (in place of Home) */}
+          <Pressable
+            onPress={handleCreatePress}
+            style={({ pressed }) => [
+              styles.cyanPlusBtn,
+              { transform: [{ scale: pressed ? 0.90 : 1 }] },
+            ]}
+            accessibilityLabel="Create Content"
+            hitSlop={8}
+          >
+            <Ionicons name="add" size={26} color="#0E1117" />
+          </Pressable>
+
+          {/* 2. Feed / Home (Always visible) */}
           <Pressable
             onPress={() => navigateTo("index")}
             style={({ pressed }) => [
@@ -105,12 +114,12 @@ export function SolidDockTabBar({
           >
             <Ionicons
               name={isHomeFocused ? "home" : "home-outline"}
-              size={23}
+              size={22}
               color="#FFFFFF"
             />
           </Pressable>
 
-          {/* Reels */}
+          {/* 3. Reels */}
           <Pressable
             onPress={() => navigateTo("reels")}
             style={({ pressed }) => [
@@ -123,25 +132,12 @@ export function SolidDockTabBar({
           >
             <Ionicons
               name={isReelsFocused ? "film" : "film-outline"}
-              size={23}
+              size={22}
               color="#FFFFFF"
             />
           </Pressable>
 
-          {/* Electric Cyan Plus Button */}
-          <Pressable
-            onPress={handleCreatePress}
-            style={({ pressed }) => [
-              styles.cyanPlusBtn,
-              { transform: [{ scale: pressed ? 0.90 : 1 }] },
-            ]}
-            accessibilityLabel="Create Content"
-            hitSlop={8}
-          >
-            <Ionicons name="add" size={27} color="#0E1117" />
-          </Pressable>
-
-          {/* Shop */}
+          {/* 4. Shop */}
           <Pressable
             onPress={() => navigateTo("shop")}
             style={({ pressed }) => [
@@ -154,13 +150,13 @@ export function SolidDockTabBar({
           >
             <Ionicons
               name={isShopFocused ? "bag-handle" : "bag-handle-outline"}
-              size={23}
+              size={22}
               color="#FFFFFF"
             />
           </Pressable>
         </View>
 
-        {/* ISLAND 3 (RIGHT): Separate Dark Circle [ 👤 ] */}
+        {/* ISLAND 3 (FAR RIGHT): Separate Dark Circle [ 👤 ] */}
         <Pressable
           onPress={() => navigateTo("profile")}
           style={({ pressed }) => [
@@ -173,7 +169,7 @@ export function SolidDockTabBar({
         >
           <Ionicons
             name={isProfileFocused ? "person" : "person-outline"}
-            size={24}
+            size={23}
             color="#FFFFFF"
           />
         </Pressable>
@@ -194,13 +190,15 @@ const styles = StyleSheet.create({
   dockRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
+    justifyContent: "space-between",
+    width: "100%",
+    maxWidth: 430,
+    paddingHorizontal: 12,
   },
   circleIsland: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: "#11141A",
     alignItems: "center",
     justifyContent: "center",
@@ -225,13 +223,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#161B22",
   },
   centerIsland: {
-    height: 56,
-    paddingHorizontal: 8,
-    borderRadius: 28,
+    height: 50,
+    paddingHorizontal: 6,
+    borderRadius: 25,
     backgroundColor: "#11141A",
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 4,
     borderWidth: 1.5,
     borderColor: "rgba(255,255,255,0.10)",
     ...Platform.select({
@@ -248,9 +246,9 @@ const styles = StyleSheet.create({
     }),
   },
   iconPill: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -258,9 +256,9 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.18)",
   },
   cyanPlusBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: "#00C2E8",
     alignItems: "center",
     justifyContent: "center",

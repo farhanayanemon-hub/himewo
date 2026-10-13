@@ -401,17 +401,17 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
     <div className="min-h-screen bg-background flex flex-col pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-0">
       {/* Top Navbar */}
       <header className="sticky top-0 z-50 w-full aurora-glass-header">
-        <div className="w-full max-w-[1720px] mx-auto px-4 lg:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+        <div className="w-full max-w-[1720px] mx-auto px-2.5 sm:px-4 lg:px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 min-w-0">
             <MobileMenuButton
               navItems={navItems}
               shortcutItems={shortcutItems}
               user={user}
               onSignOut={signOut}
             />
-            <Link href="/" className="flex items-center gap-2 group" aria-label="HiMewo Home">
-              <PixelCatIcon size={40} glow={false} className="group-hover:scale-105 transition-transform" />
-              <span className="font-black text-lg tracking-tight text-foreground md:hidden">HiMewo</span>
+            <Link href="/" className="flex items-center gap-1.5 sm:gap-2 group shrink-0" aria-label="HiMewo Home">
+              <PixelCatIcon size={38} glow={false} className="group-hover:scale-105 transition-transform" />
+              <span className="font-black text-lg tracking-tight text-foreground hidden sm:inline md:hidden">HiMewo</span>
             </Link>
 
             <form onSubmit={handleSearch} className="hidden md:flex relative">
@@ -511,10 +511,10 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* Mobile Right Action Buttons (Glossy Dribbble style) */}
             <Link href="/notifications" className="md:hidden">
-              <button className="h-11 px-3.5 rounded-full bg-card border border-border/80 shadow-[0_4px_12px_rgba(0,0,0,0.06)] flex items-center gap-1.5 active:scale-92 transition-transform text-foreground cursor-pointer">
+              <button className="h-10 px-2.5 sm:h-11 sm:px-3.5 rounded-full bg-card border border-border/80 shadow-[0_4px_12px_rgba(0,0,0,0.06)] flex items-center gap-1.5 active:scale-92 transition-transform text-foreground cursor-pointer">
                 <Bell className="w-4 h-4" />
                 <span className="text-xs font-black">
                   {(unreadCount?.count ?? 0) > 99 ? "99+" : (unreadCount?.count ?? 3)}
@@ -522,7 +522,7 @@ export function MainLayout({ children, rightSidebar }: { children: ReactNode; ri
               </button>
             </Link>
             <Link href="/search" className="md:hidden">
-              <button className="w-11 h-11 rounded-full bg-card border border-border/80 shadow-[0_4px_12px_rgba(0,0,0,0.06)] flex items-center justify-center active:scale-92 transition-transform text-foreground cursor-pointer">
+              <button className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-card border border-border/80 shadow-[0_4px_12px_rgba(0,0,0,0.06)] flex items-center justify-center active:scale-92 transition-transform text-foreground cursor-pointer">
                 <Search className="w-4 h-4" />
               </button>
             </Link>

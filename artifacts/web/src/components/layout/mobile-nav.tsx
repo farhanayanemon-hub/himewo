@@ -61,7 +61,7 @@ export function MobileMenuButton({
       <button
         onClick={() => setMenuOpen(true)}
         aria-label="Menu"
-        className="md:hidden flex items-center justify-center w-11 h-11 rounded-full bg-card border border-border/80 shadow-[0_4px_14px_rgba(0,0,0,0.06)] active:scale-90 transition-transform cursor-pointer"
+        className="lg:hidden flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-card border border-border/80 shadow-[0_4px_14px_rgba(0,0,0,0.06)] active:scale-90 transition-transform cursor-pointer shrink-0"
       >
         <MenuIcon className="w-5 h-5 text-foreground stroke-[2.4]" />
       </button>
@@ -155,9 +155,9 @@ export function MobileMenuButton({
 
 /**
  * 3-Island Floating Dock Navigation (mobile only):
- * - Island 1 (Left): Separate dark circular button [ 💬 ] (Messages)
- * - Island 2 (Middle): Combined dark pill [ ⌂ Home ] [ 🎬 Reels ] [ ➕ ] [ 🛍️ Shop ]
- * - Island 3 (Right): Separate dark circular button [ 👤 ] (Profile)
+ * - Island 1 (Left Edge): Separate dark circular button [ 💬 ] (Messages)
+ * - Island 2 (Middle Pill): [ ➕ Plus ] [ ⌂ Feed ] [ 🎬 Reels ] [ 🛍️ Shop ]
+ * - Island 3 (Right Edge): Separate dark circular button [ 👤 ] (Profile)
  */
 export function MobileNav({
   user,
@@ -189,15 +189,16 @@ export function MobileNav({
       />
 
       <nav
-        className="md:hidden fixed bottom-3 inset-x-0 z-50 pointer-events-none flex justify-center pb-[env(safe-area-inset-bottom)]"
+        aria-label="Mobile Navigation"
+        className="md:hidden fixed bottom-3 inset-x-0 z-50 pointer-events-none flex justify-center px-2.5 sm:px-4 pb-[env(safe-area-inset-bottom)]"
       >
-        <div className="pointer-events-auto flex items-center gap-2">
-          {/* ISLAND 1 (LEFT): Separate Dark Circle [ 💬 ] */}
+        <div className="pointer-events-auto w-full max-w-[430px] flex items-center justify-between">
+          {/* ISLAND 1 (FAR LEFT): Separate Dark Circle [ 💬 ] */}
           <Link
             href="/messages"
             aria-label="Chats"
-            className={`relative w-[48px] h-[48px] rounded-full bg-[#14171D] text-white flex items-center justify-center shadow-[0_12px_28px_rgba(0,0,0,0.35)] border border-white/10 active:scale-90 transition-transform ${
-              isChatsActive ? "ring-2 ring-white/30" : ""
+            className={`relative shrink-0 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#14171D] text-white flex items-center justify-center shadow-[0_12px_28px_rgba(0,0,0,0.35)] border border-white/10 active:scale-90 transition-transform ${
+              isChatsActive ? "ring-2 ring-[#00C2E8]/60 border-[#00C2E8]/40" : ""
             }`}
           >
             <MessageCircle className="w-5 h-5 text-white" />
@@ -208,63 +209,63 @@ export function MobileNav({
             ) : null}
           </Link>
 
-          {/* ISLAND 2 (MIDDLE): Combined Pill [ ⌂ Home ] [ 🎬 Reels ] [ ➕ ] [ 🛍️ Shop ] */}
-          <div className="h-[48px] px-2 rounded-full bg-[#14171D] text-white flex items-center gap-1.5 shadow-[0_12px_28px_rgba(0,0,0,0.35)] border border-white/10">
-            {/* Home */}
+          {/* ISLAND 2 (MIDDLE PILL): [ ➕ Plus ] [ ⌂ Feed ] [ 🎬 Reels ] [ 🛍️ Shop ] */}
+          <div className="h-11 sm:h-12 px-1.5 sm:px-2 rounded-full bg-[#14171D] text-white flex items-center gap-1 sm:gap-1.5 shadow-[0_12px_28px_rgba(0,0,0,0.35)] border border-white/10 shrink-0">
+            {/* 1. Cyan Plus Button (In place of Home) */}
+            <button
+              onClick={() => setCreateModalOpen(true)}
+              aria-label="Create Content"
+              className="w-[34px] h-[34px] sm:w-[36px] sm:h-[36px] rounded-full bg-[#00C2E8] text-[#14171D] flex items-center justify-center font-black text-xl shadow-[0_0_14px_rgba(0,194,232,0.55)] active:scale-90 transition-transform cursor-pointer"
+            >
+              +
+            </button>
+
+            {/* 2. Feed / Home (Always visible with currentColor) */}
             <Link
               href="/"
               aria-label="Home Feed"
-              className={`w-[36px] h-[36px] rounded-full flex items-center justify-center active:scale-95 transition-all ${
+              className={`w-[34px] h-[34px] sm:w-[36px] sm:h-[36px] rounded-full flex items-center justify-center active:scale-95 transition-all ${
                 isHomeActive
                   ? "bg-white/18 text-white"
                   : "text-white/70 hover:text-white"
               }`}
             >
-              <NavHomeIcon className="w-4 h-4 text-white" fill={isHomeActive ? "currentColor" : "none"} />
+              <NavHomeIcon className="w-5 h-5 text-current" />
             </Link>
 
-            {/* Reels */}
+            {/* 3. Reels */}
             <Link
               href="/reels"
               aria-label="Reels"
-              className={`w-[36px] h-[36px] rounded-full flex items-center justify-center active:scale-95 transition-all ${
+              className={`w-[34px] h-[34px] sm:w-[36px] sm:h-[36px] rounded-full flex items-center justify-center active:scale-95 transition-all ${
                 isReelsActive
                   ? "bg-white/18 text-white"
                   : "text-white/70 hover:text-white"
               }`}
             >
-              <NavReelsIcon className="w-4 h-4 text-white" />
+              <NavReelsIcon className="w-5 h-5 text-current" />
             </Link>
 
-            {/* Cyan Plus Button */}
-            <button
-              onClick={() => setCreateModalOpen(true)}
-              aria-label="Create Content"
-              className="w-[36px] h-[36px] rounded-full bg-[#00C2E8] text-[#14171D] flex items-center justify-center font-black text-xl shadow-[0_0_14px_rgba(0,194,232,0.55)] active:scale-90 transition-transform cursor-pointer"
-            >
-              +
-            </button>
-
-            {/* Shop */}
+            {/* 4. Shop */}
             <Link
               href="/shop"
               aria-label="Shop"
-              className={`w-[36px] h-[36px] rounded-full flex items-center justify-center active:scale-95 transition-all ${
+              className={`w-[34px] h-[34px] sm:w-[36px] sm:h-[36px] rounded-full flex items-center justify-center active:scale-95 transition-all ${
                 isShopActive
                   ? "bg-white/18 text-white"
                   : "text-white/70 hover:text-white"
               }`}
             >
-              <NavShopIcon className="w-4 h-4 text-white" />
+              <NavShopIcon className="w-5 h-5 text-current" />
             </Link>
           </div>
 
-          {/* ISLAND 3 (RIGHT): Separate Dark Circle [ 👤 ] */}
+          {/* ISLAND 3 (FAR RIGHT): Separate Dark Circle [ 👤 ] */}
           <Link
             href={profileHref}
             aria-label="Profile"
-            className={`w-[48px] h-[48px] rounded-full bg-[#14171D] text-white flex items-center justify-center shadow-[0_12px_28px_rgba(0,0,0,0.35)] border border-white/10 active:scale-90 transition-transform ${
-              isProfileActive ? "ring-2 ring-white/30" : ""
+            className={`shrink-0 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#14171D] text-white flex items-center justify-center shadow-[0_12px_28px_rgba(0,0,0,0.35)] border border-white/10 active:scale-90 transition-transform ${
+              isProfileActive ? "ring-2 ring-[#00C2E8]/60 border-[#00C2E8]/40" : ""
             }`}
           >
             <UserCircle className="w-5 h-5 text-white" />
