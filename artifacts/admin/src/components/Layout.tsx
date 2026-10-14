@@ -86,7 +86,7 @@ export function Layout({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen">
       <aside className="aurora-glass-header fixed inset-y-0 left-0 flex w-64 flex-col border-r">
         <div className="flex items-center gap-3 px-5 py-5">
-          <img src="/favicon.png" alt="HiMewo" className="h-10 w-10 object-contain rounded-xl" />
+          <img src="/logo.png" alt="HiMewo" className="h-10 w-10 object-contain" />
           <div>
             <p className="text-sm font-extrabold text-slate-900 tracking-tight">HiMewo</p>
             <p className="text-[11px] font-medium text-slate-500">Admin Console</p>

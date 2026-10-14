@@ -215,8 +215,8 @@ export default function HomeScreen() {
         >
           <Image
             source={require("@/assets/images/icon.png")}
-            style={styles.headerLogo}
-            contentFit="cover"
+            style={[styles.headerLogo, { tintColor: c.foreground }]}
+            contentFit="contain"
           />
           <Text style={[styles.headerBrandText, { color: c.foreground }]}>
             HiMewo
@@ -525,7 +525,6 @@ const styles = StyleSheet.create({
   headerLogo: {
     width: 34,
     height: 34,
-    borderRadius: 12,
   },
   headerBrandText: {
     fontSize: 18,

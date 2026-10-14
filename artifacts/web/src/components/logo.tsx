@@ -38,10 +38,10 @@ export function OriginalPixelCatLogo({
           src={
             isChat
               ? "/original_user_pixel_cat_chat_white_bubble.png"
-              : "/original_user_pixel_cat_zoomed.png"
+              : "/logo.png"
           }
           alt={isChat ? "HiMewo Chat Logo" : "HiMewo Logo"}
-          className="w-full h-full object-contain rounded-2xl"
+          className="w-full h-full object-contain dark:invert transition-all"
         />
       </div>
       {isChat && (

@@ -364,8 +364,8 @@ export default function App() {
       <header className="sticky top-0 z-50 border-b border-purple-100 bg-white/90 backdrop-blur-md shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <a href="https://himewo.com" className="flex items-center gap-3 group">
-            <div className="purple-gradient h-11 w-11 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-[0_8px_20px_rgba(147,51,234,0.3)] group-hover:scale-105 transition-transform">
-              H
+            <div className="h-11 w-11 flex items-center justify-center select-none group-hover:scale-105 transition-transform">
+              <img src="/logo.png" alt="HiMewo" className="h-11 w-11 object-contain" />
             </div>
             <span className="font-['Outfit',sans-serif] text-2xl font-black tracking-tight purple-gradient-text">
               HiMewo
