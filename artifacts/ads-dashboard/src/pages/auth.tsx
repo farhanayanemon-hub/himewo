@@ -54,7 +54,7 @@ export default function AuthPage() {
               className="h-14 w-14 object-contain dark:invert transition-transform hover:scale-105"
             />
           </div>
-          <CardTitle className="text-2xl aurora-gradient-text">HiMewo Ads Manager</CardTitle>
+          <CardTitle className="text-2xl aurora-gradient-text">HiMewo Promotion Manager</CardTitle>
           <CardDescription>
             Create and manage your ad campaigns.
           </CardDescription>
